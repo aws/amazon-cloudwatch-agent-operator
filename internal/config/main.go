@@ -13,6 +13,7 @@ import (
 
 const (
 	defaultCollectorConfigMapEntry = "cwagentconfig.json"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -27,6 +28,8 @@ type Config struct {
 	autoInstrumentationNginxImage       string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
+	targetAllocatorImage          string
+	targetAllocatorConfigMapEntry string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
 	labelsFilter                        []string
@@ -37,17 +40,28 @@ func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
 		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
-		logger:                  logf.Log.WithName("config"),
-		version:                 version.Get(),
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,logger:                  logf.Log.WithName("config"),
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
 
+	// this is derived from another option, so, we need to first parse the options, then set a default
+	// if there's no explicit value being set
+	if len(o.collectorImage) == 0 {
+		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
+	}
+
+	if len(o.targetAllocatorImage) == 0 {
+		o.targetAllocatorImage = fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", o.version.TargetAllocator)
+	}
+
 	return Config{
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
-		logger:                              o.logger,
+		targetAllocatorImage:          o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry: o.targetAllocatorConfigMapEntry,logger:                              o.logger,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -114,6 +128,19 @@ func (c *Config) DcgmExporterImage() string {
 // NeuronMonitorImage returns Neuron Monitor Exporter container image.
 func (c *Config) NeuronMonitorImage() string {
 	return c.neuronMonitorImage
+// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+func (c *Config) TargetAllocatorImage() string {
+	return c.targetAllocatorImage
+}
+
+// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+func (c *Config) TargetAllocatorConfigMapEntry() string {
+	return c.targetAllocatorConfigMapEntry
+}
+
+// Platform represents the type of the platform this operator is running.
+func (c *Config) Platform() platform.Platform {
+	return c.platform
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

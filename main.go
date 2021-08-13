@@ -171,6 +171,7 @@ func main() {
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
+		"opentelemetry-targetallocator", v.TargetAllocator,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,

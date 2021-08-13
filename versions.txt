@@ -12,3 +12,5 @@ aws-otel-dotnet-instrumentation=1.6.0
 
 dcgm-exporter=3.3.3-3.3.1-ubuntu22.04
 neuron-monitor=1.0.0
+# Represents the current release of the Target Allocator.
+targetallocator=0.1.0
