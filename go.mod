@@ -10,6 +10,7 @@ replace github.com/openshift/api v3.9.0+incompatible => github.com/openshift/api
 require (
 	dario.cat/mergo v1.0.0
 	github.com/go-logr/logr v1.4.1
+	github.com/google/uuid v1.3.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.70.0
@@ -40,6 +41,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2 v2.2.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.45.25 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -75,7 +77,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
-	github.com/google/uuid v1.3.1 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gophercloud/gophercloud v1.7.0 // indirect
@@ -124,6 +125,7 @@ require (
 	github.com/prometheus/client_golang v1.17.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
+	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.21 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
