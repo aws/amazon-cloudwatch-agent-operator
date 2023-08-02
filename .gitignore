@@ -1,0 +1,6 @@
+build
+.tmp
+*.iml
+.DS_Store
+.idea
+.attach_pid*
