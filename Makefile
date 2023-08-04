@@ -32,8 +32,17 @@ KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "cwa-operator"
 
 OPERATOR_SDK_VERSION ?= 1.29.0
-
 CERTMANAGER_VERSION ?= 1.10.0
+
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+CHLOGGEN ?= $(LOCALBIN)/chloggen
+ADDLICENSE ?= $(LOCALBIN)/addlicense
+
+KUSTOMIZE_VERSION ?= v5.0.3
+CONTROLLER_TOOLS_VERSION ?= v0.12.0
+ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -136,7 +145,7 @@ lint:
 # Generate code
 .PHONY: generate
 generate: controller-gen api-docs
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="licensing/header.txt" paths="./..."
 
 # Build the container image, used only for local dev purposes
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
@@ -148,15 +157,6 @@ container:
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
-
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
-CHLOGGEN ?= $(LOCALBIN)/chloggen
-
-KUSTOMIZE_VERSION ?= v5.0.3
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
-
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -230,3 +230,18 @@ operator-sdk:
 	curl -L -o $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk_`go env GOOS`_`go env GOARCH`;\
 	chmod +x $(OPERATOR_SDK) ;\
 	}
+
+addlicense: install-addlicense
+	@ADDLICENSEOUT=`$(ADDLICENSE) -y="" -s=only -l="Apache-2.0" -c="Amazon.com, Inc. or its affiliates. All Rights Reserved." $(ALL_SRC) 2>&1`; \
+    		if [ "$$ADDLICENSEOUT" ]; then \
+    			echo "$(ADDLICENSE) FAILED => add License errors:\n"; \
+    			echo "$$ADDLICENSEOUT\n"; \
+    			exit 1; \
+    		else \
+    			echo "Add License finished successfully"; \
+    		fi
+
+install-addlicense:
+	# Using 04bfe4e to get SPDX template changes that are not present in the most recent tag v1.0.0
+	# This is required to be able to easily omit the year in our license header.
+	GOBIN=$(LOCALBIN) go install github.com/google/addlicense@04bfe4e

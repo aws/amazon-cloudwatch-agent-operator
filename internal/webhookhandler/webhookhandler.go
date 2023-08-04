@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package webhookhandler contains the webhook that injects sidecars into pods.
 package webhookhandler
 
