@@ -8,9 +8,8 @@ import (
 	"sort"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (

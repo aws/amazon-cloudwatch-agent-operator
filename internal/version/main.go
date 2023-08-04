@@ -13,7 +13,6 @@ var (
 	version                 string
 	buildDate               string
 	agent                   string
-	targetAllocator         string
 	autoInstrumentationJava string
 )
 

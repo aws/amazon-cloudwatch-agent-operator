@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 // Option represents one specific configuration option.

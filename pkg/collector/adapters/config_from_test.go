@@ -6,9 +6,8 @@ package adapters_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInvalidYAML(t *testing.T) {
