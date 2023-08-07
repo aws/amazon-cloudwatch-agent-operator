@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package config contains the operator's runtime configuration.
 package config
 
@@ -6,10 +9,10 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 const (

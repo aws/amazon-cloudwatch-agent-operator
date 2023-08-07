@@ -1,9 +1,13 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package adapters is for data conversion.
 package adapters
 
 import (
 	"encoding/json"
 	"errors"
+
 	"gopkg.in/yaml.v2"
 )
 

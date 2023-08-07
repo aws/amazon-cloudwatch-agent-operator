@@ -1,16 +1,18 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package sidecar
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestGetAttributesEnvNoPodReferences(t *testing.T) {

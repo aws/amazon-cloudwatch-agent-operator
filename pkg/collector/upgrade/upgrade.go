@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package upgrade handles the upgrade routine from one OpenTelemetry Collector to the next.
 package upgrade
 

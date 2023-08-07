@@ -32,8 +32,18 @@ KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "cwa-operator"
 
 OPERATOR_SDK_VERSION ?= 1.29.0
-
 CERTMANAGER_VERSION ?= 1.10.0
+
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+CHLOGGEN ?= $(LOCALBIN)/chloggen
+ADDLICENSE ?= $(LOCALBIN)/addlicense
+
+KUSTOMIZE_VERSION ?= v5.0.3
+CONTROLLER_TOOLS_VERSION ?= v0.12.0
+ALL_SRC := $(shell find . -name '*.go' -type f | sort)
+CW_AGENT_OPERATOR_IMPORT_PATH = "github.com/aws/amazon-cloudwatch-agent-operator"
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -118,7 +128,7 @@ manifests: controller-gen
 
 # Run go fmt against code
 .PHONY: fmt
-fmt:
+fmt: goimports addlicense
 	go fmt ./...
 
 # Run go vet against code
@@ -126,17 +136,10 @@ fmt:
 vet:
 	go vet ./...
 
-# Run go lint against code
-.PHONY: lint
-lint:
-	golangci-lint run
-	cd cmd/otel-allocator && golangci-lint run
-	cd cmd/operator-opamp-bridge && golangci-lint run
-
 # Generate code
 .PHONY: generate
 generate: controller-gen api-docs
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="licensing/header.txt" paths="./..."
 
 # Build the container image, used only for local dev purposes
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
@@ -149,15 +152,6 @@ container:
 container-push:
 	docker push ${IMG}
 
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
-CHLOGGEN ?= $(LOCALBIN)/chloggen
-
-KUSTOMIZE_VERSION ?= v5.0.3
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
-
-
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
@@ -167,11 +161,52 @@ controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessar
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
+.PHONY: goimports
+goimports:
+	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/goimports -w -local $(CW_AGENT_OPERATOR_IMPORT_PATH) || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports
+
+.PHONY: impi
+impi:
+	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/impi --local $(CW_AGENT_OPERATOR_IMPORT_PATH) --scheme stdThirdPartyLocal || GOBIN=$(LOCALBIN) go install github.com/pavius/impi/cmd/impi@v0.0.3
+	@echo "Check import order/grouping finished"
+
+.PHONY: lint
+lint: simple-lint
+	$(LOCALBIN)/golangci-lint run ./... ||	(curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) v1.51.1)
+
+simple-lint: checklicense impi
+
+install-addlicense:
+	# Using 04bfe4e to get SPDX template changes that are not present in the most recent tag v1.0.0
+	# This is required to be able to easily omit the year in our license header.
+	GOBIN=$(LOCALBIN) go install github.com/google/addlicense@04bfe4e
+
+addlicense: install-addlicense
+	@ADDLICENSEOUT=`$(ADDLICENSE) -y="" -s=only -l="Apache-2.0" -c="Amazon.com, Inc. or its affiliates. All Rights Reserved." $(ALL_SRC) 2>&1`; \
+    		if [ "$$ADDLICENSEOUT" ]; then \
+    			echo "$(ADDLICENSE) FAILED => add License errors:\n"; \
+    			echo "$$ADDLICENSEOUT\n"; \
+    			exit 1; \
+    		else \
+    			echo "Add License finished successfully"; \
+    		fi
+
+checklicense: install-addlicense
+	@ADDLICENSEOUT=`$(ADDLICENSE) -check $(ALL_SRC) 2>&1`; \
+    		if [ "$$ADDLICENSEOUT" ]; then \
+    			echo "$(ADDLICENSE) FAILED => add License errors:\n"; \
+    			echo "$$ADDLICENSEOUT\n"; \
+    			echo "Use 'make addlicense' to fix this."; \
+    			exit 1; \
+    		else \
+    			echo "Check License finished successfully"; \
+    		fi
+
+
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

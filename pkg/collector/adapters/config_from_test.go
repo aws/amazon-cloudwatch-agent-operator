@@ -1,11 +1,13 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package adapters_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInvalidYAML(t *testing.T) {

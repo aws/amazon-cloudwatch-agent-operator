@@ -1,17 +1,22 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package reconcile
 
 import (
 	"context"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/naming"
+	"reflect"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/naming"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete

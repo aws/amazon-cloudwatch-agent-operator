@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package config
 
 import (
@@ -6,9 +9,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 // Option represents one specific configuration option.

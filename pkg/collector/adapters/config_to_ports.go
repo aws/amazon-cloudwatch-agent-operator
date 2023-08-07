@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package adapters
 
 import (
@@ -5,9 +8,8 @@ import (
 	"sort"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (
