@@ -1,0 +1,53 @@
+# Default values for cloudwatchagent-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+## Provide a name in place of cloudwatchagent-operator.
+##
+nameOverride: ""
+
+## Reference one or more secrets to be used when pulling images from authenticated repositories.
+imagePullSecrets: []
+
+## Provide CloudWatchAgent Operator manager container image and resources.
+##
+manager:
+  name:
+  image:
+    repository: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-release
+    tag: latest
+  ports:
+    containerPort: 9443
+    metricsPort: 8080
+    webhookPort: 9443
+    healthzPort: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  ## Adds additional environment variables
+  ## e.g ENV_VAR: env_value
+  env:
+    ENABLE_WEBHOOKS: "true"
+
+  # -- Create the manager ServiceAccount
+  serviceAccount:
+    create: true
+    annotations: {}
+
+  podAnnotations: {}
+  podLabels: {}
+
+  certificate:
+    name:
+    secretName:
+
+  service:
+    name:
+
+agent:
+  enabled: true
+  serviceAccount:
+    name: # override agent service account name 
+

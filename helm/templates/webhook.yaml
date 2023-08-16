@@ -1,0 +1,174 @@
+{{- $altNames := list ( printf "%s-webhook-service.%s" (include "cloudwatchagent-operator.name" .) .Release.Namespace ) ( printf "%s-webhook-service.%s.svc" (include "cloudwatchagent-operator.name" .) .Release.Namespace ) -}}
+{{- $ca := genCA "cloudwatchagent-operator-operator-ca" 365 -}}
+{{- $cert := genSignedCert (include "cloudwatchagent-operator.name" .) nil $altNames 365 $ca -}}
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: {{ template "cloudwatchagent-operator.certificateSecretName" . }}
+  labels:
+    {{- include "cloudwatchagent-operator.labels" . | nindent 4}}
+data:
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  labels:
+    {{- include "cloudwatchagent-operator.labels" . | nindent 4}}
+  name: {{ template "cloudwatchagent-operator.name" . }}-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.webhookServiceName" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Fail
+  name: mamazoncloudwatchagent.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - amazoncloudwatchagents
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.webhookServiceName" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Fail
+  name: minstrumentation.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.webhookServiceName" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-v1-pod
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Ignore
+  name: mpod.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  labels:
+    {{- include "cloudwatchagent-operator.labels" . | nindent 4}}
+  name: {{ template "cloudwatchagent-operator.name" . }}-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.webhookServiceName" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Fail
+  name: vamazoncloudwatchagentcreateupdate.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - amazoncloudwatchagents
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.name" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Ignore
+  name: vamazoncloudwatchagentdelete.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - DELETE
+    resources:
+    - amazoncloudwatchagents
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.name" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Fail
+  name: vinstrumentationcreateupdate.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "cloudwatchagent-operator.name" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
+    caBundle: {{ $ca.Cert | b64enc }}
+  failurePolicy: Ignore
+  name: vinstrumentationdelete.kb.io
+  rules:
+  - apiGroups:
+    - cloudwatch.aws.amazon.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - DELETE
+    resources:
+    - instrumentations
+  sideEffects: None

@@ -1,0 +1,41 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "cloudwatchagent-operator.labels" . | nindent 4 }}
+    control-plane: controller-manager
+  name: {{ template "cloudwatchagent-operator.name" . }}-controller-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "cloudwatchagent-operator.name" . }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "cloudwatchagent-operator.name" . }}
+        control-plane: controller-manager
+        {{- include "cloudwatchagent-operator.podLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+        name: manager
+        ports:
+        - containerPort: {{ .Values.manager.ports.containerPort }}
+          name: webhook-server
+          protocol: TCP
+        resources: {{ toYaml .Values.manager.resources | nindent 12 }}   
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      serviceAccountName: {{ template "cloudwatchagent-operator.managerServiceAccountName" . }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ template "cloudwatchagent-operator.certificateSecretName" . }}

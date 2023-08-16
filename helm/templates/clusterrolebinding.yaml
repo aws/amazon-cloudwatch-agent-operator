@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "cloudwatchagent-operator.labels" . | nindent 4 }}
+  name: {{ template "cloudwatchagent-operator.name" . }}-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "cloudwatchagent-operator.name" . }}-manager-role
+subjects:
+- kind: ServiceAccount
+  name: {{ template "cloudwatchagent-operator.managerServiceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+
+{{ if .Values.agent.enabled }}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "cloudwatchagent-operator.name" . }}-agent-role-binding
+roleRef:
+  kind: ClusterRole
+  name: {{ template "cloudwatchagent-operator.name" . }}-agent-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "cloudwatchagent-operator.agentServiceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
