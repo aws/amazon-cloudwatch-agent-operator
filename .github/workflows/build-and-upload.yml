@@ -3,13 +3,13 @@ name: Build And Upload
 on:
   push:
     branches:
-      - gha-tests*
+      - main*
   workflow_dispatch:
   workflow_call:
 
 jobs:
   MakeBinary:
-    name: 'MakeDockerImage'
+    name: 'MakeContainerImage'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -19,7 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Set up building environment, patch the dev repo code on dispatch events.
       - name: Set up Go 1.x
         uses: actions/setup-go@v4
         with:
@@ -32,24 +31,7 @@ jobs:
           role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
-      - name: Cache binaries
-        id: cached_binaries
-        uses: actions/cache@v3
-        with:
-          key: "cached_binaries_${{ github.sha }}"
-          path: go.mod
-
-      - name: Cache go
-        # Only skip for integration builds not release builds.
-        if: steps.cached_binaries.outputs.cache-hit == false
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: v1-go-pkg-mod-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
-
-      - name: Login ECR
+      - name: Login to ECR
         if: steps.cached_binaries.outputs.cache-hit == false
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
@@ -62,12 +44,12 @@ jobs:
         if: steps.cached_binaries.outputs.cache-hit == false
         uses: docker/setup-qemu-action@v1
 
-      - name: Build Cloudwatch Agent Operator Image
+      - name: Build Cloudwatch Agent Operator Image and push to ECR
         uses: docker/build-push-action@v4
         if: steps.cached_binaries.outputs.cache-hit == false
         with:
           file: ./Dockerfile
           context: .
           push: true
-          tags: 506463145083.dkr.ecr.us-west-2.amazonaws.com/apm-beta-pre-release:latest
+          tags: ${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
           platforms: linux/amd64, linux/arm64
