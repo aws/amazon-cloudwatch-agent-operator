@@ -1,10 +1,6 @@
 name: AWS Cloudwatch Agent Operator build testing
 env:
   TERRAFORM_AWS_ASSUME_ROLE_DURATION: 14400 # 4 hours
-#  AWS_DEFAULT_REGION: us-east-1
-#  TEST_ACCOUNT: 612966150583
-#  SAMPLE_APP_NAMESPACE: sample-app-namespace
-#  SAMPLE_APP_IMAGE: 417921506511.dkr.ecr.us-east-1.amazonaws.com/aws-apm-test/aws-apm-java-springboot:latest
 
 on:
   push:
@@ -52,14 +48,14 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
+          aws-region: us-east-1
 #          role-duration-seconds: ${{ env.TERRAFORM_AWS_ASSUME_ROLE_DURATION }} --Error: The requested DurationSeconds exceeds the MaxSessionDuration set for this role.
 
-      - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
-
-      - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+#      - name: Create kubeconfig directory
+#        run: mkdir -p ${{ github.workspace }}/.kube
+#
+#      - name: Set KUBECONFIG environment variable
+#        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
       - name: Install eksctl
         run: |
@@ -67,6 +63,12 @@ jobs:
           curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
           tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
+
+      - name: Update kubconfig with cluster
+        run: |
+          mkdir -p ${{ github.workspace }}/.kube
+          aws eks update-kubeconfig --name cloudwatchagent-operator --region us-east-1 --kubeconfig ${{ github.workspace }}/.kube/config
+          echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
       - name: Verify Kubectl version
         run: kubectl config view
