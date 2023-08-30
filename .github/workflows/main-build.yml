@@ -69,4 +69,4 @@ jobs:
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
 
       - name: Verify Kubectl version
-        run: kubectl version --short --client
+        run: kubectl config view
