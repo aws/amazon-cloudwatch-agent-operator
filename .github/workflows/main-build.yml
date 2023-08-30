@@ -1,0 +1,73 @@
+name: AWS Cloudwatch Agent Operator build testing
+env:
+  TERRAFORM_AWS_ASSUME_ROLE_DURATION: 14400 # 4 hours
+#  AWS_DEFAULT_REGION: us-east-1
+#  TEST_ACCOUNT: 612966150583
+#  SAMPLE_APP_NAMESPACE: sample-app-namespace
+#  SAMPLE_APP_IMAGE: 417921506511.dkr.ecr.us-east-1.amazonaws.com/aws-apm-test/aws-apm-java-springboot:latest
+
+on:
+  push:
+    branches:
+      - integ-test*  # CHANGE TO MAIN
+    paths-ignore:
+      - '**/*.md'
+      - 'NOTICE'
+      - 'LICENSE'
+#      - '.github/**'
+#      - '!.github/workflows/main-build.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+#  BuildAndUpload:
+#    uses: ./.github/workflows/build-and-upload.yml
+#    secrets: inherit
+#    permissions:
+#      id-token: write
+#      contents: read
+
+  EKSIntegrationTest:
+    name: 'EKSIntegrationTest'
+    runs-on: ubuntu-latest
+#    needs: [ BuildAndUpload ]
+    strategy:
+      fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+          role-duration-seconds: ${{ env.TERRAFORM_AWS_ASSUME_ROLE_DURATION }}
+
+          # local directory to store the kubernetes config
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
+      - name: Install eksctl
+        run: |
+          mkdir ${{ github.workspace }}/eksctl
+          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
+          echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
+
+      - name: Verify Kubectl version
+        run: kubectl version --short --client
