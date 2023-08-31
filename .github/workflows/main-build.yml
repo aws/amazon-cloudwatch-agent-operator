@@ -5,7 +5,7 @@ env:
 on:
   push:
     branches:
-      - integ-test*  # CHANGE TO MAIN
+      - main*  # CHANGE TO MAIN
     paths-ignore:
       - '**/*.md'
       - 'NOTICE'
