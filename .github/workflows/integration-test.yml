@@ -1,0 +1,45 @@
+name: Run Integration Tests for EKS Addon
+env:
+  TERRAFORM_AWS_ASSUME_ROLE_DURATION: 14400 # 4 hours
+
+on:
+  push:
+    branches:
+      - integ-test-eks*  # CHANGE TO MAIN
+    paths-ignore:
+      - '**/*.md'
+      - 'NOTICE'
+      - 'LICENSE'
+  #      - '.github/**'
+  #      - '!.github/workflows/main-build.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  EKSAddOnIntegrationTest:
+    name: EKSAddOnIntegrationTest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-east-1
+      - name: Verify Terraform version
+        run: terraform --version
