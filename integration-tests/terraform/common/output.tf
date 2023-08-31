@@ -21,14 +21,6 @@ output "cwa_iam_instance_profile" {
   value = "cwa-e2e-iam-instance-profile"
 }
 
-output "cwagent_image_repo" {
-  value = var.cwagent_image_repo
-}
-
-output "cwagent_image_tag" {
-  value = var.cwagent_image_tag
-}
-
 output "vpc_security_group" {
   value = var.vpc_security_group
 }
