@@ -142,9 +142,6 @@ resource "null_resource" "validator" {
     null_resource.integration-test
   ]
   provisioner "local-exec" {
-    command = "cd ../../.."
-  }
-  provisioner "local-exec" {
     command = "go test ${var.test_dir} -eksClusterName=${aws_eks_cluster.this.name} -computeType=EKS -v"
   }
 
