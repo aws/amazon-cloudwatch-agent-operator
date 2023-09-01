@@ -117,17 +117,23 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "eks-addon" {
+resource "null_resource" "integration-test" {
   depends_on = [
     aws_eks_node_group.this,
     null_resource.kubectl
   ]
   provisioner "local-exec" {
-    command = <<-EOT
-      echo "Validating kubectl"
-      "kubectl cluster-info"
-      "aws eks  --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
-    EOT
+    command = "kubectl cluster-info"
+  }
+}
+
+resource "null_resource" "eks-addon" {
+  depends_on = [
+    aws_eks_node_group.this,
+    null_resource.integration-test
+  ]
+  provisioner "local-exec" {
+    command = "aws eks  --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
   }
 }
 
@@ -136,10 +142,10 @@ resource "null_resource" "validator" {
     null_resource.eks-addon
   ]
   provisioner "local-exec" {
-    command = <<-EOT
-      echo "Validating EKS resources"
-      cd ../../..
-      go test ${var.test_dir} -eksClusterName=${aws_eks_cluster.this.name} -computeType=EKS -v
-    EOT
+    command = "cd ../../.."
   }
+  provisioner "local-exec" {
+    command = "go test ${var.test_dir} -eksClusterName=${aws_eks_cluster.this.name} -computeType=EKS -v"
+  }
+
 }
