@@ -106,3 +106,24 @@ resource "kubernetes_namespace" "namespace" {
     }
   }
 }
+
+resource "null_resource" "kubectl" {
+  depends_on = [
+    aws_eks_cluster.this,
+    aws_eks_node_group.this
+  ]
+  provisioner "local-exec" {
+    command = "aws eks --region us-west-2 update-kubeconfig --name ${aws_eks_cluster.this.name}"
+  }
+}
+
+resource "null_resource" "integration_test" {
+  depends_on = [
+    aws_eks_cluster.this,
+    aws_eks_node_group.this,
+    null_resource.kubectl
+  ]
+  provisioner "local-exec" {
+    command = "kubectl cluster-info"
+  }
+}
