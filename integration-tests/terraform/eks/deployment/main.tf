@@ -98,14 +98,14 @@ resource "aws_iam_role_policy_attachment" "node_CloudWatchAgentServerPolicy" {
   role       = aws_iam_role.node_role.name
 }
 
-resource "kubernetes_namespace" "namespace" {
+/*resource "kubernetes_namespace" "namespace" {
   metadata {
     name = "amazon-cloudwatch"
     labels = {
       name = "amazon-cloudwatch"
     }
   }
-}
+}*/
 
 resource "null_resource" "kubectl" {
   depends_on = [
@@ -117,13 +117,29 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "integration_test" {
+resource "null_resource" "eks-addon" {
   depends_on = [
-    aws_eks_cluster.this,
     aws_eks_node_group.this,
     null_resource.kubectl
   ]
   provisioner "local-exec" {
-    command = "kubectl cluster-info"
+    command = <<-EOT
+      echo "Validating kubectl"
+      "kubectl cluster-info"
+      "aws eks  --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
+    EOT
+  }
+}
+
+resource "null_resource" "validator" {
+  depends_on = [
+    null_resource.eks-addon
+  ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Validating EKS resources"
+      cd ../../..
+      go test ${var.test_dir} -eksClusterName=${aws_eks_cluster.this.name} -computeType=EKS -v
+    EOT
   }
 }
