@@ -1,0 +1,47 @@
+[{
+  "EKS.Cluster": "^{{cluster}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^sample-(remote-)?app-deployment(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "aws.span.kind": "^SERVER$"
+},
+{
+  "EKS.Cluster": "^{{cluster}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "RemoteService": "e2e-test-bucket-name.s3.us-east-1.amazonaws.com",
+  "RemoteOperation": "GET /",
+  "aws.span.kind": "^CLIENT$"
+},
+{
+  "EKS.Cluster": "^{{cluster}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "RemoteService": "sts.us-east-1.amazonaws.com",
+  "RemoteOperation": "POST /",
+  "aws.span.kind": "^CLIENT$"
+},
+{
+  "EKS.Cluster": "^{{cluster}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "RemoteService": "S3",
+  "RemoteOperation": "GetBucketLocation",
+  "RemoteTarget": "e2e-test-bucket-name",
+  "aws.span.kind": "^CLIENT$"
+}]

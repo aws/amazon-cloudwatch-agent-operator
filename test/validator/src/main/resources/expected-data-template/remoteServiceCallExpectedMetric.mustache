@@ -1,0 +1,323 @@
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: EKS.Cluster
+      value: {{cluster}}
+    -
+      name: K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: sample-remote-app-service:8080

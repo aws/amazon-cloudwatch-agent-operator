@@ -1,0 +1,20 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+
+name: APM Release
+on:
+  workflow_dispatch:
+jobs:
+  BuildAndUpload:
+    uses: ./.github/workflows/build-and-upload.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+
+  e2e-test:
+    needs: BuildAndUpload
+    uses: ./.github/workflows/apm-e2e-test.yml
+    secrets: inherit
+    with:
+      test-cluster-name: 'pulse-cw-agent-operator-test'
