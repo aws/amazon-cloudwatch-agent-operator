@@ -54,7 +54,8 @@ resource "aws_eks_node_group" "this" {
     aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly,
     aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.node_CloudWatchAgentServerPolicy
+    aws_iam_role_policy_attachment.node_CloudWatchAgentServerPolicy,
+    null_resource.kubectl
   ]
 }
 
@@ -109,11 +110,10 @@ resource "aws_iam_role_policy_attachment" "node_CloudWatchAgentServerPolicy" {
 
 resource "null_resource" "kubectl" {
   depends_on = [
-    aws_eks_cluster.this,
-    aws_eks_node_group.this
+    aws_eks_cluster.this
   ]
   provisioner "local-exec" {
-    command = "aws eks --region us-west-2 update-kubeconfig --name ${aws_eks_cluster.this.name}"
+    command = "aws eks --endpoint https://api.beta.us-west-2.wesley.amazonaws.com --region us-west-2 update-kubeconfig --name ${aws_eks_cluster.this.name}"
   }
 }
 
@@ -133,7 +133,7 @@ resource "null_resource" "integration-test" {
     null_resource.integration-test
   ]
   provisioner "local-exec" {
-    command = "aws eks  --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
+    command = "aws eks --endpoint https://api.beta.us-west-2.wesley.amazonaws.com --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
   }
 }*/
 
