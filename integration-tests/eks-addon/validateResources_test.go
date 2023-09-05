@@ -66,3 +66,13 @@ func ListNamespaces(client kubernetes.Interface) (*v1.NamespaceList, error) {
 	}
 	return namespaces, nil
 }
+
+func ListServices(namespace string, client kubernetes.Interface) (*v1.ServiceList, error) {
+	fmt.Println("Get Kubernetes Services")
+	namespaces, err := client.CoreV1().Services(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting Services: %v\n", err)
+		return nil, err
+	}
+	return namespaces, nil
+}
