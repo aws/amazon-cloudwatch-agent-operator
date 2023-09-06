@@ -23,58 +23,8 @@ permissions:
   contents: read
 
 jobs:
-#  EKSAddOnIntegrationTest:
-#    name: EKSAddOnIntegrationTest
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#    permissions:
-#      id-token: write
-#      contents: read
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v2
-#        with:
-#          role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-#          aws-region: us-east-1
-#
-#      - name: Verify Terraform version
-#        run: terraform --version
-#
-#      - name: Terraform apply
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks/deployment
-#
-#            terraform init
-#            if terraform apply --auto-approve; then
-#              terraform destroy -auto-approve
-#            else
-#              terraform destroy -auto-approve && exit 1
-#            fi
-#
-#      - name: Terraform destroy
-#        if: ${{ cancelled() || failure() }}
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 8
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks/deployment
-#
-#            terraform destroy --auto-approve
-
-  EKSAddOnIntegrationTestOnBetaCluster:
-    name: EKSAddOnIntegrationTestOnBetaCluster
+  EKSAddOnIntegrationTest:
+    name: EKSAddOnIntegrationTest
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -102,7 +52,7 @@ jobs:
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/eks/beta
+            cd integration-tests/terraform/eks/deployment
 
             terraform init
             if terraform apply --auto-approve; then
@@ -122,3 +72,53 @@ jobs:
             cd integration-tests/terraform/eks/deployment
 
             terraform destroy --auto-approve
+
+#  EKSAddOnIntegrationTestOnBetaCluster:
+#    name: EKSAddOnIntegrationTestOnBetaCluster
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#    permissions:
+#      id-token: write
+#      contents: read
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v2
+#        with:
+#          role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+#          aws-region: us-east-1
+#
+#      - name: Verify Terraform version
+#        run: terraform --version
+#
+#      - name: Terraform apply
+#        uses: nick-fields/retry@v2
+#        with:
+#          max_attempts: 3
+#          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
+#          retry_wait_seconds: 5
+#          command: |
+#            cd integration-tests/terraform/eks/beta
+#
+#            terraform init
+#            if terraform apply --auto-approve; then
+#              terraform destroy -auto-approve
+#            else
+#              terraform destroy -auto-approve && exit 1
+#            fi
+#
+#      - name: Terraform destroy
+#        if: ${{ cancelled() || failure() }}
+#        uses: nick-fields/retry@v2
+#        with:
+#          max_attempts: 3
+#          timeout_minutes: 8
+#          retry_wait_seconds: 5
+#          command: |
+#            cd integration-tests/terraform/eks/beta
+#
+#            terraform destroy --auto-approve

@@ -127,22 +127,21 @@ resource "null_resource" "integration-test" {
   }
 }
 
-/*resource "null_resource" "eks-addon" {
+resource "null_resource" "eks-addon" {
   depends_on = [
-    aws_eks_node_group.this,
     null_resource.integration-test
   ]
   provisioner "local-exec" {
-    command = "aws eks  --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
+    command = "aws eks --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
   }
-}*/
+}
 
 resource "null_resource" "validator" {
   depends_on = [
     null_resource.integration-test
   ]
   provisioner "local-exec" {
-    command = "go test ${var.test_dir} -eksClusterName=${aws_eks_cluster.this.name} -computeType=EKS -v"
+    command = "go test ${var.test_dir} -v"
   }
 
 }
