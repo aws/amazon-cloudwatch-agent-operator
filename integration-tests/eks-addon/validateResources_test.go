@@ -54,18 +54,24 @@ func TestK8s(t *testing.T) {
 	// Validating the "amazon-cloudwatch" namespace creation as part of EKS addon
 	namespace, err := GetNameSpace(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, NAMESPACE, namespace)
+	assert.Equal(t, NAMESPACE, namespace.Name)
 	//Validating the number of pods and status
 	pods, err := ListPods(NAMESPACE, clientset)
 	fmt.Printf("Total Pods: %d\n", len(pods.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(pods.Items))
-	assert.Equal(t, v1.PodRunning, pods.Items[0].Status)
+	for _, pod := range pods.Items {
+		fmt.Println("name: " + pod.Name + " namespace:" + pod.Namespace)
+	}
+	assert.Equal(t, 1, len(pods.Items)) //Todo: Why 2 ?
+	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
 	fmt.Printf("Total Services: %d\n", len(services.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(services.Items))
+	for _, service := range services.Items {
+		fmt.Println("name: " + service.Name + " namespace:" + service.Namespace)
+	}
+	assert.Equal(t, 1, len(services.Items)) //Todo: why 4?
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-webhook-service", services.Items[0].Name)
 
 	//Validating the Deployment
@@ -85,17 +91,16 @@ func TestK8s(t *testing.T) {
 	fmt.Printf("Total DaemonSets: %d\n", len(daemonSets.Items))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(daemonSets.Items))
-	assert.Equal(t, "cloudwatch-agent", daemonSets.Items[0].Name)
-	fmt.Printf("Total deployment conditions: %d\n", len(daemonSets.Items[0].Status.Conditions))
-	for _, daemonSetCondition := range daemonSets.Items[0].Status.Conditions {
-		fmt.Println(daemonSetCondition.Type)
-	}
+	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
 	fmt.Printf("Total ServiceAccounts: %d\n", len(serviceAccounts.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(serviceAccounts.Items))
+	for _, serviceAcc := range serviceAccounts.Items {
+		fmt.Println("name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
+	}
+	assert.Equal(t, 2, len(serviceAccounts.Items)) // Todo: why 3?
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-agent"))
 
@@ -103,7 +108,10 @@ func TestK8s(t *testing.T) {
 	clusterRoles, err := ListClusterRoles(clientset)
 	fmt.Printf("Total ClusterRoles: %d\n", len(clusterRoles.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(clusterRoles.Items))
+	for _, clusterRole := range clusterRoles.Items {
+		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
+	}
+	assert.Equal(t, 2, len(clusterRoles.Items)) // todo: why 85?
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-agent-role"))
 
@@ -111,7 +119,10 @@ func TestK8s(t *testing.T) {
 	clusterRoleBindings, err := ListClusterRoleBindings(clientset)
 	fmt.Printf("Total ClusterRoleBindings: %d\n", len(clusterRoleBindings.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(clusterRoleBindings.Items))
+	for _, clusterRole := range clusterRoleBindings.Items {
+		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
+	}
+	assert.Equal(t, 2, len(clusterRoleBindings.Items)) // todo : why 71?
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding "))
 
@@ -119,7 +130,10 @@ func TestK8s(t *testing.T) {
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
 	fmt.Printf("Total MutatingWebhookConfigurations: %d\n", len(mutatingWebhookConfigurations.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(mutatingWebhookConfigurations.Items))
+	assert.Equal(t, 1, len(mutatingWebhookConfigurations.Items)) // todo.=: why 3?
+	for _, clusterRole := range mutatingWebhookConfigurations.Items {
+		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
+	}
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
 
@@ -127,7 +141,10 @@ func TestK8s(t *testing.T) {
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
 	fmt.Printf("Total ValidatingWebhookConfigurations: %d\n", len(validatingWebhookConfigurations.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(validatingWebhookConfigurations.Items))
+	assert.Equal(t, 1, len(validatingWebhookConfigurations.Items)) // why 3
+	for _, clusterRole := range validatingWebhookConfigurations.Items {
+		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
+	}
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
