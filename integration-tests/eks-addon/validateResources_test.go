@@ -83,7 +83,6 @@ func TestK8s(t *testing.T) {
 
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
-	fmt.Printf("Total DaemonSets: %d\n", len(daemonSets.Items))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(daemonSets.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
@@ -109,7 +108,7 @@ func TestK8s(t *testing.T) {
 	clusterRoleBindings, err := ListClusterRoleBindings(clientset)
 	assert.NoError(t, err)
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-manager-rolebinding"))
-	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding "))
+	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding"))
 
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
