@@ -41,49 +41,44 @@ func TestK8s(t *testing.T) {
 		os.Exit(1)
 	}
 
-	//ListNamespaces function call returns a list of namespaces in the kubernetes cluster
-	namespaces, err := ListNamespaces(clientset)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	for _, namespace := range namespaces.Items {
-		fmt.Println(namespace.Name)
-	}
-	fmt.Printf("Total namespaces: %d\n", len(namespaces.Items))
 	// Validating the "amazon-cloudwatch" namespace creation as part of EKS addon
 	namespace, err := GetNameSpace(NAMESPACE, clientset)
 	assert.NoError(t, err)
 	assert.Equal(t, NAMESPACE, namespace.Name)
+
 	//Validating the number of pods and status
 	pods, err := ListPods(NAMESPACE, clientset)
-	fmt.Printf("Total Pods: %d\n", len(pods.Items))
 	assert.NoError(t, err)
-	for _, pod := range pods.Items {
-		fmt.Println("name: " + pod.Name + " namespace:" + pod.Namespace)
-	}
-	assert.Equal(t, 1, len(pods.Items)) //Todo: Why 2 ?
+	assert.Equal(t, 2, len(pods.Items))
+	/*
+		null_resource.validator (local-exec): Total Pods: 2
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-gzhs8 namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-controller-manager-b7ccb9vdngt namespace:amazon-cloudwatch
+	*/
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
+	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
+
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
-	fmt.Printf("Total Services: %d\n", len(services.Items))
 	assert.NoError(t, err)
-	for _, service := range services.Items {
-		fmt.Println("name: " + service.Name + " namespace:" + service.Namespace)
-	}
-	assert.Equal(t, 1, len(services.Items)) //Todo: why 4?
-	assert.Equal(t, "amazon-cloudwatch-agent-operator-webhook-service", services.Items[0].Name)
+	assert.Equal(t, 4, len(services.Items))
+	/*
+		null_resource.validator (local-exec): Total Services: 4
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-headless namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-monitoring namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-webhook-service namespace:amazon-cloudwatch
+	*/
+	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
+	assert.Equal(t, "amazon-cloudwatch-agent-headless", services.Items[1].Name)
+	assert.Equal(t, "amazon-cloudwatch-agent-monitoring", services.Items[2].Name)
+	assert.Equal(t, "amazon-cloudwatch-agent-operator-webhook-service", services.Items[3].Name)
 
 	//Validating the Deployment
 	deployments, err := ListDeployments(NAMESPACE, clientset)
-	fmt.Printf("Total Deployments: %d\n", len(deployments.Items))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(deployments.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-controller-manager", deployments.Items[0].Name)
-	fmt.Printf("Total deployment conditions: %d\n", len(deployments.Items[0].Status.Conditions))
-	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
-		fmt.Println(deploymentCondition.Type)
-	}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
@@ -95,56 +90,46 @@ func TestK8s(t *testing.T) {
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
-	fmt.Printf("Total ServiceAccounts: %d\n", len(serviceAccounts.Items))
 	assert.NoError(t, err)
-	for _, serviceAcc := range serviceAccounts.Items {
-		fmt.Println("name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
-	}
-	assert.Equal(t, 2, len(serviceAccounts.Items)) // Todo: why 3?
+	/*
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-agent namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-controller-manager namespace:amazon-cloudwatch
+		null_resource.validator (local-exec): name: default namespace:amazon-cloudwatch
+	*/
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-agent"))
 
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientset)
-	fmt.Printf("Total ClusterRoles: %d\n", len(clusterRoles.Items))
 	assert.NoError(t, err)
-	for _, clusterRole := range clusterRoles.Items {
-		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
-	}
-	assert.Equal(t, 2, len(clusterRoles.Items)) // todo: why 85?
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-agent-role"))
 
 	//Validating ClusterRoleBinding
 	clusterRoleBindings, err := ListClusterRoleBindings(clientset)
-	fmt.Printf("Total ClusterRoleBindings: %d\n", len(clusterRoleBindings.Items))
 	assert.NoError(t, err)
-	for _, clusterRole := range clusterRoleBindings.Items {
-		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
-	}
-	assert.Equal(t, 2, len(clusterRoleBindings.Items)) // todo : why 71?
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding "))
 
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
-	fmt.Printf("Total MutatingWebhookConfigurations: %d\n", len(mutatingWebhookConfigurations.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(mutatingWebhookConfigurations.Items)) // todo.=: why 3?
-	for _, clusterRole := range mutatingWebhookConfigurations.Items {
-		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
-	}
+	/*
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-mutating-webhook-configuration namespace:
+		null_resource.validator (local-exec): name: pod-identity-webhook namespace:
+		null_resource.validator (local-exec): name: vpc-resource-mutating-webhook namespace:
+	*/
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
-	fmt.Printf("Total ValidatingWebhookConfigurations: %d\n", len(validatingWebhookConfigurations.Items))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(validatingWebhookConfigurations.Items)) // why 3
-	for _, clusterRole := range validatingWebhookConfigurations.Items {
-		fmt.Println("name: " + clusterRole.Name + " namespace:" + clusterRole.Namespace)
-	}
+	/*
+		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-validating-webhook-configuration namespace:
+		null_resource.validator (local-exec): name: eks-aws-auth-configmap-validation-webhook namespace:
+		null_resource.validator (local-exec): name: vpc-resource-validating-webhook namespace:
+	*/
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
@@ -177,23 +162,12 @@ func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingL
 }
 
 func ListPods(namespace string, client kubernetes.Interface) (*v1.PodList, error) {
-	fmt.Println("Get Kubernetes Pods")
 	pods, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		err = fmt.Errorf("error getting pods: %v\n", err)
 		return nil, err
 	}
 	return pods, nil
-}
-
-func ListNamespaces(client kubernetes.Interface) (*v1.NamespaceList, error) {
-	fmt.Println("Get Kubernetes Namespaces")
-	namespaces, err := client.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("error getting namespaces: %v\n", err)
-		return nil, err
-	}
-	return namespaces, nil
 }
 
 func GetNameSpace(namespace string, client kubernetes.Interface) (*v1.Namespace, error) {
@@ -206,7 +180,6 @@ func GetNameSpace(namespace string, client kubernetes.Interface) (*v1.Namespace,
 }
 
 func ListServices(namespace string, client kubernetes.Interface) (*v1.ServiceList, error) {
-	fmt.Println("Get Kubernetes Services")
 	namespaces, err := client.CoreV1().Services(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		err = fmt.Errorf("error getting Services: %v\n", err)
