@@ -138,7 +138,7 @@ resource "null_resource" "eks-addon" {
 
 resource "null_resource" "validator" {
   depends_on = [
-    null_resource.integration-test
+    null_resource.eks-addon
   ]
   provisioner "local-exec" {
     command = "go test ${var.test_dir} -v"
