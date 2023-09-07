@@ -16,7 +16,7 @@ data "aws_eks_cluster_auth" "this" {
 }
 
 resource "aws_eks_cluster" "this" {
-  name     = "cwagent-eks-integ-${module.common.testing_id}"
+  name     = "cwagent-operator-eks-integ-${module.common.testing_id}"
   role_arn = module.basic_components.role_arn
   version  = var.k8s_version
   enabled_cluster_log_types = [
@@ -35,7 +35,7 @@ resource "aws_eks_cluster" "this" {
 # EKS Node Groups
 resource "aws_eks_node_group" "this" {
   cluster_name    = aws_eks_cluster.this.name
-  node_group_name = "cwagent-eks-integ-node"
+  node_group_name = "cwagent-operator-eks-integ-node"
   node_role_arn   = aws_iam_role.node_role.arn
   subnet_ids      = module.basic_components.public_subnet_ids
 
@@ -138,6 +138,7 @@ resource "null_resource" "eks-addon" {
 
 resource "null_resource" "validator" {
   depends_on = [
+    null_resource.integration-test,
     null_resource.eks-addon
   ]
   provisioner "local-exec" {
