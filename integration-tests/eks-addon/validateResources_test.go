@@ -50,11 +50,6 @@ func TestK8s(t *testing.T) {
 	pods, err := ListPods(NAMESPACE, clientset)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(pods.Items))
-	/*
-		null_resource.validator (local-exec): Total Pods: 2
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-gzhs8 namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-controller-manager-b7ccb9vdngt namespace:amazon-cloudwatch
-	*/
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
 
@@ -62,13 +57,6 @@ func TestK8s(t *testing.T) {
 	services, err := ListServices(NAMESPACE, clientset)
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(services.Items))
-	/*
-		null_resource.validator (local-exec): Total Services: 4
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-headless namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-monitoring namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-webhook-service namespace:amazon-cloudwatch
-	*/
 	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-monitoring", services.Items[2].Name)
@@ -90,11 +78,6 @@ func TestK8s(t *testing.T) {
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	/*
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-agent namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-controller-manager namespace:amazon-cloudwatch
-		null_resource.validator (local-exec): name: default namespace:amazon-cloudwatch
-	*/
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-agent"))
 
@@ -113,22 +96,12 @@ func TestK8s(t *testing.T) {
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
 	assert.NoError(t, err)
-	/*
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-mutating-webhook-configuration namespace:
-		null_resource.validator (local-exec): name: pod-identity-webhook namespace:
-		null_resource.validator (local-exec): name: vpc-resource-mutating-webhook namespace:
-	*/
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
 	assert.NoError(t, err)
-	/*
-		null_resource.validator (local-exec): name: amazon-cloudwatch-agent-operator-validating-webhook-configuration namespace:
-		null_resource.validator (local-exec): name: eks-aws-auth-configmap-validation-webhook namespace:
-		null_resource.validator (local-exec): name: vpc-resource-validating-webhook namespace:
-	*/
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
