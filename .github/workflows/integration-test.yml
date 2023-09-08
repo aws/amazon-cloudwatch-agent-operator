@@ -1,6 +1,5 @@
 name: Run Integration Tests for EKS Addon
 env:
-  TERRAFORM_AWS_ASSUME_ROLE_DURATION: 14400 # 4 hours
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
@@ -42,7 +41,6 @@ jobs:
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-east-1
-          role-duration-seconds: ${{ env.TERRAFORM_AWS_ASSUME_ROLE_DURATION }}
 
       - name: Verify Terraform version
         run: terraform --version
