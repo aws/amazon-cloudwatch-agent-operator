@@ -98,22 +98,13 @@ resource "aws_iam_role_policy_attachment" "node_CloudWatchAgentServerPolicy" {
   role       = aws_iam_role.node_role.name
 }
 
-/*resource "kubernetes_namespace" "namespace" {
-  metadata {
-    name = "amazon-cloudwatch"
-    labels = {
-      name = "amazon-cloudwatch"
-    }
-  }
-}*/
-
 resource "null_resource" "kubectl" {
   depends_on = [
     aws_eks_cluster.this,
     aws_eks_node_group.this
   ]
   provisioner "local-exec" {
-    command = "aws eks --region us-west-2 update-kubeconfig --name ${aws_eks_cluster.this.name}"
+    command = "aws eks --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}"
   }
 }
 
@@ -132,7 +123,7 @@ resource "null_resource" "eks-addon" {
     null_resource.integration-test
   ]
   provisioner "local-exec" {
-    command = "aws eks --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name amazon-cloudwatch"
+    command = "aws eks --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name ${var.addon}"
   }
 }
 

@@ -15,3 +15,8 @@ variable "test_dir" {
   type    = string
   default = "../../.././eks-addon"
 }
+
+variable "addon" {
+  type = string
+  default = "amazon-cloudwatch"
+}
