@@ -118,19 +118,15 @@ resource "null_resource" "integration-test" {
   }
 }
 
-resource "null_resource" "eks-addon" {
-  depends_on = [
-    null_resource.integration-test
-  ]
-  provisioner "local-exec" {
-    command = "aws eks --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name ${var.addon}"
-  }
+resource "aws_eks_addon" "this" {
+  addon_name   = var.addon
+  cluster_name = aws_eks_cluster.this.name
 }
 
 resource "null_resource" "validator" {
   depends_on = [
     null_resource.integration-test,
-    null_resource.eks-addon
+    aws_eks_addon.this
   ]
   provisioner "local-exec" {
     command = "go test ${var.test_dir} -v"
