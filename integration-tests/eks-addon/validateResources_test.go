@@ -56,8 +56,14 @@ func TestK8s(t *testing.T) {
 	assert.Equal(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
-	assert.True(t, validateAgentPodRegexMatch(pods.Items[0].Name))
-	assert.True(t, validateOperatorRegexMatch(pods.Items[1].Name))
+
+	if validateAgentPodRegexMatch(pods.Items[0].Name) {
+		assert.True(t, validateOperatorRegexMatch(pods.Items[1].Name))
+	} else if validateOperatorRegexMatch(pods.Items[0].Name) {
+		assert.True(t, validateAgentPodRegexMatch(pods.Items[1].Name))
+	} else {
+		assert.True(t, false)
+	}
 
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
