@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 module "common" {
-  source             = "../../common"
+  source             = "../common"
 }
 
 module "basic_components" {
-  source = "../../basic_components"
+  source = "../basic_components"
 
   region = var.region
 }

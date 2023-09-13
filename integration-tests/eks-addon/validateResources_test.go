@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	arv1 "k8s.io/api/admissionregistration/v1"
 	appsV1 "k8s.io/api/apps/v1"
@@ -49,13 +50,21 @@ func TestK8s(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(NAMESPACE, clientset)
 	assert.NoError(t, err)
+	for _, pod := range pods.Items {
+		fmt.Println("name: " + pod.Name + " namespace:" + pod.Namespace)
+	}
 	assert.Equal(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
+	assert.True(t, validateAgentPodRegexMatch(pods.Items[0].Name))
+	assert.True(t, validateOperatorRegexMatch(pods.Items[1].Name))
 
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
 	assert.NoError(t, err)
+	for _, service := range services.Items {
+		fmt.Println("name: " + service.Name + " namespace:" + service.Namespace)
+	}
 	assert.Equal(t, 4, len(services.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-headless", services.Items[1].Name)
@@ -106,6 +115,15 @@ func TestK8s(t *testing.T) {
 	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
 
+func validateAgentPodRegexMatch(podName string) bool {
+	agentPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-*", podName)
+	return agentPodMatch
+}
+
+func validateOperatorRegexMatch(podName string) bool {
+	operatorPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-operator-controller-manager-*", podName)
+	return operatorPodMatch
+}
 func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccountName string) bool {
 	for _, serviceAccount := range serviceAccounts.Items {
 		if serviceAccount.Name == serviceAccountName {
