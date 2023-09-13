@@ -18,6 +18,6 @@ output "cwa_iam_instance_profile" {
 }
 
 output "vpc_security_group" {
-  value = var.vpc_security_group
+  value = "vpc_security_group"
 }
 

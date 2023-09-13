@@ -19,13 +19,6 @@ resource "aws_eks_cluster" "this" {
   name     = "cwagent-operator-eks-integ-${module.common.testing_id}"
   role_arn = module.basic_components.role_arn
   version  = var.k8s_version
-  enabled_cluster_log_types = [
-    "api",
-    "audit",
-    "authenticator",
-    "controllerManager",
-    "scheduler"
-  ]
   vpc_config {
     subnet_ids         = module.basic_components.public_subnet_ids
     security_group_ids = [module.basic_components.security_group]
@@ -60,7 +53,7 @@ resource "aws_eks_node_group" "this" {
 
 # EKS Node IAM Role
 resource "aws_iam_role" "node_role" {
-  name = "cwagent-eks-Worker-Role-${module.common.testing_id}"
+  name = "cwagent-operator-eks-Worker-Role-${module.common.testing_id}"
 
   assume_role_policy = <<POLICY
 {
