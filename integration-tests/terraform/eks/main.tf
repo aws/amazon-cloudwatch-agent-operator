@@ -114,6 +114,9 @@ resource "null_resource" "integration-test" {
 resource "aws_eks_addon" "this" {
   addon_name   = var.addon
   cluster_name = aws_eks_cluster.this.name
+  depends_on = [
+    null_resource.kubectl
+  ]
 }
 
 resource "null_resource" "validator" {
@@ -124,5 +127,4 @@ resource "null_resource" "validator" {
   provisioner "local-exec" {
     command = "go test ${var.test_dir} -v"
   }
-
 }

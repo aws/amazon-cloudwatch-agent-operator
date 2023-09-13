@@ -51,7 +51,7 @@ func TestK8s(t *testing.T) {
 	pods, err := ListPods(NAMESPACE, clientset)
 	assert.NoError(t, err)
 	for _, pod := range pods.Items {
-		fmt.Println("name: " + pod.Name + " namespace:" + pod.Namespace)
+		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 	}
 	assert.Equal(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
@@ -63,7 +63,7 @@ func TestK8s(t *testing.T) {
 	services, err := ListServices(NAMESPACE, clientset)
 	assert.NoError(t, err)
 	for _, service := range services.Items {
-		fmt.Println("name: " + service.Name + " namespace:" + service.Namespace)
+		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 	}
 	assert.Equal(t, 4, len(services.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
@@ -74,19 +74,31 @@ func TestK8s(t *testing.T) {
 	//Validating the Deployment
 	deployments, err := ListDeployments(NAMESPACE, clientset)
 	assert.NoError(t, err)
+	for _, deployment := range deployments.Items {
+		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
+	}
 	assert.Equal(t, 1, len(deployments.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-controller-manager", deployments.Items[0].Name)
+	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
+		fmt.Println("deployment condition type: " + deploymentCondition.Type)
+	}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
 	assert.NoError(t, err)
+	for _, daemonSet := range daemonSets.Items {
+		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
+	}
 	assert.Equal(t, 1, len(daemonSets.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
 	assert.NoError(t, err)
+	for _, serviceAcc := range serviceAccounts.Items {
+		fmt.Println("serviceAccount name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
+	}
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-agent"))
 
