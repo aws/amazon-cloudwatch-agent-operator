@@ -11,6 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +22,37 @@ import (
 
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
+	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
+
+	defaultInst = &v1alpha1.Instrumentation{
+		Status: v1alpha1.InstrumentationStatus{},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "cloudwatch.aws.amazon.com/v1alpha1",
+			Kind:       "Instrumentation",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "java-instrumentation",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			Exporter: v1alpha1.Exporter{Endpoint: "http://cloudwatch-agent.amazon-cloudwatch:4317"},
+			Propagators: []v1alpha1.Propagator{
+				v1alpha1.TraceContext,
+				v1alpha1.Baggage,
+				v1alpha1.B3,
+				v1alpha1.XRay,
+			},
+			Java: v1alpha1.Java{
+				Image: "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest",
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_SMP_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "0.05"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "parentbased_traceidratio"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4317"},
+				},
+			},
+		},
+	}
 )
 
 type instPodMutator struct {
@@ -50,7 +81,7 @@ func NewMutator(logger logr.Logger, client client.Client, recorder record.EventR
 	}
 }
 
-func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
+func (pm *instPodMutator) Mutate(ctx context.Context, namespace corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
 	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
 	// We check if Pod is already instrumented.
@@ -66,7 +97,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	// We bail out if any annotation fails to process.
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, namespace, pod, annotationInjectJava); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -78,7 +109,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, namespace, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -91,34 +122,34 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	var targetContainers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+	var targetContainers = annotationValue(namespace.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
 
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
 	modifiedPod := pod
 	for _, currentContainer := range strings.Split(targetContainers, ",") {
-		modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, strings.TrimSpace(currentContainer))
+		modifiedPod = pm.sdkInjector.inject(ctx, insts, namespace, modifiedPod, strings.TrimSpace(currentContainer))
 	}
 
 	return modifiedPod, nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
-	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, namespace corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+	instValue := annotationValue(namespace.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
 		return nil, nil
 	}
 
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, namespace)
 	}
 
 	var instNamespacedName types.NamespacedName
 	if instNamespace, instName, namespaced := strings.Cut(instValue, "/"); namespaced {
 		instNamespacedName = types.NamespacedName{Name: instName, Namespace: instNamespace}
 	} else {
-		instNamespacedName = types.NamespacedName{Name: instValue, Namespace: ns.Name}
+		instNamespacedName = types.NamespacedName{Name: instValue, Namespace: namespace.Name}
 	}
 
 	otelInst := &v1alpha1.Instrumentation{}
@@ -130,16 +161,15 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, namespace corev1.Namespace) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
-	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
+	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(namespace.Name)); err != nil {
 		return nil, err
 	}
-
-	switch s := len(otelInsts.Items); {
-	case s == 0:
-		return nil, errNoInstancesAvailable
-	case s > 1:
+	switch items := len(otelInsts.Items); {
+	case items == 0:
+		return defaultInst, errNoInstancesAvailable
+	case items > 1:
 		return nil, errMultipleInstancesPossible
 	default:
 		return &otelInsts.Items[0], nil
