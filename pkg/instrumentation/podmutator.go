@@ -35,7 +35,7 @@ var (
 			Namespace: "default",
 		},
 		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{Endpoint: "http://cloudwatch-agent.amazon-cloudwatch:4317"},
+			Exporter: v1alpha1.Exporter{Endpoint: "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"},
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
