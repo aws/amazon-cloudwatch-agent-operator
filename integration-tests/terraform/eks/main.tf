@@ -7,8 +7,6 @@ module "common" {
 
 module "basic_components" {
   source = "../basic_components"
-
-  region = var.region
 }
 
 data "aws_eks_cluster_auth" "this" {

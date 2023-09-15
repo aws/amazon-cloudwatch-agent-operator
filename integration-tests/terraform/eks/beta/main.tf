@@ -39,7 +39,6 @@ resource "null_resource" "kubectl" {
     aws_eks_cluster.this
   ]
   provisioner "local-exec" {
-    command = "aws eks --endpoint ${var.beta_endpoint} --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}"
     command = <<-EOT
       aws eks --endpoint ${var.beta_endpoint} --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}
       aws eks --endpoint ${var.beta_endpoint} --region ${var.region} list-clusters --output text
