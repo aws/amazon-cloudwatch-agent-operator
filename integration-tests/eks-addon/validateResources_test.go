@@ -132,7 +132,8 @@ func TestK8s(t *testing.T) {
 
 func validateAgentPodRegexMatch(podName string) bool {
 	agentPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-*", podName)
-	return agentPodMatch
+	operatorPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-operator-controller-manager-*", podName)
+	return agentPodMatch && !operatorPodMatch
 }
 
 func validateOperatorPodRegexMatch(podName string) bool {
