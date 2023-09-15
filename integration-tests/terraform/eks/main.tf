@@ -119,6 +119,14 @@ resource "null_resource" "setup_operator" {
   }
 }
 
+#resource "aws_eks_addon" "this" {
+#  addon_name   = var.addon
+#  cluster_name = aws_eks_cluster.this.name
+#  depends_on = [
+#    null_resource.kubectl
+#  ]
+#}
+
 resource "null_resource" "validator" {
   depends_on = [
     null_resource.setup_operator,
@@ -127,21 +135,3 @@ resource "null_resource" "validator" {
     command = "go test ${var.test_dir} -v"
   }
 }
-
-#resource "aws_eks_addon" "this" {
-#  addon_name   = var.addon
-#  cluster_name = aws_eks_cluster.this.name
-#  depends_on = [
-#    null_resource.kubectl
-#  ]
-#}
-#
-#resource "null_resource" "validator" {
-#  depends_on = [
-#    null_resource.setup_operator,
-##    aws_eks_addon.this
-#  ]
-#  provisioner "local-exec" {
-#    command = "go test ${var.test_dir} -v"
-#  }
-#}

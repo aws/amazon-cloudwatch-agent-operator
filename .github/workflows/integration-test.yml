@@ -58,10 +58,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply --auto-approve; then
-              terraform destroy -auto-approve
+            if terraform apply -var="test_dir=../../operator" --auto-approve; then
+              terraform destroy-var="test_dir=../../operator"  -auto-approve
             else
-              terraform destroy -auto-approve && exit 1
+              terraform destroy -var="test_dir=../../operator" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -74,7 +74,7 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy --auto-approve
+            terraform destroy -var="test_dir=../../operator" --auto-approve
             
             
 

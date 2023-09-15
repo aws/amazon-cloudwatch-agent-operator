@@ -18,7 +18,7 @@ variable "k8s_version" {
 
 variable "test_dir" {
   type    = string
-  default = "../../operator"
+  default = ""
 }
 
 variable "addon" {

@@ -30,6 +30,5 @@ done
 echo "Install cloudwatch-agent as a daemon-set"
 kubectl apply -f $AGENT_YAML
 
+echo "Waiting for 1 minute for the pods to start-up"
 sleep 60
-
-kubectl get pods -A
