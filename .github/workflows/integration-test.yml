@@ -11,7 +11,7 @@ on:
       - 'NOTICE'
       - 'LICENSE'
       - '.github/**'
-#      - '!.github/workflows/integration-test.yml'
+      - '!.github/workflows/integration-test.yml'
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +43,8 @@ jobs:
           aws-region: us-west-2
 
       - name: Build the operator
-        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
+        # release-artifacts needs the IMG variable to build the operator.
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=test-image:latest
 
       - name: Store operator-build
         run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
@@ -56,12 +57,11 @@ jobs:
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
-
             terraform init
-            if terraform apply -var="test_dir=../../operator" --auto-approve; then
-              terraform destroy-var="test_dir=../../operator"  -auto-approve
+            if terraform apply -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve; then
+              terraform destroy-var="test_dir=../../operator" -var="typeOfTest=operator"  -auto-approve
             else
-              terraform destroy -var="test_dir=../../operator" -auto-approve && exit 1
+              terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -73,9 +73,7 @@ jobs:
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
-
-            terraform destroy -var="test_dir=../../operator" --auto-approve
-            
+            terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve
             
 
 #  EKSAddOnIntegrationTest:
@@ -108,12 +106,11 @@ jobs:
 #          retry_wait_seconds: 5
 #          command: |
 #            cd integration-tests/terraform/eks
-#
 #            terraform init
-#            if terraform apply --auto-approve; then
-#              terraform destroy -auto-approve
+#            if terraform apply -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve; then
+#              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve
 #            else
-#              terraform destroy -auto-approve && exit 1
+#              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve && exit 1
 #            fi
 #
 #      - name: Terraform destroy
@@ -125,5 +122,4 @@ jobs:
 #          retry_wait_seconds: 5
 #          command: |
 #            cd integration-tests/terraform/eks
-#
-#            terraform destroy --auto-approve
+#            terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve

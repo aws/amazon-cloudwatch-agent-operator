@@ -102,6 +102,7 @@ resource "null_resource" "kubectl" {
 }
 
 resource "null_resource" "setup_operator" {
+  count = var.typeOfTest == "operator" ? 1 : 0
   depends_on = [
     aws_eks_cluster.this,
     aws_eks_node_group.this,
@@ -113,19 +114,19 @@ resource "null_resource" "setup_operator" {
     working_dir = path.module
 
     environment = {
-      INSTRUMENTATION_YAML = "instrumentation.yaml"
       AGENT_YAML = "agent_daemon_set.yaml"
     }
   }
 }
 
-#resource "aws_eks_addon" "this" {
-#  addon_name   = var.addon
-#  cluster_name = aws_eks_cluster.this.name
-#  depends_on = [
-#    null_resource.kubectl
-#  ]
-#}
+resource "aws_eks_addon" "this" {
+  count = var.typeOfTest == "add-on" ? 1 : 0
+  addon_name   = var.addon
+  cluster_name = aws_eks_cluster.this.name
+  depends_on = [
+    null_resource.kubectl
+  ]
+}
 
 resource "null_resource" "validator" {
   depends_on = [
