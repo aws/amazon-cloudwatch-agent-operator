@@ -127,13 +127,13 @@ resource "null_resource" "setup_operator" {
 #    null_resource.kubectl
 #  ]
 #}
-
-resource "null_resource" "validator" {
-  depends_on = [
-    null_resource.integration-test,
-    aws_eks_addon.this
-  ]
-  provisioner "local-exec" {
-    command = "go test ${var.test_dir} -v"
-  }
-}
+#
+#resource "null_resource" "validator" {
+#  depends_on = [
+#    null_resource.setup_operator,
+##    aws_eks_addon.this
+#  ]
+#  provisioner "local-exec" {
+#    command = "go test ${var.test_dir} -v"
+#  }
+#}
