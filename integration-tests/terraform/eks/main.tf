@@ -101,23 +101,32 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "integration-test" {
+resource "null_resource" "setup_operator" {
   depends_on = [
+    aws_eks_cluster.this,
     aws_eks_node_group.this,
     null_resource.kubectl
   ]
   provisioner "local-exec" {
-    command = "kubectl cluster-info"
+    command     = "setup-apm.sh"
+    interpreter = ["/bin/bash"]
+    working_dir = path.module
+
+    environment = {
+      APM_YAML = var.operator_yaml
+      INSTRUMENTATION_YAML = "instrumentation.yaml"
+      AGENT_YAML = "agent_daemon_set.yaml"
+    }
   }
 }
 
-resource "aws_eks_addon" "this" {
-  addon_name   = var.addon
-  cluster_name = aws_eks_cluster.this.name
-  depends_on = [
-    null_resource.kubectl
-  ]
-}
+#resource "aws_eks_addon" "this" {
+#  addon_name   = var.addon
+#  cluster_name = aws_eks_cluster.this.name
+#  depends_on = [
+#    null_resource.kubectl
+#  ]
+#}
 
 resource "null_resource" "validator" {
   depends_on = [
