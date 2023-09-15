@@ -120,7 +120,7 @@ undeploy: set-image-controller
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
-	$(KUSTOMIZE) build config/default -o scripts/eks/apm/apm.yaml
+	$(KUSTOMIZE) build config/default -o dist/apm.yaml
 
 .PHONY: manifests
 manifests: controller-gen
