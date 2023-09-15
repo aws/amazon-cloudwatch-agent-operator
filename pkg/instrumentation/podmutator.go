@@ -22,7 +22,6 @@ import (
 
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
 
 	defaultInst = &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -168,7 +167,8 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	}
 	switch items := len(otelInsts.Items); {
 	case items == 0:
-		return defaultInst, errNoInstancesAvailable
+		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
+		return defaultInst, nil
 	case items > 1:
 		return nil, errMultipleInstancesPossible
 	default:
