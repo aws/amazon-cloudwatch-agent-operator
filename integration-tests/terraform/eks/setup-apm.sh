@@ -14,6 +14,7 @@ do
     fi
     break
 done
+sleep 60
 
 echo "Install cloudwatch-agent as a daemon-set"
 kubectl apply -f $AGENT_YAML
