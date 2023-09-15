@@ -113,9 +113,8 @@ resource "null_resource" "setup_operator" {
     working_dir = path.module
 
     environment = {
-#      APM_YAML = var.operator_yaml
-#      INSTRUMENTATION_YAML = "instrumentation.yaml"
-#      AGENT_YAML = "agent_daemon_set.yaml"
+      INSTRUMENTATION_YAML = "instrumentation.yaml"
+      AGENT_YAML = "agent_daemon_set.yaml"
     }
   }
 }
