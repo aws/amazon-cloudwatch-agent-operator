@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Install Cert-Manager for EKS so cloudwatch-agent Operator can communicate with Cluster API Server via TLS
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.2/cert-manager.yaml
+
 # Install cloudwatch-agent operator
 echo "Creating cloudwatch-agent operator"
 for i in {1..3}
