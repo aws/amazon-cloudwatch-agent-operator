@@ -50,7 +50,7 @@ func TestK8s(t *testing.T) {
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 	}
-	assert.Len(t, 2, len(pods.Items))
+	assert.Len(t, pods.Items, 2)
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
 
@@ -68,7 +68,7 @@ func TestK8s(t *testing.T) {
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 	}
-	assert.Len(t, 4, len(services.Items))
+	assert.Len(t, services.Items, 4)
 	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-monitoring", services.Items[2].Name)
@@ -80,7 +80,7 @@ func TestK8s(t *testing.T) {
 	for _, deployment := range deployments.Items {
 		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
 	}
-	assert.Len(t, 1, len(deployments.Items))
+	assert.Len(t, deployments.Items, 1)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-controller-manager", deployments.Items[0].Name)
 	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
 		fmt.Println("deployment condition type: " + deploymentCondition.Type)
@@ -93,7 +93,7 @@ func TestK8s(t *testing.T) {
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 	}
-	assert.Len(t, 1, len(daemonSets.Items))
+	assert.Len(t, daemonSets.Items, 1)
 	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
@@ -121,13 +121,13 @@ func TestK8s(t *testing.T) {
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
-	assert.Len(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
+	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 3)
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
-	assert.Len(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
+	assert.Len(t, validatingWebhookConfigurations.Items[0].Webhooks, 4)
 }
 
 func validateAgentPodRegexMatch(podName string) bool {
