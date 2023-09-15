@@ -11,9 +11,14 @@ variable "k8s_version" {
   default = "1.24"
 }
 
+#variable "test_dir" {
+#  type    = string
+#  default = "../../eks-addon"
+#}
+
 variable "test_dir" {
   type    = string
-  default = "../../eks-addon"
+  default = "../../operator"
 }
 
 variable "addon" {

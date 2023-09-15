@@ -119,6 +119,15 @@ resource "null_resource" "setup_operator" {
   }
 }
 
+resource "null_resource" "validator" {
+  depends_on = [
+    null_resource.setup_operator,
+  ]
+  provisioner "local-exec" {
+    command = "go test ${var.test_dir} -v"
+  }
+}
+
 #resource "aws_eks_addon" "this" {
 #  addon_name   = var.addon
 #  cluster_name = aws_eks_cluster.this.name

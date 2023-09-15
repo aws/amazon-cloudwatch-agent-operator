@@ -15,8 +15,6 @@ do
     break
 done
 
-sleep 60
-
 # Applying java-instrumentation SDK object
 echo "Creating instrumentation object"
 for i in {1..3}
@@ -28,8 +26,6 @@ do
     fi
     break
 done
-
-sleep 60
 
 echo "Install cloudwatch-agent as a daemon-set"
 kubectl apply -f $AGENT_YAML
