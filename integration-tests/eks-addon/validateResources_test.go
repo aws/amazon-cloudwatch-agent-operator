@@ -18,72 +18,69 @@ import (
 	"testing"
 )
 
-const NAMESPACE = "amazon-cloudwatch"
+const nameSpace = "amazon-cloudwatch"
 
 func TestK8s(t *testing.T) {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("error getting user home dir: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("error getting user home dir: %v\n", err)
 	}
 	kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
-	fmt.Printf("Using kubeconfig: %s\n", kubeConfigPath)
+	t.Logf("Using kubeconfig: %s\n", kubeConfigPath)
 
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		fmt.Printf("Error getting kubernetes config: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error getting kubernetes config: %v\n", err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
 
 	if err != nil {
-		fmt.Printf("error getting kubernetes config: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("error getting kubernetes config: %v\n", err)
 	}
 
 	// Validating the "amazon-cloudwatch" namespace creation as part of EKS addon
-	namespace, err := GetNameSpace(NAMESPACE, clientset)
+	namespace, err := GetNameSpace(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Equal(t, NAMESPACE, namespace.Name)
+	assert.Equal(t, nameSpace, namespace.Name)
 
 	//Validating the number of pods and status
-	pods, err := ListPods(NAMESPACE, clientset)
+	pods, err := ListPods(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 	}
-	assert.Equal(t, 2, len(pods.Items))
+	assert.Len(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
 
 	if validateAgentPodRegexMatch(pods.Items[0].Name) {
-		assert.True(t, validateOperatorRegexMatch(pods.Items[1].Name))
-	} else if validateOperatorRegexMatch(pods.Items[0].Name) {
+		assert.True(t, validateOperatorPodRegexMatch(pods.Items[1].Name))
+	} else if validateOperatorPodRegexMatch(pods.Items[0].Name) {
 		assert.True(t, validateAgentPodRegexMatch(pods.Items[1].Name))
 	} else {
-		assert.True(t, false)
+		assert.Fail(t, "Cluster Pods are not created correctly form EKS addon")
 	}
 
 	//Validating the services
-	services, err := ListServices(NAMESPACE, clientset)
+	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 	}
-	assert.Equal(t, 4, len(services.Items))
+	assert.Len(t, 4, len(services.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-monitoring", services.Items[2].Name)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-webhook-service", services.Items[3].Name)
 
 	//Validating the Deployment
-	deployments, err := ListDeployments(NAMESPACE, clientset)
+	deployments, err := ListDeployments(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, deployment := range deployments.Items {
 		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
 	}
-	assert.Equal(t, 1, len(deployments.Items))
+	assert.Len(t, 1, len(deployments.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-controller-manager", deployments.Items[0].Name)
 	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
 		fmt.Println("deployment condition type: " + deploymentCondition.Type)
@@ -91,16 +88,16 @@ func TestK8s(t *testing.T) {
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
-	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
+	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 	}
-	assert.Equal(t, 1, len(daemonSets.Items))
+	assert.Len(t, 1, len(daemonSets.Items))
 	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
-	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
+	serviceAccounts, err := ListServiceAccounts(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, serviceAcc := range serviceAccounts.Items {
 		fmt.Println("serviceAccount name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
@@ -109,28 +106,28 @@ func TestK8s(t *testing.T) {
 	assert.True(t, validateServiceAccount(serviceAccounts, "amazon-cloudwatch-agent-operator-agent"))
 
 	//Validating ClusterRoles
-	clusterRoles, err := ListClusterRoles(clientset)
+	clusterRoles, err := ListClusterRoles(clientSet)
 	assert.NoError(t, err)
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-agent-role"))
 
 	//Validating ClusterRoleBinding
-	clusterRoleBindings, err := ListClusterRoleBindings(clientset)
+	clusterRoleBindings, err := ListClusterRoleBindings(clientSet)
 	assert.NoError(t, err)
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding"))
 
 	//Validating MutatingWebhookConfiguration
-	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
+	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
-	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
+	assert.Len(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
 
 	//Validating ValidatingWebhookConfiguration
-	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
+	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
-	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
+	assert.Len(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
 
 func validateAgentPodRegexMatch(podName string) bool {
@@ -138,7 +135,7 @@ func validateAgentPodRegexMatch(podName string) bool {
 	return agentPodMatch
 }
 
-func validateOperatorRegexMatch(podName string) bool {
+func validateOperatorPodRegexMatch(podName string) bool {
 	operatorPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-operator-controller-manager-*", podName)
 	return operatorPodMatch
 }

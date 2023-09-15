@@ -101,16 +101,6 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "integration-test" {
-  depends_on = [
-    aws_eks_node_group.this,
-    null_resource.kubectl
-  ]
-  provisioner "local-exec" {
-    command = "kubectl cluster-info"
-  }
-}
-
 resource "aws_eks_addon" "this" {
   addon_name   = var.addon
   cluster_name = aws_eks_cluster.this.name
@@ -121,7 +111,6 @@ resource "aws_eks_addon" "this" {
 
 resource "null_resource" "validator" {
   depends_on = [
-    null_resource.integration-test,
     aws_eks_addon.this
   ]
   provisioner "local-exec" {

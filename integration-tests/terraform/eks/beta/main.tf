@@ -7,24 +7,32 @@ module "common" {
 
 module "basic_components" {
   source = "../../basic_components"
-
-  region = var.region
 }
 
-data "aws_eks_cluster_auth" "this" {
-  name = aws_eks_cluster.this.name
+resource "aws_cloudformation_stack" "service_role" {
+  name = "cwagent-operator-eks-beta-service-role"
+  capabilities = ["CAPABILITY_IAM"]
+  template_body = file("${path.module}/amazon-eks-service-role.yaml")
+}
+
+resource "aws_cloudformation_stack" "vpc_stack" {
+  name = "cwagent-operator-eks-beta-vpc-stack"
+  capabilities = ["CAPABILITY_IAM"]
+  template_body = file("${path.module}/amazon-eks-vpc-sample.yaml")
 }
 
 resource "aws_eks_cluster" "this" {
   name     = "cwagent-operator-eks-beta-integ-${module.common.testing_id}"
-  role_arn = module.basic_components.role_arn
+  role_arn = aws_cloudformation_stack.service_role.outputs.RoleArn
   version  = var.k8s_version
   vpc_config {
-    subnet_ids         = module.basic_components.public_subnet_ids
-    security_group_ids = [module.basic_components.security_group]
+    subnet_ids         = split(",",aws_cloudformation_stack.vpc_stack.outputs.SubnetIds)
+    security_group_ids = split(",",aws_cloudformation_stack.vpc_stack.outputs.SecurityGroups)
   }
+  depends_on = [
+    aws_cloudformation_stack.vpc_stack
+  ]
 }
-
 
 resource "null_resource" "kubectl" {
   depends_on = [
@@ -32,6 +40,11 @@ resource "null_resource" "kubectl" {
   ]
   provisioner "local-exec" {
     command = "aws eks --endpoint ${var.beta_endpoint} --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}"
+    command = <<-EOT
+      aws eks --endpoint ${var.beta_endpoint} --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}
+      aws eks --endpoint ${var.beta_endpoint} --region ${var.region} list-clusters --output text
+      aws eks --endpoint ${var.beta_endpoint} --region ${var.region} describe-cluster --name ${aws_eks_cluster.this.name} --output text
+    EOT
   }
 }
 
@@ -47,10 +60,10 @@ resource "aws_cloudformation_stack" "node-stack" {
     NodeImageId="ami-015a336f2a25fc752"
     ClusterName=aws_eks_cluster.this.name
     NodeGroupName="${aws_eks_cluster.this.name}-nodegroup"
-    ClusterControlPlaneSecurityGroup=module.basic_components.security_group
-    VpcId=module.basic_components.vpc_id
+    ClusterControlPlaneSecurityGroup=aws_cloudformation_stack.vpc_stack.outputs.SecurityGroups
+    VpcId=aws_cloudformation_stack.vpc_stack.outputs.VpcId
     DisableIMDSv1=true
-    Subnets=join(", ", module.basic_components.public_subnet_ids)
+    Subnets=aws_cloudformation_stack.vpc_stack.outputs.SubnetIds
   }
   depends_on = [
     aws_eks_cluster.this
@@ -83,6 +96,19 @@ resource "null_resource" "eks-addon" {
       echo "Adding EKS addon"
       aws eks --endpoint ${var.beta_endpoint} --region ${var.region} create-addon --cluster-name ${aws_eks_cluster.this.name} --addon-name ${var.addon}
       sleep 100
+    EOT
+  }
+}
+
+resource "null_resource" "test-resources" {
+  depends_on = [
+    null_resource.eks-addon
+  ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl get pods -A
+      kubectl get services --namespace amazon-cloudwatch
+      kubectl get all --all-namespaces
     EOT
   }
 }

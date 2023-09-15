@@ -1,4 +1,4 @@
-name: Run Integration Tests for EKS Addon
+name: Run Integration Tests
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
@@ -40,7 +40,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-east-1
+          aws-region: us-west-2
 
       - name: Verify Terraform version
         run: terraform --version
@@ -90,7 +90,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-east-1
+          aws-region: us-west-2
 
       - name: Verify Terraform version
         run: terraform --version
