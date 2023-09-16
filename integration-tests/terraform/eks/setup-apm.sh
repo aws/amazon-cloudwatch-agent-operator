@@ -26,15 +26,8 @@ do
 done
 
 echo "Install cloudwatch-agent as a daemon-set"
-for i in {1..3}
-do
-    agent_status=$(kubectl apply -f $AGENT_YAML 2>&1)
-    if [[ "${agent_status}" == *"Error "* ]];  then
-        sleep 60
-        continue
-    fi
-    break
-done
+kubectl apply -f $AGENT_YAML
 
 echo "Waiting for 1 minute for the pods to start-up"
 sleep 60
+kubectl get pods -A
