@@ -1,4 +1,4 @@
-name: Run Integration Tests for EKS Addon
+name: Integration Tests for Amazon CloudWatch Operator
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 

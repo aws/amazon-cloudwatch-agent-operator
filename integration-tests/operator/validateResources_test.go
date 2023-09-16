@@ -1,4 +1,4 @@
-package eks_addon
+package operator
 
 import (
 	"context"
