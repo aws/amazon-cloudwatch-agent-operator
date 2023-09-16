@@ -5,7 +5,7 @@ env:
 on:
   push:
     branches:
-      - integ-test-beta
+      - sky333999/beta
     paths-ignore:
       - '**/*.md'
       - 'NOTICE'
@@ -102,13 +102,13 @@ jobs:
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/eks/beta
+            cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply --auto-approve; then
-              terraform destroy -auto-approve
+            if terraform apply --auto-approve -var="beta=true"; then
+              terraform destroy -var="beta=true" -auto-approve
             else
-              terraform destroy -auto-approve && exit 1
+              terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -119,6 +119,6 @@ jobs:
           timeout_minutes: 8
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/eks/beta
+            cd integration-tests/terraform/eks
 
-            terraform destroy --auto-approve
+            terraform destroy -var="beta=true" --auto-approve
