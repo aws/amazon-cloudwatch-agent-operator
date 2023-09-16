@@ -13,26 +13,24 @@ do
     fi
     break
 done
-#debug
-kubectl get pods -A
 
 echo "Waiting for 1 minute for the resources to start-up"
 sleep 60
 
-#echo "Install instrumentation object"
-#for i in {1..3}
-#do
-#    sdk_status=$(kubectl apply -f $INSTRUMENTATION_YAML 2>&1)
-#    if [[ "${sdk_status}" == *"Error "* ]];  then
-#        sleep 60
-#        continue
-#    fi
-#    break
-#done
+echo "Install instrumentation object"
+for i in {1..3}
+do
+    sdk_status=$(kubectl apply -f $INSTRUMENTATION_YAML 2>&1)
+    if [[ "${sdk_status}" == *"Error "* ]];  then
+        sleep 60
+        continue
+    fi
+    break
+done
 
 echo "Install cloudwatch-agent as a daemon-set"
 kubectl apply -f $AGENT_YAML
 
-echo "Waiting for 1 minute for the pods to start-up"
+echo "Waiting for 1 minute for the resources to start-up"
 sleep 60
 kubectl get pods -A
