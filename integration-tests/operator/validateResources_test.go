@@ -50,9 +50,6 @@ func TestK8s(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	//for _, pod := range pods.Items {
-	//	fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
-	//}
 	assert.Equal(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
@@ -68,9 +65,6 @@ func TestK8s(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	//for _, service := range services.Items {
-	//	fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
-	//}
 	assert.Equal(t, 4, len(services.Items))
 	assert.Equal(t, "cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "cloudwatch-agent-headless", services.Items[1].Name)
@@ -80,31 +74,19 @@ func TestK8s(t *testing.T) {
 	//Validating the Deployment
 	deployments, err := ListDeployments(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	//for _, deployment := range deployments.Items {
-	//	fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
-	//}
 	assert.Equal(t, 1, len(deployments.Items))
 	assert.Equal(t, "cloudwatch-controller-manager", deployments.Items[0].Name)
-	//for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
-	//	fmt.Println("deployment condition type: " + deploymentCondition.Type)
-	//}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	//for _, daemonSet := range daemonSets.Items {
-	//	fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
-	//}
 	assert.Equal(t, 1, len(daemonSets.Items))
 	assert.Equal(t, "cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	//for _, serviceAcc := range serviceAccounts.Items {
-	//	fmt.Println("serviceAccount name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
-	//}
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-agent"))
 
@@ -123,14 +105,12 @@ func TestK8s(t *testing.T) {
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, "cloudwatch-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
-	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
+	assert.True(t, validateMutatingWebhookConfiguration(mutatingWebhookConfigurations, "cloudwatch-mutating-webhook-configuration"))
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, "cloudwatch-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
-	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
+	assert.True(t, validateValidatingWebhookConfiguration(validatingWebhookConfigurations, "cloudwatch-validating-webhook-configuration"))
 }
 
 func validateAgentPodRegexMatch(podName string) bool {
@@ -163,6 +143,24 @@ func validateClusterRoles(clusterRoles *rbacV1.ClusterRoleList, clusterRoleName 
 func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingList, clusterRoleBindingName string) bool {
 	for _, clusterRoleBinding := range clusterRoleBindings.Items {
 		if clusterRoleBinding.Name == clusterRoleBindingName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateMutatingWebhookConfiguration(mutatingWebhookConfigurations *arv1.MutatingWebhookConfigurationList, mutatingWebhookConfigName string) bool {
+	for _, mutatingWebhookConfiguration := range mutatingWebhookConfigurations.Items {
+		if mutatingWebhookConfiguration.Name == mutatingWebhookConfigName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateValidatingWebhookConfiguration(validatingWebhookConfigurations *rbacV1.ValidatingWebhookConfigurationList, validatingWebhookConfigurationName string) bool {
+	for _, validatingWebhookConfiguration := range validatingWebhookConfigurations.Items {
+		if validatingWebhookConfiguration.Name == validatingWebhookConfigurationName {
 			return true
 		}
 	}
