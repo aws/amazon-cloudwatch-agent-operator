@@ -44,7 +44,7 @@ jobs:
 
       - name: Build the operator
         # release-artifacts needs the IMG variable to build the operator.
-        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=test-image:latest
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
 
       - name: Store operator-build
         run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
