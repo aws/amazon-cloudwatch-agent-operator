@@ -46,7 +46,7 @@ func TestK8s(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Len(t, len(pods.Items), 2)
+	assert.Len(t, pods.Items, 2)
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
 
@@ -61,7 +61,7 @@ func TestK8s(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Len(t, len(services.Items), 4)
+	assert.Len(t, services.Items, 4)
 	assert.Equal(t, "cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "cloudwatch-agent-monitoring", services.Items[2].Name)
@@ -70,14 +70,14 @@ func TestK8s(t *testing.T) {
 	//Validating the Deployment
 	deployments, err := ListDeployments(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Len(t, len(deployments.Items), 1)
+	assert.Len(t, deployments.Items, 1)
 	assert.Equal(t, "cloudwatch-controller-manager", deployments.Items[0].Name)
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Len(t, len(daemonSets.Items), 1)
+	assert.Len(t, daemonSets.Items, 1)
 	assert.Equal(t, "cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
