@@ -50,9 +50,9 @@ func TestK8s(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	for _, pod := range pods.Items {
-		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
-	}
+	//for _, pod := range pods.Items {
+	//	fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
+	//}
 	assert.Equal(t, 2, len(pods.Items))
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
@@ -68,81 +68,69 @@ func TestK8s(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	for _, service := range services.Items {
-		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
-	}
+	//for _, service := range services.Items {
+	//	fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
+	//}
 	assert.Equal(t, 4, len(services.Items))
 	assert.Equal(t, "cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "cloudwatch-agent-monitoring", services.Items[2].Name)
-	assert.Equal(t, "cloudwatch-agent-operator-webhook-service", services.Items[3].Name)
+	assert.Equal(t, "cloudwatch-webhook-service", services.Items[3].Name)
 
 	//Validating the Deployment
 	deployments, err := ListDeployments(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	for _, deployment := range deployments.Items {
-		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
-	}
+	//for _, deployment := range deployments.Items {
+	//	fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
+	//}
 	assert.Equal(t, 1, len(deployments.Items))
 	assert.Equal(t, "cloudwatch-controller-manager", deployments.Items[0].Name)
-	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
-		fmt.Println("deployment condition type: " + deploymentCondition.Type)
-	}
+	//for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
+	//	fmt.Println("deployment condition type: " + deploymentCondition.Type)
+	//}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	for _, daemonSet := range daemonSets.Items {
-		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
-	}
+	//for _, daemonSet := range daemonSets.Items {
+	//	fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
+	//}
 	assert.Equal(t, 1, len(daemonSets.Items))
 	assert.Equal(t, "cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
 	assert.NoError(t, err)
-	for _, serviceAcc := range serviceAccounts.Items {
-		fmt.Println("serviceAccount name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
-	}
+	//for _, serviceAcc := range serviceAccounts.Items {
+	//	fmt.Println("serviceAccount name: " + serviceAcc.Name + " namespace:" + serviceAcc.Namespace)
+	//}
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-agent"))
 
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientset)
-	for _, clusterRole := range clusterRoles.Items {
-		fmt.Println("clusterRole: " + clusterRole.Name)
-	}
-	//assert.NoError(t, err)
-	//assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-manager-role"))
-	//assert.True(t, validateClusterRoles(clusterRoles, "amazon-cloudwatch-agent-operator-agent-role"))
+	assert.NoError(t, err)
+	assert.True(t, validateClusterRoles(clusterRoles, "cloudwatch-agent-role"))
+	assert.True(t, validateClusterRoles(clusterRoles, "cloudwatch-manager-role"))
 
 	//Validating ClusterRoleBinding
 	clusterRoleBindings, err := ListClusterRoleBindings(clientset)
-	for _, clusterRoleBinding := range clusterRoleBindings.Items {
-		fmt.Println("clusterRoleBinding: " + clusterRoleBinding.Name)
-	}
-	//assert.NoError(t, err)
-	//assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-manager-rolebinding"))
-	//assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "amazon-cloudwatch-agent-operator-agent-role-binding"))
+	assert.NoError(t, err)
+	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "cloudwatch-agent-role-binding"))
+	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, "cloudwatch-manager-rolebinding"))
 
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientset)
-	for _, mutatingWebhookConfiguration := range mutatingWebhookConfigurations.Items {
-		fmt.Println("mutatingWebhookConfiguration: " + mutatingWebhookConfiguration.Name)
-	}
-	//assert.NoError(t, err)
-	//assert.Equal(t, "amazon-cloudwatch-agent-operator-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
-	//assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
+	assert.NoError(t, err)
+	assert.Equal(t, "cloudwatch-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
+	assert.Equal(t, 3, len(mutatingWebhookConfigurations.Items[0].Webhooks))
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientset)
-	for _, validatingWebhookConfiguration := range validatingWebhookConfigurations.Items {
-		fmt.Println("validatingWebhookConfiguration: " + validatingWebhookConfiguration.Name)
-	}
-	//assert.NoError(t, err)
-	//assert.Equal(t, "amazon-cloudwatch-agent-operator-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
-	//assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
+	assert.NoError(t, err)
+	assert.Equal(t, "cloudwatch-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
+	assert.Equal(t, 4, len(validatingWebhookConfigurations.Items[0].Webhooks))
 }
 
 func validateAgentPodRegexMatch(podName string) bool {
@@ -151,7 +139,7 @@ func validateAgentPodRegexMatch(podName string) bool {
 }
 
 func validateOperatorRegexMatch(podName string) bool {
-	operatorPodMatch, _ := regexp.MatchString("cloudwatch-operator-controller-manager-*", podName)
+	operatorPodMatch, _ := regexp.MatchString("cloudwatch-controller-manager-*", podName)
 	return operatorPodMatch
 }
 func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccountName string) bool {
@@ -163,23 +151,23 @@ func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccou
 	return false
 }
 
-//func validateClusterRoles(clusterRoles *rbacV1.ClusterRoleList, clusterRoleName string) bool {
-//	for _, clusterRole := range clusterRoles.Items {
-//		if clusterRole.Name == clusterRoleName {
-//			return true
-//		}
-//	}
-//	return false
-//}
-//
-//func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingList, clusterRoleBindingName string) bool {
-//	for _, clusterRoleBinding := range clusterRoleBindings.Items {
-//		if clusterRoleBinding.Name == clusterRoleBindingName {
-//			return true
-//		}
-//	}
-//	return false
-//}
+func validateClusterRoles(clusterRoles *rbacV1.ClusterRoleList, clusterRoleName string) bool {
+	for _, clusterRole := range clusterRoles.Items {
+		if clusterRole.Name == clusterRoleName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingList, clusterRoleBindingName string) bool {
+	for _, clusterRoleBinding := range clusterRoleBindings.Items {
+		if clusterRoleBinding.Name == clusterRoleBindingName {
+			return true
+		}
+	}
+	return false
+}
 
 func ListPods(namespace string, client kubernetes.Interface) (*v1.PodList, error) {
 	pods, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
