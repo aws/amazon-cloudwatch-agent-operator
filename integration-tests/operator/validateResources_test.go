@@ -18,39 +18,35 @@ import (
 	"testing"
 )
 
-const NAMESPACE = "amazon-cloudwatch"
+const nameSpace = "amazon-cloudwatch"
 
 func TestK8s(t *testing.T) {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("error getting user home dir: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("error getting user home dir: %v", err)
 	}
 	kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
-	fmt.Printf("Using kubeconfig: %s\n", kubeConfigPath)
+	t.Logf("Using kubeconfig: %s\n", kubeConfigPath)
 
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		fmt.Printf("Error getting kubernetes config: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("error getting kubernetes config: %v", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
-
 	if err != nil {
-		fmt.Printf("error getting kubernetes config: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("error getting kubernetes config: %v", err)
 	}
 
 	// Validating the "amazon-cloudwatch" namespace creation
-	namespace, err := GetNameSpace(NAMESPACE, clientset)
+	namespace, err := GetNameSpace(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, NAMESPACE, namespace.Name)
+	assert.Equal(t, nameSpace, namespace.Name)
 
 	//Validating the number of pods and status
-	pods, err := ListPods(NAMESPACE, clientset)
+	pods, err := ListPods(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(pods.Items))
+	assert.Len(t, len(pods.Items), 2)
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
 
@@ -59,33 +55,33 @@ func TestK8s(t *testing.T) {
 	} else if validateOperatorRegexMatch(pods.Items[0].Name) {
 		assert.True(t, validateAgentPodRegexMatch(pods.Items[1].Name))
 	} else {
-		assert.True(t, false)
+		assert.Fail(t, "failed to validate pod names")
 	}
 
 	//Validating the services
-	services, err := ListServices(NAMESPACE, clientset)
+	services, err := ListServices(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, 4, len(services.Items))
+	assert.Len(t, len(services.Items), 4)
 	assert.Equal(t, "cloudwatch-agent", services.Items[0].Name)
 	assert.Equal(t, "cloudwatch-agent-headless", services.Items[1].Name)
 	assert.Equal(t, "cloudwatch-agent-monitoring", services.Items[2].Name)
 	assert.Equal(t, "cloudwatch-webhook-service", services.Items[3].Name)
 
 	//Validating the Deployment
-	deployments, err := ListDeployments(NAMESPACE, clientset)
+	deployments, err := ListDeployments(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(deployments.Items))
+	assert.Len(t, len(deployments.Items), 1)
 	assert.Equal(t, "cloudwatch-controller-manager", deployments.Items[0].Name)
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
 	//Validating the Daemon Sets
-	daemonSets, err := ListDaemonSets(NAMESPACE, clientset)
+	daemonSets, err := ListDaemonSets(nameSpace, clientset)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(daemonSets.Items))
+	assert.Len(t, len(daemonSets.Items), 1)
 	assert.Equal(t, "cloudwatch-agent", daemonSets.Items[0].Name)
 
 	// Validating Service Accounts
-	serviceAccounts, err := ListServiceAccounts(NAMESPACE, clientset)
+	serviceAccounts, err := ListServiceAccounts(nameSpace, clientset)
 	assert.NoError(t, err)
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, "cloudwatch-agent"))
@@ -158,7 +154,7 @@ func validateMutatingWebhookConfiguration(mutatingWebhookConfigurations *arv1.Mu
 	return false
 }
 
-func validateValidatingWebhookConfiguration(validatingWebhookConfigurations *rbacV1.ValidatingWebhookConfigurationList, validatingWebhookConfigurationName string) bool {
+func validateValidatingWebhookConfiguration(validatingWebhookConfigurations *arv1.ValidatingWebhookConfigurationList, validatingWebhookConfigurationName string) bool {
 	for _, validatingWebhookConfiguration := range validatingWebhookConfigurations.Items {
 		if validatingWebhookConfiguration.Name == validatingWebhookConfigurationName {
 			return true
