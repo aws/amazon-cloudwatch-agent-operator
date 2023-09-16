@@ -14,6 +14,17 @@ do
     break
 done
 
+echo "Install instrumentation object"
+for i in {1..3}
+do
+    sdk_status=$(kubectl apply -f $INSTRUMENTATION_YAML 2>&1)
+    if [[ "${sdk_status}" == *"Error "* ]];  then
+        sleep 60
+        continue
+    fi
+    break
+done
+
 echo "Install cloudwatch-agent as a daemon-set"
 for i in {1..3}
 do

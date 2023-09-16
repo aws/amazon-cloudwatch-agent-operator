@@ -114,6 +114,7 @@ resource "null_resource" "setup_operator" {
     working_dir = path.module
 
     environment = {
+      INSTRUMENTATION_YAML = "instrumentation.yaml"
       AGENT_YAML = "agent_daemon_set.yaml"
     }
   }
