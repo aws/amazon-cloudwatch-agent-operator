@@ -59,7 +59,7 @@ jobs:
             cd integration-tests/terraform/eks
             terraform init
             if terraform apply -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve; then
-              terraform destroy-var="test_dir=../../operator" -var="typeOfTest=operator"  -auto-approve
+              terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator"  -auto-approve
             else
               terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" -auto-approve && exit 1
             fi
