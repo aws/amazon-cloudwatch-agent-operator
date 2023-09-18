@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: MIT
 
 module "common" {
-  source             = "../common"
+  source = "../common"
 }
 
 module "basic_components" {
   source = "../basic_components"
+}
 
-  region = var.region
+locals {
+  role_arn = format("%s%s", module.basic_components.role_arn, var.beta ? "-eks-beta" : "")
+  aws_eks  = format("%s%s", "aws eks --region ${var.region}", var.beta ? " --endpoint ${var.beta_endpoint}" : "")
 }
 
 data "aws_eks_cluster_auth" "this" {
@@ -17,7 +20,7 @@ data "aws_eks_cluster_auth" "this" {
 
 resource "aws_eks_cluster" "this" {
   name     = "cwagent-operator-eks-integ-${module.common.testing_id}"
-  role_arn = module.basic_components.role_arn
+  role_arn = local.role_arn
   version  = var.k8s_version
   vpc_config {
     subnet_ids         = module.basic_components.public_subnet_ids
@@ -97,31 +100,24 @@ resource "null_resource" "kubectl" {
     aws_eks_node_group.this
   ]
   provisioner "local-exec" {
-    command = "aws eks --region ${var.region} update-kubeconfig --name ${aws_eks_cluster.this.name}"
-  }
-}
-
-resource "null_resource" "integration-test" {
-  depends_on = [
-    aws_eks_node_group.this,
-    null_resource.kubectl
-  ]
-  provisioner "local-exec" {
-    command = "kubectl cluster-info"
+    command = <<-EOT
+      ${local.aws_eks} update-kubeconfig --name ${aws_eks_cluster.this.name}
+      ${local.aws_eks} list-clusters --output text
+      ${local.aws_eks} describe-cluster --name ${aws_eks_cluster.this.name} --output text
+    EOT
   }
 }
 
 resource "aws_eks_addon" "this" {
-  addon_name   = var.addon
-  cluster_name = aws_eks_cluster.this.name
   depends_on = [
     null_resource.kubectl
   ]
+  addon_name   = var.addon
+  cluster_name = aws_eks_cluster.this.name
 }
 
 resource "null_resource" "validator" {
   depends_on = [
-    null_resource.integration-test,
     aws_eks_addon.this
   ]
   provisioner "local-exec" {

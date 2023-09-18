@@ -17,6 +17,16 @@ variable "test_dir" {
 }
 
 variable "addon" {
-  type = string
+  type    = string
   default = "amazon-cloudwatch"
+}
+
+variable "beta" {
+  type    = bool
+  default = false
+}
+
+variable "beta_endpoint" {
+  type    = string
+  default = "https://api.beta.us-west-2.wesley.amazonaws.com"
 }

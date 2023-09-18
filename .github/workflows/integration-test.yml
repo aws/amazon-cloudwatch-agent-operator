@@ -1,11 +1,11 @@
-name: Run Integration Tests for EKS Addon
+name: Run Integration Tests
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
   push:
     branches:
-      - integ-test-eks-addon
+      - integ-test-beta
     paths-ignore:
       - '**/*.md'
       - 'NOTICE'
@@ -40,7 +40,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-east-1
+          aws-region: us-west-2
 
       - name: Verify Terraform version
         run: terraform --version
@@ -72,3 +72,53 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform destroy --auto-approve
+
+  EKSAddOnBetaClusterIntegrationTest:
+    name: EKSAddOnBetaClusterIntegrationTest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform apply
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 1
+          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform init
+            if terraform apply --auto-approve -var="beta=true"; then
+              terraform destroy -var="beta=true" -auto-approve
+            else
+              terraform destroy -var="beta=true" -auto-approve && exit 1
+            fi
+
+      - name: Terraform destroy
+        if: ${{ cancelled() || failure() }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 8
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform destroy -var="beta=true" --auto-approve
