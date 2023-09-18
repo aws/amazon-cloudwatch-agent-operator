@@ -4,8 +4,8 @@ The Amazon CloudWatch Agent Operator is software developed to manage the [CloudW
 This repo is based off of the [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator)
 
 ## Build and Deployment
-1. Build the image using `make container`
-2. Set environment variable to name the build image `export CLOUDWATCH_AGENT_OPERATOR_IMAGE="ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/amazon-cloudwatch-agent-operator:latest"`
+1. Set environment variable to name the build image `export CLOUDWATCH_AGENT_OPERATOR_IMAGE="ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/amazon-cloudwatch-agent-operator:latest"`
+2. Build the image using `make container`
 3. Push the image to your local ecr repo
 
 ```
@@ -133,7 +133,7 @@ metadata:
   namespace: default # use a namespace with pods you'd like to inject
 spec:
   exporter:
-    endpoint: http://cloudwatch-agent.amazon-cloudwatch:4317
+    endpoint: http://amazon-cloudwatch-agent.amazon-cloudwatch:4317
   propagators:
     - tracecontext
     - baggage
