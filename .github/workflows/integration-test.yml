@@ -44,7 +44,7 @@ jobs:
 
       - name: Build the operator
         # release-artifacts needs the IMG variable to build the operator.
-        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
 
       - name: Store operator-build
         run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
@@ -74,52 +74,51 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
             terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve
-            
 
-#  EKSAddOnIntegrationTest:
-#    name: EKSAddOnIntegrationTest
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#    permissions:
-#      id-token: write
-#      contents: read
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v2
-#        with:
-#          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-#          aws-region: us-east-1
-#
-#      - name: Verify Terraform version
-#        run: terraform --version
-#
-#      - name: Terraform apply
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 1
-#          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks
-#            terraform init
-#            if terraform apply -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve; then
-#              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve
-#            else
-#              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve && exit 1
-#            fi
-#
-#      - name: Terraform destroy
-#        if: ${{ cancelled() || failure() }}
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 8
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks
-#            terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve
+  EKSAddOnIntegrationTest:
+    name: EKSAddOnIntegrationTest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-east-1
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform apply
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 1
+          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+            terraform init
+            if terraform apply -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve; then
+              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve
+            else
+              terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" -auto-approve && exit 1
+            fi
+
+      - name: Terraform destroy
+        if: ${{ cancelled() || failure() }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 8
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+            terraform destroy -var="test_dir=../../eks-addon" -var="typeOfTest=add-on" --auto-approve
