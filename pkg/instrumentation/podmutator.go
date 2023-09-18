@@ -20,21 +20,38 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhookhandler"
 )
 
+const (
+	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	defaultJavaImage                       = "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest"
+	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
+	defaultInstrumenation                  = "java-instrumentation"
+	defaultNamespace                       = "default"
+	defaultKind                            = "Instrumentation"
+	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
+	otelSampleEnabledDefaultValue          = "true"
+	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
+	otelTracesSamplerArgDefaultValue       = "0.05"
+	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
+	otelTracesSamplerDefaultValue          = "parentbased_traceidratio"
+	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+)
+
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
 
 	defaultInst = &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "cloudwatch.aws.amazon.com/v1alpha1",
-			Kind:       "Instrumentation",
+			APIVersion: defaultAPIVersion,
+			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "java-instrumentation",
-			Namespace: "default",
+			Name:      defaultInstrumenation,
+			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{Endpoint: "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"},
+			Exporter: v1alpha1.Exporter{Endpoint: defaultExporterEndpoint},
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
@@ -42,12 +59,12 @@ var (
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
-				Image: "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest",
+				Image: defaultJavaImage,
 				Env: []corev1.EnvVar{
-					{Name: "OTEL_SMP_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "0.05"},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "parentbased_traceidratio"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4317"},
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
+					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 				},
 			},
 		},
