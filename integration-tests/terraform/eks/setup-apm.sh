@@ -33,4 +33,3 @@ kubectl apply -f $AGENT_YAML
 
 echo "Waiting for 1 minute for the resources to start-up"
 sleep 60
-kubectl get pods -A
