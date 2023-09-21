@@ -1,6 +1,6 @@
 {{- $altNames := list ( printf "%s-webhook-service.%s" (include "cloudwatchagent-operator.name" .) .Release.Namespace ) ( printf "%s-webhook-service.%s.svc" (include "cloudwatchagent-operator.name" .) .Release.Namespace ) -}}
-{{- $ca := genCA "cloudwatchagent-operator-operator-ca" 365 -}}
-{{- $cert := genSignedCert (include "cloudwatchagent-operator.name" .) nil $altNames 365 $ca -}}
+{{- $ca := genCA "cloudwatchagent-operator-operator-ca" 1827 -}}
+{{- $cert := genSignedCert (include "cloudwatchagent-operator.name" .) nil $altNames 1827 $ca -}}
 apiVersion: v1
 kind: Secret
 type: kubernetes.io/tls

@@ -172,7 +172,7 @@ rules:
     resources: ["services"]
     verbs: ["list", "watch"]
   - apiGroups: ["apps"]
-    resources: ["replicasets"]
+    resources: ["replicasets", "daemonsets", "deployments", "statefulsets"]
     verbs: ["list", "watch", "get"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -186,4 +186,6 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["update"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get", "list", "watch"]
 {{- end }}
