@@ -133,7 +133,7 @@ metadata:
   namespace: default # use a namespace with pods you'd like to inject
 spec:
   exporter:
-    endpoint: http://amazon-cloudwatch-agent.amazon-cloudwatch:4317
+    endpoint: http://amazon-cloudwatch-agent.amazon-cloudwatch:4315
   propagators:
     - tracecontext
     - baggage
