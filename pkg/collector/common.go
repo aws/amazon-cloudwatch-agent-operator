@@ -10,14 +10,10 @@ import (
 var CloudwatchAgentPorts = []corev1.ServicePort{
 	{
 		Name: "otlp-grpc",
-		Port: 4315,
+		Port: 4317,
 	},
 	{
 		Name: "otlp-http",
-		Port: 4316,
-	},
-	{
-		Name: "aws-proxy",
-		Port: 2000,
+		Port: 4318,
 	},
 }
