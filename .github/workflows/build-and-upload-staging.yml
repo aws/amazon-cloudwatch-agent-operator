@@ -1,4 +1,11 @@
-name: Build And Upload
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build And Upload Staging Artifact
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 
 on:
   push:
@@ -28,7 +35,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
       - name: Login to ECR
@@ -51,5 +58,5 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: ${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
+          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
           platforms: linux/amd64, linux/arm64
