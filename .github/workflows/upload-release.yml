@@ -9,9 +9,6 @@ env:
   ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
 on:
-  push:
-    branches:
-      - upload_release
   workflow_dispatch:
 
 jobs:
