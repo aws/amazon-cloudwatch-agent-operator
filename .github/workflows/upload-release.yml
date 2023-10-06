@@ -1,0 +1,49 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+
+name: Upload Release Artifact
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
+
+on:
+  push:
+    branches:
+      - upload_release
+  workflow_dispatch:
+
+jobs:
+  integ-test:
+    uses: ./.github/workflows/integration-test.yml
+    secrets: inherit
+
+  push-release-ecr:
+    needs: integ-test
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: us-west-2 # Uploads only to us-west-2 for now
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push image to release ECR
+        run: |
+          docker buildx imagetools create \
+          -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
+          ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
