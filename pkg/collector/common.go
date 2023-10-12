@@ -16,4 +16,8 @@ var CloudwatchAgentPorts = []corev1.ServicePort{
 		Name: "otlp-http",
 		Port: 4318,
 	},
+	{
+		Name: "aws-proxy",
+		Port: 2000,
+	},
 }
