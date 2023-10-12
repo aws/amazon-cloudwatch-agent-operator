@@ -21,20 +21,22 @@ import (
 )
 
 const (
-	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
-	defaultJavaImage                       = "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest"
-	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
-	defaultInstrumenation                  = "java-instrumentation"
-	defaultNamespace                       = "default"
-	defaultKind                            = "Instrumentation"
-	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
-	otelSampleEnabledDefaultValue          = "true"
-	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue       = "0.05"
-	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
-	otelTracesSamplerDefaultValue          = "parentbased_traceidratio"
-	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	defaultExporterEndpoint                       = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	defaultJavaImage                              = "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest"
+	defaultAPIVersion                             = "cloudwatch.aws.amazon.com/v1alpha1"
+	defaultInstrumenation                         = "java-instrumentation"
+	defaultNamespace                              = "default"
+	defaultKind                                   = "Instrumentation"
+	otelSampleEnabledKey                          = "OTEL_SMP_ENABLED"
+	otelSampleEnabledDefaultValue                 = "true"
+	otelTracesSamplerArgKey                       = "OTEL_TRACES_SAMPLER_ARG"
+	otelTracesSamplerArgDefaultValue              = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
+	otelTracesSamplerKey                          = "OTEL_TRACES_SAMPLER"
+	otelTracesSamplerDefaultValue                 = "xray"
+	otelExporterTracesEndpointKey                 = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+	otelExporterTracesEndpointDefaultValue        = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	otelSpanAttributeValueLengthLimitKey          = "OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT"
+	otelSpanAttributeValueLengthLimitDefaultValue = "1024"
 )
 
 var (
@@ -65,6 +67,7 @@ var (
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
+					{Name: otelSpanAttributeValueLengthLimitKey, Value: otelSpanAttributeValueLengthLimitDefaultValue},
 				},
 			},
 		},
