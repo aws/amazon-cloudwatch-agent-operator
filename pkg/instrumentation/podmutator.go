@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
 	defaultJavaImage                       = "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest"
 	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
 	defaultInstrumenation                  = "java-instrumentation"
@@ -30,11 +30,11 @@ const (
 	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
 	otelSampleEnabledDefaultValue          = "true"
 	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue       = "0.05"
+	otelTracesSamplerArgDefaultValue       = "endpoint=http://amazon-cloudwatch-agent.amazon-cloudwatch:2000"
 	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
-	otelTracesSamplerDefaultValue          = "parentbased_traceidratio"
+	otelTracesSamplerDefaultValue          = "xray"
 	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4317"
+	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
 )
 
 var (
