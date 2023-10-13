@@ -36,11 +36,8 @@ import (
 )
 
 const (
-	cloudwatchAgentImageRepository = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
-	cloudwatchAgentImageTag        = "latest"
-
-	autoInstrumentationJavaImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java"
-	autoInstrumentationJavaImageTag        = "latest"
+	cloudwatchAgentImageRepository         = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
+	autoInstrumentationJavaImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 )
 
 var (
@@ -78,8 +75,8 @@ func main() {
 		tlsOpt                  tlsConfig
 	)
 
-	pflag.StringVar(&agentImage, "agent-image", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, cloudwatchAgentImageTag), "The default cloudwatch agent image. This image is used when no image is specified in the CustomResource.")
-	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, autoInstrumentationJavaImageTag), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&agentImage, "agent-image", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default cloudwatch agent image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))

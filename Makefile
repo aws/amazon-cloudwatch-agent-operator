@@ -1,8 +1,14 @@
-# Current Operator version
-VERSION ?= "0.1"
+# Versions from versions.txt
+VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
+VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+VERSION_PKG ?= "github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
+AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | awk -F= '{print $$2}')"
+AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-java-instrumentation | awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(CLOUDWATCH_AGENT_OPERATOR_IMAGE)
+IMG_PREFIX ?= public.ecr.aws/cloudwatch-agent
+IMG_REPO ?= cloudwatch-agent-operator
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
 
 # Options for 'bundle-build'
@@ -59,7 +65,6 @@ $(LOCALBIN):
 SED ?= $(shell which gsed 2>/dev/null || which sed)
 
 .PHONY: ensure-generate-is-noop
-ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
@@ -145,7 +150,7 @@ generate: controller-gen api-docs
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-	docker buildx build --load --platform linux/${ARCH} -t ${IMG} .
+	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push

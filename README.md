@@ -4,17 +4,8 @@ The Amazon CloudWatch Agent Operator is software developed to manage the [CloudW
 This repo is based off of the [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator)
 
 ## Build and Deployment
-1. Set environment variable to name the build image `export CLOUDWATCH_AGENT_OPERATOR_IMAGE="ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/amazon-cloudwatch-agent-operator:latest"`
-2. Build the image using `make container`
-3. Push the image to your local ecr repo
-
-```
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
-
-docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/amazon-cloudwatch-agent-operator:latest
-```
-
-4. Deploy kubernetes objects to your cluster `make deploy`
+- Image can be built using `make container`
+- Deploy kubernetes objects to your cluster `make deploy`
 
 ## Pre requisites
 1. Have an existing kubernetes cluster, such as [minikube](https://minikube.sigs.k8s.io/docs/start/)
