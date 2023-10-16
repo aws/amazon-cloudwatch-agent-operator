@@ -2,7 +2,7 @@
 cloudwatch-agent=1.300028.1b210
 
 # Represents the current release of the CloudWatch Agent Operator.
-operator=0.1.0
+operator=1.0.0
 
 # Represents the current release of ADOT Java instrumentation.
 aws-otel-java-instrumentation=v1.30.0
