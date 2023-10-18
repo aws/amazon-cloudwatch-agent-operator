@@ -6,6 +6,15 @@ env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
+  push:
+    branches:
+      - test_update
+    paths-ignore:
+      - '**/*.md'
+      - 'NOTICE'
+      - 'LICENSE'
+      - '.github/**'
+      - '!.github/workflows/integration-test.yml'
   workflow_call:
     inputs:
       addon_name:
