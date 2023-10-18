@@ -46,6 +46,7 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - run: echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -69,7 +70,7 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply --auto-approve -var="beta=true" -var="addon_name=${{github.event.inputs.addon_name}}" -var="addon_version=${{github.event.inputs.addon_version}}"; then
+            if terraform apply --auto-approve -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}"; then
               terraform destroy -var="beta=true" -auto-approve
             else
               terraform destroy -var="beta=true" -auto-approve && exit 1

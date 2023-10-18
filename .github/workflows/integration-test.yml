@@ -61,6 +61,7 @@ jobs:
       - name: Echo test plan matrix
         run: |
          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+         echo "Addon name ${{ inputs.addon_name }}, addon version  ${{ inputs.addon_version }} "
 
   EKSAddOnIntegrationTest:
     needs: [GenerateTestMatrix]
