@@ -16,16 +16,17 @@ on:
       - '.github/**'
       - '!.github/workflows/integration-test.yml'
   workflow_dispatch:
-  workflow_call:
     inputs:
       addon_name:
         required: false
         type: string
-        default: 'amazon-cloudwatch'
+        default: "amazon-cloudwatch"
+        description: "EKS addon name"
       addon_version:
         required: false
         type: string
-        default: 'v0.1.0-eksbuild.4'
+        default: "v0.1.0-eksbuild.4"
+        description: "EKS addon version"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -68,10 +69,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply --auto-approve -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}"; then
-              terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve
+            if terraform apply --auto-approve -var="beta=true" -var="addon_name=${{github.event.inputs.addon_name}}" -var="addon_version=${{github.event.inputs.addon_version}}"; then
+              terraform destroy -var="beta=true" -auto-approve
             else
-              terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve && exit 1
+              terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -84,4 +85,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" --auto-approve
+            terraform destroy -var="beta=true" --auto-approve
