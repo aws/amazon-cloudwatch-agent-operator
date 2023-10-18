@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Run EKS addon Integration Tests
+name: Run EKS addon Integration Tests for Beta Cluster
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
@@ -34,29 +34,11 @@ permissions:
   contents: read
 
 jobs:
-  GenerateTestMatrix:
-    name: 'GenerateTestMatrix'
-    runs-on: ubuntu-latest
-    outputs:
-     eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
-    steps:
-      - name: Generate matrix
-        id: set-matrix
-        run: |
-         echo "::set-output name=eks_addon_matrix::$(echo $(cat ../../integration-tests/generator/k8s_versions_matrix.json))"
-
-      - name: Echo test plan matrix
-        run: |
-         echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-
-  EKSAddOnIntegrationTest:
-    needs: [GenerateTestMatrix]
-    name: EKSAddOnIntegrationTest
+  EKSAddOnBetaClusterIntegrationTest:
+    name: EKSAddOnBetaClusterIntegrationTest
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
     permissions:
       id-token: write
       contents: read
@@ -84,10 +66,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve
+            if terraform apply --auto-approve -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}"; then
+              terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve
             else
-              terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve && exit 1
+              terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -100,4 +82,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" --auto-approve
+            terraform destroy -var="beta=true" -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" --auto-approve
