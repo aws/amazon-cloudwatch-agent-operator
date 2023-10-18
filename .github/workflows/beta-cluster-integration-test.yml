@@ -21,9 +21,11 @@ on:
       addon_name:
         required: false
         type: string
+        default: 'amazon-cloudwatch'
       addon_version:
         required: false
         type: string
+        default: 'v0.1.0-eksbuild.4'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}

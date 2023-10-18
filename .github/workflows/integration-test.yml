@@ -15,14 +15,17 @@ on:
       - 'LICENSE'
       - '.github/**'
       - '!.github/workflows/integration-test.yml'
+  workflow_dispatch:
   workflow_call:
     inputs:
       addon_name:
-        required: true
+        required: false
         type: string
+        default: 'amazon-cloudwatch'
       addon_version:
-        required: true
+        required: false
         type: string
+        default: 'v0.1.0-eksbuild.4'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -52,7 +55,7 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-         echo "::set-output name=eks_addon_matrix::$(echo $(cat ../../integration-tests/generator/k8s_versions_matrix.json))"
+         echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
       - name: Echo test plan matrix
         run: |
