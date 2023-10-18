@@ -19,10 +19,10 @@ on:
   workflow_call:
     inputs:
       addon_name:
-        required: false
+        required: true
         type: string
       addon_version:
-        required: false
+        required: true
         type: string
 
 concurrency:

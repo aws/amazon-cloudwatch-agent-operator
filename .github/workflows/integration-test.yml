@@ -6,23 +6,13 @@ env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
-  push:
-    branches:
-      - test_update
-    paths-ignore:
-      - '**/*.md'
-      - 'NOTICE'
-      - 'LICENSE'
-      - '.github/**'
-      - '!.github/workflows/integration-test.yml'
-  workflow_dispatch:
   workflow_call:
     inputs:
       addon_name:
-        required: false
+        required: true
         type: string
       addon_version:
-        required: false
+        required: true
         type: string
 
 concurrency:
@@ -40,6 +30,16 @@ jobs:
     outputs:
      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
       - name: Generate matrix
         id: set-matrix
         run: |
