@@ -6,27 +6,18 @@ env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
-  push:
-    branches:
-      - test_update
-    paths-ignore:
-      - '**/*.md'
-      - 'NOTICE'
-      - 'LICENSE'
-      - '.github/**'
-      - '!.github/workflows/integration-test.yml'
   workflow_dispatch:
-  workflow_call:
     inputs:
       addon_name:
-        required: false
+        required: true
         type: string
-        default: 'amazon-cloudwatch'
+        default: "amazon-cloudwatch"
         description: "EKS addon name"
       addon_version:
-        required: false
+        required: true
         type: string
-        default: 'v0.1.0-eksbuild.4'
+        default: "v0.1.0-eksbuild.4"
+        description: "EKS addon version"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -61,7 +52,7 @@ jobs:
       - name: Echo test plan matrix
         run: |
          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-         echo "Addon name ${{ inputs.addon_name }}, addon version  ${{ inputs.addon_version }} "
+         echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
 
   EKSAddOnIntegrationTest:
     needs: [GenerateTestMatrix]
@@ -98,10 +89,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve
+            if terraform apply -var="addon_name=${{  github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -auto-approve
             else
-              terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" -auto-approve && exit 1
+              terraform destroy -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -114,4 +105,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="addon_name=${{inputs.addon_name}}" -var="addon_version=${{inputs.addon_version}}" --auto-approve
+            terraform destroy --auto-approve
