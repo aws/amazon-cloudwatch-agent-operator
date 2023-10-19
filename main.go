@@ -92,10 +92,14 @@ func main() {
 		"go-os", runtime.GOOS,
 	)
 
+	// set java instrumentation java image in environment variable to be used for default instrumentation
+	os.Setenv("auto-instrumentation-java", autoInstrumentationJava)
+
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
 		config.WithCollectorImage(agentImage),
+		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")

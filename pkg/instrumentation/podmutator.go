@@ -11,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,55 +19,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhookhandler"
 )
 
-const (
-	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
-	defaultJavaImage                       = "160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview:latest"
-	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
-	defaultInstrumenation                  = "java-instrumentation"
-	defaultNamespace                       = "default"
-	defaultKind                            = "Instrumentation"
-	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
-	otelSampleEnabledDefaultValue          = "true"
-	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue       = "endpoint=http://amazon-cloudwatch-agent.amazon-cloudwatch:2000"
-	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
-	otelTracesSamplerDefaultValue          = "xray"
-	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
-)
-
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
-
-	defaultInst = &v1alpha1.Instrumentation{
-		Status: v1alpha1.InstrumentationStatus{},
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: defaultAPIVersion,
-			Kind:       defaultKind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
-			Namespace: defaultNamespace,
-		},
-		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{Endpoint: defaultExporterEndpoint},
-			Propagators: []v1alpha1.Propagator{
-				v1alpha1.TraceContext,
-				v1alpha1.Baggage,
-				v1alpha1.B3,
-				v1alpha1.XRay,
-			},
-			Java: v1alpha1.Java{
-				Image: defaultJavaImage,
-				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
-					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
-					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
-					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-				},
-			},
-		},
-	}
 )
 
 type instPodMutator struct {
@@ -185,7 +137,7 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	switch items := len(otelInsts.Items); {
 	case items == 0:
 		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
-		return defaultInst, nil
+		return getDefaultInstrumentation()
 	case items > 1:
 		return nil, errMultipleInstancesPossible
 	default:
