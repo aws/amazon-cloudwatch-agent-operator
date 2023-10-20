@@ -93,7 +93,7 @@ func main() {
 	)
 
 	// set java instrumentation java image in environment variable to be used for default instrumentation
-	os.Setenv("auto-instrumentation-java", autoInstrumentationJava)
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),

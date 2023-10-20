@@ -28,7 +28,7 @@ const (
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
-	instrumentationImage, ok := os.LookupEnv("auto-instrumentation-java")
+	instrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine instrumentation image")
 	}
