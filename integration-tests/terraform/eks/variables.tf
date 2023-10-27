@@ -16,9 +16,14 @@ variable "test_dir" {
   default = "../../eks-addon"
 }
 
-variable "addon" {
+variable "addon_name" {
   type    = string
   default = "amazon-cloudwatch"
+}
+
+variable "addon_version" {
+  type = string
+  default = "v0.1.0-eksbuild.4"
 }
 
 variable "beta" {

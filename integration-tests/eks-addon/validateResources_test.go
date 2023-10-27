@@ -55,9 +55,10 @@ func TestK8s(t *testing.T) {
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 	}
-	assert.Len(t, pods.Items, 2)
+	assert.Len(t, pods.Items, 3)
 	assert.Equal(t, v1.PodRunning, pods.Items[0].Status.Phase)
 	assert.Equal(t, v1.PodRunning, pods.Items[1].Status.Phase)
+	assert.Equal(t, v1.PodRunning, pods.Items[2].Status.Phase)
 
 	if validateAgentPodRegexMatch(pods.Items[0].Name) {
 		assert.True(t, validateOperatorPodRegexMatch(pods.Items[1].Name))
@@ -66,6 +67,8 @@ func TestK8s(t *testing.T) {
 	} else {
 		assert.Fail(t, "Cluster Pods are not created correctly form EKS addon")
 	}
+
+	assert.True(t, validateFluentBitPodRegexMatch(pods.Items[2].Name))
 
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
@@ -98,8 +101,9 @@ func TestK8s(t *testing.T) {
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 	}
-	assert.Len(t, daemonSets.Items, 1)
+	assert.Len(t, daemonSets.Items, 2)
 	assert.Equal(t, "amazon-cloudwatch-agent", daemonSets.Items[0].Name)
+	assert.Equal(t, "fluent-bit", daemonSets.Items[1].Name)
 
 	// Validating Service Accounts
 	serviceAccounts, err := ListServiceAccounts(nameSpace, clientSet)
@@ -144,6 +148,11 @@ func validateAgentPodRegexMatch(podName string) bool {
 func validateOperatorPodRegexMatch(podName string) bool {
 	operatorPodMatch, _ := regexp.MatchString("amazon-cloudwatch-agent-operator-controller-manager-*", podName)
 	return operatorPodMatch
+}
+
+func validateFluentBitPodRegexMatch(podName string) bool {
+	fluentBitPodMatch, _ := regexp.MatchString("fluent-bit-*", podName)
+	return fluentBitPodMatch
 }
 func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccountName string) bool {
 	for _, serviceAccount := range serviceAccounts.Items {

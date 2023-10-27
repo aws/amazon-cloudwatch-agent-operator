@@ -13,12 +13,11 @@ on:
 
 jobs:
   integ-test:
-    uses: ./.github/workflows/integration-test.yml
+    uses: ./.github/workflows/eks-add-on-integ-test.yml
     secrets: inherit
 
   push-release-ecr:
-    #integ-test is broken due to us including fluentbit as a pod. Need to update test
-    #needs: integ-test
+    needs: integ-test
     permissions:
       id-token: write
       contents: read
