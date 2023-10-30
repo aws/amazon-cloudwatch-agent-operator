@@ -124,13 +124,13 @@ agent:
       },
       "traces": {
         "traces_collected": {
-          "apm": {
+          "app_signals": {
           }
         }
       },
       "logs": {
         "metrics_collected": {
-          "apm": {
+          "app_signals": {
           },
           "kubernetes": {
             "enhanced_container_insights": true
