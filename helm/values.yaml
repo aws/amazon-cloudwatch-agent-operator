@@ -1,0 +1,140 @@
+# Default values for amazon-cloudwatch-observability.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+## Provide a name in place of cloudwatchagent-operator.
+##
+nameOverride: ""
+
+## Reference one or more secrets to be used when pulling images from authenticated repositories.
+imagePullSecrets: [ ]
+
+## Provide the ClusterName (optional when installing via EKS add-on)
+clusterName: EKS_CLUSTER_NAME
+
+## Provide the Region (optional when installing via EKS add-on)
+region: AWS_REGION_NAME
+
+containerLogs:
+  enabled: true
+  fluentBit:
+    image:
+      repository: public.ecr.aws/aws-observability/aws-for-fluent-bit
+      tag: 2.31.12.20230911
+
+## Provide CloudWatchAgent Operator manager container image and resources.
+##
+manager:
+  name:
+  image:
+    repository: public.ecr.aws/cloudwatch-agent/cloudwatch-agent-operator
+    tag: 1.0.0
+  autoInstrumentationImage:
+    java:
+      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
+      tag: v1.32.0
+  ports:
+    containerPort: 9443
+    metricsPort: 8080
+    webhookPort: 9443
+    healthzPort: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  ## Adds additional environment variables
+  ## e.g ENV_VAR: env_value
+  env:
+    ENABLE_WEBHOOKS: "true"
+
+  # -- Create the manager ServiceAccount
+  serviceAccount:
+    create: true
+    annotations: { }
+
+  podAnnotations: { }
+  podLabels: { }
+
+  service:
+    name:
+
+## Admission webhooks make sure only requests with correctly formatted rules will get into the Operator.
+admissionWebhooks:
+  create: true
+  failurePolicy: Ignore
+  secretName: ""
+
+  ## Defines the sidecar injection logic in Pods.
+  ## - Ignore, the injection is fail-open. The pod will be created, but the sidecar won't be injected.
+  ## - Fail, the injection is fail-close. If the webhook pod is not ready, pods cannot be created.
+  pods:
+    failurePolicy: Ignore
+
+  ## Adds a prefix to the mutating webhook name.
+  ## This can be used to order this mutating webhook with all your cluster's mutating webhooks.
+  namePrefix: ""
+
+  ## Customize webhook timeout duration
+  timeoutSeconds: 10
+
+  ## Provide selectors for your objects
+  namespaceSelector: { }
+  objectSelector: { }
+
+  ## TLS Certificate Option 1: Use Helm to automatically generate self-signed certificate.
+  ## autoGenerateCert must be enabled. This is the default option.
+  ## If true, Helm will automatically create a self-signed cert and secret for you.
+  autoGenerateCert:
+    enabled: true
+    expiryDays: 3650 # 10 years
+
+  ## TLS Certificate Option 2: Use certManager to generate self-signed certificate.
+  ## certManager must be enabled. If enabled, it takes precedence over option 1.
+  certManager:
+    enabled: false
+    ## Provide the issuer kind and name to do the cert auth job.
+    ## By default, OpenTelemetry Operator will use self-signer issuer.
+    issuerRef: { }
+    # kind:
+    # name:
+    ## Annotations for the cert and issuer if cert-manager is enabled.
+    certificateAnnotations: { }
+    issuerAnnotations: { }
+
+  ## Secret annotations
+  secretAnnotations: { }
+  ## Secret labels
+  secretLabels: { }
+
+agent:
+  name:
+  image:
+    repository: public.ecr.aws/cloudwatch-agent/cloudwatch-agent
+    tag: 1.300028.1b210
+  enabled: true
+  serviceAccount:
+    name: # override agent service account name 
+  config: # optional config that can be provided to override the defaultConfig
+  defaultConfig:
+    {
+      "agent": {
+        "debug": true
+      },
+      "traces": {
+        "traces_collected": {
+          "app_signals": {
+          }
+        }
+      },
+      "logs": {
+        "metrics_collected": {
+          "app_signals": {
+          },
+          "kubernetes": {
+            "enhanced_container_insights": true
+          }
+        }
+      }
+    }
