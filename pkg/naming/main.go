@@ -9,8 +9,8 @@ import (
 )
 
 // ConfigMap builds the name for the config map used in the AmazonCloudWatchAgent containers.
-func ConfigMap(agent v1alpha1.AmazonCloudWatchAgent) string {
-	return DNSName(Truncate("%s", 63, agent.Name))
+func ConfigMap(_ v1alpha1.AmazonCloudWatchAgent) string {
+	return "cwaagentconfig"
 }
 
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
@@ -20,7 +20,7 @@ func ConfigMapVolume() string {
 
 // Container returns the name to use for the container in the pod.
 func Container() string {
-	return "cwa-container"
+	return "cloudwatch-agent"
 }
 
 // Agent builds the agent (deployment/daemonset) name based on the instance.
