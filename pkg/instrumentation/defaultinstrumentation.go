@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultExporterEndpoint                = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
+	defaultExporterEndpoint                = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
 	defaultInstrumenation                  = "java-instrumentation"
 	defaultNamespace                       = "default"
@@ -20,11 +20,11 @@ const (
 	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
 	otelSampleEnabledDefaultValue          = "true"
 	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue       = "endpoint=http://amazon-cloudwatch-agent.amazon-cloudwatch:2000"
+	otelTracesSamplerArgDefaultValue       = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
 	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
 	otelTracesSamplerDefaultValue          = "xray"
 	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://amazon-cloudwatch-agent.amazon-cloudwatch:4315"
+	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
