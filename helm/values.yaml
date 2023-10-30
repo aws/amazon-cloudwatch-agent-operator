@@ -29,14 +29,12 @@ containerLogs:
 manager:
   name:
   image:
-    # This repository is for internal beta testing only, it will be replaced with the public repository before public release
-    repository: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-release
-    tag: latest
+    repository: public.ecr.aws/cloudwatch-agent/cloudwatch-agent-operator
+    tag: 1.0.0
   autoInstrumentationImage:
     java:
-      # This repository is for internal beta testing only, it will be replaced with the public repository before public release
-      repository: 160148376629.dkr.ecr.us-west-2.amazonaws.com/aws-apm-preview
-      tag: latest
+      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
+      tag: v1.32.0
   ports:
     containerPort: 9443
     metricsPort: 8080
