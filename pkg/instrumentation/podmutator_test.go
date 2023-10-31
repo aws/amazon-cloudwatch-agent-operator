@@ -40,6 +40,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace)
 
 	assert.Nil(t, err)
+	defaultInst, _ := getDefaultInstrumentation()
 	assert.Equal(t, defaultInst, instrumentation)
-
 }
