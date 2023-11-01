@@ -21,20 +21,32 @@ containerLogs:
   enabled: true
   fluentBit:
     image:
-      repository: public.ecr.aws/aws-observability/aws-for-fluent-bit
+      repository: aws-for-fluent-bit
       tag: 2.31.12.20230911
+      repositoryDomainMap:
+        public: public.ecr.aws/aws-observability
+        cn-north-1: 128054284489.dkr.ecr.cn-north-1.amazonaws.com.cn
+        cn-northwest-1: 128054284489.dkr.ecr.cn-northwest-1.amazonaws.com.cn
+        us-gov-east-1: 161423150738.dkr.ecr.us-gov-east-1.amazonaws.com
+        us-gov-west-1: 161423150738.dkr.ecr.us-gov-west-1.amazonaws.com
 
 ## Provide CloudWatchAgent Operator manager container image and resources.
 ##
 manager:
   name:
   image:
-    repository: public.ecr.aws/cloudwatch-agent/cloudwatch-agent-operator
-    tag: 1.0.0
+    repository: cloudwatch-agent-operator
+    tag: 1.0.1
+    repositoryDomainMap:
+      public: public.ecr.aws/cloudwatch-agent
+      cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
+      cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
+      us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
+      us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   autoInstrumentationImage:
     java:
       repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
-      tag: v1.32.0
+      tag: v1.31.0
   ports:
     containerPort: 9443
     metricsPort: 8080
@@ -111,27 +123,22 @@ admissionWebhooks:
 agent:
   name:
   image:
-    repository: public.ecr.aws/cloudwatch-agent/cloudwatch-agent
-    tag: 1.300028.1b210
+    repository: cloudwatch-agent
+    tag: 1.300030.1b305
+    repositoryDomainMap:
+      public: public.ecr.aws/cloudwatch-agent
+      cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
+      cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
+      us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
+      us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   enabled: true
   serviceAccount:
     name: # override agent service account name 
   config: # optional config that can be provided to override the defaultConfig
   defaultConfig:
     {
-      "agent": {
-        "debug": true
-      },
-      "traces": {
-        "traces_collected": {
-          "app_signals": {
-          }
-        }
-      },
       "logs": {
         "metrics_collected": {
-          "app_signals": {
-          },
           "kubernetes": {
             "enhanced_container_insights": true
           }

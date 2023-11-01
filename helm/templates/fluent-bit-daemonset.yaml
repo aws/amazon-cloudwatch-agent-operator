@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: fluent-bit
-        image: {{ .Values.containerLogs.fluentBit.image.repository }}:{{ .Values.containerLogs.fluentBit.image.tag }}
+        image: {{ template "fluent-bit.image" . }}
         imagePullPolicy: Always
         env:
         - name: AWS_REGION
