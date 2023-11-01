@@ -13,6 +13,42 @@ Name for cloudwatch-agent
 {{- end }}
 
 {{/*
+Get the current recommended cloudwatch agent image for a region
+*/}}
+{{- define "cloudwatch-agent.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.agent.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.agent.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.agent.image.repository .Values.agent.image.tag -}}
+{{- end -}}
+
+{{/*
+Get the current recommended cloudwatch agent operator image for a region
+*/}}
+{{- define "cloudwatch-agent-operator.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.manager.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.manager.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.manager.image.repository .Values.manager.image.tag -}}
+{{- end -}}
+
+{{/*
+Get the current recommended fluent-bit image for a region
+*/}}
+{{- define "fluent-bit.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.containerLogs.fluentBit.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tag -}}
+{{- end -}}
+
+{{/*
 Common labels
 */}}
 {{- define "amazon-cloudwatch-observability.labels" -}}

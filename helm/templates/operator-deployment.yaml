@@ -24,7 +24,7 @@ spec:
         {{- include "amazon-cloudwatch-observability.podLabels" . | nindent 8 }}
     spec:
       containers:
-      - image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+      - image: {{ template "cloudwatch-agent-operator.image" . }}
         args:
         - "--auto-instrumentation-java-image={{ .Values.manager.autoInstrumentationImage.java.repository }}:{{ .Values.manager.autoInstrumentationImage.java.tag }}"
         command:
