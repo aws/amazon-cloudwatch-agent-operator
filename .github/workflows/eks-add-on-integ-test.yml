@@ -11,12 +11,12 @@ on:
       addon_name:
         required: true
         type: string
-        default: "amazon-cloudwatch"
+        default: "amazon-cloudwatch-observability"
         description: "EKS addon name"
       addon_version:
         required: true
         type: string
-        default: "v0.1.0-eksbuild.4"
+        default: "v1.1.0-eksbuild.1"
         description: "EKS addon version"
 
 concurrency:
