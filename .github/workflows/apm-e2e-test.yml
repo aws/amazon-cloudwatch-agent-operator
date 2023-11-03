@@ -163,6 +163,7 @@ jobs:
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --cluster ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
@@ -196,6 +197,7 @@ jobs:
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --cluster ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
