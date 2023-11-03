@@ -30,6 +30,8 @@ import com.amazon.aoc.models.xray.Entity;
 import com.amazon.aoc.services.XRayService;
 import com.amazonaws.services.xray.model.Segment;
 import com.amazonaws.services.xray.model.Trace;
+import com.amazonaws.services.xray.model.TraceSummary;
+import com.amazonaws.services.xray.model.ValueWithServiceIds;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -79,6 +81,12 @@ public class TraceValidator implements IValidator {
 
                       // prepare list of trace IDs to retrieve from X-Ray service
                       String traceId = (String) storedTrace.get("[0].trace_id");
+                      // If the traceId is invalid, then we don't want to try validating the retrieved trace
+                      // with the invalid id. Therefore,
+                      // remove it from the expected trace.
+                      if (XRayService.DEFAULT_TRACE_ID.equals(traceId)) {
+                        storedTrace.remove("[0].trace_id");
+                      }
                       List<String> traceIdList = Collections.singletonList(traceId);
 
                       // Retry 5 times to since segments might not be immediately available in X-Ray service
@@ -124,7 +132,40 @@ public class TraceValidator implements IValidator {
 
   // this method will hit get trace from x-ray service and get retrieved trace
   private Map<String, Object> getRetrievedTrace(List<String> traceIdList) throws Exception {
-    List<Trace> retrieveTraceList = xrayService.listTraceByIds(traceIdList);
+    List<Trace> retrieveTraceList = null;
+    // Special Case for the /client-call. The API call doesn't return the trace ID of the local root
+    // client span,
+    // so find traces generated within the last 60 second and search for the InternalOperation
+    // Keyword.
+    if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
+      List<TraceSummary> retrieveTraceLists = xrayService.searchTraces();
+      for (TraceSummary summary : retrieveTraceLists) {
+        try {
+          boolean isClientCall = false;
+          // A summary represents a trace. The trace for the local-root-client-call will have two
+          // segments, each with their own aws_local_service key in the annotation section.
+          // Therefore,
+          // getAnnotations.get("aws_local_service") will return a list with two values, one from
+          // each segment. Search in the list to find whether local-root-client-call exists.
+          for (ValueWithServiceIds service : summary.getAnnotations().get("aws_local_service")) {
+            if (service.getAnnotationValue().getStringValue().equals("local-root-client-call")) {
+              isClientCall = true;
+              break;
+            }
+          }
+
+          if (isClientCall) {
+            List<String> traceIdLists = Collections.singletonList(summary.getId());
+            retrieveTraceList = xrayService.listTraceByIds(traceIdLists);
+            break;
+          }
+        } catch (Exception e) {
+          // Keep iterating until the right trace is found
+        }
+      }
+    } else {
+      retrieveTraceList = xrayService.listTraceByIds(traceIdList);
+    }
     if (retrieveTraceList == null || retrieveTraceList.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);
     }

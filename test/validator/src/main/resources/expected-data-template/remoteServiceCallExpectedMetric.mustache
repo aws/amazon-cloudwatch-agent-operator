@@ -53,7 +53,7 @@
       value: GET /healthcheck
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -75,7 +75,7 @@
   dimensions:
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -252,7 +252,7 @@
       value: GET /healthcheck
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -274,7 +274,7 @@
   dimensions:
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -451,7 +451,7 @@
       value: GET /healthcheck
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -473,7 +473,7 @@
   dimensions:
     -
       name: Service
-      value: sample-remote-application-{{testingId}}
+      value: {{remoteServiceDeploymentName}}
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}

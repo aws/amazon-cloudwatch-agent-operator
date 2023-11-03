@@ -26,17 +26,20 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   AWSSDK_EXPECTED_LOG("/expected-data-template/awsSdkCallExpectedLog.mustache"),
   HTTP_EXPECTED_LOG("/expected-data-template/httpCallExpectedLog.mustache"),
   REMOTE_SERVICE_EXPECTED_LOG("/expected-data-template/remoteServiceCallExpectedLog.mustache"),
+  CLIENT_EXPECTED_LOG("/expected-data-template/clientCallExpectedLog.mustache"),
   /** metric template, defined in resources. */
   HTTP_EXPECTED_METRIC("/expected-data-template/httpCallExpectedMetric.mustache"),
   AWSSDK_EXPECTED_METRIC("/expected-data-template/awsSdkCallExpectedMetric.mustache"),
   REMOTE_SERVICE_EXPECTED_METRIC(
-          "/expected-data-template/remoteServiceCallExpectedMetric.mustache"),
+      "/expected-data-template/remoteServiceCallExpectedMetric.mustache"),
+  CLIENT_EXPECTED_METRIC("/expected-data-template/clientCallExpectedMetric.mustache"),
 
   /** trace template, defined in resources. */
   XRAY_SDK_HTTP_EXPECTED_TRACE("/expected-data-template/xraySDKexpectedHTTPTrace.mustache"),
   XRAY_SDK_AWSSDK_EXPECTED_TRACE("/expected-data-template/xraySDKexpectedAWSSDKTrace.mustache"),
   XRAY_SDK_REMOTE_SERVICE_EXPECTED_TRACE(
-          "/expected-data-template/xraySDKexpectedREMOTESERVICETrace.mustache"),
+      "/expected-data-template/xraySDKexpectedREMOTESERVICETrace.mustache"),
+  XRAY_SDK_CLIENT_EXPECTED_TRACE("/expected-data-template/xraySDKexpectedCLIENTTrace.mustache"),
   ;
 
   private String path;

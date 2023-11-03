@@ -34,7 +34,7 @@ variable "service_account_aws_access" {
 }
 
 variable "sample_app_image" {
-  default = "417921506511.dkr.ecr.us-east-1.amazonaws.com/aws-apm-test/aws-apm-java-springboot:latest"
+  default = "417921506511.dkr.ecr.us-east-1.amazonaws.com/aws-apm-test/aws-apm-java-springboot-main-service:latest"
 }
 
 variable "sample_remote_app_image" {

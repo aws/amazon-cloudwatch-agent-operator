@@ -92,10 +92,11 @@ public class CWMetricValidator implements IValidator {
             () -> {
                 // We will query both the Service and RemoteService dimensions to ensure we get all
                 // metrics from all aggregations, specifically the [RemoteService] aggregation.
-                List<String> serviceNames = Lists.newArrayList(context.getServiceName());
+                List<String> serviceNames = Lists.newArrayList(
+                    context.getServiceName(), context.getRemoteServiceDeploymentName());
+                // TODO - Put the following back in: "www.amazon.com",  "AWS.SDK.S3"
                 List<String> remoteServiceNames =
-                    Lists.newArrayList(
-                        "www.amazon.com", "AWS.SDK.S3", context.getRemoteServiceDeploymentName());
+                    Lists.newArrayList(context.getRemoteServiceDeploymentName());
                 if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
                     serviceNames.add(context.getRemoteServiceName());
                 }
@@ -135,10 +136,10 @@ public class CWMetricValidator implements IValidator {
         List<Metric> expectedMetricList,
         List<Metric> actualMetricList)
         throws Exception {
-        for (String dimemensionValue : dimensionValues) {
+        for (String dimensionValue : dimensionValues) {
             actualMetricList.addAll(
                 this.listMetricFromCloudWatch(
-                    cloudWatchService, expectedMetricList, dimensionName, dimemensionValue));
+                    cloudWatchService, expectedMetricList, dimensionName, dimensionValue));
         }
     }
 

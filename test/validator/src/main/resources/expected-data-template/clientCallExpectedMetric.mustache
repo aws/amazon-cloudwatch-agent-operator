@@ -3,40 +3,17 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
       name: Service
       value: {{serviceName}}
+    -
+      name: Operation
+      value: GET /client-call
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
     -
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
 
 -
   metricName: Latency
@@ -60,6 +37,26 @@
       name: Service
       value: {{serviceName}}
     -
+      name: Operation
+      value: InternalOperation
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{cluster}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: InternalOperation
+    -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
     -
@@ -67,7 +64,10 @@
       value: {{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: local-root-client-call
+    -
+      name: RemoteOperation
+      value: GET /
 
 -
   metricName: Latency
@@ -83,37 +83,11 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      value: GET /
 
 -
   metricName: Latency
@@ -129,22 +103,30 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      value: local-root-client-call
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
     -
       name: Operation
-      value: GET /aws-sdk-call
+      value: GET /client-call
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{cluster}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
@@ -159,32 +141,12 @@
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
     -
       name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
+      value: InternalOperation
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -199,46 +161,9 @@
     -
       name: Service
       value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
     -
       name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
+      value: InternalOperation
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -246,14 +171,11 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: local-root-client-call
     -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      name: RemoteOperation
+      value: GET /
 
 -
   metricName: Error
@@ -269,22 +191,50 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
+      name: RemoteService
+      value: local-root-client-call
+    -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{cluster}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      value: local-root-client-call
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
     -
       name: Operation
-      value: GET /aws-sdk-call
+      value: GET /client-call
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{cluster}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
@@ -299,32 +249,12 @@
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
     -
       name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
+      value: InternalOperation
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -339,46 +269,9 @@
     -
       name: Service
       value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EKS.Cluster
-      value: {{cluster}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
     -
       name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
+      value: InternalOperation
     -
       name: HostedIn.EKS.Cluster
       value: {{cluster}}
@@ -386,14 +279,11 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: local-root-client-call
     -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      name: RemoteOperation
+      value: GET /
 
 -
   metricName: Fault
@@ -409,11 +299,25 @@
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
     -
+      name: RemoteService
+      value: local-root-client-call
+    -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{cluster}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: e2e-test-bucket-name
+      value: local-root-client-call
