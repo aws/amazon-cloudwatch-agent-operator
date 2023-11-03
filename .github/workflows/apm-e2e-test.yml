@@ -23,8 +23,8 @@ env:
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APM_E2E_SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APM_E2E_SAMPLE_APP_REMOTE_SERVICE_IMAGE }}
   APM_E2E_ONBOARDING_ZIP_S3_URI: ${{ secrets.APM_E2E_ONBOARDING_ZIP_S3_URI }}
-  METRIC_NAMESPACE: AWS/APM
-  APM_LOG_GROUP: /aws/apm/eks
+  METRIC_NAMESPACE: AppSignals
+  APM_LOG_GROUP: /aws/appsignals/eks
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
   ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
@@ -87,7 +87,7 @@ jobs:
 
       - name: Enable APM
         run: |
-          ./enable-apm.sh \
+          ./enable-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
           ${{ env.AWS_DEFAULT_REGION }} \
           ${{ env.SAMPLE_APP_NAMESPACE }}
@@ -160,6 +160,7 @@ jobs:
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.TEST_ACCOUNT }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --cluster ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
@@ -177,6 +178,7 @@ jobs:
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.TEST_ACCOUNT }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --cluster ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
@@ -194,6 +196,7 @@ jobs:
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.TEST_ACCOUNT }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --cluster ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
@@ -207,12 +210,12 @@ jobs:
         if: always()
         run: |
           delete_log_group="aws logs delete-log-group --log-group-name '${{ env.APM_LOG_GROUP }}' --region \$REGION"
-          sed -i "s#$delete_log_group##g" clean-apm.sh
+          sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Clean APM
         if: always()
         run: |
-          ./clean-apm.sh \
+          ./clean-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
           ${{ env.AWS_DEFAULT_REGION }} \
           ${{ env.SAMPLE_APP_NAMESPACE }}
