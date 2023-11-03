@@ -4,6 +4,7 @@
   "K8s.Node": "^i-[A-Za-z0-9]{17}$",
   "K8s.Pod": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
   "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "Operation": "GET /remote-service",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "aws.span.kind": "^LOCAL_ROOT$"
@@ -15,9 +16,10 @@
   "K8s.Node": "^i-[A-Za-z0-9]{17}$",
   "K8s.Pod": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
   "K8s.Workload": "^sample-app-deployment(-[A-Za-z0-9]*)*$",
+  "Operation": "GET /remote-service",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "RemoteService": "sample-remote-app-deployment-{{testingId}}",
+  "RemoteService": "{{remoteServiceDeploymentName}}",
   "RemoteOperation": "GET /healthcheck",
   "aws.span.kind": "^CLIENT$"
 }]

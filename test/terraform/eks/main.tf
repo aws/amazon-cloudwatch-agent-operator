@@ -166,7 +166,7 @@ resource "kubernetes_ingress_v1" "sample-app-ingress" {
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
 
   metadata {
-    name      = "sample-remote-app-deployment-${var.test_id}"
+    name      = "sample-r-app-deployment-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
       app = "remote-app"
@@ -196,11 +196,6 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
           name = "back-end"
           image = var.sample_remote_app_image
           image_pull_policy = "Always"
-          env {
-            #inject the test id to service name for unique APM metrics
-            name = "OTEL_SERVICE_NAME"
-            value = "sample-remote-application-${var.test_id}"
-          }
           port {
             container_port = 8080
           }

@@ -90,14 +90,6 @@
       value: www.amazon.com
 
 -
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
@@ -189,14 +181,6 @@
       value: www.amazon.com
 
 -
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
@@ -283,14 +267,6 @@
     -
       name: HostedIn.K8s.Namespace
       value: {{appNamespace}}
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
     -
       name: RemoteService
       value: www.amazon.com

@@ -16,3 +16,9 @@
   httpMethod: "get"
   callingType: "http-with-body"
   expectedTraceTemplate: "XRAY_SDK_REMOTE_SERVICE_EXPECTED_TRACE"
+-
+  validationType: "trace"
+  httpPath: "/client-call"
+  httpMethod: "get"
+  callingType: "http"
+  expectedTraceTemplate: "XRAY_SDK_CLIENT_EXPECTED_TRACE"

@@ -19,11 +19,18 @@ import com.amazonaws.services.xray.AWSXRay;
 import com.amazonaws.services.xray.AWSXRayClientBuilder;
 import com.amazonaws.services.xray.model.BatchGetTracesRequest;
 import com.amazonaws.services.xray.model.BatchGetTracesResult;
+import com.amazonaws.services.xray.model.GetTraceSummariesRequest;
+import com.amazonaws.services.xray.model.GetTraceSummariesResult;
 import com.amazonaws.services.xray.model.Trace;
+import com.amazonaws.services.xray.model.TraceSummary;
+import java.util.Date;
 import java.util.List;
+import org.joda.time.DateTime;
 
 public class XRayService {
   private AWSXRay awsxRay;
+  private final int SEARCH_PERIOD = 60;
+  public static String DEFAULT_TRACE_ID = "1-00000000-000000000000000000000000";
 
   public XRayService(String region) {
     awsxRay = AWSXRayClientBuilder.standard().withRegion(region).build();
@@ -40,5 +47,15 @@ public class XRayService {
         awsxRay.batchGetTraces(new BatchGetTracesRequest().withTraceIds(traceIdList));
 
     return batchGetTracesResult.getTraces();
+  }
+
+  // Search for traces generated within the last 60 second.
+  public List<TraceSummary> searchTraces() {
+    Date currentDate = new Date();
+    Date pastDate = new DateTime(currentDate).minusSeconds(SEARCH_PERIOD).toDate();
+    GetTraceSummariesResult traceSummaryResult =
+        awsxRay.getTraceSummaries(
+            new GetTraceSummariesRequest().withStartTime(pastDate).withEndTime(currentDate));
+    return traceSummaryResult.getTraceSummaries();
   }
 }

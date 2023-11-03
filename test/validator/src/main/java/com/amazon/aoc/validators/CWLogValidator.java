@@ -63,14 +63,16 @@ public class CWLogValidator implements IValidator {
 
                     // Iterate through each expected template to check if the log is present
                     for (Map<String, Object> expectedAttributes : expectedAttributesArray) {
-                        // All attributes are in REGEX for preciseness except remoteService and remoteOperation
+                        // All attributes are in REGEX for preciseness except operation, remoteService and
+                        // remoteOperation
                         // which are in normal text as they are needed for
                         // the filter expressions for retrieving the actual logs.
                         log.info("Searching for expected log: {}", expectedAttributes);
+                        String operation = (String) expectedAttributes.get("Operation");
                         String remoteService = (String) expectedAttributes.get("RemoteService");
                         String remoteOperation = (String) expectedAttributes.get("RemoteOperation");
 
-                        Map<String, Object> actualLog = this.getActualLog(remoteService, remoteOperation);
+                        Map<String, Object> actualLog = this.getActualLog(operation, remoteService, remoteOperation);
                         log.info("Value of an actual log: {}", actualLog);
 
                         if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
@@ -127,7 +129,7 @@ public class CWLogValidator implements IValidator {
         return flattenedJsonMapForExpectedLogArray;
     }
 
-    private Map<String, Object> getActualLog(String remoteService, String remoteOperation)
+    private Map<String, Object> getActualLog(String operation, String remoteService, String remoteOperation)
             throws Exception {
         String filterPattern = null;
 
@@ -138,17 +140,17 @@ public class CWLogValidator implements IValidator {
         if (remoteService == null && remoteOperation == null) {
             filterPattern =
                     String.format(
-                            "{ ($.['HostedIn.EKS.Cluster'] = %s) && ($.Service = %s) && ($.Operation = \"GET %s\") && "
+                            "{ ($.['HostedIn.EKS.Cluster'] = %s) && ($.Service = %s) && ($.Operation = \"%s\") && "
                                     + "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)}",
-                            context.getCluster(), context.getServiceName(), this.caller.getCallingPath());
+                            context.getCluster(), context.getServiceName(), operation);
         } else {
             filterPattern =
                     String.format(
-                            "{ ($.['HostedIn.EKS.Cluster'] = %s) && ($.Service = %s) && ($.Operation = \"GET %s\") && "
+                            "{ ($.['HostedIn.EKS.Cluster'] = %s) && ($.Service = %s) && ($.Operation = \"%s\") && "
                                     + "($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")}",
                             context.getCluster(),
                             context.getServiceName(),
-                            this.caller.getCallingPath(),
+                            operation,
                             remoteService,
                             remoteOperation);
         }
