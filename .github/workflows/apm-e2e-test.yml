@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          # Checkout apm branch and get only the required resources for testing
+          # Checkout e2e-test branch and get only the required resources for testing
           ref: e2e-test
           sparse-checkout: |
             test
