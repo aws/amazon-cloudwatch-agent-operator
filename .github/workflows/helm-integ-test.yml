@@ -50,13 +50,10 @@ jobs:
       
       #  local directory to store the kubernetes config
       - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
+        run: mkdir -p ${{ github.workspace }}/../../../.kube
 
       - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
-
-      # - name: Set up kubeconfig
-      #   run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }}
+        run: echo KUBECONFIG="${{ github.workspace }}/../../../.kube/config" >> $GITHUB_ENV
 
       - name: Install eksctl
         run: |
@@ -80,7 +77,7 @@ jobs:
             if terraform apply -auto-approve \
                 -var="cluster_name=${{ github.event.inputs.cluster_name }}" \
                 -var="cluster_namespace=${{ github.event.inputs.cluster_namespace }}" \
-                -var="kube_dir=${{ github.workspace }}/.kube"; then
+                -var="kube_dir=${{ github.workspace }}/../../../.kube"; then
               terraform destroy -auto-approve
             else
               terraform destroy -auto-approve && exit 1
