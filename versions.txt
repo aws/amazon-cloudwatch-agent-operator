@@ -5,4 +5,4 @@ cloudwatch-agent=1.300031.0b313
 operator=1.0.2
 
 # Represents the current release of ADOT Java instrumentation.
-aws-otel-java-instrumentation=v1.32.0
+aws-otel-java-instrumentation=v1.31.1
