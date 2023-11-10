@@ -27,6 +27,8 @@ const (
 	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 	otelExporterSmpEndpointKey             = "OTEL_AWS_SMP_EXPORTER_ENDPOINT"
 	otelExporterSmpEndpointDefaultValue    = "http://cloudwatch-agent.amazon-cloudwatch:4315"
+	otelExporterMetricKey                  = "OTEL_METRICS_EXPORTER"
+	otelExporterMetricDefaultValue         = "none"
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
@@ -45,7 +47,6 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{Endpoint: defaultExporterEndpoint},
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
@@ -60,6 +61,7 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
 				},
 			},
 		},
