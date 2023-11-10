@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	defaultExporterEndpoint                = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
 	defaultInstrumenation                  = "java-instrumentation"
 	defaultNamespace                       = "default"
