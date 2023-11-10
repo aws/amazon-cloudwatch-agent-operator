@@ -18,12 +18,12 @@ variable "test_dir" {
 
 variable "addon_name" {
   type    = string
-  default = "amazon-cloudwatch"
+  default = "amazon-cloudwatch-observability"
 }
 
 variable "addon_version" {
   type = string
-  default = "v0.1.0-eksbuild.4"
+  default = "v1.1.0-eksbuild.1"
 }
 
 variable "beta" {
