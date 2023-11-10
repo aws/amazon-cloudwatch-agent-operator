@@ -25,6 +25,10 @@ variable "eks_cluster_name" {
   default = "pulse-canary-cluster"
 }
 
+variable "eks_cluster_context_name" {
+  default = "us-east-1.pulse-cw-agent-operator-test"
+}
+
 variable "test_namespace" {
   default = "sample-app-namespace"
 }

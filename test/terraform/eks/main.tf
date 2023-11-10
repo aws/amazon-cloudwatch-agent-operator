@@ -47,7 +47,7 @@ provider "kubectl" {
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
-    CLUSTER_NAME : data.aws_eks_cluster.testing_cluster.name
+    CLUSTER_NAME : var.eks_cluster_context_name
     CA_DATA : data.aws_eks_cluster.testing_cluster.certificate_authority[0].data
     SERVER_ENDPOINT : data.aws_eks_cluster.testing_cluster.endpoint
     TOKEN = data.aws_eks_cluster_auth.testing_cluster.token
