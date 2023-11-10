@@ -25,6 +25,8 @@ const (
 	otelTracesSamplerDefaultValue          = "xray"
 	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
 	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4315"
+	otelExporterSmpEndpointKey             = "OTEL_AWS_SMP_EXPORTER_ENDPOINT"
+	otelExporterSmpEndpointDefaultValue    = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
@@ -57,6 +59,7 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 				},
 			},
 		},
