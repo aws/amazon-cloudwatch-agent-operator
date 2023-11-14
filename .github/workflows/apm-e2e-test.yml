@@ -83,7 +83,7 @@ jobs:
 
       - name: Set the CW Agent Operator image to the staging image in the manifest
         if: inputs.caller-workflow-name == 'build-and-upload-staging'
-        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' apm.yaml"
+        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
 
       - name: Enable APM
         run: |
