@@ -77,21 +77,6 @@ jobs:
           --region ${{ env.AWS_DEFAULT_REGION }} \
           --approve
 
-      # Enable APM on the test cluster
-      - name: Pull and unzip enablement script from S3
-        run: aws s3 cp ${{ env.APM_E2E_ONBOARDING_ZIP_S3_URI }} . && unzip -j onboarding.zip
-
-      - name: Set the CW Agent Operator image to the staging image in the manifest
-        if: inputs.caller-workflow-name == 'build-and-upload-staging'
-        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
-
-      - name: Enable APM
-        run: |
-          ./enable-app-signals.sh \
-          ${{ inputs.test-cluster-name }} \
-          ${{ env.AWS_DEFAULT_REGION }} \
-          ${{ env.SAMPLE_APP_NAMESPACE }}
-
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -106,10 +91,31 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+            -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
             -var="sample_app_image=${{ env.SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}" \
             -var="sample_remote_app_image=${{ env.SAMPLE_APP_REMOTE_SERVICE_IMAGE }}"
+
+      # Enable APM on the test cluster
+      - name: Pull and unzip enablement script from S3
+        run: aws s3 cp ${{ env.ENABLEMENT_SCRIPT_S3_BUCKET }} . && unzip -j onboarding.zip
+
+      - name: Set the CW Agent Operator image to the staging image in the manifest
+        if: inputs.caller-workflow-name == 'build-and-upload-staging'
+        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
+
+      - name: Enable APM
+        run: |
+          ./enable-app-signals.sh \
+          ${{ inputs.test-cluster-name }} \
+          ${{ env.AWS_DEFAULT_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      # Application pods need to be restarted for the
+      # apm instrumentation to take effect
+      - name: Restart the app pods
+        run: kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Wait for sample app pods to come up
         run: |
@@ -214,6 +220,7 @@ jobs:
 
       - name: Clean APM
         if: always()
+        continue-on-error: true
         run: |
           ./clean-app-signals.sh \
           ${{ inputs.test-cluster-name }} \

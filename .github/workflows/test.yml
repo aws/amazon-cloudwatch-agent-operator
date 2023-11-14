@@ -1,0 +1,24 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Testing
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+
+on:
+  push:
+    branches:
+      - e2e-cleanup-fix
+
+jobs:
+  e2e-test:
+    uses: ./.github/workflows/apm-e2e-test.yml
+    secrets: inherit
+    concurrency:
+      group: 'pulse-pg'
+      cancel-in-progress: false
+    with:
+      test-cluster-name: 'pulse-pg'
+      caller-workflow-name: 'build-and-upload-staging'
