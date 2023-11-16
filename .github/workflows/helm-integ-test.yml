@@ -7,17 +7,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      cluster_name:
-        required: true
-        type: string
-        default: "cwagent-operator-helm-integ"
-        description: "EKS cluster name"
-      cluster_namespace:
-        required: true
-        type: string
-        default: "amazon-cloudwatch"
-        description: "EKS cluster namespace"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -71,8 +60,6 @@ jobs:
             cd integration-tests/terraform/helm
             terraform init
             if terraform apply -auto-approve \
-                -var="cluster_name=${{ github.event.inputs.cluster_name }}" \
-                -var="cluster_namespace=${{ github.event.inputs.cluster_namespace }}" \
                 -var="kube_dir=${{ github.workspace }}/../../../.kube"; then
               terraform destroy -auto-approve
             else

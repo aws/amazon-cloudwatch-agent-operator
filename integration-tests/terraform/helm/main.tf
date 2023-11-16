@@ -12,7 +12,6 @@ module "basic_components" {
 locals {
   aws_eks  = "aws eks --region ${var.region}"
   cluster_name = var.cluster_name != "" ? var.cluster_name : "cwagent-operator-helm-integ"
-  cluster_namespace = var.cluster_namespace != "" ? var.cluster_namespace : "amazon-cloudwatch"
 }
 
 data "aws_eks_cluster_auth" "this" {
@@ -114,7 +113,7 @@ resource "helm_release" "this" {
     null_resource.kubectl
   ]
   name = "amazon-cloudwatch-observability"
-  namespace = "${local.cluster_namespace}"
+  namespace = "amazon-cloudwatch"
   create_namespace = true
   chart      = "${var.helm_dir}" 
 }

@@ -31,8 +31,3 @@ variable "cluster_name" {
   type    = string
   default = "cwagent-operator-helm-integ"
 }
-
-variable "cluster_namespace" {
-  type = string
-  default = "amazon-cloudwatch"
-}
