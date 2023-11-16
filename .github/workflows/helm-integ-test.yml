@@ -3,6 +3,9 @@
 
 name: Run Helm Charts Integration Tests
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       cluster_name:
