@@ -66,7 +66,7 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - amazon-cloudwatch-observability-controller-manager-*
 		// - fluent-bit-*
 		if match, _ := regexp.MatchString(podNameRegex, pod.Name); !match {
-			assert.Fail(t, "Cluster Pods are not created correctly by Helm Charts")
+			assert.Fail(t, "Cluster Pods are not created correctly")
 		}
 	}
 
@@ -82,7 +82,7 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent-headless
 		// - cloudwatch-agent-monitoring
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
-			assert.Fail(t, "Cluster Service is not created correctly by Helm Charts")
+			assert.Fail(t, "Cluster Service is not created correctly")
 		}
 	}
 
@@ -111,7 +111,7 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent
 		// - fluent-bit
 		if match, _ := regexp.MatchString(agentName+"|fluent-bit", daemonSet.Name); !match {
-			assert.Fail(t, "DaemonSet is created correctly by Helm Charts")
+			assert.Fail(t, "DaemonSet is created correctly")
 		}
 	}
 

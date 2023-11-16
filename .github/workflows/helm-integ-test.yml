@@ -58,13 +58,6 @@ jobs:
       - name: Set KUBECONFIG environment variable
         run: echo KUBECONFIG="${{ github.workspace }}/../../../.kube/config" >> $GITHUB_ENV
 
-      - name: Install eksctl
-        run: |
-          mkdir ${{ github.workspace }}/eksctl
-          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
-          tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
-          echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
-
       - name: Verify Terraform version
         run: terraform --version
 
