@@ -8,30 +8,26 @@ variable "region" {
 
 variable "k8s_version" {
   type    = string
-  default = "1.24"
+  default = "1.25"
 }
 
+# eks addon and helm tests are similar
 variable "test_dir" {
   type    = string
   default = "../../eks"
 }
 
-variable "addon_name" {
+variable "helm_dir" {
   type    = string
-  default = "amazon-cloudwatch-observability"
+  default = "../../../helm"
 }
 
-variable "addon_version" {
-  type = string
-  default = "v1.1.0-eksbuild.1"
-}
-
-variable "beta" {
-  type    = bool
-  default = false
-}
-
-variable "beta_endpoint" {
+variable "kube_dir" {
   type    = string
-  default = "https://api.beta.us-west-2.wesley.amazonaws.com"
+  default = "~/.kube"
+}
+
+variable "cluster_name" {
+  type    = string
+  default = "cwagent-operator-helm-integ"
 }
