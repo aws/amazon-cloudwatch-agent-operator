@@ -90,19 +90,19 @@ jobs:
 
             terraform init
             if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="beta=true" -auto-approve
+              echo "Terraform apply succeeded"
             else
               terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
 
-      - name: Terraform destroy
-        if: ${{ cancelled() || failure() }}
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 8
-          retry_wait_seconds: 5
-          command: |
-            cd integration-tests/terraform/eks
-
-            terraform destroy -var="beta=true" --auto-approve
+#      - name: Terraform destroy
+#        if: ${{ cancelled() || failure() }}
+#        uses: nick-fields/retry@v2
+#        with:
+#          max_attempts: 3
+#          timeout_minutes: 8
+#          retry_wait_seconds: 5
+#          command: |
+#            cd integration-tests/terraform/eks
+#
+#            terraform destroy -var="beta=true" --auto-approve
