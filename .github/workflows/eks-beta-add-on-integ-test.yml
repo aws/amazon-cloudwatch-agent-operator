@@ -90,7 +90,9 @@ jobs:
 
             terraform init
             if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              echo "Terraform apply succeeded"
+              echo "Terraform apply succeeded123"
+              kubectl describe nodes
+              kubectl get pod -A
             else
               terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
