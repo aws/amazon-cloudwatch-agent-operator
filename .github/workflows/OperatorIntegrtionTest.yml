@@ -1,4 +1,4 @@
-name: Operator Integration Tests for Amazon CloudWatch
+name: Operator Integration Test for Amazon CloudWatch
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
