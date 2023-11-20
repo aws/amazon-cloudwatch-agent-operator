@@ -126,6 +126,7 @@ undeploy: set-image-controller
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
 	$(KUSTOMIZE) build config/default -o scripts/eks/apm/apm.yaml
+	echo "make release-artifacts ran successfully"
 
 .PHONY: manifests
 manifests: controller-gen
@@ -160,6 +161,7 @@ container-push:
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+	echo "make Kustomize ran successfully"
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.

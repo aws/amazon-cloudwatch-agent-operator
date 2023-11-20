@@ -90,9 +90,9 @@ jobs:
 
             terraform init
             if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              echo "Terraform apply succeeded123"
+              echo "Terraform apply succeeded"
               kubectl describe nodes
-              kubectl get pod -A
+              kubectl get nodes -A
               kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.amazon-cloudwatch-agent -o=jsonpath='{.items[*].metadata.name}'
             else
               terraform destroy -var="beta=true" -auto-approve && exit 1
