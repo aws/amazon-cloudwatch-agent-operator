@@ -101,20 +101,20 @@ jobs:
                terraform destroy -var="beta=true" -auto-approve && exit 1
              else
                echo "Pod $pod_name is running. Continue with the workflow."
+               terraform destroy -var="beta=true" -auto-approve && exit 1
              fi
             else
              terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
 
+      - name: Terraform destroy
+        if: ${{ cancelled() || failure() }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 8
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
 
-#      - name: Terraform destroy
-#        if: ${{ cancelled() || failure() }}
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 8
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks
-#
-#            terraform destroy -var="beta=true" --auto-approve
+            terraform destroy -var="beta=true" --auto-approve
