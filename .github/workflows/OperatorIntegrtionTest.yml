@@ -6,6 +6,8 @@ env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
+  push:
+    -addOperatorIntgTest
   workflow_dispatch:
     inputs:
       addon_name:
