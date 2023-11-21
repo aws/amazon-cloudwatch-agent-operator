@@ -98,7 +98,7 @@ jobs:
             cd integration-tests/terraform/operator
 
             terraform init
-            if terraform apply -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve; then
+            if terraform apply --auto-approve; then
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
