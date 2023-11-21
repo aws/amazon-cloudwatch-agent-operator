@@ -33,7 +33,7 @@ permissions:
 jobs:
   GenerateTestMatrix:
     name: 'GenerateTestMatrix'
-    runs-on: ubuntu-22.04
+    runs-on: windows-latest
     outputs:
       eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
@@ -60,7 +60,7 @@ jobs:
   EKSAddOnBetaClusterIntegrationTest:
     needs: [GenerateTestMatrix]
     name: EKSAddOnBetaClusterIntegrationTest
-    runs-on: ubuntu-22.04
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
