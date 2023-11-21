@@ -90,6 +90,7 @@ jobs:
 
             terraform init
             if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+             kubectl get pods -A
              echo "--------------this is terraform apply"
              pod_name=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.amazon-cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
              echo "::::::::::set-output name=pod_name::$pod_name"
