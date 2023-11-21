@@ -79,8 +79,9 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
       - name: Build the operator
-        run: |
-          update-binfmts --enable qemu-aarch64
+        with:
+          architecture: 'x64'
+        run:
           mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
 
       - name: Store operator-build
