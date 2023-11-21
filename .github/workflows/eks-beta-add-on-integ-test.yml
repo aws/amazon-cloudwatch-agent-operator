@@ -30,7 +30,7 @@ permissions:
 jobs:
   GenerateTestMatrix:
     name: 'GenerateTestMatrix'
-    runs-on: amazonlinux2
+    runs-on: ubuntu-latest
     outputs:
       eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:

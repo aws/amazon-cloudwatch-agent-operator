@@ -33,7 +33,7 @@ permissions:
 jobs:
   GenerateTestMatrix:
     name: 'GenerateTestMatrix'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
@@ -80,7 +80,7 @@ jobs:
           aws-region: us-west-2
       - name: Build the operator
         run: |
-            docker image inspect rethkevin/rf:v1 
+            docker image inspect ${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }} 
             mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
 
       - name: Store operator-build
