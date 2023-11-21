@@ -79,9 +79,7 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
       - name: Build the operator
-        run: |
-            docker image inspect ${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }} 
-            mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
 
       - name: Store operator-build
         run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
