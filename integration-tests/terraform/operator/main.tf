@@ -107,14 +107,13 @@ resource "null_resource" "kubectl" {
     EOT
   }
 }
-
 resource "aws_eks_addon" "this" {
   depends_on = [
     null_resource.kubectl
   ]
-  addon_name   = var.addon_name
+  addon_name   = "amazon-cloudwatch-observability"
   cluster_name = aws_eks_cluster.this.name
-  addon_version = var.addon_version
+  addon_version = "v1.1.0-eksbuild.1"
 }
 
 
