@@ -1,36 +1,117 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: .github/workflows/OperatorIntegrtionTest.yml
+name: Run EKS addon Integration Tests for Beta Cluster
 env:
-  # Use terraform assume role for uploading to ecr
-  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+  TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
 on:
-  push:
-    branches:
-      - addOperatorIntgTest
   workflow_dispatch:
-  workflow_call:
+    inputs:
+      addon_name:
+        required: true
+        type: string
+        default: "amazon-cloudwatch-observability"
+        description: "EKS addon name"
+      addon_version:
+        required: true
+        type: string
+        default: "v1.1.0-eksbuild.1"
+        description: "EKS addon version"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  IntegrationTest:
+  GenerateTestMatrix:
     name: 'GenerateTestMatrix'
     runs-on: ubuntu-latest
+    outputs:
+      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
-      - name: Get Pod Name
-        id: get_pod_name
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Generate matrix
+        id: set-matrix
         run: |
-          pod_name=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.amazon-cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
-          echo "::set-output name=pod_name::$pod_name"
-      - name: Check if Pod is running
+          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+
+      - name: Echo test plan matrix
         run: |
-          pod_name="${{ steps.get_pod_name.outputs.pod_name }}"
-          status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
-          if [ "$status" != "Running" ]; then
-              echo "Pod $pod_name is not running. Exiting with error."
-              exit 1
-          else
-              echo "Pod $pod_name is running. Continue with the workflow."
-          fi
+          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
+
+  EKSAddOnBetaClusterIntegrationTest:
+    needs: [GenerateTestMatrix]
+    name: EKSAddOnBetaClusterIntegrationTest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform apply
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 1
+          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform init
+            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              pod_name=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.amazon-cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+              echo "::set-output name=pod_name::$pod_name"
+              pod_name="${{ steps.get_pod_name.outputs.pod_name }}"
+              status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
+              if [ "$status" != "Running" ]; then
+                echo "Pod $pod_name is not running. Exiting with error."
+                terraform destroy -var="beta=true" -auto-approve && exit 1
+              else
+                echo "Pod $pod_name is running. Continue with the workflow."
+              fi
+            else
+              terraform destroy -var="beta=true" -auto-approve && exit 1
+            fi
+
+#      - name: Terraform destroy
+#        if: ${{ cancelled() || failure() }}
+#        uses: nick-fields/retry@v2
+#        with:
+#          max_attempts: 3
+#          timeout_minutes: 8
+#          retry_wait_seconds: 5
+#          command: |
+#            cd integration-tests/terraform/eks
+#
+#            terraform destroy -var="beta=true" --auto-approve
