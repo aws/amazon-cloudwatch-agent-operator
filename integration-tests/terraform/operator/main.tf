@@ -115,6 +115,14 @@ resource "aws_eks_addon" "this" {
   cluster_name = aws_eks_cluster.this.name
   addon_version = "v1.1.0-eksbuild.1"
 }
+resource "null_resource" "validator" {
+  depends_on = [
+    aws_eks_addon.this
+  ]
+  provisioner "local-exec" {
+    command = "go test ${var.test_dir} -v"
+  }
+}
 
 
 
