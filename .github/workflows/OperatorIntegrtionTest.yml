@@ -79,10 +79,15 @@ jobs:
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
-      - name: Build the operator
-        run: |
-          uname -a
-          mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
+      - name: Build Cloudwatch Agent Operator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./Dockerfile
+          context: .
+          push: true
+          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
+          platforms: linux/amd64, linux/arm64
 
       - name: Store operator-build
         run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
