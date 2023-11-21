@@ -78,6 +78,11 @@ jobs:
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
+      - name: Build the operator
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
+
+      - name: Store operator-build
+        run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
 
       - name: Verify Terraform version
         run: terraform --version
@@ -92,7 +97,7 @@ jobs:
             cd integration-tests/terraform/operator
 
             terraform init
-            if terraform apply -var="beta=true" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+            if terraform apply -var="test_dir=../../operator" -var="typeOfTest=operator" --auto-approve; then
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
@@ -101,12 +106,12 @@ jobs:
               status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
               if [ "$status" != "Running" ]; then
                 echo "******************Pod $pod_name is not running. Exiting with error."
-                terraform destroy -var="beta=true" -auto-approve && exit 1
+                terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" -auto-approve && exit 1
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
               fi
             else
-              terraform destroy -var="beta=true" -auto-approve && exit 1
+              terraform destroy -var="test_dir=../../operator" -var="typeOfTest=operator" -auto-approve && exit 1
             fi
 
 #      - name: Terraform destroy
