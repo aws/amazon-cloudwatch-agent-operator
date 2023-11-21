@@ -33,7 +33,10 @@ permissions:
 jobs:
   GenerateTestMatrix:
     name: 'GenerateTestMatrix'
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [ linux/amd64, linux/arm64, linux/arm ]
     outputs:
       eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
@@ -65,6 +68,7 @@ jobs:
       fail-fast: false
       matrix:
         arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+        platform: [ linux/amd64, linux/arm64, linux/arm ]
     permissions:
       id-token: write
       contents: read
