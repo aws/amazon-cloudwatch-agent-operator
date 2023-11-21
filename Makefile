@@ -126,7 +126,8 @@ undeploy: set-image-controller
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
 	echo "Running release-artifacts"
-	$(KUSTOMIZE) build config/default -o scripts/eks/apm/apm.yaml
+	#$(KUSTOMIZE) build config/default -o scripts/eks/apm/apm.yaml
+	$(KUSTOMIZE) build config/default -o dist/apm.yaml
 	echo "make release-artifacts ran successfully"
 
 .PHONY: manifests
