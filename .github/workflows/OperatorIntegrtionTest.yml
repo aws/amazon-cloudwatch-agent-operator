@@ -104,6 +104,7 @@ jobs:
           push: true
           tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
           platforms: linux/amd64, linux/arm64
+
       - name: Echo a message
         run: echo "name of the repo ${{env.ECR_OPERATOR_STAGING_IMAGE}}"
 
@@ -120,11 +121,12 @@ jobs:
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/eks
+            cd integration-tests/terraform/operator
 
             terraform init
             if terraform apply --auto-approve; then
               kubectl get pods -A
+              
               kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
               pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
