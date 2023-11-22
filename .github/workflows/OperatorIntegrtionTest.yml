@@ -81,6 +81,7 @@ jobs:
         with:
           role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
           aws-region: us-west-2
+
       - name: Login to ECR
         if: steps.cached_binaries.outputs.cache-hit == false
         id: login-ecr
@@ -101,7 +102,7 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: "test-amazon-cloudwatch-agent-operator"
+          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
           platforms: linux/amd64, linux/arm64
 
       - name: Store operator-build
