@@ -101,7 +101,7 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
+          tags: "test-amazon-cloudwatch-agent-operator"
           platforms: linux/amd64, linux/arm64
 
       - name: Store operator-build
