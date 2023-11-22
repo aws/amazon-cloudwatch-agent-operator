@@ -127,7 +127,7 @@ jobs:
             if terraform apply --auto-approve; then
               kubectl get pods -A
               kubectl create namespace amazon-cloudwatch
-              kubectl create deployment CCWA_Operator --image=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
+              kubectl create deployment CCWA_Operator --image=${{ env.ECR_OPERATOR_STAGING_IMAGE }}
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
