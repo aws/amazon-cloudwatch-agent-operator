@@ -8,6 +8,9 @@ env:
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 
 on:
+  push:
+    branches:
+      - addOperatorIntgTest
   workflow_dispatch:
     inputs:
       addon_name:
