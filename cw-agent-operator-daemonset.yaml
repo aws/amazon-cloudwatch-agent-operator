@@ -1,26 +1,14 @@
-
-apiVersion: cloudwatch.aws.amazon.com/v1alpha1
-kind: AmazonCloudWatchAgent
+apiVersion: apps/v1
+kind: DaemonSet
 metadata:
   name: "cloudwatch-agent-operator"
   namespace: "amazon-cloudwatch"
 spec:
-  image: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
-  mode: daemonset
-  env:
-    - name: K8S_NODE_NAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
-    - name: HOST_IP
-      valueFrom:
-        fieldRef:
-          fieldPath: status.hostIP
-    - name: HOST_NAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
-    - name: K8S_NAMESPACE
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.namespace
+  template:
+    spec:
+      containers:
+        - name: cwagent-operator
+          image: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
+  selector:
+    matchLabels:
+      name: cloudwatch-agent-operator
