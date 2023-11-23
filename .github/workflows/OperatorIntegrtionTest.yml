@@ -123,6 +123,7 @@ jobs:
             terraform init
             if terraform apply --auto-approve; then
               kubectl create namespace amazon-cloudwatch
+              sleep 300
               cd -
               pwd
               ls -lirt
