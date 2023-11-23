@@ -1,9 +1,9 @@
-{{- if .Values.agent.enabled }}
+
 apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: AmazonCloudWatchAgent
 metadata:
-  name: {{ template "cloudwatch-agent-operator.name" . }}
-  namespace: {{ .Release.Namespace }}
+  name: "cloudwatch-agent-operator"
+  namespace: "amazon-cloudwatch"
 spec:
   image: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
   mode: daemonset
@@ -24,4 +24,3 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
-{{- end }}
