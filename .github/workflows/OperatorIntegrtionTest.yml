@@ -123,6 +123,9 @@ jobs:
             terraform init
             if terraform apply --auto-approve; then
               kubectl create namespace amazon-cloudwatch
+              cd -
+              pwd
+              ls -lirt
               kubectl apply -f ./cw-agent-operator-daemonset.yaml
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent-operator -n amazon-cloudwatch
