@@ -127,6 +127,7 @@ jobs:
               pwd
               ls -lirt
               kubectl apply -f ./cw-agent-operator-daemonset.yaml
+              sleep 300
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent-operator -n amazon-cloudwatch
               echo "--------------this is terraform apply"
