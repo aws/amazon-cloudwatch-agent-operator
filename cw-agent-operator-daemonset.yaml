@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: "cloudwatch-agent-operator"
-  namespace: "amazon-cloudwatch"
+  name: cloudwatch-agent-operator
+  namespace: amazon-cloudwatch
 spec:
   template:
     spec:
