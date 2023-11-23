@@ -1,0 +1,27 @@
+{{- if .Values.agent.enabled }}
+apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+kind: AmazonCloudWatchAgent
+metadata:
+  name: {{ template "cloudwatch-agent-operator.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  image: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
+  mode: daemonset
+  env:
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: HOST_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: K8S_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+{{- end }}
