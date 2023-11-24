@@ -127,11 +127,12 @@ jobs:
               pwd
               ls -lirt
               kubectl apply -f ./cw-agent-operator-daemonset.yaml
-              sleep 300
+              kubectl get crd 
+              kubectl get instrumentation -n amazon-cloudwatch
               kubectl get pods -A
-              kubectl describe daemonset cloudwatch-agent-operator -n amazon-cloudwatch
+              kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
-              pod_name="$(kubectl get pods -n amazon-cloudwatch --selector=name=cloudwatch-agent-operator -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
+              pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.amazon-cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
               echo "::::::::::set-output name=pod_name::$pod_name"
               kubectl describe pod "$pod_name" -n amazon-cloudwatch
               kubectl logs $pod_name -n amazon-cloudwatch -f --all-containers
