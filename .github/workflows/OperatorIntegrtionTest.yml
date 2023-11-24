@@ -128,7 +128,8 @@ jobs:
               ls -lirt
               kubectl apply -f ./cw-agent-operator-daemonset.yaml
               kubectl get crd 
-              kubectl get instrumentation -n amazon-cloudwatch
+              kubectl get instrumentations -n amazon-cloudwatch
+              kubectl get all -n amazon-cloudwatch
               kubectl get pods -A
               kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               echo "--------------this is terraform apply"
