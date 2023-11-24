@@ -133,6 +133,7 @@ jobs:
               echo "--------------this is terraform apply"
               pod_name="$(kubectl get pods -n amazon-cloudwatch --selector=name=cloudwatch-agent-operator -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
               echo "::::::::::set-output name=pod_name::$pod_name"
+              kubectl describe pod "$pod_name" -n amazon-cloudwatch
               status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
               if [ "$status" != "Running" ]; then
                 echo "******************Pod $pod_name is not running. Exiting with error."
