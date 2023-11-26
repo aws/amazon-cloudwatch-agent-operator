@@ -126,7 +126,8 @@ jobs:
               cd -
               pwd
               ls -lirt
-              kubectl apply -f ./cw-agent-operator-daemonset.yaml
+#              kubectl apply -f ./cw-agent-operator-daemonset.yaml
+              kubectl get all 
               kubectl get crd 
               kubectl get instrumentations -n amazon-cloudwatch
               kubectl get all -n amazon-cloudwatch
