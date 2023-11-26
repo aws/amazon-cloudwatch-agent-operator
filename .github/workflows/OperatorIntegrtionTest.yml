@@ -128,6 +128,9 @@ jobs:
               ls -lirt
               kubectl get all 
               kubectl get crd 
+              kubectl apply -f https://k8s.io/examples/application/deployment.yaml
+              kubectl describe deployment nginx-deployment
+              kubectl describe pod
               kubectl get instrumentations -n amazon-cloudwatch
               kubectl get all -n amazon-cloudwatch
               kubectl get pods -A
