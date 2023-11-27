@@ -123,7 +123,7 @@ resource "helm_release" "this" {
           "repository" = "cwagent-operator-pre-release"
           "tag"        = "latest"
           "repositoryDomainMap" = {
-            "private" = "506463145083.dkr.ecr.us-west-2.amazonaws.com"
+            "public" = "506463145083.dkr.ecr.us-west-2.amazonaws.com"
           }
         }
       }
