@@ -118,8 +118,14 @@ resource "helm_release" "this" {
   chart      = "${var.helm_dir}"
   values = [
     {
-      "cloudwatch-agent-operator" = {
-        "image" = "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest"
+      "manager" = {
+        "image" = {
+          "repository" = "cwagent-operator-pre-release"
+          "tag"        = "latest"
+          "repositoryDomainMap" = {
+            "private" = "506463145083.dkr.ecr.us-west-2.amazonaws.com"
+          }
+        }
       }
     }
   ]
