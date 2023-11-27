@@ -1,7 +1,19 @@
 apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: Instrumentation
 metadata:
-  name: nginx-deployment
+  name: java-instrumentation
+  namespace: default # use a namespace with pods you'd like to inject
 spec:
-  image: nginx:1.14.2
-  mode: deployment
+  exporter:
+    endpoint: http://cloudwatch-agent.amazon-cloudwatch:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+    - xray
+  java:
+    env:
+      - name: OTEL_METRICS_EXPORTER
+        value: "none"
+      - name: OTEL_SMP_ENABLED
+        value: "true"
