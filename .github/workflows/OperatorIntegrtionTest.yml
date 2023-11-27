@@ -121,6 +121,7 @@ jobs:
             cd integration-tests/terraform/testbuild
             terraform init
             if terraform apply --auto-approve; then
+              kubectl apply -f test-deployment.yaml
               kubectl get pods -A
               echo "***operator name***"
               kubectl describe deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch
