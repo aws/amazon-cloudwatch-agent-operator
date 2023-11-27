@@ -122,6 +122,7 @@ jobs:
             terraform init
             if terraform apply --auto-approve; then
               kubectl apply -f test-deployment.yaml
+              sleep 60 
               kubectl get pods -A
               echo "***operator name***"
               kubectl describe deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch
@@ -135,7 +136,7 @@ jobs:
                 terraform destroy -auto-approve && exit 1
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
-                kubectl describe pods
+                kubectl describe pod cloudwatch-agent-sample-linux-deployment
               fi
             else
               terraform destroy  -auto-approve && exit 1
