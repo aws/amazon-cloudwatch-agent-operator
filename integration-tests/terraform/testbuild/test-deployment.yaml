@@ -1,19 +1,21 @@
-apiVersion: cloudwatch.aws.amazon.com/v1alpha1
-kind: Instrumentation
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: java-instrumentation
-  namespace: default # use a namespace with pods you'd like to inject
+  name: cloudwatch-agent-sample-linux-deployment
+  namespace: bhanu
 spec:
-  exporter:
-    endpoint: http://cloudwatch-agent.amazon-cloudwatch:4317
-  propagators:
-    - tracecontext
-    - baggage
-    - b3
-    - xray
-  java:
-    env:
-      - name: OTEL_METRICS_EXPORTER
-        value: "none"
-      - name: OTEL_SMP_ENABLED
-        value: "true"
+  selector:
+    matchLabels:
+      app: cloudwatch-agent-sample-linux-deployment
+  template:
+    metadata:
+      labels:
+        app: cloudwatch-agent-sample-linux-deployment
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - name: amazonlinux
+          image: amazonlinux
+      restartPolicy: Always
+status: {}
