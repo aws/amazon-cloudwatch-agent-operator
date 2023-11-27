@@ -133,10 +133,3 @@ resource "null_resource" "validator" {
     command = "go test ${var.test_dir} -v"
   }
 }
-values = [
-  {
-    "cloud-watch-agent-operator" = {
-      "image" = "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest"
-    }
-  }
-]
