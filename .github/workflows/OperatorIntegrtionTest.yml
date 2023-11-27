@@ -135,7 +135,7 @@ jobs:
                 terraform destroy -auto-approve && exit 1
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
-                kubectl describe pod 
+                kubectl describe pods
               fi
             else
               terraform destroy  -auto-approve && exit 1
