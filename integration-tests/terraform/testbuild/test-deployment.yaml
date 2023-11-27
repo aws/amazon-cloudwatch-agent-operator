@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudwatch-agent-sample-linux-deployment
-  namespace: bhanu
+  namespace: amazon-cloudwatch
 spec:
   selector:
     matchLabels:
