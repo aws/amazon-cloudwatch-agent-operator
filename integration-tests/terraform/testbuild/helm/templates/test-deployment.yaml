@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: Instrumentation
 metadata:
   name: nginx-deployment
