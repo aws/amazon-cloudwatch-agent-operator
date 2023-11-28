@@ -136,7 +136,8 @@ jobs:
                 terraform destroy -auto-approve && exit 1
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
-                kubectl describe pod cloudwatch-agent-sample-linux-deployment
+                kubectl get pods -n amazon-cloudwatch
+                kubectl describe pod cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch
               fi
             else
               terraform destroy  -auto-approve && exit 1
