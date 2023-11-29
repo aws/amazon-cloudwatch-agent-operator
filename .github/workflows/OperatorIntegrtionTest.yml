@@ -120,9 +120,7 @@ jobs:
           command: |
             cd integration-tests/terraform/testbuild
             terraform init
-            if terraform apply --auto-approve; then
-              kubectl apply -f test-deployment.yaml
-              sleep 60 
+            if terraform apply --auto-approve; then 
               kubectl get all -n amazon-cloudwatch 
               kubectl get pods -A
               echo "***operator name***"
