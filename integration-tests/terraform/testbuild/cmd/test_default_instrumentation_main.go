@@ -31,6 +31,7 @@ func main() {
 		fmt.Println("Error fetching environment variables from the pod:", err)
 		return
 	}
+	fmt.Println("Pod environment variables:", envMap)
 
 	// Read and parse JSON file containing key-value pairs
 	fileData, err := ioutil.ReadFile("stored_env_variables.json")
@@ -44,7 +45,7 @@ func main() {
 		fmt.Println("Error parsing JSON file:", err)
 		return
 	}
-
+	fmt.Println("JSON data:", jsonData)
 	// Compare environment variables with data from JSON file
 	for key, value := range jsonData {
 		if val, ok := envMap[key]; ok {
