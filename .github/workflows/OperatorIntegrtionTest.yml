@@ -141,10 +141,10 @@ jobs:
                 kubectl get pods -n amazon-cloudwatch
                 echo "########################****describe pod nginx****#######################"
                 kubectl describe pod nginx
-                echo "****describe pod nginx amazon-cloudwatch namespace****"
+                echo "########################****describe pod nginx amazon-cloudwatch namespace****########################"
                 kubectl describe pod nginx -n amazon-cloudwatch
-                echo "########################****searching for api-resources****#######################"
-                kubectl api-resources --verbs=list --namespaced=true --namespace=amazon-cloudwatch
+                cd cmd
+                go run ./test_default_instrumentation_main.go
               fi
             else
               terraform destroy  -auto-approve && exit 1
