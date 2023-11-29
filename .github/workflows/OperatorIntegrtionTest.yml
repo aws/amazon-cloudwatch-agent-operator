@@ -121,17 +121,16 @@ jobs:
             cd integration-tests/terraform/testbuild
             terraform init
             if terraform apply --auto-approve; then
+              kubectl apply -f sample-instrumentation.yaml
+              sleep 10
               kubectl apply -f test-deployment.yaml
               sleep 60 
               kubectl api-resources --verbs=list --namespaced=true
               kubectl get all -n amazon-cloudwatch 
               kubectl get pods -A
               echo "***operator name***"
-              kubectl describe deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch
-              kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch
               pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
               echo "::::::::::set-output name=pod_name::$pod_name"
-              kubectl describe pod "$pod_name" -n amazon-cloudwatch
               status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
               if [ "$status" != "Running" ]; then
                 echo "Pod $pod_name is not running. Exiting with error."
@@ -143,7 +142,6 @@ jobs:
                 kubectl describe pod nginx
                 echo "****searching for api-resources****"
                 kubectl api-resources --verbs=list --namespaced=true --namespace=amazon-cloudwatch
-                kubectl describe deployment cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch
               fi
             else
               terraform destroy  -auto-approve && exit 1
