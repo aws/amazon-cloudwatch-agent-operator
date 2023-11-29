@@ -124,6 +124,7 @@ jobs:
               kubectl apply -f sample-instrumentation.yaml
               sleep 10
               kubectl apply -f test-deployment.yaml
+              kubectl apply -f ns-annotation-test-deployment.yaml
               sleep 60 
               kubectl api-resources --verbs=list --namespaced=true
               kubectl get all -n amazon-cloudwatch 
@@ -138,9 +139,11 @@ jobs:
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
                 kubectl get pods -n amazon-cloudwatch
-                echo "****describe pod nginx****"
+                echo "########################****describe pod nginx****#######################"
                 kubectl describe pod nginx
-                echo "****searching for api-resources****"
+                echo "****describe pod nginx amazon-cloudwatch namespace****"
+                kubectl describe pod nginx -n amazon-cloudwatch
+                echo "########################****searching for api-resources****#######################"
                 kubectl api-resources --verbs=list --namespaced=true --namespace=amazon-cloudwatch
               fi
             else
