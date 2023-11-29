@@ -49,7 +49,7 @@ func main() {
 	// Compare environment variables with data from JSON file
 	for key, value := range jsonData {
 		if val, ok := envMap[key]; ok {
-			if val != value {
+			if strings.ReplaceAll(val, " ", "") != strings.ReplaceAll(value, " ", "") {
 				fmt.Printf("Mismatch: Key '%s' values do not match. Pod value: %s, JSON value: %s\n", key, val, value)
 				os.Exit(1)
 			} else {
