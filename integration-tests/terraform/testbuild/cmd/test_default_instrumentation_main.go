@@ -12,7 +12,7 @@ import (
 func main() {
 	// Define pod name and namespace
 	cmd := "kubectl"
-	args := []string{"get", "pods", "-n", "amazon-cloudwatch", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
+	args := []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 
 	// Execute kubectl command
 	out, err := exec.Command(cmd, args...).Output()
@@ -23,7 +23,7 @@ func main() {
 
 	// Process the output (remove quotes if present)
 	podName := strings.ReplaceAll(string(out), "'", "")
-	namespace := "amazon-cloudwatch"
+	namespace := "default"
 
 	// Function to fetch environment variables from the pod
 	envMap, err := getPodEnvVariables(podName, namespace)
