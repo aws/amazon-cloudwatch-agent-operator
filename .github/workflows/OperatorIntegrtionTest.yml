@@ -139,8 +139,9 @@ jobs:
                 echo "Pod $pod_name is running. Continue with the workflow."
                 kubectl get pods -n amazon-cloudwatch
                 kubectl describe pod cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch
-                echo "searching for environment variables"
-                kubectl exec cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch -it -- bash -- env
+                echo "****searching for api-resources****"
+                kubectl api-resources --verbs=list --namespaced=true --namespace=amazon-cloudwatch
+                kubectl describe deployment cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch
               fi
             else
               terraform destroy  -auto-approve && exit 1
