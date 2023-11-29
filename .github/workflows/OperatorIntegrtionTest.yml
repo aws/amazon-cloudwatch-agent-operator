@@ -120,7 +120,10 @@ jobs:
           command: |
             cd integration-tests/terraform/testbuild
             terraform init
-            if terraform apply --auto-approve; then 
+            if terraform apply --auto-approve; then
+              kubectl apply -f test-deployment.yaml
+              sleep 60 
+              kubectl api-resources --verbs=list --namespaced=true
               kubectl get all -n amazon-cloudwatch 
               kubectl get pods -A
               echo "***operator name***"
@@ -136,7 +139,8 @@ jobs:
               else
                 echo "Pod $pod_name is running. Continue with the workflow."
                 kubectl get pods -n amazon-cloudwatch
-                kubectl describe pod cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch
+                echo "****describe pod nginx****"
+                kubectl describe pod nginx
                 echo "****searching for api-resources****"
                 kubectl api-resources --verbs=list --namespaced=true --namespace=amazon-cloudwatch
                 kubectl describe deployment cloudwatch-agent-sample-linux-deployment -n amazon-cloudwatch

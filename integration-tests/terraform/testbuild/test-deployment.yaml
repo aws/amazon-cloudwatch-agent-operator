@@ -1,21 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cloudwatch-agent-sample-linux-deployment
-  namespace: amazon-cloudwatch
+  name: nginx
 spec:
   selector:
     matchLabels:
-      app: cloudwatch-agent-sample-linux-deployment
+      app: nginx
   template:
     metadata:
       labels:
-        app: cloudwatch-agent-sample-linux-deployment
+        app: nginx
       annotations:
         instrumentation.opentelemetry.io/inject-java: "true"
     spec:
       containers:
-        - name: amazonlinux
-          image: amazonlinux
+        - name: nginx
+          image: nginx:1.14.2
       restartPolicy: Always
 status: {}
