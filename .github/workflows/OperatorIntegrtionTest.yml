@@ -12,17 +12,17 @@ on:
       - main*
       - addOperatorIntgTest
   workflow_dispatch:
-    inputs:
-      addon_name:
-        required: true
-        type: string
-        default: "amazon-cloudwatch-observability"
-        description: "EKS addon name"
-      addon_version:
-        required: true
-        type: string
-        default: "v1.1.0-eksbuild.1"
-        description: "EKS addon version"
+#    inputs:
+#      addon_name:
+#        required: true
+#        type: string
+#        default: "amazon-cloudwatch-observability"
+#        description: "EKS addon name"
+#      addon_version:
+#        required: true
+#        type: string
+#        default: "v1.1.0-eksbuild.1"
+#        description: "EKS addon version"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
@@ -51,7 +51,7 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-          echo "::set-output name=operator_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
       - name: Echo test plan matrix
         run: |
