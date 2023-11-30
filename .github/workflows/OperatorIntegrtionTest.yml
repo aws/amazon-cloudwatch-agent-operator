@@ -51,12 +51,12 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+          echo "::set-output name=operator_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
       - name: Echo test plan matrix
         run: |
-          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
+          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.operator_matrix }}"
+          echo "Addon name ${{ github.event.inputs.operator_matrix }}, addon version  ${{ github.event.inputs.operator_matrix }} "
 
   AmazonCloudWatchAgentOperatorIntegrationTest:
     needs: [GenerateTestMatrix]
@@ -65,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.operator_matrix) }}
         platform: [ ubuntu-core-22-amd64]
     permissions:
       id-token: write
