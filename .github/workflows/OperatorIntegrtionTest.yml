@@ -125,24 +125,28 @@ jobs:
                 ./pod_status_test.sh
                 if [ $? -ne 0 ]; then
                   echo "Pod is not in running state"
+                  echo "TestCase 1: Daemonset Pod Running Status: FAIL"
                   terraform destroy  -auto-approve && exit 1
                 else
                   echo "Pod in running state"
+                  echo "TestCase 1: Daemonset Pod Running Status: PASS"  
                 fi
                 go run ./test_default_instrumentation_main.go
                 if [ $? -ne 0 ]; then
-                  echo "Default Instrumentation annotation test failed"
+                  echo "TestCase 2: Default Instrumentation Annotation Injection Test: FAIL"
                   terraform destroy  -auto-approve && exit 1
                 else
-                  echo "Default Instrumentation annotation test passed"
+                  echo "TestCase 2: Default Instrumentation Annotation Injection Test: PASS"
                 fi
                 go run ./test_ns_instrumentation_main.go
                 if [ $? -ne 0 ]; then
                   echo "Namespace Instrumentation annotation test failed"
+                   echo "TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL"
                   terraform destroy  -auto-approve && exit 1
                 else
-                  echo "Namespace Instrumentation annotation test passed"
+                  echo "TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS"
                 fi
+                terraform destroy  -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
