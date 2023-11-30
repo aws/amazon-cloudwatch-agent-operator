@@ -87,13 +87,13 @@ jobs:
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
-            
-             terraform init
-             if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-               terraform destroy -var="beta=true" -auto-approve
-             else
-               terraform destroy -var="beta=true" -auto-approve && exit 1
-             fi
+
+            terraform init
+            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=true" -auto-approve
+            else
+              terraform destroy -var="beta=true" -auto-approve && exit 1
+            fi
 
       - name: Terraform destroy
         if: ${{ cancelled() || failure() }}
