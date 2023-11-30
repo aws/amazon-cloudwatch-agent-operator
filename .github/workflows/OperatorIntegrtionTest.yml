@@ -32,39 +32,39 @@ permissions:
   contents: read
 
 jobs:
-  GenerateTestMatrix:
-    name: 'GenerateTestMatrix'
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
-
-      - name: Generate matrix
-        id: set-matrix
-        run: |
-          echo "::set-output name=matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
-
-      - name: Echo test plan matrix
-        run: |
-          echo "matrix: ${{ steps.set-matrix.outputs.matrix }}"
+#  GenerateTestMatrix:
+#    name: 'GenerateTestMatrix'
+#    runs-on: ubuntu-latest
+#    outputs:
+#      matrix: ${{ steps.set-matrix.outputs.matrix }}
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v2
+#        with:
+#          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+#          aws-region: us-west-2
+#
+#      - name: Generate matrix
+#        id: set-matrix
+#        run: |
+#          echo "::set-output name=matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+#
+#      - name: Echo test plan matrix
+#        run: |
+#          echo "matrix: ${{ steps.set-matrix.outputs.matrix }}"
+#  needs: [GenerateTestMatrix]
+#  strategy:
+#    fail-fast: false
+#    matrix:
+#      arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.matrix) }}
+#      platform: [ ubuntu-core-22-amd64 ]
   AmazonCloudWatchAgentOperatorIntegrationTest:
-    needs: [GenerateTestMatrix]
-    name: createCluster
+    name: AmazonCloudWatchAgentOperatorIntegrationTest
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.matrix) }}
-        platform: [ ubuntu-core-22-amd64]
     permissions:
       id-token: write
       contents: read
