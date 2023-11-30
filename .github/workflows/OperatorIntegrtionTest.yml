@@ -1,10 +1,9 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: .github/workflows/OperatorIntegrtionTest.yml
+name: Amazon CloudWatch Agent Operator Integration test
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 
 on:
@@ -13,17 +12,6 @@ on:
       - main*
       - addOperatorIntgTest
   workflow_dispatch:
-    inputs:
-      addon_name:
-        required: true
-        type: string
-        default: "amazon-cloudwatch-observability"
-        description: "EKS addon name"
-      addon_version:
-        required: true
-        type: string
-        default: "v1.1.0-eksbuild.1"
-        description: "EKS addon version"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -80,7 +68,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
       - name: Login to ECR
