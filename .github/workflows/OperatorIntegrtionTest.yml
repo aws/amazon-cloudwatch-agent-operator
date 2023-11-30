@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.operator_matrix) }}
         platform: [ ubuntu-core-22-amd64]
     permissions:
       id-token: write
