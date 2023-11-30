@@ -45,7 +45,7 @@ jobs:
 
       - name: Echo test plan matrix
         run: |
-          echo "operator_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+          echo "operator_matrix: ${{ steps.set-matrix.outputs.operator_matrix }}"
 
   AmazonCloudWatchAgentOperatorIntegrationTest:
     needs: [GenerateTestMatrix]
