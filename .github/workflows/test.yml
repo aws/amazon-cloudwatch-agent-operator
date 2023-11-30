@@ -1,0 +1,50 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: test for generate test matrix
+env:
+  TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+
+on:
+  push:
+    branches:
+      - main*
+      - addOperatorIntgTest
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  GenerateTestMatrix:
+    name: 'GenerateTestMatrix'
+    runs-on: ubuntu-latest
+    outputs:
+      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Generate matrix
+        id: set-matrix
+        run: |
+          echo "::set-output name=operator_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+
+      - name: Echo test plan matrix
+        run: |
+          echo "operator_matrix: ${{ steps.set-matrix.outputs.operator_matrix }}"
+
+  #    needs: [GenerateTestMatrix]

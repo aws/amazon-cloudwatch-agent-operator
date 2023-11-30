@@ -10,7 +10,7 @@ on:
   push:
     branches:
       - main*
-      - addOperatorIntgTest
+#      - addOperatorIntgTest
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +22,32 @@ permissions:
   contents: read
 
 jobs:
+  GenerateTestMatrix:
+    name: 'GenerateTestMatrix'
+    runs-on: ubuntu-latest
+    outputs:
+      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Generate matrix
+        id: set-matrix
+        run: |
+          echo "::set-output name=operator_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+
+      - name: Echo test plan matrix
+        run: |
+          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
+  #    needs: [GenerateTestMatrix]
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
     runs-on: ubuntu-latest
