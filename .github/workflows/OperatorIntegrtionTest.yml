@@ -12,17 +12,17 @@ on:
       - main*
       - addOperatorIntgTest
   workflow_dispatch:
-#    inputs:
-#      addon_name:
-#        required: true
-#        type: string
-#        default: "amazon-cloudwatch-observability"
-#        description: "EKS addon name"
-#      addon_version:
-#        required: true
-#        type: string
-#        default: "v1.1.0-eksbuild.1"
-#        description: "EKS addon version"
+    inputs:
+      addon_name:
+        required: true
+        type: string
+        default: "amazon-cloudwatch-observability"
+        description: "EKS addon name"
+      addon_version:
+        required: true
+        type: string
+        default: "v1.1.0-eksbuild.1"
+        description: "EKS addon version"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
@@ -36,7 +36,7 @@ jobs:
     name: 'GenerateTestMatrix'
     runs-on: ubuntu-latest
     outputs:
-      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -51,13 +51,11 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+          echo "::set-output name=matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
       - name: Echo test plan matrix
         run: |
-          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
-
+          echo "matrix: ${{ steps.set-matrix.outputs.matrix }}"
   AmazonCloudWatchAgentOperatorIntegrationTest:
     needs: [GenerateTestMatrix]
     name: createCluster
@@ -65,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.matrix) }}
         platform: [ ubuntu-core-22-amd64]
     permissions:
       id-token: write
