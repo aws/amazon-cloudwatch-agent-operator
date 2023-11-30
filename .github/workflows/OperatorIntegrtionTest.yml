@@ -12,17 +12,6 @@ on:
       - main*
       - addOperatorIntgTest
   workflow_dispatch:
-    inputs:
-      addon_name:
-        required: true
-        type: string
-        default: "amazon-cloudwatch-observability"
-        description: "EKS addon name"
-      addon_version:
-        required: true
-        type: string
-        default: "v1.1.0-eksbuild.1"
-        description: "EKS addon version"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
@@ -32,6 +21,19 @@ permissions:
   contents: read
 
 jobs:
+
+#  inputs:
+#    addon_name:
+#      required: true
+#      type: string
+#      default: "amazon-cloudwatch-observability"
+#      description: "EKS addon name"
+#    addon_version:
+#      required: true
+#      type: string
+#      default: "v1.1.0-eksbuild.1"
+#      description: "EKS addon version"
+
 #  GenerateTestMatrix:
 #    name: 'GenerateTestMatrix'
 #    runs-on: ubuntu-latest
