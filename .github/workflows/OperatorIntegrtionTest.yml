@@ -121,29 +121,14 @@ jobs:
             cd integration-tests/terraform/testbuild
             terraform init
             if terraform apply --auto-approve; then
-              kubectl apply -f sample-instrumentation.yaml
-              sleep 10
-              kubectl apply -f test-deployment.yaml
-              kubectl apply -f ns-annotation-test-deployment.yaml
-              sleep 60 
-              kubectl api-resources --verbs=list --namespaced=true
-              kubectl get all -n amazon-cloudwatch 
-              kubectl get pods -A
-              echo "***operator name***"
-              pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-              echo "::::::::::set-output name=pod_name::$pod_name"
-              status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
-              if [ "$status" != "Running" ]; then
-                echo "Pod $pod_name is not running. Exiting with error."
-                terraform destroy -auto-approve && exit 1
-              else
-                echo "Pod $pod_name is running. Continue with the workflow."
-                kubectl get pods -n amazon-cloudwatch
-                echo "########################****describe pod nginx****#######################"
-                kubectl describe pod nginx
-                echo "########################****describe pod nginx amazon-cloudwatch namespace****########################"
-                kubectl describe pod nginx -n amazon-cloudwatch
                 cd cmd
+                ./pod_status_test.sh
+                if [ $? -ne 0 ]; then
+                  echo "Pod is not in running state"
+                  terraform destroy  -auto-approve && exit 1
+                else
+                  echo "Pod in running state"
+                fi
                 go run ./test_default_instrumentation_main.go
                 if [ $? -ne 0 ]; then
                   echo "Default Instrumentation annotation test failed"
@@ -158,9 +143,6 @@ jobs:
                 else
                   echo "Namespace Instrumentation annotation test passed"
                 fi
-              fi
-            else
-              terraform destroy  -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -172,5 +154,4 @@ jobs:
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
-
             terraform destroy -var="beta=true" --auto-approve
