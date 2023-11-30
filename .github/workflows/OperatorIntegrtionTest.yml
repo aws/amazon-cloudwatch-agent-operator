@@ -146,8 +146,17 @@ jobs:
                 cd cmd
                 go run ./test_default_instrumentation_main.go
                 if [ $? -ne 0 ]; then
-                  echo "error in go lang file"
+                  echo "Default Instrumentation annotation test failed"
                   terraform destroy  -auto-approve && exit 1
+                else
+                  echo "Default Instrumentation annotation test passed"
+                fi
+                go run ./test_ns_instrumentation_main.go
+                if [ $? -ne 0 ]; then
+                  echo "Namespace Instrumentation annotation test failed"
+                  terraform destroy  -auto-approve && exit 1
+                else
+                  echo "Namespace Instrumentation annotation test passed"
                 fi
               fi
             else
