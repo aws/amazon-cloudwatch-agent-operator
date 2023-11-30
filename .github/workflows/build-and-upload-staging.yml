@@ -60,13 +60,13 @@ jobs:
           push: true
           tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
           platforms: linux/amd64, linux/arm64
-#  e2e-test:
-#    needs: MakeBinary
-#    uses: ./.github/workflows/apm-e2e-test.yml
-#    secrets: inherit
-#    concurrency:
-#      group: 'pulse-cw-agent-operator-test'
-#      cancel-in-progress: false
-#    with:
-#      test-cluster-name: 'pulse-cw-agent-operator-test'
-#      caller-workflow-name: 'build-and-upload-staging'
+  e2e-test:
+    needs: MakeBinary
+    uses: ./.github/workflows/apm-e2e-test.yml
+    secrets: inherit
+    concurrency:
+      group: 'pulse-cw-agent-operator-test'
+      cancel-in-progress: false
+    with:
+      test-cluster-name: 'pulse-cw-agent-operator-test'
+      caller-workflow-name: 'build-and-upload-staging'
