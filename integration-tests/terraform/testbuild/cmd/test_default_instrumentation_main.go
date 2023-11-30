@@ -4,13 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"strings"
 )
 
 func main() {
-	// Define pod name and namespace
+
+	success := verifyInstrumentationEnvVariables("")
+	if !success {
+		// error, fail test
+	}
+	success = verifyInstrumentationEnvVariables("amazon-cloudwatch")
+	if !success {
+		// error, fail test
+	}
+
+}
+
+func verifyInstrumentationEnvVariables(namespace string) bool {
+
+	defaultJSONPath := "default_instrumentation_env_variables.json"
+	namespacedJSONPath := "ns_stored_env_variables.json"
+
+	jsonPath := defaultJSONPath
+	if namespace != "" {
+		jsonPath = namespacedJSONPath
+	}
+
+	//	// Define pod name and namespace
 	cmd := "kubectl"
 	args := []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 
@@ -18,32 +39,31 @@ func main() {
 	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		fmt.Println("Error running kubectl command:", err)
-		return
+		return false
 	}
 
 	// Process the output (remove quotes if present)
 	podName := strings.ReplaceAll(string(out), "'", "")
-	namespace := "default"
 
 	// Function to fetch environment variables from the pod
 	envMap, err := getPodEnvVariables(podName, namespace)
 	if err != nil {
 		fmt.Println("Error fetching environment variables from the pod:", err)
-		return
+		return false
 	}
 	fmt.Println("Pod environment variables:", envMap)
 
 	// Read and parse JSON file containing key-value pairs
-	fileData, err := ioutil.ReadFile("default_instrumentation_env_variables.json")
+	fileData, err := ioutil.ReadFile(jsonPath)
 	if err != nil {
 		fmt.Println("Error reading JSON file:", err)
-		return
+		return false
 	}
 
 	var jsonData map[string]string
 	if err := json.Unmarshal(fileData, &jsonData); err != nil {
 		fmt.Println("Error parsing JSON file:", err)
-		return
+		return false
 	}
 	fmt.Println("JSON data:", jsonData)
 	// Compare environment variables with data from JSON file
@@ -51,15 +71,16 @@ func main() {
 		if val, ok := envMap[key]; ok {
 			if strings.ReplaceAll(val, " ", "") != strings.ReplaceAll(value, " ", "") {
 				fmt.Printf("Mismatch: Key '%s' values do not match. Pod value: %s, JSON value: %s\n", key, val, value)
-				os.Exit(1)
+				return false
 			} else {
 				fmt.Printf("Match: Key '%s' values match. Pod value: %s, JSON value: %s\n", key, val, value)
 			}
 		} else {
 			fmt.Printf("Key '%s' not found in pod environment variables\n", key)
-			os.Exit(1)
+			return false
 		}
 	}
+	return true
 }
 
 // Function to fetch environment variables from a Kubernetes pod

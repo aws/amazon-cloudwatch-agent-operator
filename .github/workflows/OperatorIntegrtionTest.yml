@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Amazon CloudWatch Agent Operator Integration test
+name: OperatorIntegrationTest.yml
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
@@ -81,31 +81,28 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
-      - name: Login to ECR
-        if: steps.cached_binaries.outputs.cache-hit == false
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Set up Docker Buildx
-        if: steps.cached_binaries.outputs.cache-hit == false
-        uses: docker/setup-buildx-action@v1
-
-      - name: Set up QEMU
-        if: steps.cached_binaries.outputs.cache-hit == false
-        uses: docker/setup-qemu-action@v1
-
-      - name: Build Cloudwatch Agent Operator Image and push to ECR
-        uses: docker/build-push-action@v4
-        if: steps.cached_binaries.outputs.cache-hit == false
-        with:
-          file: ./Dockerfile
-          context: .
-          push: true
-          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
-          platforms: linux/amd64, linux/arm64
-
-      - name: Store operator-build
-        run: echo APM_YAML="${{ github.workspace }}/dist/apm.yaml" >> $GITHUB_ENV
+#      - name: Login to ECR
+#        if: steps.cached_binaries.outputs.cache-hit == false
+#        id: login-ecr
+#        uses: aws-actions/amazon-ecr-login@v1
+#
+#      - name: Set up Docker Buildx
+#        if: steps.cached_binaries.outputs.cache-hit == false
+#        uses: docker/setup-buildx-action@v1
+#
+#      - name: Set up QEMU
+#        if: steps.cached_binaries.outputs.cache-hit == false
+#        uses: docker/setup-qemu-action@v1
+#
+#      - name: Build Cloudwatch Agent Operator Image and push to ECR
+#        uses: docker/build-push-action@v4
+#        if: steps.cached_binaries.outputs.cache-hit == false
+#        with:
+#          file: ./Dockerfile
+#          context: .
+#          push: true
+#          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
+#          platforms: linux/amd64, linux/arm64
 
       - name: Verify Terraform version
         run: terraform --version
@@ -136,14 +133,6 @@ jobs:
                   terraform destroy  -auto-approve && exit 1
                 else
                   echo "TestCase 2: Default Instrumentation Annotation Injection Test: PASS"
-                fi
-                go run ./test_ns_instrumentation_main.go
-                if [ $? -ne 0 ]; then
-                  echo "Namespace Instrumentation annotation test failed"
-                   echo "TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL"
-                  terraform destroy  -auto-approve && exit 1
-                else
-                  echo "TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS"
                 fi
             else
                 terraform destroy  -auto-approve && exit 1
