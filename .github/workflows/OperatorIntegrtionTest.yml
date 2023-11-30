@@ -146,6 +146,7 @@ jobs:
                 else
                   echo "TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS"
                 fi
+            else
                 terraform destroy  -auto-approve && exit 1
             fi
 
