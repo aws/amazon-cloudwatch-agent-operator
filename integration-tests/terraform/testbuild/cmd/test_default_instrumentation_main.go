@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("Pod environment variables:", envMap)
 
 	// Read and parse JSON file containing key-value pairs
-	fileData, err := ioutil.ReadFile("stored_env_variables.json")
+	fileData, err := ioutil.ReadFile("default_instrumentation_env_variables.json")
 	if err != nil {
 		fmt.Println("Error reading JSON file:", err)
 		return
