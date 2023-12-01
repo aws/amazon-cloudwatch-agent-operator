@@ -19,7 +19,7 @@ variable "test_dir" {
 
 variable "helm_dir" {
   type    = string
-  default = "../../../helm"
+  default = "./helm"
 }
 
 variable "kube_dir" {
