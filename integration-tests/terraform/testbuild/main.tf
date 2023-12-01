@@ -117,12 +117,12 @@ resource "helm_release" "this" {
   create_namespace = true
   chart      = "${var.helm_dir}"
   set {
-    name  = "manager.image.repositoryDomainMap.public"
-    value = "public.ecr.aws/cloudwatch-agent"
+    name  = "manager.image.repositoryDomainMap.test-us-west-2"
+    value = "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release"
   }
   set {
     name  = "manager.image.tag"
-    value = "1.0.2" # Use "latest" to pull the latest image
+    value = "latest" # Use "latest" to pull the latest image
   }
 }
 

@@ -127,7 +127,7 @@ jobs:
                   echo "Pod in running state"
                   echo "TestCase 1: Daemonset Pod Running Status: PASS"  
                 fi
-                go run ./test_default_ns_instrumentation_main.go
+                go run ./test_default_and_ns_instrumentation_main.go
                 if [ $? -ne 0 ]; then
                   terraform destroy  -auto-approve && exit 1
                 fi
