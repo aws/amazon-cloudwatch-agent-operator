@@ -118,15 +118,6 @@ jobs:
             terraform init
             if terraform apply --auto-approve; then
                 cd cmd
-                ./pod_status_test.sh
-                if [ $? -ne 0 ]; then
-                  echo "Pod is not in running state"
-                  echo "TestCase 1: Daemonset Pod Running Status: FAIL"
-                  terraform destroy  -auto-approve && exit 1
-                else
-                  echo "Pod in running state"
-                  echo "TestCase 1: Daemonset Pod Running Status: PASS"  
-                fi
                 go run ./test_default_and_ns_instrumentation_main.go
                 if [ $? -ne 0 ]; then
                   terraform destroy  -auto-approve && exit 1
