@@ -21,49 +21,6 @@ permissions:
   contents: read
 
 jobs:
-
-#  inputs:
-#    addon_name:
-#      required: true
-#      type: string
-#      default: "amazon-cloudwatch-observability"
-#      description: "EKS addon name"
-#    addon_version:
-#      required: true
-#      type: string
-#      default: "v1.1.0-eksbuild.1"
-#      description: "EKS addon version"
-
-#  GenerateTestMatrix:
-#    name: 'GenerateTestMatrix'
-#    runs-on: ubuntu-latest
-#    outputs:
-#      matrix: ${{ steps.set-matrix.outputs.matrix }}
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v2
-#        with:
-#          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-#          aws-region: us-west-2
-#
-#      - name: Generate matrix
-#        id: set-matrix
-#        run: |
-#          echo "::set-output name=matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
-#
-#      - name: Echo test plan matrix
-#        run: |
-#          echo "matrix: ${{ steps.set-matrix.outputs.matrix }}"
-#  needs: [GenerateTestMatrix]
-#  strategy:
-#    fail-fast: false
-#    matrix:
-#      arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.matrix) }}
-#      platform: [ ubuntu-core-22-amd64 ]
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
     runs-on: ubuntu-latest
