@@ -108,6 +108,11 @@ resource "null_resource" "kubectl" {
   }
 }
 
+data "external" "latest_image_tag" {
+  program = ["sh", "-c", "aws ecr describe-images --repository-name cwagent-operator-pre-release --region us-west-2 --query 'imageDetails[].imageTags[]' --output text | sort -r | head -n 1"]
+}
+
+
 resource "helm_release" "this" {
   depends_on = [
     null_resource.kubectl
@@ -122,7 +127,7 @@ resource "helm_release" "this" {
   }
   set {
     name  = "manager.image.tag"
-    value = "latest"  # Use "latest" to pull the latest image
+    value = data.external.latest_image_tag.result  # Use "latest" to pull the latest image
   }
 }
 
