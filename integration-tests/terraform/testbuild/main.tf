@@ -108,8 +108,17 @@ resource "null_resource" "kubectl" {
   }
 }
 
-data "external" "latest_image_tag" {
-  program = ["sh", "-c", "aws ecr describe-images --repository-name cwagent-operator-pre-release --region us-west-2 --query 'imageDetails[].imageTags[]' --output text | sort -r | head -n 1"]
+resource "null_resource" "latest_image_tag" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      latest_tag=$(aws ecr describe-images --repository-name cwagent-operator-pre-release --region us-west-2 --query 'imageDetails[].imageTags[]' --output text | sort -r | head -n 1)
+      echo "{\"latest_image_tag\":\"$latest_tag\"}" > latest_image_tag.json
+    EOT
+  }
+}
+data "local_file" "latest_image_tag" {
+  depends_on = [null_resource.latest_image_tag]
+  filename     = "latest_image_tag.json"
 }
 
 
@@ -127,7 +136,7 @@ resource "helm_release" "this" {
   }
   set {
     name  = "manager.image.tag"
-    value = data.external.latest_image_tag.result  # Use "latest" to pull the latest image
+    value = jsondecode(data.local_file.latest_image_tag.content)["latest_image_tag"] # Use "latest" to pull the latest image
   }
 }
 
