@@ -116,6 +116,14 @@ resource "helm_release" "this" {
   namespace = "amazon-cloudwatch"
   create_namespace = true
   chart      = "${var.helm_dir}"
+  set {
+    name  = "manager.image.repositoryDomainMap.public"
+    value = "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release"
+  }
+  set {
+    name  = "manager.image.tag"
+    value = "latest"  # Use "latest" to pull the latest image
+  }
 }
 
 resource "null_resource" "validator" {

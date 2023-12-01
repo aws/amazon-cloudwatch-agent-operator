@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -12,11 +13,17 @@ func main() {
 
 	success := verifyInstrumentationEnvVariables("")
 	if !success {
-		// error, fail test
+		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: FAIL")
+		os.Exit(1)
+	} else {
+		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: PASS")
 	}
 	success = verifyInstrumentationEnvVariables("amazon-cloudwatch")
 	if !success {
-		// error, fail test
+		fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL")
+		os.Exit(1)
+	} else {
+		fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS")
 	}
 
 }
@@ -27,13 +34,18 @@ func verifyInstrumentationEnvVariables(namespace string) bool {
 	namespacedJSONPath := "ns_stored_env_variables.json"
 
 	jsonPath := defaultJSONPath
+
+	var args []string
 	if namespace != "" {
 		jsonPath = namespacedJSONPath
+		args = []string{"get", "pods", "-n", "", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
+	} else {
+		args = []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
+		args = append(args, "-n", namespace)
 	}
 
 	//	// Define pod name and namespace
 	cmd := "kubectl"
-	args := []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 
 	// Execute kubectl command
 	out, err := exec.Command(cmd, args...).Output()
