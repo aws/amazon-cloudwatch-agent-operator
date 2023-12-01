@@ -108,20 +108,6 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "latest_image_tag" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      latest_tag=$(aws ecr describe-images --repository-name cwagent-operator-pre-release --region us-west-2 --query 'imageDetails[].imageTags[]' --output text | sort -r | head -n 1)
-      echo "{\"latest_image_tag\":\"$latest_tag\"}" > latest_image_tag.json
-    EOT
-  }
-}
-data "local_file" "latest_image_tag" {
-  depends_on = [null_resource.latest_image_tag]
-  filename     = "latest_image_tag.json"
-}
-
-
 resource "helm_release" "this" {
   depends_on = [
     null_resource.kubectl
@@ -132,11 +118,11 @@ resource "helm_release" "this" {
   chart      = "${var.helm_dir}"
   set {
     name  = "manager.image.repositoryDomainMap.public"
-    value = "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release"
+    value = "public.ecr.aws/cloudwatch-agent"
   }
   set {
     name  = "manager.image.tag"
-    value = jsondecode(data.local_file.latest_image_tag.content)["latest_image_tag"] # Use "latest" to pull the latest image
+    value = "1.0.2" # Use "latest" to pull the latest image
   }
 }
 
