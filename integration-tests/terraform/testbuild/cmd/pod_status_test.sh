@@ -7,6 +7,7 @@ kubectl apply -f ../ns-annotation-test-deployment.yaml
 sleep 60
 kubectl get all -n amazon-cloudwatch
 kubectl get pods -A
+kubectl describe deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch
 pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
 status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
 if [ "$status" != "Running" ]; then
