@@ -95,9 +95,11 @@ jobs:
             status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
             if [ "$status" != "Running" ]; then
               echo "Pod $pod_name is not running. Exiting with ERROR."
+              echo "Testcase 1: Pod running test case: FAIL"
               terraform destroy  -auto-approve && exit 1
             else
               echo "Pod $pod_name is running."
+              echo "Testcase 1: Pod running test case: PASS"
             fi
       - name: java Annotation testing
         run: |
