@@ -100,5 +100,5 @@ jobs:
           timeout_minutes: 8
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/eks
+            cd integration-tests/terraform/testbuild
             terraform destroy -var="beta=true" --auto-approve

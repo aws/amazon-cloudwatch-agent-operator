@@ -1,6 +1,6 @@
 #!/bin/bash
 
-helm install --set manager.image.repository=cloudwatch-agent-operator-staging amazon-cloudwatch-observability ../helm
+helm install --set manager.image.repository=cloudwatch-agent-operator-staging amazon-cloudwatch-observability .../../../helm
 kubectl apply -f ../sample-instrumentation.yaml
 sleep 10
 kubectl apply -f ../test-deployment.yaml

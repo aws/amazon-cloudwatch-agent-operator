@@ -2,6 +2,6 @@ manager:
   name:
   image:
     repository: cloudwatch-agent-operator-staging // or whatever the name of your image is
-    tag: 1.0.1
+    tag: latest
     repositoryDomainMap:
       test-us-west-2: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release
