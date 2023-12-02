@@ -1,6 +1,6 @@
 #!/bin/bash
 
-helm install --set manager.image.repository=cloudwatch-agent-operator-staging amazon-cloudwatch-observability .../../../helm
+helm install --set manager.image.repository=cwagent-operator-pre-release --set manager.image.tag=latest --set manager.image.repositoryDomainMap.test-us-west-2=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release ../../../helm
 kubectl apply -f ../sample-instrumentation.yaml
 sleep 10
 kubectl apply -f ../test-deployment.yaml
