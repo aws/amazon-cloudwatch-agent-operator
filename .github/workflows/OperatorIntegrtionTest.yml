@@ -81,11 +81,12 @@ jobs:
             fi
       - name: Checking pod running status
         run: |
+            cd integration-tests/terraform/testbuild 
             kubectl set image deployment/amazon-cloudwatch-observability-controller-manager manager=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest -n amazon-cloudwatch
-            kubectl apply -f ../sample-instrumentation.yaml
+            kubectl apply -f ./sample-instrumentation.yaml
             sleep 10
-            kubectl apply -f ../test-deployment.yaml
-            kubectl apply -f ../ns-annotation-test-deployment.yaml
+            kubectl apply -f ./test-deployment.yaml
+            kubectl apply -f ./ns-annotation-test-deployment.yaml
             sleep 60
             kubectl get all -n amazon-cloudwatch
             kubectl get pods -A
@@ -100,7 +101,7 @@ jobs:
             fi
       - name: java Annotation testing
         run: |
-          cd integration-tests/terraform/testbuild
+          cd integration-tests/terraform/testbuild/cmd
           go run ./test_default_and_ns_instrumentation_main.go
           if [ $? -ne 0 ]; then
             terraform destroy  -auto-approve && exit 1
