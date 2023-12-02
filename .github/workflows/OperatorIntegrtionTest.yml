@@ -38,28 +38,28 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
-#      - name: Login to ECR
-#        if: steps.cached_binaries.outputs.cache-hit == false
-#        id: login-ecr
-#        uses: aws-actions/amazon-ecr-login@v1
-#
-#      - name: Set up Docker Buildx
-#        if: steps.cached_binaries.outputs.cache-hit == false
-#        uses: docker/setup-buildx-action@v1
-#
-#      - name: Set up QEMU
-#        if: steps.cached_binaries.outputs.cache-hit == false
-#        uses: docker/setup-qemu-action@v1
-#
-#      - name: Build Cloudwatch Agent Operator Image and push to ECR
-#        uses: docker/build-push-action@v4
-#        if: steps.cached_binaries.outputs.cache-hit == false
-#        with:
-#          file: ./Dockerfile
-#          context: .
-#          push: true
-#          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
-#          platforms: linux/amd64, linux/arm64
+      - name: Login to ECR
+        if: steps.cached_binaries.outputs.cache-hit == false
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Docker Buildx
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up QEMU
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-qemu-action@v1
+
+      - name: Build Cloudwatch Agent Operator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./Dockerfile
+          context: .
+          push: true
+          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
+          platforms: linux/amd64, linux/arm64
 
       - name: Verify Terraform version
         run: terraform --version
@@ -74,23 +74,37 @@ jobs:
             cd integration-tests/terraform/testbuild
             terraform init
             if terraform apply --auto-approve; then
-                cd cmd
-                ./pod_status_test.sh
-                if [ $? -ne 0 ]; then
-                  echo "Pod is not in running state"
-                  echo "TestCase 1: Daemonset Pod Running Status: FAIL"
-                  terraform destroy  -auto-approve && exit 1
-                else
-                  echo "Pod in running state"
-                  echo "TestCase 1: Daemonset Pod Running Status: PASS"  
-                fi
-                go run ./test_default_and_ns_instrumentation_main.go
-                if [ $? -ne 0 ]; then
-                  terraform destroy  -auto-approve && exit 1
-                fi
+                echo "Cluster created successfully"
             else
-                terraform destroy  -auto-approve && exit 1
+                echo "Cluster creation failed"
+                terraform destroy -auto-approve && exit 1
             fi
+      - name: Checking pod running status
+        run: |
+            kubectl set image deployment/amazon-cloudwatch-observability-controller-manager manager=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest -n amazon-cloudwatch
+            kubectl apply -f ../sample-instrumentation.yaml
+            sleep 10
+            kubectl apply -f ../test-deployment.yaml
+            kubectl apply -f ../ns-annotation-test-deployment.yaml
+            sleep 60
+            kubectl get all -n amazon-cloudwatch
+            kubectl get pods -A
+            kubectl describe deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch
+            pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
+            status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
+            if [ "$status" != "Running" ]; then
+              echo "Pod $pod_name is not running. Exiting with ERROR."
+              terraform destroy  -auto-approve && exit 1
+            else
+              echo "Pod $pod_name is running."
+            fi
+      - name: java Annotation testing
+        run: |
+          cd integration-tests/terraform/testbuild
+          go run ./test_default_and_ns_instrumentation_main.go
+          if [ $? -ne 0 ]; then
+            terraform destroy  -auto-approve && exit 1
+          fi
 
       - name: Terraform destroy
         if: ${{ cancelled() || failure() }}
