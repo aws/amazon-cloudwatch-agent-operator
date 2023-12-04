@@ -63,11 +63,11 @@ jobs:
 
   e2e-test:
     needs: MakeBinary
-    uses: ./.github/workflows/apm-e2e-test.yml
+    uses: ./.github/workflows/appsignals-e2e-test.yml
     secrets: inherit
     concurrency:
-      group: 'pulse-cw-agent-operator-test'
+      group: 'appsignals-cw-agent-operator-test'
       cancel-in-progress: false
     with:
-      test-cluster-name: 'pulse-cw-agent-operator-test'
+      test-cluster-name: 'e2e-cw-agent-operator-test'
       caller-workflow-name: 'build-and-upload-staging'

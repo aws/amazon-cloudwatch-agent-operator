@@ -1,7 +1,7 @@
-# This is a reusable workflow for running the E2E test for APM.
+# This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: APM Enablement E2E Testing
+name: App Signals Enablement E2E Testing
 on:
   workflow_call:
     inputs:
@@ -18,18 +18,18 @@ permissions:
 
 env:
   AWS_DEFAULT_REGION: us-east-1
-  TEST_ACCOUNT: ${{ secrets.APM_E2E_TEST_ACCOUNT }}
+  TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACCOUNT }}
+  ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ONBOARDING_ZIP_S3_URI }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
-  SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APM_E2E_SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}
-  SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APM_E2E_SAMPLE_APP_REMOTE_SERVICE_IMAGE }}
-  APM_E2E_ONBOARDING_ZIP_S3_URI: ${{ secrets.APM_E2E_ONBOARDING_ZIP_S3_URI }}
+  SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}
+  SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_REMOTE_SERVICE_IMAGE }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP: /aws/appsignals/eks
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
   ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
 jobs:
-  apm-e2e-test:
+  appsignals-e2e-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -45,7 +45,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.APM_E2E_TEST_ROLE_ARN }}
+          role-to-assume: ${{ secrets.APP_SIGNALS_E2E_TEST_ROLE_ARN }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       # local directory to store the kubernetes config
@@ -77,21 +77,6 @@ jobs:
           --region ${{ env.AWS_DEFAULT_REGION }} \
           --approve
 
-      # Enable APM on the test cluster
-      - name: Pull and unzip enablement script from S3
-        run: aws s3 cp ${{ env.APM_E2E_ONBOARDING_ZIP_S3_URI }} . && unzip -j onboarding.zip
-
-      - name: Set the CW Agent Operator image to the staging image in the manifest
-        if: inputs.caller-workflow-name == 'build-and-upload-staging'
-        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
-
-      - name: Enable APM
-        run: |
-          ./enable-app-signals.sh \
-          ${{ inputs.test-cluster-name }} \
-          ${{ env.AWS_DEFAULT_REGION }} \
-          ${{ env.SAMPLE_APP_NAMESPACE }}
-
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -106,10 +91,31 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+            -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
             -var="sample_app_image=${{ env.SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}" \
             -var="sample_remote_app_image=${{ env.SAMPLE_APP_REMOTE_SERVICE_IMAGE }}"
+
+      # Enable App Signals on the test cluster
+      - name: Pull and unzip enablement script from S3
+        run: aws s3 cp ${{ env.ENABLEMENT_SCRIPT_S3_BUCKET }} . && unzip -j onboarding.zip
+
+      - name: Set the CW Agent Operator image to the staging image in the manifest
+        if: inputs.caller-workflow-name == 'build-and-upload-staging'
+        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
+
+      - name: Enable App Signals
+        run: |
+          ./enable-app-signals.sh \
+          ${{ inputs.test-cluster-name }} \
+          ${{ env.AWS_DEFAULT_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
+          
+      # Application pods need to be restarted for the
+      # app signals instrumentation to take effect
+      - name: Restart the app pods
+        run: kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Wait for sample app pods to come up
         run: |
@@ -150,7 +156,7 @@ jobs:
             sleep 10
           done
 
-      # Validation for pulse telemetry data
+      # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
         id: log-validation
         working-directory: test/validator
@@ -212,7 +218,7 @@ jobs:
           delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP }}' --region \$REGION"
           sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
-      - name: Clean APM
+      - name: Clean Up App Signals
         if: always()
         run: |
           ./clean-app-signals.sh \
