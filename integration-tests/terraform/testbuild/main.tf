@@ -108,21 +108,29 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "helm_release" "this" {
-  depends_on = [
-    null_resource.kubectl
-  ]
-  name = "amazon-cloudwatch-observability"
-  namespace = "amazon-cloudwatch"
-  create_namespace = true
-  chart      = "${var.helm_dir}"
-}
-
-resource "null_resource" "validator" {
-  depends_on = [
-    helm_release.this
-  ]
+resource "null_resource" "run_make_deploy" {
   provisioner "local-exec" {
-    command = "go test ${var.test_dir} -v"
+    command     = "make deploy"
+    working_dir = "../../../Makefile"
   }
 }
+
+
+#resource "helm_release" "this" {
+#  depends_on = [
+#    null_resource.kubectl
+#  ]
+#  name = "amazon-cloudwatch-observability"
+#  namespace = "amazon-cloudwatch"
+#  create_namespace = true
+#  chart      = "${var.helm_dir}"
+#}
+#
+#resource "null_resource" "validator" {
+#  depends_on = [
+#    helm_release.this
+#  ]
+#  provisioner "local-exec" {
+#    command = "go test ${var.test_dir} -v"
+#  }
+#}
