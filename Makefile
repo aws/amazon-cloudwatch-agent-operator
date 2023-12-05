@@ -110,7 +110,7 @@ uninstall: manifests kustomize
 # Set the controller image parameters
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release:latest
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
