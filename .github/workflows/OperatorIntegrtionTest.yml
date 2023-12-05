@@ -79,6 +79,9 @@ jobs:
                 echo "Cluster creation failed"
                 terraform destroy -auto-approve && exit 1
             fi
+      - name: run make deployment
+        run: make deploy
+
       - name: Checking pod running status
         run: |
             cd integration-tests/terraform/testbuild 

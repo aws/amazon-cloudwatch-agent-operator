@@ -6,12 +6,9 @@ AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | aw
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-java-instrumentation | awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
-#IMG_PREFIX ?= public.ecr.aws/cloudwatch-agent
-IMG_PREFIX ?=506463145083.dkr.ecr.us-west-2.amazonaws.com
-#IMG_REPO ?= cloudwatch-agent-operator
-IMG_REPO ?= cwagent-operator-pre-release
-#IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:latest
+IMG_PREFIX ?= public.ecr.aws/cloudwatch-agent
+IMG_REPO ?= cloudwatch-agent-operator
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
 
 # Options for 'bundle-build'
