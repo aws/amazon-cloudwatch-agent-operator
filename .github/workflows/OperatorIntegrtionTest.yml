@@ -80,7 +80,7 @@ jobs:
                 terraform destroy -auto-approve && exit 1
             fi
       - name: run make deployment
-        run: make deploy
+        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
 
       - name: Checking pod running status
         run: |
