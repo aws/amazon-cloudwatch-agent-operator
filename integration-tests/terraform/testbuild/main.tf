@@ -108,12 +108,12 @@ resource "null_resource" "kubectl" {
   }
 }
 
-resource "null_resource" "run_make_deploy" {
-  provisioner "local-exec" {
-    command     = "make deploy"
-    working_dir = "../../../../amazon-cloudwatch-agent-operator"
-  }
-}
+#resource "null_resource" "run_make_deploy" {
+#  provisioner "local-exec" {
+#    command     = "make deploy"
+#    working_dir = "../../../../amazon-cloudwatch-agent-operator"
+#  }
+#}
 
 
 #resource "helm_release" "this" {
