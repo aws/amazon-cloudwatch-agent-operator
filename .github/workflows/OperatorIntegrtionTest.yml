@@ -5,6 +5,7 @@ name: OperatorIntegrationTest.yml
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+  OPERATOR_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 on:
   push:
     branches:
