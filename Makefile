@@ -10,7 +10,8 @@ AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep a
 IMG_PREFIX ?=506463145083.dkr.ecr.us-west-2.amazonaws.com
 #IMG_REPO ?= cloudwatch-agent-operator
 IMG_REPO ?= cwagent-operator-pre-release
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+#IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:latest
 ARCH ?= $(shell go env GOARCH)
 
 # Options for 'bundle-build'
