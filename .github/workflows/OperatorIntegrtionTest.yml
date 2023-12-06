@@ -23,7 +23,7 @@ permissions:
 jobs:
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
-    runs-on: amazonlinux2
+    runs-on: windows-latest
     permissions:
       id-token: write
       contents: read
