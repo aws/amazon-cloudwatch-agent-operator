@@ -23,7 +23,7 @@ permissions:
 jobs:
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
-    runs-on: windows-latest
+    runs-on: macos-12
     permissions:
       id-token: write
       contents: read
@@ -61,8 +61,8 @@ jobs:
 #          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
 #          platforms: linux/amd64, linux/arm64
 
-#      - name: Verify Terraform version
-#        run: terraform --version
+      - name: Verify Terraform version
+        run: terraform --version
 
       - name: Terraform apply
         uses: nick-fields/retry@v2
