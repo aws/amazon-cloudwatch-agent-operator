@@ -79,8 +79,11 @@ jobs:
                 echo "Cluster creation failed"
                 terraform destroy -auto-approve && exit 1
             fi
+
       - name: run make deployment
-        run: mkdir ${{ github.workspace }}/dist && make kustomize && make release-artifacts IMG=${{ secrets.ECR_OPERATOR_RELEASE_REPOSITORY }}
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+          make deploy
 
       - name: Checking pod running status
         run: |
