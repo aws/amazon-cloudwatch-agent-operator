@@ -48,10 +48,22 @@ jobs:
         run:
           make deploy
 
-      - name: Test
+      - name: Verify pods and operator logs
         run: |
           sleep 10
           kubectl get pods -A
+          kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch --tail=100
 
-      - name: Test
-        run: kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch --tail=100
+      # Apply amazoncloudwatchagent.yaml
+
+      # Verify cloudwatch-agent deployed in amazon-cloudwatch namespace as daemonset with 2 pods
+
+      # Apply test-deployment.yaml
+
+      # Verify test deployment succeeds
+
+      # Verify default instrumentation values
+
+      # Apply sample-instrumentation.yaml
+
+      # Verify overwritten instrumentation values defined in the yaml
