@@ -50,18 +50,16 @@ jobs:
         run:
           make deploy
 
-      - name: Verify pods and operator logs
-        run: |
-          sleep 10
-          kubectl get pods -A
-          kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch --tail=100
+#      - name: Verify pods and operator logs
+#        run: |
+#          sleep 10
+#          kubectl get pods -A
+#          kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch --tail=100
       - name: Apply cloudwatch-agent.yaml
         run: |
           cd integration-tests/operator
           kubectl apply -f amazoncloudwatchagent.yaml
-          sleep 10
           kubectl apply -f ./sample-instrumentation.yaml
-          sleep 10
           kubectl apply -f ./test-deployment.yaml
           sleep 10
           kubectl get pods -A
