@@ -58,7 +58,7 @@ jobs:
       - name: Apply cloudwatch-agent.yaml
         run: |
           cd integration-tests/operator
-          kubectl apply -f amazoncloudwatchagent.yaml
+          kubectl apply -f ./amazoncloudwatchagent.yaml
           kubectl apply -f ./sample-instrumentation.yaml
           kubectl apply -f ./test-deployment.yaml
           sleep 10
