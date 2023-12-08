@@ -49,3 +49,6 @@ jobs:
 
       - name: Test
         run: kubectl get pods -A
+
+      - name: Test
+        run: kubectl describe pod cloudwatch-controller-manager -n amazon-cloudwatch
