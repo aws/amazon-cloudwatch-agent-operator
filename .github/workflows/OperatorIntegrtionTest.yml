@@ -78,6 +78,7 @@ jobs:
       - name: java Annotation testing
         run: |
           cd integration-tests/operator/cmd
+          go run ./test_default_and_ns_instrumentation_main.go
       # Apply amazoncloudwatchagent.yaml
 
       # Verify cloudwatch-agent deployed in amazon-cloudwatch namespace as daemonset with 2 pods
