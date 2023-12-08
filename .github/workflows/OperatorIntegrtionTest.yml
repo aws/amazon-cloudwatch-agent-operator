@@ -26,24 +26,25 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Start minikube
-          uses: medyagh/setup-minikube@master
+        uses: medyagh/setup-minikube@master
 
       - name: Try the cluster !
-          run: kubectl get pods -A
+        run: kubectl get pods -A
 
       - name: Build image
-          run: |
-            make container
-            docker images
+        run: |
+          make container
+          docker images
 
       - name: Deploy operator to minikube
-          run:
-            make deploy
+        run:
+          make deploy
 
       - name: Test
         run: kubectl get pods -A
