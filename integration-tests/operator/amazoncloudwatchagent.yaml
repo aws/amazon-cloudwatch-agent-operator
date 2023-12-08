@@ -5,7 +5,6 @@ metadata:
   namespace: amazon-cloudwatch
 spec:
   mode: daemonset
-  replicas: 2
   serviceAccount: cloudwatch-agent
   config: |
     {
