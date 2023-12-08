@@ -75,7 +75,6 @@ jobs:
             echo "Pod $pod_name is running."
             echo "Testcase 1: Pod running test case: PASS"
           fi
-          kubectl logs cloudwatch-agent -n amazon-cloudwatch
       - name: java Annotation testing
         run: |
           cd integration-tests/operator/cmd
