@@ -36,6 +36,7 @@ jobs:
 
       - name: Build image
         run: |
+          eval $(minikube docker-env)
           make container
           docker images
 
@@ -51,4 +52,4 @@ jobs:
         run: kubectl get pods -A
 
       - name: Test
-        run: kubectl describe pod cloudwatch-controller-manager -n amazon-cloudwatch
+        run: kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch
