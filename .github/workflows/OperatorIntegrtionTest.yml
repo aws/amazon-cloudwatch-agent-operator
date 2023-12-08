@@ -77,6 +77,13 @@ jobs:
             echo "Pod $pod_name is running."
             echo "Testcase 1: Pod running test case: PASS"
           fi
+      - name: java Annotation testing
+        run: |
+          cd integration-tests/operator/cmd
+          go run ./test_default_and_ns_instrumentation_main.go
+          if [ $? -ne 0 ]; then
+            terraform destroy  -auto-approve && exit 1
+          fi
       # Apply amazoncloudwatchagent.yaml
 
       # Verify cloudwatch-agent deployed in amazon-cloudwatch namespace as daemonset with 2 pods
