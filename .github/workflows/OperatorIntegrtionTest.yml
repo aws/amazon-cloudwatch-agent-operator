@@ -35,10 +35,10 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
+#      - name: Verify minikube and cert-manager
+#        run: |
+#          sleep 10
+#          kubectl get pods -A
 
       - name: Build image
         run: |
@@ -60,14 +60,12 @@ jobs:
           cd integration-tests/operator
           kubectl apply -f amazoncloudwatchagent.yaml
           sleep 10
-          kubectl get pods cloudwatch-agent -n amazon-cloudwatch
           kubectl apply -f ./sample-instrumentation.yaml
           sleep 10
-          kubectl get pods sample-instrumentation -n amazon-cloudwatch
           kubectl apply -f ./test-deployment.yaml
           sleep 10
-          kubectl get pods test-deployment -n amazon-cloudwatch
           kubectl get pods -A
+          kubectl get pods -n amazon-cloudwatch
           kubectl describe deployment cloudwatch-controller-manager -n amazon-cloudwatch
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
           status=$(kubectl get pod "$pod_name" -n amazon-cloudwatch -o=jsonpath='{.status.phase}')
