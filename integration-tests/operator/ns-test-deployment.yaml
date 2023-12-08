@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx
-  namespace: amazon-cloudwatch
+  namespace: nginx-namespace
 spec:
   selector:
     matchLabels:
