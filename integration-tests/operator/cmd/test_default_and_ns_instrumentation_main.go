@@ -38,7 +38,7 @@ func verifyInstrumentationEnvVariables(namespace string) bool {
 	var args []string
 	if namespace != "" {
 		jsonPath = namespacedJSONPath
-		args = []string{"get", "pods", "-n", "nginx-namespace", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
+		args = []string{"get", "pods", "-n", "amazon-cloudwatch", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 	} else {
 		args = []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 	}

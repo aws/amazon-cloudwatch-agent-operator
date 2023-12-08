@@ -59,6 +59,7 @@ jobs:
         run: |
           cd integration-tests/operator
           kubectl apply -f ./amazoncloudwatchagent.yaml
+          sleep 10
           kubectl apply -f ./sample-instrumentation.yaml
           kubectl apply -f ./test-deployment.yaml
           kubectl apply -f ./ns-test-deployment.yaml
