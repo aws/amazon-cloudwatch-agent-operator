@@ -52,4 +52,6 @@ jobs:
         run: kubectl get pods -A
 
       - name: Test
-        run: kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch
+        run: |
+          sleep(60);
+          kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch
