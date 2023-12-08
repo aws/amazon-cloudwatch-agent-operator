@@ -31,7 +31,11 @@ jobs:
       - name: Start minikube
         uses: medyagh/setup-minikube@master
 
-      - name: Verify minikube
+      - name: Deploy cert-manager to minikube
+        run:
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+      - name: Verify minikube and cert-manager
         run: kubectl get pods -A
 
       - name: Build image
@@ -40,18 +44,14 @@ jobs:
           make container
           docker images
 
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
       - name: Deploy operator to minikube
         run:
           make deploy
 
       - name: Test
-        run: kubectl get pods -A
+        run: |
+          sleep 60s
+          kubectl get pods -A
 
       - name: Test
-        run: |
-          sleep(60);
-          kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch
+        run: kubectl logs -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator -n amazon-cloudwatch
