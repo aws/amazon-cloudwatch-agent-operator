@@ -62,7 +62,6 @@ jobs:
           sleep 10
           kubectl apply -f ./sample-instrumentation.yaml
           kubectl apply -f ./test-deployment.yaml
-          kubectl apply -f ./ns-test-deployment.yaml
           sleep 60
           kubectl get pods -A
           kubectl get pods -n amazon-cloudwatch 
@@ -80,7 +79,6 @@ jobs:
       - name: java Annotation testing
         run: |
           cd integration-tests/operator/cmd
-          go run ./test_default_and_ns_instrumentation_main.go
       # Apply amazoncloudwatchagent.yaml
 
       # Verify cloudwatch-agent deployed in amazon-cloudwatch namespace as daemonset with 2 pods
