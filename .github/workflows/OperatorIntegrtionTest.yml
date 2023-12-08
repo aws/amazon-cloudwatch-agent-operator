@@ -50,7 +50,7 @@ jobs:
 
       - name: Test
         run: |
-          sleep 60s
+          sleep 10
           kubectl get pods -A
 
       - name: Test
