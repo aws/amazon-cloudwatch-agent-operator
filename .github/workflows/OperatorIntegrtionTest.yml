@@ -5,7 +5,6 @@ name: OperatorIntegrationTest.yml
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
-  OPERATOR_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 on:
   push:
     branches:
@@ -31,11 +30,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
+      - name: Start minikube
+          uses: medyagh/setup-minikube@master
+
+      - name: Try the cluster !
+          run: kubectl get pods -A
+
+      - name: Build image
+          run: |
+            make container
+            docker images
+
+      - name: Deploy operator to minikube
+          run:
+            make deploy
 
       - name: Test
-        run: echo ${{ env.ECR_OPERATOR_STAGING_IMAGE }} | sed 's/./& /g'
+        run: kubectl get pods -A
