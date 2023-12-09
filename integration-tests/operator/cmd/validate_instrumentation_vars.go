@@ -11,33 +11,36 @@ import (
 
 func main() {
 
-	success := verifyInstrumentationEnvVariables("")
+	args := os.Args
+	namespace := args[1]
+	jsonPath := args[2]
+
+	success := verifyInstrumentationEnvVariables(namespace, jsonPath)
 	if !success {
 		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
 	} else {
 		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: PASS")
 	}
-	success = verifyInstrumentationEnvVariables("amazon-cloudwatch")
-	if !success {
-		fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL")
-		os.Exit(1)
-	} else {
-		fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS")
-	}
+	//success = verifyInstrumentationEnvVariables("amazon-cloudwatch")
+	//if !success {
+	//	fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL")
+	//	os.Exit(1)
+	//} else {
+	//	fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS")
+	//}
 
 }
 
-func verifyInstrumentationEnvVariables(namespace string) bool {
+func verifyInstrumentationEnvVariables(namespace string, jsonpath string) bool {
 
-	defaultJSONPath := "default_instrumentation_env_variables.json"
-	namespacedJSONPath := "ns_stored_env_variables.json"
-
-	jsonPath := defaultJSONPath
+	//defaultJSONPath := "default_instrumentation_env_variables.json"
+	//namespacedJSONPath := "ns_instrumentation_env_variables.json"
+	//jsonPath := defaultJSONPath
 
 	var args []string
-	if namespace != "" {
-		jsonPath = namespacedJSONPath
+	if namespace != "default" {
+		//jsonPath = namespacedJSONPath
 		args = []string{"get", "pods", "-n", "amazon-cloudwatch", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 	} else {
 		args = []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
@@ -65,7 +68,7 @@ func verifyInstrumentationEnvVariables(namespace string) bool {
 	fmt.Println("Pod environment variables:", envMap)
 
 	// Read and parse JSON file containing key-value pairs
-	fileData, err := ioutil.ReadFile(jsonPath)
+	fileData, err := ioutil.ReadFile(jsonpath)
 	if err != nil {
 		fmt.Println("Error reading JSON file:", err)
 		return false

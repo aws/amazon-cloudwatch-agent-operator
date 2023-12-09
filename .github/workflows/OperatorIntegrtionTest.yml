@@ -72,23 +72,27 @@ jobs:
             echo "Pod $pod_name is running."
             echo "Testcase 1: Pod is created test case: PASS"
           fi
-      - name: java Annotation testing
+      - name: Building the validate_instrumentation binary
         run: |
           cd integration-tests/operator/cmd
-          go run ./test_default_and_ns_instrumentation_main.go
+          go build validate_instrumentation.go
 
       - name: Test default instrumentation
         run: |
+          cd integration-tests/operator
           kubectl apply -f ./test-deployment.yaml
           sleep 10
-          validate_instrumentation_vars default default_instrumentation_env_variables.json
+          cd ./cmd
+          ./validate_instrumentation_vars default default_instrumentation_env_variables.json
       - name: Test namespace instrumentation
         run: |
+          cd integration-tests/operator
           kubectl apply -f ./sample-instrumentation.yaml
           kubectl apply -f ./ns-test-deployment.yaml
           sleep 60
+          cd ./cmd
           kubectl rollout restart deployment nginx -n amazon-cloudwatch
-          validate_instrumentation_vars amazon-cloudwatch ns_instrumentation_env_variables.json
+          ./validate_instrumentation_vars amazon-cloudwatch ns_instrumentation_env_variables.json
       # Apply amazoncloudwatchagent.yaml
 
       # Verify cloudwatch-agent deployed in amazon-cloudwatch namespace as daemonset with 2 pods
