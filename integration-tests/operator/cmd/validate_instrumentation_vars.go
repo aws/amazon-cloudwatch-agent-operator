@@ -61,6 +61,7 @@ func verifyInstrumentationEnvVariables(namespace string, jsonpath string) bool {
 
 	// Process the output (remove quotes if present)
 	podName := strings.ReplaceAll(string(out), "'", "")
+	fmt.Println("Pod name:", podName)
 
 	// Function to fetch environment variables from the pod
 	envMap, err := getPodEnvVariables(podName, namespace)
