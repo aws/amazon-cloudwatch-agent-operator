@@ -14,36 +14,19 @@ func main() {
 	args := os.Args
 	namespace := args[1]
 	jsonPath := args[2]
-	fmt.Println("Namespace: " + namespace + ", jsonPath: " + jsonPath)
-	if namespace == "bhanu" {
-		return
-	}
 	success := verifyInstrumentationEnvVariables(namespace, jsonPath)
 	if !success {
-		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: FAIL")
+		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
 	} else {
-		fmt.Println("TestCase 2: Default Instrumentation Annotation Injection Test: PASS")
+		fmt.Println("Instrumentation Annotation Injection Test: PASS")
 	}
-	//success = verifyInstrumentationEnvVariables("amazon-cloudwatch")
-	//if !success {
-	//	fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: FAIL")
-	//	os.Exit(1)
-	//} else {
-	//	fmt.Println("TestCase 3: Same Namespace Instrumentation Annotation Injection Test: PASS")
-	//}
-
 }
 
 func verifyInstrumentationEnvVariables(namespace string, jsonpath string) bool {
 
-	//defaultJSONPath := "default_instrumentation_env_variables.json"
-	//namespacedJSONPath := "ns_instrumentation_env_variables.json"
-	//jsonPath := defaultJSONPath
-
 	var args []string
 	if namespace != "default" {
-		//jsonPath = namespacedJSONPath
 		args = []string{"get", "pods", "-n", "amazon-cloudwatch", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 	} else {
 		args = []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
