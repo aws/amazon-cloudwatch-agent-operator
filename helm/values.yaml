@@ -43,7 +43,6 @@ manager:
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
       us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
-      test-us-west-2: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-pre-release
   autoInstrumentationImage:
     java:
       repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
