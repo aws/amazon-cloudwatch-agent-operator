@@ -2,7 +2,7 @@ apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: Instrumentation
 metadata:
   name: sample-instrumentation
-  namespace: default
+  namespace: amazon-cloudwatch
 spec:
   exporter:
     endpoint: "http://example.com/collector"
