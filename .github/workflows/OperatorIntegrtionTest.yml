@@ -94,6 +94,7 @@ jobs:
           kubectl describe pods -n amazon-cloudwatch
           cd ./cmd
           kubectl rollout restart deployment nginx -n amazon-cloudwatch
+          sleep 60
           go run validate_instrumentation_vars.go amazon-cloudwatch ns_instrumentation_env_variables.json
       # Apply amazoncloudwatchagent.yaml
 
