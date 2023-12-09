@@ -8,7 +8,13 @@ spec:
   serviceAccount: cloudwatch-agent
   config: |
     {
+      "logs": {
+        "metrics_collected": {
+          "app_signals": {}
+        },
+      },
     }
+
   volumeMounts:
     - mountPath: /rootfs
       name: rootfs
