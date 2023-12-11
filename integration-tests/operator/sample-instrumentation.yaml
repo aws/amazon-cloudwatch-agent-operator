@@ -3,7 +3,6 @@ kind: Instrumentation
 metadata:
   name: sample-instrumentation
 spec:
-  restartPolicy: Always
   exporter:
     endpoint: "http://example.com/collector"
   sampler:

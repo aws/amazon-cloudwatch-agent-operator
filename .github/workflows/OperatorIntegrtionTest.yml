@@ -7,6 +7,10 @@ on:
     branches:
       - lisaguo-op-integ
       - main
+  pull_request:
+    types: [ opened, reopened ]
+    branches:
+      - main
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
