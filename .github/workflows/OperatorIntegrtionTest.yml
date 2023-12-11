@@ -77,7 +77,7 @@ jobs:
       - name: Test namespace instrumentation
         run: |
           cd integration-tests/operator
-          kubectl apply -f ./sample-instrumentation
+          kubectl apply -f ./sample-instrumentation.yaml
           kubectl apply -f ./ns-test-deployment.yaml
           kubectl rollout restart deployment nginx
           sleep 60
