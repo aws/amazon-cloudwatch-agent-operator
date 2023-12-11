@@ -55,6 +55,7 @@ jobs:
         run: |
           helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm | kubectl apply --namespace amazon-cloudwatch -f -
           sleep 60
+          kubectl get pods -A
           kubectl get pods -n amazon-cloudwatch
           kubectl describe pods -n amazon-cloudwatch
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
@@ -72,7 +73,7 @@ jobs:
           kubectl apply -f ./test-deployment.yaml
           sleep 60
           cd ./cmd
-          go run cmd/validate_instrumentation_vars.go default default_instrumentation_env_variables.json
+          go run validate_instrumentation_vars.go default default_instrumentation_env_variables.json
       - name: Test namespace instrumentation
         run: |
           cd integration-tests/operator
