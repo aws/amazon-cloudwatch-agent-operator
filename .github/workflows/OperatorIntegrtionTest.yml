@@ -75,7 +75,7 @@ jobs:
           kubectl apply -f ./test-deployment.yaml
           sleep 60
           kubectl get pods -A 
-          kubectl describe pods -n amazon-cloudwatch
+          kubectl describe pods -n default
           cd ./cmd
           go run validate_instrumentation_vars.go default default_instrumentation_env_variables.json
       - name: Test namespace instrumentation
