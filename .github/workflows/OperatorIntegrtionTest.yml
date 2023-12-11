@@ -53,7 +53,6 @@ jobs:
 
       - name: Test case for AmagonCloudWatchAgent pod creation
         run: |
-          cd integration-tests/operator
           helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm | kubectl apply --namespace amazon-cloudwatch -f -
           sleep 60
           kubectl get pods -n amazon-cloudwatch
