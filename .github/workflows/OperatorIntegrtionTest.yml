@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - lisaguo-op-integ
+      - main
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
