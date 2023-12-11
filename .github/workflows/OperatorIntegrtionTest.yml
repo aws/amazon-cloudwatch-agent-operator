@@ -78,7 +78,7 @@ jobs:
         run: |
           cd integration-tests/operator
           kubectl apply -f ./sample-instrumentation.yaml
-          kubectl apply -f ./ns-test-deployment.yaml
+          sleep 60
           kubectl rollout restart deployment nginx
           sleep 60
           cd ./cmd
