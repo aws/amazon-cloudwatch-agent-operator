@@ -2,11 +2,7 @@ apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: Instrumentation
 metadata:
   name: sample-instrumentation
-  namespace: amazon-cloudwatch
 spec:
-  containers:
-    - name: nginx
-      image: nginx:1.14.2
   restartPolicy: Always
   exporter:
     endpoint: "http://example.com/collector"
