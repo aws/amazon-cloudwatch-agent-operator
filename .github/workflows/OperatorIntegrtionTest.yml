@@ -74,6 +74,8 @@ jobs:
           cd integration-tests/operator
           kubectl apply -f ./test-deployment.yaml
           sleep 60
+          kubectl get pods -A 
+          kubectl describe pods -n amazon-cloudwatch
           cd ./cmd
           go run validate_instrumentation_vars.go default default_instrumentation_env_variables.json
       - name: Test namespace instrumentation
@@ -84,5 +86,6 @@ jobs:
           kubectl rollout restart deployment nginx
           sleep 60
           kubectl get pods -A
+          kubectl describe pods -n default
           cd ./cmd
           go run validate_instrumentation_vars.go amazon-cloudwatch ns_instrumentation_env_variables.json
