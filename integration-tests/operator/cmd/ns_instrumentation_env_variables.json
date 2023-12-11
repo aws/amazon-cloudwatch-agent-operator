@@ -1,5 +1,6 @@
 {
   "OTEL_TRACES_SAMPLER":"traceidratio",
   "OTEL_TRACES_SAMPLER_ARG": "0.5",
-  "OTEL_EXPORTER_OTLP_ENDPOINT":"http://example.com/collector"
+  "OTEL_EXPORTER_OTLP_ENDPOINT":"http://example.com/collector",
+  "OTEL_PROPAGATORS": "tracecontext,baggage,b3,jaeger"
 }
