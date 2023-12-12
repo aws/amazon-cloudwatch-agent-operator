@@ -5,7 +5,7 @@ name: Agent Operator Integration Test
 on:
   push:
     branches:
-      - lisaguo-op-test
+      - lisaguo-op-integ
       - main
   pull_request:
     types: [ opened, reopened ]
