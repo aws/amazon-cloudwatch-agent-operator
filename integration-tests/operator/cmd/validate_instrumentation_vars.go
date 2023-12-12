@@ -26,11 +26,7 @@ func main() {
 func verifyInstrumentationEnvVariables(namespace string, jsonpath string) bool {
 
 	var args []string
-	if namespace != "default" {
-		args = []string{"get", "pods", "-n", "amazon-cloudwatch", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
-	} else {
-		args = []string{"get", "pods", "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
-	}
+	args = []string{"get", "pods", "-n", namespace, "-l", "app=nginx", "-o=jsonpath='{.items[*].metadata.name}'"}
 
 	//	// Define pod name and namespace
 	cmd := "kubectl"
