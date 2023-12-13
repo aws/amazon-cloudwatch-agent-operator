@@ -48,12 +48,14 @@ jobs:
       - name: Build image
         run: |
           eval $(minikube docker-env)
-          make container
+          make container-custom-build
           docker images
 
       - name: Deploy operator to minikube
         run:
           make deploy
+          kubectl describe deployment -n amazon-cloudwatch cloudwatch-controller-manager
+          kubectl set image deployment/cloudwatch-controller-manager -n amazon-cloudwatch cloudwatch-controller-manager=cloudwatch-agent-operator:latest
 
       - name: Test case for AmagonCloudWatchAgent pod creation
         run: |
