@@ -48,7 +48,7 @@ jobs:
       - name: Build image
         run: |
           eval $(minikube docker-env)
-          make container-operator-test
+          make container-custom-build
           docker images
 
       - name: Deploy operator to minikube
