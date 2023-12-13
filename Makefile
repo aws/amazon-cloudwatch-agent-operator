@@ -1,5 +1,5 @@
 # Versions from versions.txt
-VERSION ?= $(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')
+VERSION ?= dev
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | awk -F= '{print $$2}')"
