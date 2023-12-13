@@ -52,7 +52,7 @@ jobs:
           docker images
 
       - name: Deploy operator to minikube
-        run:
+        run: | 
           make deploy
           kubectl describe deployment -n amazon-cloudwatch cloudwatch-controller-manager
           kubectl set image deployment/cloudwatch-controller-manager -n amazon-cloudwatch cloudwatch-controller-manager=cloudwatch-agent-operator:latest
