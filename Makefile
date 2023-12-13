@@ -151,6 +151,7 @@ generate: controller-gen api-docs
 .PHONY: container
 container:
 	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} .
+	docker tag ${IMG}:latest cloudwatch-agent-operator:latest
 
 .PHONY: container-custom-build
 container-custom-build:
