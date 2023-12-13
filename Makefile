@@ -152,6 +152,12 @@ generate: controller-gen api-docs
 container:
 	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} .
 
+
+.PHONY: container-operator-test
+container:
+	docker buildx build --load --platform linux/${ARCH} -t cloudwatch-agent-operator --build-arg VERSION_PKG=latest --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} .
+
+
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
