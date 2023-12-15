@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,13 +15,15 @@ import (
 )
 
 func main() {
+
+	args := os.Args
+	namespace := args[1]
+	jsonFilePath := args[2]
 	//kubeconfig := flag.String("kubeconfig", "", "Path to the kubeconfig file")
-	namespace := flag.String("namespace", "", "Kubernetes namespace")
-	jsonPath := flag.String("jsonPath", "", "Path to JSON file")
-	flag.Parse()
-	jsonFilePath := fmt.Sprintf("%d", jsonPath)
-	fmt.Println("JSON path:", *jsonPath)
-	jsonFilePath = "./" + jsonFilePath
+	//namespace := flag.String("namespace", "", "Kubernetes namespace")
+	//jsonPath := flag.String("jsonPath", "", "Path to JSON file")
+	//flag.Parse()
+	fmt.Println("JSON path:", jsonFilePath)
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Println("error getting user home dir: %v\n", err)
@@ -61,7 +62,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	success := verifyInstrumentationEnvVariables(clientSet, *namespace, jsonFilePath)
+	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
