@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 func main() {
@@ -20,17 +21,32 @@ func main() {
 	jsonPath := flag.String("jsonPath", "", "Path to JSON file")
 	flag.Parse()
 
-	config, err := buildConfig()
+	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("Error building kubeconfig:", err)
-		os.Exit(1)
+		fmt.Println("error getting user home dir: %v\n", err)
+	}
+	kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
+	fmt.Println("Using kubeconfig: %s\n", kubeConfigPath)
+
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		fmt.Println("Error getting kubernetes config: %v\n", err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
+
 	if err != nil {
-		fmt.Println("Error creating Kubernetes client:", err)
-		os.Exit(1)
+		fmt.Println("error getting kubernetes config: %v\n", err)
 	}
+
+	//configPath, err := kubeConfigPath()
+	//if err != nil {
+	//	fmt.Println("Error retrieving kubeconfig path:", err)
+	//	os.Exit(1)
+	//}
+
+	//fmt.Println("Kubeconfig path:", configPath)
+
 	//config, err := buildConfig(*kubeconfig)
 	//if err != nil {
 	//	fmt.Println("Error building kubeconfig:", err)
@@ -43,7 +59,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	success := verifyInstrumentationEnvVariables(clientset, *namespace, *jsonPath)
+	success := verifyInstrumentationEnvVariables(clientSet, *namespace, *jsonPath)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -52,15 +68,6 @@ func main() {
 	}
 }
 
-//	func buildConfig(kubeconfig string) (*rest.Config, error) {
-//		if kubeconfig == "" {
-//			return rest.InClusterConfig()
-//		}
-//		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-//	}
-func buildConfig() (*rest.Config, error) {
-	return rest.InClusterConfig()
-}
 func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=nginx"})
 	if err != nil {
