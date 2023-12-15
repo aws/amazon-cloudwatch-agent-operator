@@ -12,16 +12,15 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
-	kubeconfig := flag.String("kubeconfig", "", "Path to the kubeconfig file")
+	//kubeconfig := flag.String("kubeconfig", "", "Path to the kubeconfig file")
 	namespace := flag.String("namespace", "", "Kubernetes namespace")
 	jsonPath := flag.String("jsonPath", "", "Path to JSON file")
 	flag.Parse()
 
-	config, err := buildConfig(*kubeconfig)
+	config, err := buildConfig()
 	if err != nil {
 		fmt.Println("Error building kubeconfig:", err)
 		os.Exit(1)
@@ -32,6 +31,17 @@ func main() {
 		fmt.Println("Error creating Kubernetes client:", err)
 		os.Exit(1)
 	}
+	//config, err := buildConfig(*kubeconfig)
+	//if err != nil {
+	//	fmt.Println("Error building kubeconfig:", err)
+	//	os.Exit(1)
+	//}
+
+	//clientset, err := kubernetes.NewForConfig(config)
+	//if err != nil {
+	//	fmt.Println("Error creating Kubernetes client:", err)
+	//	os.Exit(1)
+	//}
 
 	success := verifyInstrumentationEnvVariables(clientset, *namespace, *jsonPath)
 	if !success {
@@ -42,13 +52,15 @@ func main() {
 	}
 }
 
-func buildConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig == "" {
-		return rest.InClusterConfig()
-	}
-	return clientcmd.BuildConfigFromFlags("", kubeconfig)
+//	func buildConfig(kubeconfig string) (*rest.Config, error) {
+//		if kubeconfig == "" {
+//			return rest.InClusterConfig()
+//		}
+//		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+//	}
+func buildConfig() (*rest.Config, error) {
+	return rest.InClusterConfig()
 }
-
 func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=nginx"})
 	if err != nil {
