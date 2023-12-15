@@ -120,7 +120,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 }
 
 func getPodEnvVariables(clientset *kubernetes.Clientset, podName, namespace string) (map[string]string, error) {
-	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods("default").Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
