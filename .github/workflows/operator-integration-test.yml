@@ -7,7 +7,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [ opened, reopened ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
     branches:
       - main
   workflow_dispatch:
@@ -54,7 +54,7 @@ jobs:
         run: | 
           make deploy
 
-      - name: Test case for AmagonCloudWatchAgent pod creation
+      - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
           helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm | kubectl apply --namespace amazon-cloudwatch -f -
           sleep 60
