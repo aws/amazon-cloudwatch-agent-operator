@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - lisaguo-op-integ
   pull_request:
     types: [ opened, reopened ]
     branches:
@@ -69,7 +68,7 @@ jobs:
             echo "Pod is created test case: PASS"
           fi
 
-      - name: Test default instrumentation
+      - name: Test for default instrumentation resources
         run: |
           cd integration-tests/manifests
           kubectl apply -f ./sample-deployment.yaml
@@ -77,9 +76,9 @@ jobs:
           kubectl get pods -A 
           kubectl describe pods -n default
           cd ./cmd
-          go run validate_instrumentation_vars_new.go default default_instrumentation_env_variables.json
+          go run validate_instrumentation_vars.go default default_instrumentation_env_variables.json
 
-      - name: Test namespace instrumentation
+      - name: Test for defined instrumentation resources
         run: |
           cd integration-tests/manifests
           kubectl apply -f ./sample-instrumentation.yaml
@@ -89,4 +88,4 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           cd ./cmd
-          go run validate_instrumentation_vars_new.go default ns_instrumentation_env_variables.json
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
