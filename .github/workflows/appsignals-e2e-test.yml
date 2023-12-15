@@ -8,9 +8,6 @@ on:
       test-cluster-name:
         required: true
         type: string
-      caller-workflow-name:
-        required: true
-        type: string
 
 permissions:
   id-token: write
@@ -19,31 +16,41 @@ permissions:
 env:
   AWS_DEFAULT_REGION: us-east-1
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACCOUNT }}
-  ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ONBOARDING_ZIP_S3_URI }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_REMOTE_SERVICE_IMAGE }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP: /aws/appsignals/eks
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
-  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
 jobs:
   appsignals-e2e-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # This step avoids code duplication for terraform templates and the validator
+      # To simplify, we get the entire repo
+      - name: Get testing resources from ADOT
+        uses: actions/checkout@v4
         with:
-          # Checkout e2e-test branch and get only the required resources for testing
-          ref: e2e-test
+          repository: aws-observability/aws-otel-java-instrumentation
+          ref: main
+
+      - name: Download enablement script
+        uses: actions/checkout@v4
+        with:
+          repository: aws-observability/application-signals-demo
+          ref: main
+          path: enablement-script
           sparse-checkout: |
-            test
+            scripts/eks/appsignals/enable-app-signals.sh
+            scripts/eks/appsignals/clean-app-signals.sh
+          sparse-checkout-cone-mode: false
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.APP_SIGNALS_E2E_TEST_ROLE_ARN }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
@@ -78,17 +85,18 @@ jobs:
           --approve
 
       - name: Set up terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
       - name: Deploy sample app via terraform
-        working-directory: test/terraform/eks
+        working-directory: testing/terraform/eks
         run: |
           terraform init
           terraform validate
           terraform apply -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
+            -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
             -var="eks_cluster_context_name=$(kubectl config current-context)" \
@@ -98,20 +106,20 @@ jobs:
             -var="sample_remote_app_image=${{ env.SAMPLE_APP_REMOTE_SERVICE_IMAGE }}"
 
       # Enable App Signals on the test cluster
-      - name: Pull and unzip enablement script from S3
-        run: aws s3 cp ${{ env.ENABLEMENT_SCRIPT_S3_BUCKET }} . && unzip -j onboarding.zip
-
-      - name: Set the CW Agent Operator image to the staging image in the manifest
-        if: inputs.caller-workflow-name == 'build-and-upload-staging'
-        run: "sed -i 's#${{ env.ECR_OPERATOR_RELEASE_IMAGE }}#${{ env.ECR_OPERATOR_STAGING_IMAGE }}#g' app-signals.yaml"
-
       - name: Enable App Signals
+        working-directory: enablement-script/scripts/eks/appsignals
         run: |
           ./enable-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
           ${{ env.AWS_DEFAULT_REGION }} \
           ${{ env.SAMPLE_APP_NAMESPACE }}
-          
+
+      - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
+        run: |
+          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}]'
+          kubectl delete pods --all -n amazon-cloudwatch
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
       # Application pods need to be restarted for the
       # app signals instrumentation to take effect
       - name: Restart the app pods
@@ -139,9 +147,10 @@ jobs:
       - name: Get the sample app endpoint
         run: |
           echo "APP_ENDPOINT=$(terraform output sample_app_endpoint)" >> $GITHUB_ENV
-        working-directory: test/terraform/eks
+        working-directory: testing/terraform/eks
 
       - name: Wait for app endpoint to come online
+        id: endpoint-check
         run: |
           attempt_counter=0
           max_attempts=30
@@ -156,11 +165,20 @@ jobs:
             sleep 10
           done
 
+      # This steps increases the speed of the validation by creating the telemetry data in advance
+      - name: Call all test APIs
+        continue-on-error: true
+        run: |
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call/
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call/
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call/
+
       # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
         id: log-validation
-        working-directory: test/validator
-        run: ./gradlew run --args='-c log-validation.yml
+        if: steps.endpoint-check.outcome == 'success' && !cancelled()
+        run: ./gradlew testing:validator:run --args='-c eks/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.AWS_DEFAULT_REGION }}
@@ -168,7 +186,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --cluster ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
@@ -176,9 +194,8 @@ jobs:
 
       - name: Call endpoints and validate generated metrics
         id: metric-validation
-        if: success() || steps.log-validation.outcome == 'failure'
-        working-directory: test/validator
-        run: ./gradlew run --args='-c metric-validation.yml
+        if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew testing:validator:run --args='-c eks/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.AWS_DEFAULT_REGION }}
@@ -186,7 +203,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --cluster ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
@@ -194,9 +211,9 @@ jobs:
           --rollup'
 
       - name: Call endpoints and validate generated traces
-        if: success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure'
-        working-directory: test/validator
-        run: ./gradlew run --args='-c trace-validation.yml
+        id: trace-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew testing:validator:run --args='-c eks/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.AWS_DEFAULT_REGION }}
@@ -204,7 +221,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --cluster ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
@@ -214,12 +231,15 @@ jobs:
 
       - name: Remove log group deletion command
         if: always()
+        working-directory: enablement-script/scripts/eks/appsignals
         run: |
           delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP }}' --region \$REGION"
           sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Clean Up App Signals
         if: always()
+        continue-on-error: true
+        working-directory: enablement-script/scripts/eks/appsignals
         run: |
           ./clean-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
@@ -236,10 +256,11 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
+        working-directory: testing/terraform/eks
         run: |
-          cd test/terraform/eks
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
+            -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
@@ -254,4 +275,4 @@ jobs:
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ env.AWS_DEFAULT_REGION }} \
+          --region ${{ env.AWS_DEFAULT_REGION }}

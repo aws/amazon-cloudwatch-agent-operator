@@ -66,8 +66,7 @@ jobs:
     uses: ./.github/workflows/appsignals-e2e-test.yml
     secrets: inherit
     concurrency:
-      group: 'appsignals-cw-agent-operator-test'
+      group: 'e2e-cw-agent-operator-test'
       cancel-in-progress: false
     with:
       test-cluster-name: 'e2e-cw-agent-operator-test'
-      caller-workflow-name: 'build-and-upload-staging'
