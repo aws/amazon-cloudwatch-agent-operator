@@ -5,6 +5,7 @@ name: App Signals Enablement E2E Testing
 on:
   workflow_call:
     inputs:
+      # Ensure two tests do not run on the same cluster at the same time through GitHub Action concurrency
       test-cluster-name:
         required: true
         type: string
@@ -141,7 +142,12 @@ jobs:
 
       - name: Verify pod CWAgent image
         run: |
-          kubectl get pods -n amazon-cloudwatch --output json | \
+          kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
+          jq '.items[0].status.containerStatuses[0].imageID'
+
+      - name: Verify pod CWAgent Operator image
+        run: |
+          kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
           jq '.items[0].status.containerStatuses[0].imageID'
 
       - name: Get the sample app endpoint
