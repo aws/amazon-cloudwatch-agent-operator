@@ -1,12 +1,12 @@
 # Versions from versions.txt
-VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
+VERSION ?= $(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-java-instrumentation | awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
-IMG_PREFIX ?= public.ecr.aws/cloudwatch-agent
+IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)

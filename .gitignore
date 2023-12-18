@@ -4,3 +4,4 @@ build
 .DS_Store
 .idea
 .attach_pid*
+bin

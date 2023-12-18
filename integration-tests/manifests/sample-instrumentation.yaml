@@ -1,0 +1,19 @@
+apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+kind: Instrumentation
+metadata:
+  name: sample-instrumentation
+spec:
+  exporter:
+    endpoint: "http://example.com/collector"
+  sampler:
+    type: traceidratio
+    argument: "0.5"
+  resource:
+    addK8sUIDAttributes: true
+    resourceAttributes:
+      environment: "production"
+      app: "example-app"
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
