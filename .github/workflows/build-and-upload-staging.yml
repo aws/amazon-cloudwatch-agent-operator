@@ -65,9 +65,9 @@ jobs:
     needs: MakeBinary
     uses: ./.github/workflows/appsignals-e2e-test.yml
     secrets: inherit
+    # Two E2E tests should not run at the same time in the same EKS cluster
     concurrency:
-      group: 'appsignals-cw-agent-operator-test'
+      group: 'e2e-cw-agent-operator-test'
       cancel-in-progress: false
     with:
       test-cluster-name: 'e2e-cw-agent-operator-test'
-      caller-workflow-name: 'build-and-upload-staging'
