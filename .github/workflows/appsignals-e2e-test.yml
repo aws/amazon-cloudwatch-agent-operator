@@ -1,5 +1,9 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
+# This E2E test is responsible for validating setting up a sample application on an EKS cluster and enabling
+# App Signals using the staging image of the CloudWatch Agent Operator. It validates the generated telemetry
+# including logs, metrics, and traces, then cleans up the cluster. The testing resources can be found in the
+# ADOT java instrumentation repo: https://github.com/aws-observability/aws-otel-java-instrumentation/tree/main/testing
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: App Signals Enablement E2E Testing
 on:
