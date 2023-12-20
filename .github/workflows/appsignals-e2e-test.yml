@@ -154,6 +154,11 @@ jobs:
           kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
           jq '.items[0].status.containerStatuses[0].imageID'
 
+      - name: Log pod Fluent Bit image ID
+        run: |
+          kubectl get pods -n amazon-cloudwatch -l k8s-app=fluent-bit -o json | \
+          jq '.items[0].status.containerStatuses[0].imageID'
+
       - name: Log pod CWAgent Operator image ID and save image to the environment
         run: |
           kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
