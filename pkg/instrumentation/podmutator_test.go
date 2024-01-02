@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -26,10 +27,32 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
+
+func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default-namespace",
+		},
+	}
+	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+	podMutator := instPodMutator{
+		Client: fake.NewClientBuilder().Build(),
+		Logger: logr.Logger{},
+	}
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace)
+
+	assert.Nil(t, err)
+	assert.Equal(t, defaultInst, instrumentation)
+
+}
 
 func TestMutatePod(t *testing.T) {
 	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))

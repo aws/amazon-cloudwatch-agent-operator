@@ -397,7 +397,8 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 
 	switch s := len(otelInsts.Items); {
 	case s == 0:
-		return nil, errNoInstancesAvailable
+		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
+		return getDefaultInstrumentation()
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:

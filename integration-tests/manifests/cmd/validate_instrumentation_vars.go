@@ -26,20 +26,20 @@ func main() {
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("error getting user home dir: %v\n", err)
+		fmt.Printf("error getting user home dir: %v\n\n", err)
 	}
 	kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
-	fmt.Println("Using kubeconfig: %s\n", kubeConfigPath)
+	fmt.Printf("Using kubeconfig: %s\n\n", kubeConfigPath)
 
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		fmt.Println("Error getting kubernetes config: %v\n", err)
+		fmt.Printf("Error getting kubernetes config: %v\n\n", err)
 	}
 
 	clientSet, err := kubernetes.NewForConfig(kubeConfig)
 
 	if err != nil {
-		fmt.Println("error getting kubernetes config: %v\n", err)
+		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
 
 	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath)
