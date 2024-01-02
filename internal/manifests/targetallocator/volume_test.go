@@ -15,7 +15,7 @@ import (
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New()
 
 	// test

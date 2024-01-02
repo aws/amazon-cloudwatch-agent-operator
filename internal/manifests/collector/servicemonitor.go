@@ -38,7 +38,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       naming.ServiceMonitor(params.OtelCol.Name),
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
@@ -52,7 +52,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				},
 			},
@@ -62,7 +62,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	return &sm, nil
 }
 
-func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.Endpoint {
+func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) []monitoringv1.Endpoint {
 	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.V(2).Error(err, "Error while parsing the configuration")

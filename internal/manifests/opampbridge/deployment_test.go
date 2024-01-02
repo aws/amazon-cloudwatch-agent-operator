@@ -86,7 +86,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	expectedLabels := map[string]string{
 		"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/name":       "my-instance-opamp-bridge",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "latest",
@@ -96,7 +96,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	expectedSelectorLabels := map[string]string{
 		"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
 	assert.Equal(t, expectedSelectorLabels, d.Spec.Selector.MatchLabels)

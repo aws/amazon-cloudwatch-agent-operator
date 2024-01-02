@@ -50,7 +50,7 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
 		Spec: networkingv1.IngressSpec{
@@ -125,7 +125,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 	return rules
 }
 
-func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
+func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) ([]corev1.ServicePort, error) {
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")

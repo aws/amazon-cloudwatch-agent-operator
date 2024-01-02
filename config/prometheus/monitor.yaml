@@ -4,7 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/name: amazon-cloudwatch-agent-operator
     control-plane: controller-manager
   name: controller-manager-metrics-monitor
   namespace: system
@@ -19,8 +19,8 @@ spec:
         ca:
           secret:
             key: ca.crt
-            name: opentelemetry-operator-controller-manager-service-cert
+            name: amazon-cloudwatch-agent-operator-controller-manager-service-cert
   selector:
     matchLabels:
-      app.kubernetes.io/name: opentelemetry-operator
+      app.kubernetes.io/name: amazon-cloudwatch-agent-operator
       control-plane: controller-manager

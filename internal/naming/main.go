@@ -4,7 +4,7 @@
 // Package naming is for determining the names for components (containers, services, ...).
 package naming
 
-// ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
+// ConfigMap builds the name for the config map used in the AmazonCloudWatchAgent containers.
 func ConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
 }
@@ -74,13 +74,13 @@ func TAPodDisruptionBudget(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
 }
 
-// OpenTelemetryCollector builds the collector (deployment/daemonset) name based on the instance.
-func OpenTelemetryCollector(otelcol string) string {
+// AmazonCloudWatchAgent builds the collector (deployment/daemonset) name based on the instance.
+func AmazonCloudWatchAgent(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
 
-// OpenTelemetryCollectorName builds the collector (deployment/daemonset) name based on the instance.
-func OpenTelemetryCollectorName(otelcolName string) string {
+// AmazonCloudWatchAgentName builds the collector (deployment/daemonset) name based on the instance.
+func AmazonCloudWatchAgentName(otelcolName string) string {
 	return DNSName(Truncate("%s", 63, otelcolName))
 }
 

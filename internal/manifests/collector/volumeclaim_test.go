@@ -17,8 +17,8 @@ import (
 
 func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Mode: "statefulset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -52,8 +52,8 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 
 func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Mode: "daemonset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{

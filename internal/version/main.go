@@ -26,9 +26,9 @@ var (
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator                       string `json:"opentelemetry-operator"`
+	Operator                       string `json:"amazon-cloudwatch-agent-operator"`
 	BuildDate                      string `json:"build-date"`
-	OpenTelemetryCollector         string `json:"opentelemetry-collector-version"`
+	AmazonCloudWatchAgent          string `json:"opentelemetry-collector-version"`
 	Go                             string `json:"go-version"`
 	TargetAllocator                string `json:"target-allocator-version"`
 	OperatorOpAMPBridge            string `json:"operator-opamp-bridge"`
@@ -46,7 +46,7 @@ func Get() Version {
 	return Version{
 		Operator:                       version,
 		BuildDate:                      buildDate,
-		OpenTelemetryCollector:         OpenTelemetryCollector(),
+		AmazonCloudWatchAgent:          AmazonCloudWatchAgent(),
 		Go:                             runtime.Version(),
 		TargetAllocator:                TargetAllocator(),
 		OperatorOpAMPBridge:            OperatorOpAMPBridge(),
@@ -62,10 +62,10 @@ func Get() Version {
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v')",
+		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v')",
 		v.Operator,
 		v.BuildDate,
-		v.OpenTelemetryCollector,
+		v.AmazonCloudWatchAgent,
 		v.Go,
 		v.TargetAllocator,
 		v.OperatorOpAMPBridge,
@@ -79,8 +79,8 @@ func (v Version) String() string {
 	)
 }
 
-// OpenTelemetryCollector returns the default OpenTelemetryCollector to use when no versions are specified via CLI or configuration.
-func OpenTelemetryCollector() string {
+// AmazonCloudWatchAgent returns the default AmazonCloudWatchAgent to use when no versions are specified via CLI or configuration.
+func AmazonCloudWatchAgent() string {
 	if len(otelCol) > 0 {
 		// this should always be set, as it's specified during the build
 		return otelCol

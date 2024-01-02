@@ -20,16 +20,16 @@ func Test0_56_0Upgrade(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 
-	collectorInstance := v1alpha1.OpenTelemetryCollector{
+	collectorInstance := v1alpha1.AmazonCloudWatchAgent{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "OpenTelemetryCollector",
+			Kind:       "AmazonCloudWatchAgent",
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "somewhere",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Replicas:    &one,
 			MaxReplicas: &three,
 		},

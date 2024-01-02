@@ -17,12 +17,12 @@ import (
 )
 
 func TestDesiredServiceMonitors(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Mode:        v1alpha1.ModeStatefulSet,
 			Tolerations: testTolerationValues,
 		},

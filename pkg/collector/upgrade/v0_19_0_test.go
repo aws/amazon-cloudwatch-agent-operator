@@ -22,15 +22,15 @@ import (
 func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Config: `processors:
   queued_retry:
   otherprocessor:
@@ -67,15 +67,15 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 func TestMigrateResourceType(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Config: `processors:
   resource:
     type: some-type
@@ -107,15 +107,15 @@ func TestMigrateResourceType(t *testing.T) {
 func TestMigrateLabels(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Config: `processors:
   resource:
     labels:

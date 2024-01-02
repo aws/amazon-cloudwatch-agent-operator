@@ -45,13 +45,13 @@ type InstrumentationUpgrade struct {
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
 
-// ManagedInstances upgrades managed instances by the opentelemetry-operator.
+// ManagedInstances upgrades managed instances by the amazon-cloudwatch-agent-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	u.Logger.Info("looking for managed Instrumentation instances to upgrade")
 
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		}),
 	}
 	list := &v1alpha1.InstrumentationList{}

@@ -53,7 +53,7 @@ func TestPDB(t *testing.T) {
 		},
 	}
 
-	otelcols := []v1alpha1.OpenTelemetryCollector{
+	otelcols := []v1alpha1.AmazonCloudWatchAgent{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",

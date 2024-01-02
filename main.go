@@ -115,7 +115,7 @@ func main() {
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
@@ -126,7 +126,7 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	logger.Info("Starting the OpenTelemetry Operator",
-		"opentelemetry-operator", v.Operator,
+		"amazon-cloudwatch-agent-operator", v.Operator,
 		"opentelemetry-collector", collectorImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"build-date", v.BuildDate,
@@ -224,12 +224,12 @@ func main() {
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+		Log:      ctrl.Log.WithName("controllers").WithName("AmazonCloudWatchAgent"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
+		setupLog.Error(err, "unable to create controller", "controller", "AmazonCloudWatchAgent")
 		os.Exit(1)
 	}
 
@@ -246,7 +246,7 @@ func main() {
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			setupLog.Error(err, "unable to create webhook", "webhook", "AmazonCloudWatchAgent")
 			os.Exit(1)
 		}
 		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
@@ -258,7 +258,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
 				}),
 		})
 
@@ -299,7 +299,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 		return up.ManagedInstances(c)
 	}))
 	if err != nil {
-		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
+		return fmt.Errorf("failed to upgrade AmazonCloudWatchAgent instances: %w", err)
 	}
 
 	// adds the upgrade mechanism to be executed once the manager is ready
@@ -314,7 +314,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
 			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
 			Client:                     mgr.GetClient(),
-			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Recorder:                   mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
 		}
 		return u.ManagedInstances(c)
 	}))

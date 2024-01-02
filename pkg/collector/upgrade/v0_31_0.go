@@ -15,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.AmazonCloudWatchAgent) (*v1alpha1.AmazonCloudWatchAgent, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}

@@ -48,7 +48,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
@@ -69,7 +69,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			Selector:  manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
@@ -81,7 +81,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
@@ -143,7 +143,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
-			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

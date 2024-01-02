@@ -9,13 +9,13 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-// Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha1.OpenTelemetryCollector, name string) map[string]string {
+// Labels return the common labels to all TargetAllocator objects that are part of a managed AmazonCloudWatchAgent.
+func Labels(instance v1alpha1.AmazonCloudWatchAgent, name string) map[string]string {
 	return manifestutils.Labels(instance.ObjectMeta, name, instance.Spec.TargetAllocator.Image, ComponentOpenTelemetryTargetAllocator, nil)
 }
 
 // SelectorLabels return the selector labels for Target Allocator Pods.
-func SelectorLabels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func SelectorLabels(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	selectorLabels := manifestutils.SelectorLabels(instance.ObjectMeta, ComponentOpenTelemetryTargetAllocator)
 	// TargetAllocator uses the name label as well for selection
 	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change

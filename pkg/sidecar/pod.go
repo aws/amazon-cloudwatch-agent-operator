@@ -21,8 +21,8 @@ const (
 	confEnvVar    = "OTEL_CONFIG"
 )
 
-// add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
+// add a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
+func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
 	otelColCfg, err := collector.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err

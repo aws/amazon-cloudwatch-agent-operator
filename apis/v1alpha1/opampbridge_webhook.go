@@ -23,9 +23,9 @@ var (
 	_ admission.CustomDefaulter = &OpAMPBridgeWebhook{}
 )
 
-//+kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opampbridge,mutating=true,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=mopampbridge.kb.io,admissionReviewVersions=v1
-//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=vopampbridgecreateupdate.kb.io,admissionReviewVersions=v1
-//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=ignore,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=delete,versions=v1alpha1,name=vopampbridgedelete.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge,mutating=true,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=mopampbridge.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=vopampbridgecreateupdate.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge,mutating=false,failurePolicy=ignore,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=delete,versions=v1alpha1,name=vopampbridgedelete.kb.io,admissionReviewVersions=v1
 //+kubebuilder:object:generate=false
 
 type OpAMPBridgeWebhook struct {
@@ -75,7 +75,7 @@ func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 		r.Labels = map[string]string{}
 	}
 	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+		r.Labels["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
 	}
 
 	one := int32(1)

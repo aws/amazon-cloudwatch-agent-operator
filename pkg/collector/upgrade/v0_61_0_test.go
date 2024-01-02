@@ -25,16 +25,16 @@ var (
 
 func Test0_61_0Upgrade(t *testing.T) {
 
-	collectorInstance := v1alpha1.OpenTelemetryCollector{
+	collectorInstance := v1alpha1.AmazonCloudWatchAgent{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "OpenTelemetryCollector",
+			Kind:       "AmazonCloudWatchAgent",
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otel-my-instance",
 			Namespace: "somewhere",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 	}
 
 	tt := []struct {

@@ -16,7 +16,7 @@ import (
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
@@ -31,7 +31,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: naming.Service(params.OtelCol.Name),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

@@ -15,7 +15,7 @@ import (
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) corev1.Container {
 	image := otelcol.Spec.TargetAllocator.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()

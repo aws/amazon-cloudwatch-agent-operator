@@ -14,7 +14,7 @@ import (
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
+func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
 	if len(instance.Spec.TargetAllocator.ServiceAccount) == 0 {
 		return naming.TargetAllocatorServiceAccount(instance.Name)
 	}

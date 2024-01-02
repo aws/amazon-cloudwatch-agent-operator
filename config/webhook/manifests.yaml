@@ -10,7 +10,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1alpha1-instrumentation
+      path: /mutate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
   failurePolicy: Fail
   name: minstrumentation.kb.io
   rules:
@@ -30,7 +30,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1alpha1-opampbridge
+      path: /mutate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge
   failurePolicy: Fail
   name: mopampbridge.kb.io
   rules:
@@ -50,9 +50,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
   failurePolicy: Fail
-  name: mopentelemetrycollector.kb.io
+  name: mamazoncloudwatchagent.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -62,7 +62,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - opentelemetrycollectors
+    - amazoncloudwatchagents
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -96,7 +96,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-instrumentation
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
   failurePolicy: Fail
   name: vinstrumentationcreateupdate.kb.io
   rules:
@@ -116,7 +116,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-instrumentation
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation
   failurePolicy: Ignore
   name: vinstrumentationdelete.kb.io
   rules:
@@ -135,7 +135,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opampbridge
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge
   failurePolicy: Fail
   name: vopampbridgecreateupdate.kb.io
   rules:
@@ -155,7 +155,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opampbridge
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-opampbridge
   failurePolicy: Ignore
   name: vopampbridgedelete.kb.io
   rules:
@@ -174,9 +174,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
   failurePolicy: Fail
-  name: vopentelemetrycollectorcreateupdate.kb.io
+  name: vamazoncloudwatchagentcreateupdate.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -186,7 +186,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - opentelemetrycollectors
+    - amazoncloudwatchagents
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -194,9 +194,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent
   failurePolicy: Ignore
-  name: vopentelemetrycollectordelete.kb.io
+  name: vamazoncloudwatchagentdelete.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -205,5 +205,5 @@ webhooks:
     operations:
     - DELETE
     resources:
-    - opentelemetrycollectors
+    - amazoncloudwatchagents
   sideEffects: None

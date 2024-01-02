@@ -14,7 +14,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.AmazonCloudWatchAgent) (*v1alpha1.AmazonCloudWatchAgent, error) {
 	// return if this does not use an autoscaler
 	if otelcol.Spec.MaxReplicas == nil {
 		return otelcol, nil
@@ -29,7 +29,7 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		client.InNamespace(otelcol.Namespace),
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		}),
 	}
 
@@ -42,12 +42,12 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	errors := []error{}
 	for i := range hpaList.Items {
 		existing := hpaList.Items[i]
-		// If there is an autoscaler based on Deployment, replace it with one based on OpenTelemetryCollector
+		// If there is an autoscaler based on Deployment, replace it with one based on AmazonCloudWatchAgent
 		if existing.Spec.ScaleTargetRef.Kind == "Deployment" {
 			updated := existing.DeepCopy()
 			updated.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
-				Kind:       "OpenTelemetryCollector",
-				Name:       naming.OpenTelemetryCollectorName(otelcol.Name),
+				Kind:       "AmazonCloudWatchAgent",
+				Name:       naming.AmazonCloudWatchAgentName(otelcol.Name),
 				APIVersion: v1alpha1.GroupVersion.String(),
 			}
 			patch := client.MergeFrom(&existing)

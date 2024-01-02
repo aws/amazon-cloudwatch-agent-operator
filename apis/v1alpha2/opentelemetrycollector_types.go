@@ -12,8 +12,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
-// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
-type OpenTelemetryCollectorSpec struct {
+// AmazonCloudWatchAgentSpec defines the desired state of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentSpec struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
@@ -35,12 +35,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Autoscaler specifies the pod autoscaling configuration to use
-	// for the OpenTelemetryCollector workload.
+	// for the AmazonCloudWatchAgent workload.
 	//
 	// +optional
 	Autoscaler *v1alpha1.AutoscalerSpec `json:"autoscaler,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the OpenTelemetryCollector workload.
+	// for the AmazonCloudWatchAgent workload.
 	//
 	// +optional
 	PodDisruptionBudget *v1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
@@ -60,7 +60,7 @@ type OpenTelemetryCollectorSpec struct {
 	// opentelemetry-collector pod, when running as a deployment, daemonset,
 	// or statefulset.
 	//
-	// In sidecar mode, the opentelemetry-operator will ignore this setting.
+	// In sidecar mode, the amazon-cloudwatch-agent-operator will ignore this setting.
 	//
 	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
@@ -186,15 +186,15 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
-	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
+	// ConfigMaps is a list of ConfigMaps in the same namespace as the AmazonCloudWatchAgent
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []v1alpha1.ConfigMapsSpec `json:"configmaps,omitempty"`
 }
 
-// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
-type OpenTelemetryCollectorStatus struct {
-	// Scale is the OpenTelemetryCollector's scale subresource status.
+// AmazonCloudWatchAgentStatus defines the observed state of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentStatus struct {
+	// Scale is the AmazonCloudWatchAgent's scale subresource status.
 	// +optional
 	Scale v1alpha1.ScaleSubresourceStatus `json:"scale,omitempty"`
 
@@ -214,31 +214,31 @@ type OpenTelemetryCollectorStatus struct {
 
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
+	// Deprecated: use "AmazonCloudWatchAgent.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
-type OpenTelemetryCollector struct {
+// AmazonCloudWatchAgent is the Schema for the amazoncloudwatchagents API.
+type AmazonCloudWatchAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenTelemetryCollectorSpec   `json:"spec,omitempty"`
-	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
+	Spec   AmazonCloudWatchAgentSpec   `json:"spec,omitempty"`
+	Status AmazonCloudWatchAgentStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
-type OpenTelemetryCollectorList struct {
+// AmazonCloudWatchAgentList contains a list of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenTelemetryCollector `json:"items"`
+	Items           []AmazonCloudWatchAgent `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
+	SchemeBuilder.Register(&AmazonCloudWatchAgent{}, &AmazonCloudWatchAgentList{})
 }

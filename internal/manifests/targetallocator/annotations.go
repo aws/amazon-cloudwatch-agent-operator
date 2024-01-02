@@ -15,7 +15,7 @@ import (
 const configMapHashAnnotationKey = "opentelemetry-targetallocator-config/hash"
 
 // Annotations returns the annotations for the TargetAllocator Pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector, configMap *v1.ConfigMap) map[string]string {
+func Annotations(instance v1alpha1.AmazonCloudWatchAgent, configMap *v1.ConfigMap) map[string]string {
 	// Make a copy of PodAnnotations to be safe
 	annotations := make(map[string]string, len(instance.Spec.PodAnnotations))
 	for key, value := range instance.Spec.PodAnnotations {

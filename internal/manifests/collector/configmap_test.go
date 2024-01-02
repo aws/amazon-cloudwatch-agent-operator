@@ -15,7 +15,7 @@ import (
 
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLables := map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   "default.test",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",

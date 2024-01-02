@@ -39,7 +39,7 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 			expected: OpAMPBridge{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					},
 				},
 				Spec: OpAMPBridgeSpec{
@@ -60,7 +60,7 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 			expected: OpAMPBridge{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					},
 				},
 				Spec: OpAMPBridgeSpec{
@@ -82,7 +82,7 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 			expected: OpAMPBridge{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					},
 				},
 				Spec: OpAMPBridgeSpec{

@@ -39,7 +39,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       naming.PodMonitor(params.OtelCol.Name),
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			},
 		},
 		Spec: monitoringv1.PodMonitorSpec{
@@ -50,7 +50,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				},
 			},
@@ -66,7 +66,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	return &pm, nil
 }
 
-func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
+func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) []monitoringv1.PodMetricsEndpoint {
 	config, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.V(2).Error(err, "Error while parsing the configuration")

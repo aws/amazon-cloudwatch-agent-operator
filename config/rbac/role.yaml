@@ -140,7 +140,7 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
-  - opentelemetrycollectors
+  - amazoncloudwatchagents
   verbs:
   - get
   - list
@@ -150,7 +150,7 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
-  - opentelemetrycollectors/finalizers
+  - amazoncloudwatchagents/finalizers
   verbs:
   - get
   - patch
@@ -158,7 +158,7 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
-  - opentelemetrycollectors/status
+  - amazoncloudwatchagents/status
   verbs:
   - get
   - patch

@@ -18,11 +18,11 @@ import (
 type ManagementStateType string
 
 const (
-	// ManagementStateManaged when the OpenTelemetryCollector custom resource should be
+	// ManagementStateManaged when the AmazonCloudWatchAgent custom resource should be
 	// reconciled by the operator.
 	ManagementStateManaged ManagementStateType = "managed"
 
-	// ManagementStateUnmanaged when the OpenTelemetryCollector custom resource should not be
+	// ManagementStateUnmanaged when the AmazonCloudWatchAgent custom resource should not be
 	// reconciled by the operator.
 	ManagementStateUnmanaged ManagementStateType = "unmanaged"
 )
@@ -36,7 +36,7 @@ const (
 // SEE: https://github.com/aws/amazon-cloudwatch-agent-operator/issues/1306.
 // NOTE: As a workaround, port name and appProtocol could be specified directly
 // in the CR.
-// SEE: OpenTelemetryCollector.spec.ports[index].
+// SEE: AmazonCloudWatchAgent.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
 	// Supported types are: ingress, route
@@ -79,8 +79,8 @@ type OpenShiftRoute struct {
 	Termination TLSRouteTerminationType `json:"termination,omitempty"`
 }
 
-// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
-type OpenTelemetryCollectorSpec struct {
+// AmazonCloudWatchAgentSpec defines the desired state of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentSpec struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
@@ -103,19 +103,19 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
+	// Deprecated: use "AmazonCloudWatchAgent.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.
+	// Deprecated: use "AmazonCloudWatchAgent.Spec.Autoscaler.MaxReplicas" instead.
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// Autoscaler specifies the pod autoscaling configuration to use
-	// for the OpenTelemetryCollector workload.
+	// for the AmazonCloudWatchAgent workload.
 	//
 	// +optional
 	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the OpenTelemetryCollector workload.
+	// for the AmazonCloudWatchAgent workload.
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
@@ -135,7 +135,7 @@ type OpenTelemetryCollectorSpec struct {
 	// opentelemetry-collector pod, when running as a deployment, daemonset,
 	// or statefulset.
 	//
-	// In sidecar mode, the opentelemetry-operator will ignore this setting.
+	// In sidecar mode, the amazon-cloudwatch-agent-operator will ignore this setting.
 	//
 	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
@@ -261,7 +261,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
-	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
+	// ConfigMaps is a list of ConfigMaps in the same namespace as the AmazonCloudWatchAgent
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
@@ -364,29 +364,29 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
 }
 
-// ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
+// ScaleSubresourceStatus defines the observed state of the AmazonCloudWatchAgent's
 // scale subresource.
 type ScaleSubresourceStatus struct {
-	// The selector used to match the OpenTelemetryCollector's
+	// The selector used to match the AmazonCloudWatchAgent's
 	// deployment or statefulSet pods.
 	// +optional
 	Selector string `json:"selector,omitempty"`
 
 	// The total number non-terminated pods targeted by this
-	// OpenTelemetryCollector's deployment or statefulSet.
+	// AmazonCloudWatchAgent's deployment or statefulSet.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
-	// Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector).
+	// StatusReplicas is the number of pods targeted by this AmazonCloudWatchAgent's with a Ready Condition /
+	// Total number of non-terminated pods targeted by this AmazonCloudWatchAgent's (their labels match the selector).
 	// Deployment, Daemonset, StatefulSet.
 	// +optional
 	StatusReplicas string `json:"statusReplicas,omitempty"`
 }
 
-// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
-type OpenTelemetryCollectorStatus struct {
-	// Scale is the OpenTelemetryCollector's scale subresource status.
+// AmazonCloudWatchAgentStatus defines the observed state of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentStatus struct {
+	// Scale is the AmazonCloudWatchAgent's scale subresource status.
 	// +optional
 	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
@@ -406,7 +406,7 @@ type OpenTelemetryCollectorStatus struct {
 
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
+	// Deprecated: use "AmazonCloudWatchAgent.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
@@ -422,29 +422,29 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
 // +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
-// This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
+// This annotation provides a hint for OLM which resources are managed by AmazonCloudWatchAgent kind.
 // It's not mandatory to list all resources.
 // +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}
 
-// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
-type OpenTelemetryCollector struct {
+// AmazonCloudWatchAgent is the Schema for the amazoncloudwatchagents API.
+type AmazonCloudWatchAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenTelemetryCollectorSpec   `json:"spec,omitempty"`
-	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
+	Spec   AmazonCloudWatchAgentSpec   `json:"spec,omitempty"`
+	Status AmazonCloudWatchAgentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
-type OpenTelemetryCollectorList struct {
+// AmazonCloudWatchAgentList contains a list of AmazonCloudWatchAgent.
+type AmazonCloudWatchAgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenTelemetryCollector `json:"items"`
+	Items           []AmazonCloudWatchAgent `json:"items"`
 }
 
-// AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
+// AutoscalerSpec defines the AmazonCloudWatchAgent's pod autoscaling specification.
 type AutoscalerSpec struct {
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
 	// +optional
@@ -468,7 +468,7 @@ type AutoscalerSpec struct {
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }
 
-// PodDisruptionBudgetSpec defines the OpenTelemetryCollector's pod disruption budget specification.
+// PodDisruptionBudgetSpec defines the AmazonCloudWatchAgent's pod disruption budget specification.
 type PodDisruptionBudgetSpec struct {
 	// An eviction is allowed if at least "minAvailable" pods selected by
 	// "selector" will still be available after the eviction, i.e. even in the
@@ -559,5 +559,5 @@ type ConfigMapsSpec struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
+	SchemeBuilder.Register(&AmazonCloudWatchAgent{}, &AmazonCloudWatchAgentList{})
 }

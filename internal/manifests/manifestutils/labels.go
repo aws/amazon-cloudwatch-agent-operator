@@ -64,7 +64,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 // expected to be modified for the lifetime of the object.
 func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  component,

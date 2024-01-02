@@ -66,7 +66,7 @@ var testSecurityContextValue = &v1.PodSecurityContext{
 
 func TestDeploymentSecurityContext(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -86,11 +86,11 @@ func TestDeploymentSecurityContext(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.SecurityContext)
 
 	// Test SecurityContext
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-securitycontext",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				SecurityContext: testSecurityContextValue,
 			},
@@ -163,18 +163,18 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
-func collectorInstance() v1alpha1.OpenTelemetryCollector {
+func collectorInstance() v1alpha1.AmazonCloudWatchAgent {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return v1alpha1.OpenTelemetryCollector{
+	return v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "default",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image:  "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator:0.47.0",
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Image:  "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
 			Config: string(configYAML),
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-targetallocator:0.47.0",
@@ -185,7 +185,7 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -203,11 +203,11 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
@@ -230,7 +230,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 }
 func TestDeploymentAffinity(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -248,11 +248,11 @@ func TestDeploymentAffinity(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.Affinity)
 
 	// Test affinity
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-affinity",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Affinity: testAffinityValue,
 			},
@@ -274,7 +274,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 func TestDeploymentTolerations(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -292,11 +292,11 @@ func TestDeploymentTolerations(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
 	// Test Tolerations
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-toleration",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Tolerations: testTolerationValues,
 			},
@@ -318,7 +318,7 @@ func TestDeploymentTolerations(t *testing.T) {
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -337,11 +337,11 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},

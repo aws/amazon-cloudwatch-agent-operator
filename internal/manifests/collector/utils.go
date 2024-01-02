@@ -9,7 +9,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
-func getDNSPolicy(otelcol v1alpha1.OpenTelemetryCollector) corev1.DNSPolicy {
+func getDNSPolicy(otelcol v1alpha1.AmazonCloudWatchAgent) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
 	if otelcol.Spec.HostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet

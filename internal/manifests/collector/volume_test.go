@@ -17,7 +17,7 @@ import (
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New()
 
 	// test
@@ -32,8 +32,8 @@ func TestVolumeNewDefault(t *testing.T) {
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Volumes: []corev1.Volume{{
 				Name: "my-volume",
 			}},
@@ -53,8 +53,8 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 
 func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/",

@@ -14,7 +14,7 @@ import (
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
+func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
 	if len(instance.Spec.ServiceAccount) == 0 {
 		return naming.ServiceAccount(instance.Name)
 	}
@@ -28,7 +28,7 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 		return nil
 	}
 	name := naming.ServiceAccount(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

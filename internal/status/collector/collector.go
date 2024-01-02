@@ -19,10 +19,10 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
+func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
-		changed.Status.Version = version.OpenTelemetryCollector()
+		changed.Status.Version = version.AmazonCloudWatchAgent()
 	}
 	mode := changed.Spec.Mode
 	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
@@ -34,7 +34,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
-	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentAmazonCloudWatchAgent, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)

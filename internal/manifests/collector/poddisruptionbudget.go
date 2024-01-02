@@ -20,7 +20,7 @@ func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget 
 	}
 
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
 
 	objectMeta := metav1.ObjectMeta{

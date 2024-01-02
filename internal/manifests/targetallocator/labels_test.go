@@ -20,7 +20,7 @@ const (
 
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -29,7 +29,7 @@ func TestLabelsCommonSet(t *testing.T) {
 
 	// test
 	labels := Labels(otelcol, name)
-	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "amazon-cloudwatch-agent-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])
@@ -39,7 +39,7 @@ func TestLabelsCommonSet(t *testing.T) {
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -59,7 +59,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 
 func TestSelectorLabels(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -68,7 +68,7 @@ func TestSelectorLabels(t *testing.T) {
 
 	// test
 	labels := SelectorLabels(otelcol)
-	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "amazon-cloudwatch-agent-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])

@@ -12,7 +12,7 @@ import (
 
 // VolumeClaimTemplates builds the volumeClaimTemplates for the given instance,
 // including the config map volume mount.
-func VolumeClaimTemplates(otelcol v1alpha1.OpenTelemetryCollector) []corev1.PersistentVolumeClaim {
+func VolumeClaimTemplates(otelcol v1alpha1.AmazonCloudWatchAgent) []corev1.PersistentVolumeClaim {
 	if otelcol.Spec.Mode != "statefulset" {
 		return []corev1.PersistentVolumeClaim{}
 	}

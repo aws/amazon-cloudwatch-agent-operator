@@ -10,7 +10,7 @@ import (
 )
 
 func TestFallbackVersion(t *testing.T) {
-	assert.Equal(t, "0.0.0", OpenTelemetryCollector())
+	assert.Equal(t, "0.0.0", AmazonCloudWatchAgent())
 }
 
 func TestVersionFromBuild(t *testing.T) {
@@ -20,7 +20,7 @@ func TestVersionFromBuild(t *testing.T) {
 		otelCol = ""
 	}()
 
-	assert.Equal(t, otelCol, OpenTelemetryCollector())
+	assert.Equal(t, otelCol, AmazonCloudWatchAgent())
 	assert.Contains(t, Get().String(), otelCol)
 }
 

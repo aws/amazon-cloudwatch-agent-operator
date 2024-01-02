@@ -68,7 +68,7 @@ func Routes(params manifests.Params) ([]*routev1.Route, error) {
 				Labels: map[string]string{
 					"app.kubernetes.io/name":       naming.Route(params.OtelCol.Name, p.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 					"app.kubernetes.io/component":  "opentelemetry-collector",
 				},
 			},

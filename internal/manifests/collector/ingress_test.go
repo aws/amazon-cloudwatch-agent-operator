@@ -26,8 +26,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressType("unknown"),
 					},
@@ -44,8 +44,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Config: "!!!",
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressTypeNginx,
@@ -64,8 +64,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Config: "---",
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressTypeNginx,
@@ -113,7 +113,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Labels: map[string]string{
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
@@ -202,7 +202,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Labels: map[string]string{
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 			},
 			Spec: networkingv1.IngressSpec{

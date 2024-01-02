@@ -26,8 +26,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
-// OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
-type OpenTelemetryCollectorReconciler struct {
+// AmazonCloudWatchAgentReconciler reconciles a AmazonCloudWatchAgent object.
+type AmazonCloudWatchAgentReconciler struct {
 	client.Client
 	recorder record.EventRecorder
 	scheme   *runtime.Scheme
@@ -35,7 +35,7 @@ type OpenTelemetryCollectorReconciler struct {
 	config   config.Config
 }
 
-// Params is the set of options to build a new OpenTelemetryCollectorReconciler.
+// Params is the set of options to build a new AmazonCloudWatchAgentReconciler.
 type Params struct {
 	client.Client
 	Recorder record.EventRecorder
@@ -44,7 +44,7 @@ type Params struct {
 	Config   config.Config
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -55,9 +55,9 @@ func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelem
 	}
 }
 
-// NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
-func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
-	r := &OpenTelemetryCollectorReconciler{
+// NewReconciler creates a new reconciler for AmazonCloudWatchAgent objects.
+func NewReconciler(p Params) *AmazonCloudWatchAgentReconciler {
+	r := &AmazonCloudWatchAgentReconciler{
 		Client:   p.Client,
 		log:      p.Log,
 		scheme:   p.Scheme,
@@ -76,18 +76,18 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents/finalizers,verbs=get;update;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
-func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
+func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.log.WithValues("amazoncloudwatchagent", req.NamespacedName)
 
-	var instance v1alpha1.OpenTelemetryCollector
+	var instance v1alpha1.AmazonCloudWatchAgent
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "unable to fetch OpenTelemetryCollector")
+			log.Error(err, "unable to fetch AmazonCloudWatchAgent")
 		}
 
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -101,8 +101,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
-		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
-		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
+		log.Info("Skipping reconciliation for unmanaged AmazonCloudWatchAgent resource", "name", req.String())
+		// Stop requeueing for unmanaged AmazonCloudWatchAgent custom resources
 		return ctrl.Result{}, nil
 	}
 
@@ -117,9 +117,9 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
-func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AmazonCloudWatchAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.OpenTelemetryCollector{}).
+		For(&v1alpha1.AmazonCloudWatchAgent{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

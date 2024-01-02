@@ -33,10 +33,10 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		}),
 	}
-	list := &v1alpha1.OpenTelemetryCollectorList{}
+	list := &v1alpha1.AmazonCloudWatchAgentList{}
 	if err := u.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -90,7 +90,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 }
 
 // ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version.
-func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
+func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.AmazonCloudWatchAgent) (v1alpha1.AmazonCloudWatchAgent, error) {
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {
 		return otelcol, nil
@@ -106,13 +106,13 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 		// Update with the latest known version, which is what we have from versions.txt
 		u.Log.Info("no upgrade routines are needed for the OpenTelemetry instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
 
-		otelColV, err := semver.NewVersion(u.Version.OpenTelemetryCollector)
+		otelColV, err := semver.NewVersion(u.Version.AmazonCloudWatchAgent)
 		if err != nil {
 			return otelcol, err
 		}
 		if instanceV.LessThan(otelColV) {
 			u.Log.Info("upgraded OpenTelemetry Collector version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
-			otelcol.Status.Version = u.Version.OpenTelemetryCollector
+			otelcol.Status.Version = u.Version.AmazonCloudWatchAgent
 		} else {
 			u.Log.Info("skipping upgrade for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
 		}
@@ -135,7 +135,7 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 		}
 	}
 	// Update with the latest known version, which is what we have from versions.txt
-	otelcol.Status.Version = u.Version.OpenTelemetryCollector
+	otelcol.Status.Version = u.Version.AmazonCloudWatchAgent
 
 	u.Log.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil

@@ -17,7 +17,7 @@ import (
 
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLables := map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",
@@ -40,7 +40,7 @@ config:
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: opentelemetry
 `,
 		}
@@ -76,7 +76,7 @@ config:
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: opentelemetry
 pod_monitor_selector:
   release: my-instance
@@ -122,7 +122,7 @@ config:
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   scrape_interval: 30s

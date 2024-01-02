@@ -89,12 +89,12 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	return add(p.config, p.logger, otelcol, pod, attributes)
 }
 
-func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.AmazonCloudWatchAgent, error) {
 	if strings.EqualFold(ann, "true") {
 		return p.selectCollectorInstance(ctx, ns)
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	var nsnOtelcol types.NamespacedName
 	instNamespace, instName, namespaced := strings.Cut(ann, "/")
 	if namespaced {
@@ -108,20 +108,20 @@ func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.
 	}
 
 	if otelcol.Spec.Mode != v1alpha1.ModeSidecar {
-		return v1alpha1.OpenTelemetryCollector{}, errInstanceNotSidecar
+		return v1alpha1.AmazonCloudWatchAgent{}, errInstanceNotSidecar
 	}
 
 	return otelcol, nil
 }
 
-func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.AmazonCloudWatchAgent, error) {
 	var (
-		otelcols = v1alpha1.OpenTelemetryCollectorList{}
-		sidecars []v1alpha1.OpenTelemetryCollector
+		otelcols = v1alpha1.AmazonCloudWatchAgentList{}
+		sidecars []v1alpha1.AmazonCloudWatchAgent
 	)
 
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.OpenTelemetryCollector{}, err
+		return v1alpha1.AmazonCloudWatchAgent{}, err
 	}
 
 	for i := range otelcols.Items {
@@ -133,9 +133,9 @@ func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns core
 
 	switch {
 	case len(sidecars) == 0:
-		return v1alpha1.OpenTelemetryCollector{}, errNoInstancesAvailable
+		return v1alpha1.AmazonCloudWatchAgent{}, errNoInstancesAvailable
 	case len(sidecars) > 1:
-		return v1alpha1.OpenTelemetryCollector{}, errMultipleInstancesPossible
+		return v1alpha1.AmazonCloudWatchAgent{}, errMultipleInstancesPossible
 	default:
 		return sidecars[0], nil
 	}

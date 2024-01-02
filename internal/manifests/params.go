@@ -19,7 +19,7 @@ type Params struct {
 	Recorder    record.EventRecorder
 	Scheme      *runtime.Scheme
 	Log         logr.Logger
-	OtelCol     v1alpha1.OpenTelemetryCollector
+	OtelCol     v1alpha1.AmazonCloudWatchAgent
 	OpAMPBridge v1alpha1.OpAMPBridge
 	Config      config.Config
 }

@@ -35,12 +35,12 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "metrics",
@@ -112,7 +112,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -201,7 +201,7 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",

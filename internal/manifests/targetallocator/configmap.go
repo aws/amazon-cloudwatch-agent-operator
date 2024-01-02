@@ -33,7 +33,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	taConfig := make(map[interface{}]interface{})
 	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)
+	taConfig["label_selector"] = manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentAmazonCloudWatchAgent)
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig

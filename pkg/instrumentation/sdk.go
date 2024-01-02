@@ -34,7 +34,7 @@ const (
 	sideCarName       = "opentelemetry-auto-instrumentation"
 )
 
-// inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
+// inject a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
 
 type sdkInjector struct {
 	client client.Client

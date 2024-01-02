@@ -31,7 +31,7 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
+func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
 		return instance.Spec.Config, nil

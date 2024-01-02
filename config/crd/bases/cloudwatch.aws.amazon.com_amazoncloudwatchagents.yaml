@@ -4,17 +4,17 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: opentelemetrycollectors.opentelemetry.io
+  name: amazoncloudwatchagents.opentelemetry.io
 spec:
   group: opentelemetry.io
   names:
-    kind: OpenTelemetryCollector
-    listKind: OpenTelemetryCollectorList
-    plural: opentelemetrycollectors
+    kind: AmazonCloudWatchAgent
+    listKind: AmazonCloudWatchAgentList
+    plural: amazoncloudwatchagents
     shortNames:
     - otelcol
     - otelcols
-    singular: opentelemetrycollector
+    singular: amazoncloudwatchagent
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -42,7 +42,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        description: AmazonCloudWatchAgent is the Schema for the amazoncloudwatchagents
           API.
         properties:
           apiVersion:
@@ -58,7 +58,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
+            description: AmazonCloudWatchAgentSpec defines the desired state of AmazonCloudWatchAgent.
             properties:
               additionalContainers:
                 description: AdditionalContainers allows injecting additional containers
@@ -1946,7 +1946,7 @@ spec:
                 type: object
               autoscaler:
                 description: Autoscaler specifies the pod autoscaling configuration
-                  to use for the OpenTelemetryCollector workload.
+                  to use for the AmazonCloudWatchAgent workload.
                 properties:
                   behavior:
                     description: HorizontalPodAutoscalerBehavior configures the scaling
@@ -2203,7 +2203,7 @@ spec:
                 type: string
               configmaps:
                 description: ConfigMaps is a list of ConfigMaps in the same namespace
-                  as the OpenTelemetryCollector object, which shall be mounted into
+                  as the AmazonCloudWatchAgent object, which shall be mounted into
                   the Collector Pods.
                 items:
                   properties:
@@ -3801,14 +3801,14 @@ spec:
                 type: string
               maxReplicas:
                 description: 'MaxReplicas sets an upper bound to the autoscaling feature.
-                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas"
+                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "AmazonCloudWatchAgent.Spec.Autoscaler.MaxReplicas"
                   instead.'
                 format: int32
                 type: integer
               minReplicas:
                 description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
                   this if you are using autoscaling. It must be at least 1 Deprecated:
-                  use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
+                  use "AmazonCloudWatchAgent.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
               mode:
@@ -3848,7 +3848,7 @@ spec:
                 type: object
               podDisruptionBudget:
                 description: PodDisruptionBudget specifies the pod disruption budget
-                  configuration to use for the OpenTelemetryCollector workload.
+                  configuration to use for the AmazonCloudWatchAgent workload.
                 properties:
                   maxUnavailable:
                     anyOf:
@@ -7458,8 +7458,8 @@ spec:
                 x-kubernetes-list-type: atomic
             type: object
           status:
-            description: OpenTelemetryCollectorStatus defines the observed state of
-              OpenTelemetryCollector.
+            description: AmazonCloudWatchAgentStatus defines the observed state of
+              AmazonCloudWatchAgent.
             properties:
               image:
                 description: Image indicates the container image to use for the OpenTelemetry
@@ -7474,27 +7474,27 @@ spec:
                 x-kubernetes-list-type: atomic
               replicas:
                 description: 'Replicas is currently not being set and might be removed
-                  in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas"
+                  in the next version. Deprecated: use "AmazonCloudWatchAgent.Status.Scale.Replicas"
                   instead.'
                 format: int32
                 type: integer
               scale:
-                description: Scale is the OpenTelemetryCollector's scale subresource
+                description: Scale is the AmazonCloudWatchAgent's scale subresource
                   status.
                 properties:
                   replicas:
                     description: The total number non-terminated pods targeted by
-                      this OpenTelemetryCollector's deployment or statefulSet.
+                      this AmazonCloudWatchAgent's deployment or statefulSet.
                     format: int32
                     type: integer
                   selector:
-                    description: The selector used to match the OpenTelemetryCollector's
+                    description: The selector used to match the AmazonCloudWatchAgent's
                       deployment or statefulSet pods.
                     type: string
                   statusReplicas:
                     description: StatusReplicas is the number of pods targeted by
-                      this OpenTelemetryCollector's with a Ready Condition / Total
-                      number of non-terminated pods targeted by this OpenTelemetryCollector's
+                      this AmazonCloudWatchAgent's with a Ready Condition / Total
+                      number of non-terminated pods targeted by this AmazonCloudWatchAgent's
                       (their labels matc
                     type: string
                 type: object

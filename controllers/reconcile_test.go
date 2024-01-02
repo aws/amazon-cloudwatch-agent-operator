@@ -67,7 +67,7 @@ func newParamsAssertNoErr(t *testing.T, taContainerImage string, file string) ma
 	return p
 }
 
-func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
+func TestAmazonCloudWatchAgentReconciler_Reconcile(t *testing.T) {
 	addedMetadataDeployment := paramsWithMode(v1alpha1.ModeDeployment)
 	addedMetadataDeployment.OtelCol.Labels = map[string]string{
 		labelName: labelVal,
@@ -434,7 +434,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							taConfig := make(map[interface{}]interface{})
 							taConfig["label_selector"] = map[string]string{
 								"app.kubernetes.io/instance":   "default.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 								"app.kubernetes.io/component":  "opentelemetry-collector",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							}
@@ -498,7 +498,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check{
 						func(t *testing.T, params manifests.Params) {
-							o := v1alpha1.OpenTelemetryCollector{}
+							o := v1alpha1.AmazonCloudWatchAgent{}
 							exists, err := populateObjectIfExists(t, &o, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.False(t, exists) // There should be no collector anymore
@@ -554,7 +554,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
 				updateParam := updateParam
-				existing := v1alpha1.OpenTelemetryCollector{}
+				existing := v1alpha1.AmazonCloudWatchAgent{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
 				assert.NoError(t, err)

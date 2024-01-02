@@ -13,7 +13,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects.
-	GroupVersion = schema.GroupVersion{Group: "opentelemetry.io", Version: "v1alpha2"}
+	GroupVersion = schema.GroupVersion{Group: "cloudwatch.aws.amazon.com", Version: "v1alpha2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

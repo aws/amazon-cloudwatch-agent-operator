@@ -88,8 +88,8 @@ func TestDesiredService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `receivers:
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{Config: `receivers:
       test:
         protocols:
           unknown:`},
@@ -164,8 +164,8 @@ func TestDesiredService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `!!!`},
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{Config: `!!!`},
 			},
 		}
 
@@ -226,7 +226,7 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -237,7 +237,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, inter
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,
-			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

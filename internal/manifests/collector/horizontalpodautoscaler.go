@@ -17,7 +17,7 @@ import (
 
 func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
 	var result client.Object
 
@@ -81,8 +81,8 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 				APIVersion: v1alpha1.GroupVersion.String(),
-				Kind:       "OpenTelemetryCollector",
-				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
+				Kind:       "AmazonCloudWatchAgent",
+				Name:       naming.AmazonCloudWatchAgent(params.OtelCol.Name),
 			},
 			MinReplicas: params.OtelCol.Spec.Autoscaler.MinReplicas,
 			MaxReplicas: *params.OtelCol.Spec.Autoscaler.MaxReplicas,

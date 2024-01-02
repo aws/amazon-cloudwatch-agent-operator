@@ -89,7 +89,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 		client.InNamespace(nsn.Namespace),
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Namespace, nsn.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 			"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 		}),
 	}

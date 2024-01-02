@@ -28,7 +28,7 @@ import (
 
 var (
 	selectorLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 		"app.kubernetes.io/instance":   "test.test",
@@ -43,7 +43,7 @@ var (
 
 var (
 	opampbridgeSelectorLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 		"app.kubernetes.io/instance":   "test.test",
@@ -52,7 +52,7 @@ var (
 
 var (
 	taSelectorLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 		"app.kubernetes.io/instance":   "test.test",
@@ -74,7 +74,7 @@ service:
 `
 	one := int32(1)
 	type args struct {
-		instance v1alpha1.OpenTelemetryCollector
+		instance v1alpha1.AmazonCloudWatchAgent
 	}
 	tests := []struct {
 		name    string
@@ -85,12 +85,12 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha1.AmazonCloudWatchAgent{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 						Replicas: &one,
 						Mode:     "deployment",
 						Image:    "test",
@@ -107,16 +107,16 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+							"prometheus.io/path":                             "/metrics",
+							"prometheus.io/port":                             "8888",
+							"prometheus.io/scrape":                           "true",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -129,16 +129,16 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+									"prometheus.io/path":                             "/metrics",
+									"prometheus.io/port":                             "8888",
+									"prometheus.io/scrape":                           "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -211,7 +211,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -229,7 +229,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -244,7 +244,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -269,7 +269,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":                          "opentelemetry-collector",
 							"app.kubernetes.io/instance":                           "test.test",
-							"app.kubernetes.io/managed-by":                         "opentelemetry-operator",
+							"app.kubernetes.io/managed-by":                         "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":                               "test-collector",
 							"app.kubernetes.io/part-of":                            "opentelemetry",
 							"app.kubernetes.io/version":                            "latest",
@@ -298,7 +298,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector-monitoring",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -321,12 +321,12 @@ service:
 		{
 			name: "ingress",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha1.AmazonCloudWatchAgent{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 						Replicas: &one,
 						Mode:     "deployment",
 						Image:    "test",
@@ -350,16 +350,16 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+							"prometheus.io/path":                             "/metrics",
+							"prometheus.io/port":                             "8888",
+							"prometheus.io/scrape":                           "true",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -372,16 +372,16 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+									"prometheus.io/path":                             "/metrics",
+									"prometheus.io/port":                             "8888",
+									"prometheus.io/scrape":                           "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -454,7 +454,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -472,7 +472,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -487,7 +487,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -512,7 +512,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":                          "opentelemetry-collector",
 							"app.kubernetes.io/instance":                           "test.test",
-							"app.kubernetes.io/managed-by":                         "opentelemetry-operator",
+							"app.kubernetes.io/managed-by":                         "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":                               "test-collector",
 							"app.kubernetes.io/part-of":                            "opentelemetry",
 							"app.kubernetes.io/version":                            "latest",
@@ -541,7 +541,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector-monitoring",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -564,7 +564,7 @@ service:
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-ingress",
 						},
 						Annotations: map[string]string{
@@ -603,12 +603,12 @@ service:
 		{
 			name: "specified service account case",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha1.AmazonCloudWatchAgent{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 						Replicas:       &one,
 						Mode:           "deployment",
 						Image:          "test",
@@ -626,16 +626,16 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+							"prometheus.io/path":                             "/metrics",
+							"prometheus.io/port":                             "8888",
+							"prometheus.io/scrape":                           "true",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -648,16 +648,16 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									"amazon-cloudwatch-agent-operator-config/sha256": "8188c85abd4aa5e9c798874b4f47d37f08d4778933154e3f7d60246510ed9dd2",
+									"prometheus.io/path":                             "/metrics",
+									"prometheus.io/port":                             "8888",
+									"prometheus.io/scrape":                           "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -730,7 +730,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -748,7 +748,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -773,7 +773,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":                          "opentelemetry-collector",
 							"app.kubernetes.io/instance":                           "test.test",
-							"app.kubernetes.io/managed-by":                         "opentelemetry-operator",
+							"app.kubernetes.io/managed-by":                         "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":                               "test-collector",
 							"app.kubernetes.io/part-of":                            "opentelemetry",
 							"app.kubernetes.io/version":                            "latest",
@@ -802,7 +802,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector-monitoring",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -895,7 +895,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-opamp-bridge",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -911,7 +911,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-opamp-bridge",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
@@ -971,7 +971,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-opamp-bridge",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1008,7 +1008,7 @@ endpoint: ws://opamp-server:4320/v1/opamp
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-opamp-bridge",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1023,7 +1023,7 @@ endpoint: ws://opamp-server:4320/v1/opamp
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-opamp-bridge",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1095,7 +1095,7 @@ service:
 `
 	one := int32(1)
 	type args struct {
-		instance v1alpha1.OpenTelemetryCollector
+		instance v1alpha1.AmazonCloudWatchAgent
 	}
 	tests := []struct {
 		name         string
@@ -1107,12 +1107,12 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha1.AmazonCloudWatchAgent{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 						Replicas: &one,
 						Mode:     "statefulset",
 						Image:    "test",
@@ -1135,16 +1135,16 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							"amazon-cloudwatch-agent-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
+							"prometheus.io/path":                             "/metrics",
+							"prometheus.io/port":                             "8888",
+							"prometheus.io/scrape":                           "true",
 						},
 					},
 					Spec: appsv1.StatefulSetSpec{
@@ -1158,16 +1158,16 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									"amazon-cloudwatch-agent-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
+									"prometheus.io/path":                             "/metrics",
+									"prometheus.io/port":                             "8888",
+									"prometheus.io/scrape":                           "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1240,7 +1240,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1258,7 +1258,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1273,7 +1273,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector-monitoring",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1297,7 +1297,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1305,7 +1305,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: opentelemetry-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
+						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
 					},
 				},
 				&appsv1.Deployment{
@@ -1315,7 +1315,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1331,7 +1331,7 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-targetallocator",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
@@ -1421,7 +1421,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1435,7 +1435,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1462,12 +1462,12 @@ service:
 		{
 			name: "enable metrics case",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha1.AmazonCloudWatchAgent{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 						Replicas: &one,
 						Mode:     "statefulset",
 						Image:    "test",
@@ -1495,16 +1495,16 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							"amazon-cloudwatch-agent-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
+							"prometheus.io/path":                             "/metrics",
+							"prometheus.io/port":                             "8888",
+							"prometheus.io/scrape":                           "true",
 						},
 					},
 					Spec: appsv1.StatefulSetSpec{
@@ -1518,16 +1518,16 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									"amazon-cloudwatch-agent-operator-config/sha256": "5fe4d7d7faf3247bd7ec88688c9f73618f9ab8e170362bd7203c54e7a2f5cec0",
+									"prometheus.io/path":                             "/metrics",
+									"prometheus.io/port":                             "8888",
+									"prometheus.io/scrape":                           "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1600,7 +1600,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1618,7 +1618,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1633,7 +1633,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-collector-monitoring",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1657,7 +1657,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1665,7 +1665,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: opentelemetry-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
+						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
 					},
 				},
 				&appsv1.Deployment{
@@ -1675,7 +1675,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1691,7 +1691,7 @@ service:
 								Labels: map[string]string{
 									"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 									"app.kubernetes.io/instance":   "test.test",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 									"app.kubernetes.io/name":       "test-targetallocator",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
@@ -1781,7 +1781,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1795,7 +1795,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1823,7 +1823,7 @@ service:
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 							"app.kubernetes.io/name":       "test-targetallocator",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
@@ -1838,7 +1838,7 @@ service:
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 								"app.kubernetes.io/name":       "test-targetallocator",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							},

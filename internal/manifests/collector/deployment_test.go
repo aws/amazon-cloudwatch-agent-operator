@@ -57,12 +57,12 @@ var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Tolerations: testTolerationValues,
 		},
 	}
@@ -89,17 +89,17 @@ func TestDeploymentNewDefault(t *testing.T) {
 
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
+		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                             "/metrics",
+		"prometheus.io/port":                             "8888",
+		"prometheus.io/scrape":                           "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
 	expectedLabels := map[string]string{
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/name":       "my-instance-collector",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "latest",
@@ -109,7 +109,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	expectedSelectorLabels := map[string]string{
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
 	assert.Equal(t, expectedSelectorLabels, d.Spec.Selector.MatchLabels)
@@ -123,11 +123,11 @@ func TestDeploymentNewDefault(t *testing.T) {
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			PodAnnotations: testPodAnnotationValues,
 		},
 	}
@@ -143,14 +143,14 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	d := Deployment(params)
 
 	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues["amazon-cloudwatch-agent-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	expectedPodAnnotationValues := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
+		"annotation-key": "annotation-value",
+		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                             "/metrics",
+		"prometheus.io/port":                             "8888",
+		"prometheus.io/scrape":                           "true",
 	}
 
 	// verify
@@ -164,11 +164,11 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			PodSecurityContext: &v1.PodSecurityContext{
 				RunAsNonRoot: &runAsNonRoot,
 				RunAsUser:    &runAsUser,
@@ -194,7 +194,7 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 
 func TestDeploymentHostNetwork(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -214,11 +214,11 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// Test hostNetwork=true
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-hostnetwork",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			HostNetwork: true,
 		},
 	}
@@ -242,12 +242,12 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -268,7 +268,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -287,11 +287,11 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			HostNetwork: true,
 			NodeSelector: map[string]string{
 				"node-key": "node-value",
@@ -312,7 +312,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 }
 
 func TestDeploymentPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -331,11 +331,11 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			PriorityClassName: priorityClassName,
 		},
 	}
@@ -353,7 +353,7 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 }
 
 func TestDeploymentAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -370,11 +370,11 @@ func TestDeploymentAffinity(t *testing.T) {
 	d1 := Deployment(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Affinity: testAffinityValue,
 		},
 	}
@@ -393,7 +393,7 @@ func TestDeploymentAffinity(t *testing.T) {
 }
 
 func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -412,11 +412,11 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 	gracePeriodSec := int64(60)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TerminationGracePeriodSeconds: &gracePeriodSec,
 		},
 	}
@@ -436,12 +436,12 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 func TestDeploymentSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			InitContainers: []v1.Container{
 				{
 					Name: "test",
@@ -469,7 +469,7 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -487,11 +487,11 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			TopologySpreadConstraints: testTopologySpreadConstraintValue,
 		},
 	}
@@ -512,12 +512,12 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 func TestDeploymentAdditionalContainers(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			AdditionalContainers: []v1.Container{
 				{
 					Name: "test",

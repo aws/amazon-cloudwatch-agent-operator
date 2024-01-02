@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.AmazonCloudWatchAgent) (*v1alpha1.AmazonCloudWatchAgent, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.41.0, failed to parse configuration: %w", err)
