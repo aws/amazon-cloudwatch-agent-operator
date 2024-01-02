@@ -30,11 +30,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.

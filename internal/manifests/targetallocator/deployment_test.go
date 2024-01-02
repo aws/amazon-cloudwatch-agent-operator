@@ -23,9 +23,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 var testTolerationValues = []v1.Toleration{
@@ -185,10 +185,10 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image:  "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Image:  "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator:0.47.0",
 			Config: string(configYAML),
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0",
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-targetallocator:0.47.0",
 			},
 		},
 	}

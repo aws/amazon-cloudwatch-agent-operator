@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
+	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 
 	"github.com/stretchr/testify/assert"
 )

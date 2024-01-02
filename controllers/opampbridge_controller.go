@@ -26,10 +26,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	opampbridgeStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/opampbridge"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	opampbridgeStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/opampbridge"
 )
 
 // OpAMPBridgeReconciler reconciles a OpAMPBridge object.

@@ -6,10 +6,10 @@ metadata:
     capabilities: Deep Insights
     categories: Logging & Tracing,Monitoring
     certified: "false"
-    containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    containerImage: ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    repository: github.com/open-telemetry/opentelemetry-operator
+    repository: github.com/aws/amazon-cloudwatch-agent-operator
     support: OpenTelemetry Community
   name: opentelemetry-operator.v0.0.0
   namespace: placeholder
@@ -135,7 +135,7 @@ spec:
   - troubleshooting
   links:
   - name: OpenTelemetry Operator
-    url: https://github.com/open-telemetry/opentelemetry-operator
+    url: https://github.com/aws/amazon-cloudwatch-agent-operator
   maintainers:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling

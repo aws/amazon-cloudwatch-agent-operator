@@ -24,8 +24,8 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"gopkg.in/yaml.v2"
 
-	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 func TestPrometheusParser(t *testing.T) {

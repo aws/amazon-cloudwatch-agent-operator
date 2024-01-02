@@ -20,8 +20,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/parser"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 var _ parser.ComponentPortParser = &JaegerReceiverParser{}

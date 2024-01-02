@@ -19,9 +19,9 @@ import (
 
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -69,7 +69,7 @@ headers:
 				Namespace: "my-namespace",
 			},
 			Spec: v1alpha1.OpAMPBridgeSpec{
-				Image:    "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+				Image:    "ghcr.io/aws/amazon-cloudwatch-agent-operator/operator-opamp-bridge:0.69.0",
 				Endpoint: "ws://opamp-server:4320/v1/opamp",
 				Headers:  map[string]string{"authorization": "access-12345-token"},
 				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{

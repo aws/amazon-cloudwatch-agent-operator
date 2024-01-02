@@ -20,9 +20,9 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
 // Option represents one specific configuration option.

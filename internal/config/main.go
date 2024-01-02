@@ -21,9 +21,9 @@ import (
 	"github.com/go-logr/logr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
 const (

@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 const (
@@ -36,7 +36,7 @@ func TestLabelsCommonSet(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator:0.47.0",
 		},
 	}
 
@@ -56,7 +56,7 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
 		},
 	}
 
@@ -95,7 +95,7 @@ func TestLabelsTagUnset(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator",
 		},
 	}
 
@@ -118,7 +118,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator",
 		},
 	}
 
@@ -137,7 +137,7 @@ func TestLabelsFilter(t *testing.T) {
 			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/opentelemetry-operator",
 		},
 	}
 

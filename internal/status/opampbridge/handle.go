@@ -22,7 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 )
 
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
-// TODO: make the status more useful https://github.com/open-telemetry/opentelemetry-operator/issues/1972
+// TODO: make the status more useful https://github.com/aws/amazon-cloudwatch-agent-operator/issues/1972
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating opampbridge status")
 	if err != nil {

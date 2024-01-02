@@ -20,9 +20,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 func TestNewConfig(t *testing.T) {

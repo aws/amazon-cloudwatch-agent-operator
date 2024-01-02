@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
 var defaultSize = resource.MustParse("200Mi")

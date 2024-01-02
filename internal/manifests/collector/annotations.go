@@ -18,7 +18,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.

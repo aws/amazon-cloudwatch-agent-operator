@@ -19,8 +19,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
 func UpdateOpAMPBridgeStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpAMPBridge) error {

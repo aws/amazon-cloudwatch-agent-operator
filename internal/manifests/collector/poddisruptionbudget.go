@@ -18,9 +18,9 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {

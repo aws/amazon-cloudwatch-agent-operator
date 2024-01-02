@@ -44,7 +44,7 @@ const (
 // NOTE: If this feature is activated, all specified receivers are exposed.
 // Currently this has a few limitations. Depending on the ingress controller
 // there are problems with TLS and gRPC.
-// SEE: https://github.com/open-telemetry/opentelemetry-operator/issues/1306.
+// SEE: https://github.com/aws/amazon-cloudwatch-agent-operator/issues/1306.
 // NOTE: As a workaround, port name and appProtocol could be specified directly
 // in the CR.
 // SEE: OpenTelemetryCollector.spec.ports[index].

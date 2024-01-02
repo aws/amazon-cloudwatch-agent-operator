@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
