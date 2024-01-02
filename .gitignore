@@ -1,45 +1,7 @@
-
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-bin
-vendor
-.DS_Store
-
-# Test binary, build with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-*.coverprofile
-
-# Kubernetes Generated files - skip generated files, except for vendored files
-!vendor/**/zz_generated.*
-
-# Release artifacts
-dist
-bundle.tar.gz
-vendor
-
-# editor and IDE paraphernalia
-.idea
-*.swp
-*.swo
-*~
-
-# local resources, not to be committed
-local
-config/manager/kustomization.yaml
-.vscode
-
-# test resources
-kubeconfig
-tests/_build/
-
-# autoinstrumentation artifacts
 build
-node_modules
-package-lock.json
+.tmp
+*.iml
+.DS_Store
+.idea
+.attach_pid*
+bin

@@ -1,0 +1,108 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Run EKS addon Integration Tests for Beta Cluster
+env:
+  TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      addon_name:
+        required: true
+        type: string
+        default: "amazon-cloudwatch-observability"
+        description: "EKS addon name"
+      addon_version:
+        required: true
+        type: string
+        default: "v1.1.0-eksbuild.1"
+        description: "EKS addon version"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  GenerateTestMatrix:
+    name: 'GenerateTestMatrix'
+    runs-on: ubuntu-latest
+    outputs:
+      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Generate matrix
+        id: set-matrix
+        run: |
+          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+
+      - name: Echo test plan matrix
+        run: |
+          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
+
+  EKSAddOnBetaClusterIntegrationTest:
+    needs: [GenerateTestMatrix]
+    name: EKSAddOnBetaClusterIntegrationTest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arrays: ${{ fromJson(needs.GenerateTestMatrix.outputs.eks_addon_matrix) }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
+          aws-region: us-west-2
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform apply
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 1
+          timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform init
+            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=true" -auto-approve
+            else
+              terraform destroy -var="beta=true" -auto-approve && exit 1
+            fi
+
+      - name: Terraform destroy
+        if: ${{ cancelled() || failure() }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 8
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform destroy -var="beta=true" --auto-approve
