@@ -14,7 +14,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -26,16 +26,33 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Containers: []corev1.Container{
 				{Name: "my-app"},
 			},
+			InitContainers: []corev1.Container{
+				{
+					Name: "my-init",
+				},
+			},
 			// cross-test: the pod has a volume already, make sure we don't remove it
 			Volumes: []corev1.Volume{{}},
 		},
 	}
 	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "otelcol-sample",
+			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name: "test",
+				},
+			},
 			Config: `
 receivers:
 exporters:
@@ -51,8 +68,10 @@ processors:
 	// verify
 	assert.NoError(t, err)
 	require.Len(t, changed.Spec.Containers, 2)
+	require.Len(t, changed.Spec.InitContainers, 2)
 	require.Len(t, changed.Spec.Volumes, 1)
-	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
+	assert.Equal(t, "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-cha",
+		changed.Labels["sidecar.opentelemetry.io/injected"])
 	assert.Equal(t, corev1.Container{
 		Name:  "otc-container",
 		Image: "some-default-image",

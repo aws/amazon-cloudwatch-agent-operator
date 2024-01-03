@@ -5,10 +5,12 @@ package instrumentation
 
 import (
 	"errors"
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"os"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 const (

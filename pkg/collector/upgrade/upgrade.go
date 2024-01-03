@@ -33,7 +33,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		}),
 	}
 	list := &v1alpha1.AmazonCloudWatchAgentList{}
@@ -44,6 +44,12 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 	for i := range list.Items {
 		original := list.Items[i]
 		itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
+
+		if original.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
+			itemLogger.Info("skipping upgrade because instance is not managed")
+			continue
+		}
+
 		if original.Spec.UpgradeStrategy == v1alpha1.UpgradeStrategyNone {
 			itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
 			continue

@@ -17,7 +17,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhookhandler"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 )
 
 var (
@@ -32,7 +32,7 @@ type sidecarPodMutator struct {
 	config config.Config
 }
 
-var _ webhookhandler.PodMutator = (*sidecarPodMutator)(nil)
+var _ podmutation.PodMutator = (*sidecarPodMutator)(nil)
 
 func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator {
 	return &sidecarPodMutator{
