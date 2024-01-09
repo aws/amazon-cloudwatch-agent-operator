@@ -10,7 +10,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -33,7 +32,6 @@ import (
 
 	otelv1alpha1 "github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
@@ -93,18 +91,8 @@ func main() {
 		metricsAddr                    string
 		probeAddr                      string
 		pprofAddr                      string
-		enableLeaderElection           bool
 		collectorImage                 string
-		targetAllocatorImage           string
-		operatorOpAMPBridgeImage       string
 		autoInstrumentationJava        string
-		autoInstrumentationNodeJS      string
-		autoInstrumentationPython      string
-		autoInstrumentationDotNet      string
-		autoInstrumentationApacheHttpd string
-		autoInstrumentationNginx       string
-		autoInstrumentationGo          string
-		labelsFilter                   []string
 		webhookPort                    int
 		tlsOpt                         tlsConfig
 	)
@@ -112,9 +100,6 @@ func main() {
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.StringVar(&pprofAddr, "pprof-addr", "", "The address to expose the pprof server. Default is empty string which disables the pprof server.")
-	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
@@ -125,9 +110,9 @@ func main() {
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
-	logger.Info("Starting the OpenTelemetry Operator",
+	logger.Info("Starting the Amazon CloudWatch Agent Operator",
 		"amazon-cloudwatch-agent-operator", v.Operator,
-		"opentelemetry-collector", collectorImage,
+		"cloudwatch-agent", collectorImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -135,35 +120,12 @@ func main() {
 		"go-os", runtime.GOOS,
 	)
 
-	restConfig := ctrl.GetConfigOrDie()
-
-	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig)
-	if err != nil {
-		setupLog.Error(err, "failed to setup auto-detect routine")
-		os.Exit(1)
-	}
-
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
-		config.WithTargetAllocatorImage(targetAllocatorImage),
-		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
-		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
-		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
-		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
-		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
-		config.WithLabelFilters(labelsFilter),
 	)
-	err = cfg.AutoDetect()
-	if err != nil {
-		setupLog.Error(err, "failed to autodetect config variables")
-	}
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
@@ -171,11 +133,6 @@ func main() {
 	} else {
 		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
 	}
-
-	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
-	leaseDuration := time.Second * 137
-	renewDeadline := time.Second * 107
-	retryPeriod := time.Second * 26
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
@@ -194,11 +151,6 @@ func main() {
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "9f7554c3.opentelemetry.io",
-		LeaseDuration:          &leaseDuration,
-		RenewDeadline:          &renewDeadline,
-		RetryPeriod:            &retryPeriod,
 		PprofBindAddress:       pprofAddr,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
@@ -230,17 +182,6 @@ func main() {
 		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AmazonCloudWatchAgent")
-		os.Exit(1)
-	}
-
-	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 		os.Exit(1)
 	}
 
