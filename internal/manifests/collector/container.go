@@ -18,6 +18,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
 // maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
@@ -31,13 +32,9 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		image = cfg.CollectorImage()
 	}
 
-	// build container ports from service ports
-	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
-	if err != nil {
-		logger.Error(err, "container ports config")
-	}
-
-	for _, p := range otelcol.Spec.Ports {
+	// Use defined cloudwatch agent ports
+	ports := map[string]corev1.ContainerPort{}
+	for _, p := range constants.CloudwatchAgentPorts {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
 			ContainerPort: p.Port,

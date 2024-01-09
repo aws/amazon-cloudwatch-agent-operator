@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ComponentAmazonCloudWatchAgent = "opentelemetry-collector"
+	ComponentAmazonCloudWatchAgent = "amazon-cloudwatch-agent"
 )
 
 // Build creates the manifest for the collector resource.
