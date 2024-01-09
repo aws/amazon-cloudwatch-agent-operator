@@ -76,9 +76,9 @@ func NewReconciler(p Params) *AmazonCloudWatchAgentReconciler {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=amazoncloudwatchagents/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/finalizers,verbs=get;update;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

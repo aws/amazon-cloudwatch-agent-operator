@@ -416,12 +416,12 @@ type AmazonCloudWatchAgentStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="CloudWatch Agent Version"
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
 // +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
-// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
+// +operator-sdk:csv:customresourcedefinitions:displayName="Amazon CloudWatch Agent"
 // This annotation provides a hint for OLM which resources are managed by AmazonCloudWatchAgent kind.
 // It's not mandatory to list all resources.
 // +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}

@@ -43,7 +43,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstGo          string
 }
 
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=instrumentations,verbs=get;list;watch;update;patch
 
 // ManagedInstances upgrades managed instances by the amazon-cloudwatch-agent-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
