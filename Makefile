@@ -114,12 +114,12 @@ set-image-controller: manifests kustomize
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller
+deploy: #set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
-undeploy: set-image-controller
+undeploy: #set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Generates the released manifests
