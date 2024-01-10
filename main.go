@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -19,13 +18,11 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/tools/record"
 	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -35,10 +32,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
-	collectorupgrade "github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector/upgrade"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
-	instrumentationupgrade "github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/upgrade"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
@@ -168,11 +163,6 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	err = addDependencies(ctx, mgr, cfg, v)
-	if err != nil {
-		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
-		os.Exit(1)
-	}
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
@@ -222,43 +212,6 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		up := &collectorupgrade.VersionUpgrade{
-			Log:      ctrl.Log.WithName("collector-upgrade"),
-			Version:  v,
-			Client:   mgr.GetClient(),
-			Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
-		}
-		return up.ManagedInstances(c)
-	}))
-	if err != nil {
-		return fmt.Errorf("failed to upgrade AmazonCloudWatchAgent instances: %w", err)
-	}
-
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-			DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstGo:          cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
-			Client:                     mgr.GetClient(),
-			Recorder:                   mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
-		}
-		return u.ManagedInstances(c)
-	}))
-	if err != nil {
-		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
-	}
-	return nil
 }
 
 // This function get the option from command argument (tlsConfig), check the validity through k8sapiflag

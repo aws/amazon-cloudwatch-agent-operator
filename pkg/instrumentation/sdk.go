@@ -61,7 +61,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
+				//disable setting security context in init container due to issue with runAsNonRoot conflict
+				//https://github.com/open-telemetry/opentelemetry-operator/issues/2272
+				//pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
 			}
 		}
 	}
