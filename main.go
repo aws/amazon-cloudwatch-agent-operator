@@ -83,13 +83,13 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr                    string
-		probeAddr                      string
-		pprofAddr                      string
-		collectorImage                 string
-		autoInstrumentationJava        string
-		webhookPort                    int
-		tlsOpt                         tlsConfig
+		metricsAddr             string
+		probeAddr               string
+		pprofAddr               string
+		collectorImage          string
+		autoInstrumentationJava string
+		webhookPort             int
+		tlsOpt                  tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")

@@ -17,7 +17,7 @@ import (
 
 const (
 	defaultAutoDetectFrequency               = 5 * time.Second
-	defaultCollectorConfigMapEntry           = "collector.yaml"
+	defaultCollectorConfigMapEntry           = "cwagentconfig.json"
 	defaultTargetAllocatorConfigMapEntry     = "targetallocator.yaml"
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
 )

@@ -65,7 +65,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.ConfigMapVolume(),
-				MountPath: "/conf",
+				MountPath: "/etc/cwagentconfig",
 			})
 	}
 

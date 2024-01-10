@@ -30,7 +30,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Data: map[string]string{
-			"collector.yaml": replacedConf,
+			"cwagentconfig.json": replacedConf,
 		},
 	}, nil
 }
