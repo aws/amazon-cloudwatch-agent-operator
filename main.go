@@ -203,10 +203,6 @@ func main() {
 				}),
 		})
 
-		if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
-			os.Exit(1)
-		}
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}
