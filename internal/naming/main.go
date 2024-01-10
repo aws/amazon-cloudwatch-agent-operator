@@ -6,7 +6,7 @@ package naming
 
 // ConfigMap builds the name for the config map used in the AmazonCloudWatchAgent containers.
 func ConfigMap(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
@@ -56,17 +56,17 @@ func OpAMPBridgeContainer() string {
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // HorizontalPodAutoscaler builds the autoscaler name based on the instance.
 func HorizontalPodAutoscaler(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // PodDisruptionBudget builds the pdb name based on the instance.
 func PodDisruptionBudget(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TAPodDisruptionBudget builds the pdb name based on the instance.
@@ -106,7 +106,7 @@ func MonitoringService(otelcol string) string {
 
 // Service builds the service name based on the instance.
 func Service(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // Ingress builds the ingress name based on the instance.
@@ -131,17 +131,17 @@ func OpAMPBridgeService(opampBridge string) string {
 
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // ServiceMonitor builds the service Monitor name based on the instance.
 func ServiceMonitor(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // PodMonitor builds the pod Monitor name based on the instance.
 func PodMonitor(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.

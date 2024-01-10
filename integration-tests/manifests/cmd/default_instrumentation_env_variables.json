@@ -5,5 +5,5 @@
   "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4315",
   "OTEL_AWS_SMP_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4315",
   "OTEL_METRICS_EXPORTER": "none",
-  "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation/javaagent.jar"
+  "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 }
