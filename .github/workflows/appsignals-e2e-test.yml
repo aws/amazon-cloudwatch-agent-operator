@@ -39,6 +39,17 @@ jobs:
         with:
           repository: aws-observability/aws-otel-java-instrumentation
           ref: main
+          
+      - name: Download patch action script
+        uses: actions/checkout@v4
+        with:
+          path: patch-dependencies
+          sparse-checkout: |
+            .github/actions/patch-dependencies/action.yml
+
+      - name: Replace patch dependency action.yml
+        run: |
+          cp -f ./patch-dependencies/.github/actions/patch-dependencies/action.yml ./.github/actions/patch-dependencies/action.yml
 
       - name: Download enablement script
         uses: actions/checkout@v4
@@ -50,6 +61,11 @@ jobs:
             scripts/eks/appsignals/enable-app-signals.sh
             scripts/eks/appsignals/clean-app-signals.sh
           sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -174,6 +190,19 @@ jobs:
             exit 1
           fi
 
+      # cache local patch outputs
+      - name: Cache local Maven repository
+        id: cache-local-maven-repo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository/io/opentelemetry/
+          key: ${{ runner.os }}-maven-local-${{ hashFiles('.github/patches/opentelemetry-java*.patch') }}
+
+      - name: Publish patched dependencies to maven local
+        uses: ./.github/actions/patch-dependencies
+        if: steps.cache-local-maven-repo.outputs.cache-hit != 'true'
+        
       - name: Get the sample app endpoint
         run: |
           echo "APP_ENDPOINT=$(terraform output sample_app_endpoint)" >> $GITHUB_ENV
