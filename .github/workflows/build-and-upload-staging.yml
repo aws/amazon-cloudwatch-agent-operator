@@ -5,7 +5,7 @@ name: Build And Upload Staging Artifact
 env:
   # Use terraform assume role for uploading to ecr
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_WINDOWS_CI_STAGING_IMAGE }}
 
 on:
   push:

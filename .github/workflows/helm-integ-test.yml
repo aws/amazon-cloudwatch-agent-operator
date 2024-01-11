@@ -57,7 +57,7 @@ jobs:
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/helm
+            cd integration-tests/terraform/helm-windows
             terraform init
             if terraform apply -auto-approve \
                 -var="kube_dir=${{ github.workspace }}/../../../.kube"; then
@@ -74,5 +74,5 @@ jobs:
           timeout_minutes: 8
           retry_wait_seconds: 5
           command: |
-            cd integration-tests/terraform/helm
+            cd integration-tests/terraform/helm-windows
             terraform destroy --auto-approve
