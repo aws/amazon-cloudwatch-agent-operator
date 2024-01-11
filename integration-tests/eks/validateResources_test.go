@@ -1,6 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build linuxonly || windowslinux
+// +build linuxonly windowslinux
+
 package eks_addon
 
 import (
@@ -26,8 +29,16 @@ const (
 	nameSpace        = "amazon-cloudwatch"
 	addOnName        = "amazon-cloudwatch-observability"
 	agentName        = "cloudwatch-agent"
-	podNameRegex     = "(" + agentName + "|" + addOnName + "-controller-manager|fluent-bit)-*"
-	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service"
+	agentNameWindows = "cloudwatch-agent-windows"
+	podNameRegex     = "(" + agentName + "|" + agentNameWindows + "|" + addOnName + "-controller-manager|fluent-bit|fluent-bit-windows)-*"
+	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + addOnName + "-webhook-service"
+)
+
+const (
+	deploymentCount = 1
+	podCount        = podCountLinux + podCountWindows
+	serviceCount    = serviceCountLinux + serviceCountWindows
+	daemonsetCount  = daemonsetCountLinux + daemonsetCountWindows
 )
 
 func TestOperatorOnEKs(t *testing.T) {
@@ -57,7 +68,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, pods.Items, 3)
+	assert.Len(t, pods.Items, podCount)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 		assert.Equal(t, v1.PodRunning, pod.Status.Phase)
@@ -73,7 +84,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, services.Items, 4)
+	assert.Len(t, services.Items, serviceCount)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 		// matches
@@ -92,7 +103,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	for _, deployment := range deployments.Items {
 		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
 	}
-	assert.Len(t, deployments.Items, 1)
+	assert.Len(t, deployments.Items, deploymentCount)
 	// matches
 	// - amazon-cloudwatch-observability-controller-manager
 	assert.Equal(t, addOnName+"-controller-manager", deployments.Items[0].Name)
@@ -104,14 +115,14 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, daemonSets.Items, 2)
+	assert.Len(t, daemonSets.Items, daemonsetCount)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 		// matches
 		// - cloudwatch-agent
 		// - fluent-bit
 		if match, _ := regexp.MatchString(agentName+"|fluent-bit", daemonSet.Name); !match {
-			assert.Fail(t, "DaemonSet is created correctly")
+			assert.Fail(t, "DaemonSet is not created correctly")
 		}
 	}
 
