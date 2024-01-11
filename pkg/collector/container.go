@@ -4,8 +4,13 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
+	"go.uber.org/zap"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -107,17 +112,27 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 
 func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
-	for _, p := range CloudwatchAgentPorts {
+	var servicePorts []corev1.ServicePort
+	servicePorts = append(servicePorts, AppSignalsCloudwatchAgentPorts...)
+
+	configJSON, err := adapters.ConfigStructFromJSONString(cfg)
+	if err != nil {
+		logger.Error(err, "error parsing cw agent config")
+	} else {
+		servicePorts = getServicePorts(configJSON, servicePorts)
+	}
+
+	for _, p := range servicePorts {
 		truncName := naming.Truncate(p.Name, maxPortLen)
 		if p.Name != truncName {
 			logger.Info("truncating container port name",
-				"port.name.prev", p.Name, "port.name.new", truncName)
+				zap.String("port.name.prev", p.Name), zap.String("port.name.new", truncName))
 		}
 		nameErrs := validation.IsValidPortName(truncName)
 		numErrs := validation.IsValidPortNum(int(p.Port))
 		if len(nameErrs) > 0 || len(numErrs) > 0 {
-			logger.Info("dropping invalid container port", "port.name", truncName, "port.num", p.Port,
-				"port.name.errs", nameErrs, "num.errs", numErrs)
+			logger.Info("dropping invalid container port", zap.String("port.name", truncName), zap.Int32("port.num", p.Port),
+				zap.Strings("port.name.errs", nameErrs), zap.Strings("num.errs", numErrs))
 			continue
 		}
 		ports[truncName] = corev1.ContainerPort{
@@ -129,6 +144,114 @@ func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.Contain
 	return ports
 }
 
+func getServicePorts(configJSON *adapters.CwaConfig, servicePorts []corev1.ServicePort) []corev1.ServicePort {
+	servicePortsMap := getServicePortsMap()
+	logger, _ := zap.NewDevelopment()
+	servicePorts = append(servicePorts, getMetricsReceiversServicePorts(logger, configJSON, servicePortsMap)...)
+	servicePorts = append(servicePorts, getLogsReceiversServicePorts(logger, configJSON, servicePortsMap)...)
+	servicePorts = append(servicePorts, getTracesReceiversServicePorts(logger, configJSON, servicePortsMap)...)
+	return servicePorts
+}
+
+func getMetricsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+	var metricsPorts []corev1.ServicePort
+
+	if configJSON.Metrics == nil || configJSON.Metrics.MetricsCollected == nil {
+		return metricsPorts
+	}
+	//StatD
+	if configJSON.Metrics.MetricsCollected.StatsD != nil {
+		metricsPorts = getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, containerPortsMap, metricsPorts)
+	}
+	//CollectD
+	if configJSON.Metrics.MetricsCollected.CollectD != nil {
+		metricsPorts = getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, containerPortsMap, metricsPorts)
+	}
+	return metricsPorts
+}
+
+func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverName string, containerPortsMap map[int32]corev1.ServicePort, ports []corev1.ServicePort) []corev1.ServicePort {
+	if serviceAddress != "" {
+		port, err := portFromEndpoint(serviceAddress)
+		if err != nil {
+			logger.Error("error parsing port from endpoint", zap.Error(err))
+		} else {
+			if _, ok := containerPortsMap[port]; ok {
+				logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
+			} else {
+				sp := corev1.ServicePort{
+					Name: CWA + receiverName,
+					Port: port,
+				}
+				ports = append(ports, sp)
+				containerPortsMap[port] = sp
+			}
+		}
+	} else {
+		if _, ok := containerPortsMap[receiverDefaultPortsMap[receiverName]]; ok {
+			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap["statsd"]))
+		} else {
+			sp := corev1.ServicePort{
+				Name: receiverName,
+				Port: receiverDefaultPortsMap[receiverName],
+			}
+			ports = append(ports, sp)
+			containerPortsMap[receiverDefaultPortsMap[receiverName]] = sp
+		}
+	}
+	return ports
+}
+
+func getLogsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+	var logsPorts []corev1.ServicePort
+	//EMF
+	if configJSON.Logs != nil && configJSON.Logs.LogMetricsCollected != nil && configJSON.Logs.LogMetricsCollected.EMF != nil {
+		if _, ok := containerPortsMap[receiverDefaultPortsMap["emf"]]; ok {
+			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap["emf"]))
+		} else {
+			sp := corev1.ServicePort{
+				Name: "emf",
+				Port: receiverDefaultPortsMap["emf"],
+			}
+			logsPorts = append(logsPorts, sp)
+			containerPortsMap[receiverDefaultPortsMap["emf"]] = sp
+		}
+	}
+	return logsPorts
+}
+
+func getTracesReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+	var tracesPorts []corev1.ServicePort
+
+	if configJSON.Traces == nil || configJSON.Traces.TracesCollected == nil {
+		return tracesPorts
+	}
+	//OTLP
+	if configJSON.Traces.TracesCollected.OTLP != nil {
+		//GRPC
+		tracesPorts = getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, containerPortsMap, tracesPorts)
+		//HTTP
+		tracesPorts = getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, containerPortsMap, tracesPorts)
+
+	}
+	//Xray
+	if configJSON.Traces.TracesCollected.XRay != nil {
+		tracesPorts = getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.BindAddress, XrayTraces, containerPortsMap, tracesPorts)
+		if configJSON.Traces.TracesCollected.XRay.TCPProxy != nil {
+			tracesPorts = getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, containerPortsMap, tracesPorts)
+		}
+	}
+	return tracesPorts
+}
+
+func getServicePortsMap() map[int32]corev1.ServicePort {
+	servicePortMap := make(map[int32]corev1.ServicePort)
+	for k, v := range apmPortToServicePortMap {
+		servicePortMap[k] = v
+	}
+	return servicePortMap
+}
+
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
 	ports := make([]corev1.ContainerPort, 0, len(portMap))
 	for _, p := range portMap {
@@ -138,4 +261,25 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
+}
+
+func portFromEndpoint(endpoint string) (int32, error) {
+	var err error
+	var port int64
+
+	r := regexp.MustCompile(":[0-9]+")
+
+	if r.MatchString(endpoint) {
+		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
+
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	if port == 0 {
+		return 0, errors.New("port should not be empty")
+	}
+
+	return int32(port), err
 }
