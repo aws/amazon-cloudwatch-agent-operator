@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: fluent-bit
+  name: fluent-bit-windows
   namespace: {{ .Release.Namespace }}
   labels:
     k8s-app: fluent-bit
@@ -14,15 +14,17 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/fluent-bit-configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/fluent-bit-windows-configmap.yaml") . | sha256sum }}
       labels:
         k8s-app: fluent-bit
         version: v1
         kubernetes.io/cluster-service: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/os: windows
       containers:
       - name: fluent-bit
-        image: {{ template "fluent-bit.image" . }}
+        image: {{ template "fluent-bit-windows.image" . }}
         imagePullPolicy: Always
         env:
         - name: AWS_REGION
@@ -31,8 +33,6 @@ spec:
           value: {{ .Values.clusterName | quote }}
         - name: READ_FROM_HEAD
           value: "Off"
-        - name: READ_FROM_TAIL
-          value: "On"
         - name: HOST_NAME
           valueFrom:
             fieldRef:
@@ -59,43 +59,40 @@ spec:
         volumeMounts:
         # Please don't change below read-only permissions
         - name: fluentbitstate
-          mountPath: /var/fluent-bit/state
+          mountPath: C:\var\fluent-bit\state
         - name: varlog
-          mountPath: /var/log
+          mountPath: C:\var\log
           readOnly: true
         - name: varlibdockercontainers
-          mountPath: /var/lib/docker/containers
+          mountPath: C:\ProgramData\docker\containers
+          readOnly: true
+        - name: varlibcontainerdcontainers
+          mountPath: C:\ProgramData\containerd\root
+          readOnly: true
+        - name: eksdataplaneservicelog
+          mountPath: C:\ProgramData\Amazon\EKS\logs
           readOnly: true
         - name: fluent-bit-config
-          mountPath: /fluent-bit/etc/
-        - name: runlogjournal
-          mountPath: /run/log/journal
-          readOnly: true
-        - name: dmesg
-          mountPath: /var/log/dmesg
-          readOnly: true
+          mountPath: C:\fluent-bit\etc\
       terminationGracePeriodSeconds: 10
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       volumes:
       - name: fluentbitstate
         hostPath:
-          path: /var/fluent-bit/state
+          path: C:\var\fluent-bit\state
       - name: varlog
         hostPath:
-          path: /var/log
+          path: C:\var\log
       - name: varlibdockercontainers
         hostPath:
-          path: /var/lib/docker/containers
+          path: C:\ProgramData\docker\containers
+      - name: varlibcontainerdcontainers
+        hostPath:
+          path: C:\ProgramData\containerd\root
+      - name: eksdataplaneservicelog
+        hostPath:
+          path: C:\ProgramData\Amazon\EKS\logs
       - name: fluent-bit-config
         configMap:
-          name: fluent-bit-config
-      - name: runlogjournal
-        hostPath:
-          path: /run/log/journal
-      - name: dmesg
-        hostPath:
-          path: /var/log/dmesg
+          name: fluent-bit-windows-config
       serviceAccountName: {{ template "cloudwatch-agent.serviceAccountName" . }}
-      nodeSelector:
-        kubernetes.io/os: linux

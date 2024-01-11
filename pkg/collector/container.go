@@ -52,12 +52,21 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 	// "primary" config and in the future additional configs can be appended to the container args in a simple manner.
 
 	if addConfig {
-		volumeMounts = append(volumeMounts,
-			corev1.VolumeMount{
-				Name:      naming.ConfigMapVolume(),
-				MountPath: "/etc/cwagentconfig",
-			},
-		)
+		if agent.Spec.NodeSelector["kubernetes.io/os"] == "windows" {
+			volumeMounts = append(volumeMounts,
+				corev1.VolumeMount{
+					Name:      naming.ConfigMapVolume(),
+					MountPath: "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\cwagentconfig",
+				},
+			)
+		} else {
+			volumeMounts = append(volumeMounts,
+				corev1.VolumeMount{
+					Name:      naming.ConfigMapVolume(),
+					MountPath: "/etc/cwagentconfig",
+				},
+			)
+		}
 	}
 
 	// ensure that the v1alpha1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
