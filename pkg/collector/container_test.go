@@ -2,6 +2,7 @@ package collector
 
 import (
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
@@ -22,6 +23,7 @@ func TestStatsDGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
 	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+StatsD].Protocol)
 }
 
 func TestDefaultStatsDGetContainerPorts(t *testing.T) {
@@ -36,6 +38,7 @@ func TestDefaultStatsDGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(8125), containerPorts[StatsD].ContainerPort)
 	assert.Equal(t, StatsD, containerPorts[StatsD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[StatsD].Protocol)
 }
 
 func TestCollectDGetContainerPorts(t *testing.T) {
@@ -49,7 +52,7 @@ func TestCollectDGetContainerPorts(t *testing.T) {
 	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(25936), containerPorts[CWA+CollectD].ContainerPort)
-	assert.Equal(t, CWA+CollectD, containerPorts[CWA+CollectD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+CollectD].Protocol)
 }
 
 func TestDefaultCollectDGetContainerPorts(t *testing.T) {
@@ -64,6 +67,7 @@ func TestDefaultCollectDGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(25826), containerPorts[CollectD].ContainerPort)
 	assert.Equal(t, CollectD, containerPorts[CollectD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CollectD].Protocol)
 }
 
 func TestEMFGetContainerPorts(t *testing.T) {
@@ -92,8 +96,10 @@ func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(4327), containerPorts[CWA+OtlpGrpc].ContainerPort)
 	assert.Equal(t, CWA+OtlpGrpc, containerPorts[CWA+OtlpGrpc].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+OtlpGrpc].Protocol)
 	assert.Equal(t, int32(4328), containerPorts[CWA+OtlpHttp].ContainerPort)
 	assert.Equal(t, CWA+OtlpHttp, containerPorts[CWA+OtlpHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+OtlpHttp].Protocol)
 }
 
 func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
@@ -108,8 +114,10 @@ func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(4317), containerPorts[OtlpGrpc].ContainerPort)
 	assert.Equal(t, OtlpGrpc, containerPorts[OtlpGrpc].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[OtlpGrpc].Protocol)
 	assert.Equal(t, int32(4318), containerPorts[OtlpHttp].ContainerPort)
 	assert.Equal(t, OtlpHttp, containerPorts[OtlpHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[OtlpHttp].Protocol)
 }
 
 func TestXRayGetContainerPorts(t *testing.T) {
@@ -124,8 +132,10 @@ func TestXRayGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
 	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
 	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+XrayProxy].Protocol)
 }
 
 func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
@@ -141,6 +151,7 @@ func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
 	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+XrayProxy].Protocol)
 }
 
 func TestXRayWithTCPProxyBindAddressDefaultGetContainerPorts(t *testing.T) {
@@ -156,6 +167,7 @@ func TestXRayWithTCPProxyBindAddressDefaultGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
 }
 
 func TestNilMetricsGetContainerPorts(t *testing.T) {
@@ -183,14 +195,18 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
 	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+StatsD].Protocol)
 	assert.Equal(t, int32(25936), containerPorts[CWA+CollectD].ContainerPort)
 	assert.Equal(t, CWA+CollectD, containerPorts[CWA+CollectD].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+CollectD].Protocol)
 	assert.Equal(t, int32(25888), containerPorts[EMF].ContainerPort)
 	assert.Equal(t, EMF, containerPorts[EMF].Name)
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
 	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
 	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+XrayProxy].Protocol)
 	assert.Equal(t, int32(4327), containerPorts[CWA+OtlpGrpc].ContainerPort)
 	assert.Equal(t, CWA+OtlpGrpc, containerPorts[CWA+OtlpGrpc].Name)
 	assert.Equal(t, int32(4328), containerPorts[CWA+OtlpHttp].ContainerPort)

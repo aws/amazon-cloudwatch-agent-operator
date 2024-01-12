@@ -155,17 +155,17 @@ func getMetricsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.Cw
 	if configJSON.Metrics == nil || configJSON.Metrics.MetricsCollected == nil {
 		return
 	}
-	//StatD
+	//StatD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-statsd.html
 	if configJSON.Metrics.MetricsCollected.StatsD != nil {
-		getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, containerPortsMap)
+		getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, corev1.ProtocolUDP, containerPortsMap)
 	}
-	//CollectD
+	//CollectD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-collectd.html
 	if configJSON.Metrics.MetricsCollected.CollectD != nil {
-		getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, containerPortsMap)
+		getReceiverServicePort(logger, configJSON.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, containerPortsMap)
 	}
 }
 
-func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverName string, containerPortsMap map[int32]corev1.ServicePort) {
+func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, containerPortsMap map[int32]corev1.ServicePort) {
 	if serviceAddress != "" {
 		port, err := portFromEndpoint(serviceAddress)
 		if err != nil {
@@ -175,19 +175,21 @@ func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverN
 				logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
 				sp := corev1.ServicePort{
-					Name: CWA + receiverName,
-					Port: port,
+					Name:     CWA + receiverName,
+					Port:     port,
+					Protocol: protocol,
 				}
 				containerPortsMap[port] = sp
 			}
 		}
 	} else {
 		if _, ok := containerPortsMap[receiverDefaultPortsMap[receiverName]]; ok {
-			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap["statsd"]))
+			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[receiverName]))
 		} else {
 			sp := corev1.ServicePort{
-				Name: receiverName,
-				Port: receiverDefaultPortsMap[receiverName],
+				Name:     receiverName,
+				Port:     receiverDefaultPortsMap[receiverName],
+				Protocol: protocol,
 			}
 			containerPortsMap[receiverDefaultPortsMap[receiverName]] = sp
 		}
@@ -195,7 +197,7 @@ func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverN
 }
 
 func getLogsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
-	//EMF
+	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
 	if configJSON.Logs != nil && configJSON.Logs.LogMetricsCollected != nil && configJSON.Logs.LogMetricsCollected.EMF != nil {
 		if _, ok := containerPortsMap[receiverDefaultPortsMap[EMF]]; ok {
 			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
@@ -215,19 +217,20 @@ func getTracesReceiversServicePorts(logger *zap.Logger, configJSON *adapters.Cwa
 	if configJSON.Traces == nil || configJSON.Traces.TracesCollected == nil {
 		return tracesPorts
 	}
+	//Traces - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html#CloudWatch-Agent-Configuration-File-Tracessection
 	//OTLP
 	if configJSON.Traces.TracesCollected.OTLP != nil {
 		//GRPC
-		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, containerPortsMap)
+		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, containerPortsMap)
 		//HTTP
-		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, containerPortsMap)
+		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, containerPortsMap)
 
 	}
 	//Xray
 	if configJSON.Traces.TracesCollected.XRay != nil {
-		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.BindAddress, XrayTraces, containerPortsMap)
+		getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.BindAddress, XrayTraces, corev1.ProtocolUDP, containerPortsMap)
 		if configJSON.Traces.TracesCollected.XRay.TCPProxy != nil {
-			getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, containerPortsMap)
+			getReceiverServicePort(logger, configJSON.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, corev1.ProtocolTCP, containerPortsMap)
 		}
 	}
 	return tracesPorts
