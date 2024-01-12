@@ -170,6 +170,33 @@ func TestNilMetricsGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 }
 
+func TestMultipleReceiversGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/multipleReceiversAgentConfig.json")
+	strings.Replace(cfg, "2900", "2000", 1)
+	containerPorts := getContainerPorts(logger, cfg)
+	assert.Equal(t, 10, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
+	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
+	assert.Equal(t, int32(25936), containerPorts[CWA+CollectD].ContainerPort)
+	assert.Equal(t, CWA+CollectD, containerPorts[CWA+CollectD].Name)
+	assert.Equal(t, int32(25888), containerPorts[EMF].ContainerPort)
+	assert.Equal(t, EMF, containerPorts[EMF].Name)
+	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
+	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
+	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
+	assert.Equal(t, int32(4327), containerPorts[CWA+OtlpGrpc].ContainerPort)
+	assert.Equal(t, CWA+OtlpGrpc, containerPorts[CWA+OtlpGrpc].Name)
+	assert.Equal(t, int32(4328), containerPorts[CWA+OtlpHttp].ContainerPort)
+	assert.Equal(t, CWA+OtlpHttp, containerPorts[CWA+OtlpHttp].Name)
+}
+
 func getJSONStringFromFile(path string) string {
 	buf, err := os.ReadFile(path)
 	if err != nil {

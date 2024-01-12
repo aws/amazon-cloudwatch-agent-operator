@@ -5,22 +5,8 @@ package collector
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"sort"
 )
-
-var AppSignalsCloudwatchAgentPorts = []corev1.ServicePort{
-	{
-		Name: AppSignalsGrpc,
-		Port: 4315,
-	},
-	{
-		Name: AppSignalsHttp,
-		Port: 4316,
-	},
-	{
-		Name: AppSignalsProxy,
-		Port: 2000,
-	},
-}
 
 const (
 	StatsD          = "statsd"
@@ -45,7 +31,7 @@ var receiverDefaultPortsMap = map[string]int32{
 	EMF:        25888,
 }
 
-var apmPortToServicePortMap = map[int32]corev1.ServicePort{
+var AppSignalsPortToServicePortMap = map[int32]corev1.ServicePort{
 	4315: {
 		Name: AppSignalsGrpc,
 		Port: 4315,
@@ -58,4 +44,15 @@ var apmPortToServicePortMap = map[int32]corev1.ServicePort{
 		Name: AppSignalsProxy,
 		Port: 2000,
 	},
+}
+
+func PortMapToServicePortList(portMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+	ports := make([]corev1.ServicePort, 0, len(portMap))
+	for _, p := range portMap {
+		ports = append(ports, p)
+	}
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+	return ports
 }
