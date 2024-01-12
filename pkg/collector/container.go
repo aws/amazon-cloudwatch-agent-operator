@@ -116,8 +116,9 @@ func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.Contain
 	configJSON, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
+		servicePorts = PortMapToServicePortList(AppSignalsPortToServicePortMap)
 	} else {
-		servicePorts = getServicePortsFromCWAgentConfig(configJSON)
+		servicePorts = getServicePortsFromCWAgentConfig(logger, configJSON)
 	}
 
 	for _, p := range servicePorts {
@@ -142,16 +143,15 @@ func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.Contain
 	return ports
 }
 
-func getServicePortsFromCWAgentConfig(configJSON *adapters.CwaConfig) []corev1.ServicePort {
+func getServicePortsFromCWAgentConfig(logger logr.Logger, configJSON *adapters.CwaConfig) []corev1.ServicePort {
 	servicePortsMap := getAppSignalsServicePortsMap()
-	logger, _ := zap.NewDevelopment()
 	getMetricsReceiversServicePorts(logger, configJSON, servicePortsMap)
 	getLogsReceiversServicePorts(logger, configJSON, servicePortsMap)
 	getTracesReceiversServicePorts(logger, configJSON, servicePortsMap)
 	return PortMapToServicePortList(servicePortsMap)
 }
 
-func getMetricsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
+func getMetricsReceiversServicePorts(logger logr.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
 	if configJSON.Metrics == nil || configJSON.Metrics.MetricsCollected == nil {
 		return
 	}
@@ -165,14 +165,14 @@ func getMetricsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.Cw
 	}
 }
 
-func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, containerPortsMap map[int32]corev1.ServicePort) {
+func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, containerPortsMap map[int32]corev1.ServicePort) {
 	if serviceAddress != "" {
 		port, err := portFromEndpoint(serviceAddress)
 		if err != nil {
-			logger.Error("error parsing port from endpoint", zap.Error(err))
+			logger.Error(err, "error parsing port from endpoint")
 		} else {
 			if _, ok := containerPortsMap[port]; ok {
-				logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
+				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
 				sp := corev1.ServicePort{
 					Name:     CWA + receiverName,
@@ -184,7 +184,7 @@ func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverN
 		}
 	} else {
 		if _, ok := containerPortsMap[receiverDefaultPortsMap[receiverName]]; ok {
-			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[receiverName]))
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[receiverName]))
 		} else {
 			sp := corev1.ServicePort{
 				Name:     receiverName,
@@ -196,11 +196,11 @@ func getReceiverServicePort(logger *zap.Logger, serviceAddress string, receiverN
 	}
 }
 
-func getLogsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
+func getLogsReceiversServicePorts(logger logr.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
 	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
 	if configJSON.Logs != nil && configJSON.Logs.LogMetricsCollected != nil && configJSON.Logs.LogMetricsCollected.EMF != nil {
 		if _, ok := containerPortsMap[receiverDefaultPortsMap[EMF]]; ok {
-			logger.Warn("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
 		} else {
 			sp := corev1.ServicePort{
 				Name: EMF,
@@ -211,7 +211,7 @@ func getLogsReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaCo
 	}
 }
 
-func getTracesReceiversServicePorts(logger *zap.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+func getTracesReceiversServicePorts(logger logr.Logger, configJSON *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
 	var tracesPorts []corev1.ServicePort
 
 	if configJSON.Traces == nil || configJSON.Traces.TracesCollected == nil {

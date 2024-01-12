@@ -213,6 +213,19 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 	assert.Equal(t, CWA+OtlpHttp, containerPorts[CWA+OtlpHttp].Name)
 }
 
+func TestInvalidConfigGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/nilMetrics.json")
+	cfg = cfg + ","
+	containerPorts := getContainerPorts(logger, cfg)
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+}
+
 func getJSONStringFromFile(path string) string {
 	buf, err := os.ReadFile(path)
 	if err != nil {

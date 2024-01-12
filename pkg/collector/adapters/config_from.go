@@ -96,7 +96,7 @@ type otlp struct {
 func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
 	var config *CwaConfig
 	if err := json.Unmarshal([]byte(configStr), &config); err != nil {
-		return nil, ErrInvalidJSON
+		return nil, err
 	}
 
 	return config, nil
