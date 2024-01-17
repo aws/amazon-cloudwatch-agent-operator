@@ -9,8 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
@@ -18,7 +16,6 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                          autodetect.AutoDetect
 	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
@@ -30,29 +27,9 @@ type options struct {
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
-	targetAllocatorConfigMapEntry       string
-	operatorOpAMPBridgeConfigMapEntry   string
-	targetAllocatorImage                string
-	operatorOpAMPBridgeImage            string
-	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
 }
 
-func WithAutoDetect(a autodetect.AutoDetect) Option {
-	return func(o *options) {
-		o.autoDetect = a
-	}
-}
-func WithTargetAllocatorImage(s string) Option {
-	return func(o *options) {
-		o.targetAllocatorImage = s
-	}
-}
-func WithOperatorOpAMPBridgeImage(s string) Option {
-	return func(o *options) {
-		o.operatorOpAMPBridgeImage = s
-	}
-}
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
@@ -61,16 +38,6 @@ func WithCollectorImage(s string) Option {
 func WithCollectorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.collectorConfigMapEntry = s
-	}
-}
-func WithTargetAllocatorConfigMapEntry(s string) Option {
-	return func(o *options) {
-		o.targetAllocatorConfigMapEntry = s
-	}
-}
-func WithOperatorOpAMPBridgeConfigMapEntry(s string) Option {
-	return func(o *options) {
-		o.operatorOpAMPBridgeConfigMapEntry = s
 	}
 }
 func WithLogger(logger logr.Logger) Option {
@@ -123,12 +90,6 @@ func WithAutoInstrumentationApacheHttpdImage(s string) Option {
 func WithAutoInstrumentationNginxImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationNginxImage = s
-	}
-}
-
-func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
-	return func(o *options) {
-		o.openshiftRoutesAvailability = os
 	}
 }
 

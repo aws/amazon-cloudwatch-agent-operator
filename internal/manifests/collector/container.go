@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"sort"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
@@ -110,31 +108,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		}
 	}
 
-	if otelcol.Spec.TargetAllocator.Enabled {
-		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
-		// added by default by the Prometheus operator's config generator.
-		// All collector instances use SHARD == 0 as they only receive targets
-		// allocated to them and should not use the Prometheus hashmod-based
-		// allocation.
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "SHARD",
-			Value: "0",
-		})
-	}
-
-	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
-			livenessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("extensions not configured, skipping liveness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
-		} else {
-			logger.Error(err, "cannot create liveness probe.")
-		}
-	}
-
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
@@ -147,7 +120,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
-		LivenessProbe:   livenessProbe,
 		Lifecycle:       otelcol.Spec.Lifecycle,
 	}
 }
@@ -186,30 +158,4 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
-}
-
-func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
-	probe, err := adapters.ConfigToContainerProbe(config)
-	if err != nil {
-		return nil, err
-	}
-	if probeConfig != nil {
-		if probeConfig.InitialDelaySeconds != nil {
-			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
-		}
-		if probeConfig.PeriodSeconds != nil {
-			probe.PeriodSeconds = *probeConfig.PeriodSeconds
-		}
-		if probeConfig.FailureThreshold != nil {
-			probe.FailureThreshold = *probeConfig.FailureThreshold
-		}
-		if probeConfig.SuccessThreshold != nil {
-			probe.SuccessThreshold = *probeConfig.SuccessThreshold
-		}
-		if probeConfig.TimeoutSeconds != nil {
-			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
-		}
-		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
-	}
-	return probe, nil
 }

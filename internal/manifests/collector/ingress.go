@@ -13,7 +13,6 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
@@ -126,18 +125,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 }
 
 func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) ([]corev1.ServicePort, error) {
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
-	if err != nil {
-		logger.Error(err, "couldn't extract the configuration from the context")
-		return nil, err
-	}
-
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, configFromString)
-	if err != nil {
-		logger.Error(err, "couldn't build the ingress for this instance")
-		return nil, err
-	}
-
+	var ports []corev1.ServicePort
 	if len(otelcol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
 		// there are two cases where problems might occur:
@@ -155,5 +143,5 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAg
 		}
 		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
 	}
-	return ports, err
+	return ports, nil
 }

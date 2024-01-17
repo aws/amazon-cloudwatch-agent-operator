@@ -9,9 +9,8 @@ package v1alpha1
 
 import (
 	v2 "k8s.io/api/autoscaling/v2"
-	v1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -120,12 +119,12 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(v1.SecurityContext)
+		*out = new(corev1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodSecurityContext != nil {
 		in, out := &in.PodSecurityContext, &out.PodSecurityContext
-		*out = new(v1.PodSecurityContext)
+		*out = new(corev1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodAnnotations != nil {
@@ -135,52 +134,51 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 			(*out)[key] = val
 		}
 	}
-	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
-		*out = make([]v1.VolumeMount, len(*in))
+		*out = make([]corev1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Ports != nil {
 		in, out := &in.Ports, &out.Ports
-		*out = make([]v1.ServicePort, len(*in))
+		*out = make([]corev1.ServicePort, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.EnvFrom != nil {
 		in, out := &in.EnvFrom, &out.EnvFrom
-		*out = make([]v1.EnvFromSource, len(*in))
+		*out = make([]corev1.EnvFromSource, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.VolumeClaimTemplates != nil {
 		in, out := &in.VolumeClaimTemplates, &out.VolumeClaimTemplates
-		*out = make([]v1.PersistentVolumeClaim, len(*in))
+		*out = make([]corev1.PersistentVolumeClaim, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]v1.Toleration, len(*in))
+		*out = make([]corev1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
-		*out = make([]v1.Volume, len(*in))
+		*out = make([]corev1.Volume, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -188,12 +186,12 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 	in.Ingress.DeepCopyInto(&out.Ingress)
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
-		*out = new(v1.Affinity)
+		*out = new(corev1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Lifecycle != nil {
 		in, out := &in.Lifecycle, &out.Lifecycle
-		*out = new(v1.Lifecycle)
+		*out = new(corev1.Lifecycle)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.TerminationGracePeriodSeconds != nil {
@@ -208,14 +206,14 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 	}
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
-		*out = make([]v1.Container, len(*in))
+		*out = make([]corev1.Container, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.AdditionalContainers != nil {
 		in, out := &in.AdditionalContainers, &out.AdditionalContainers
-		*out = make([]v1.Container, len(*in))
+		*out = make([]corev1.Container, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -223,7 +221,7 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 	out.Observability = in.Observability
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
-		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		*out = make([]corev1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -277,14 +275,14 @@ func (in *ApacheHttpd) DeepCopyInto(out *ApacheHttpd) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Attrs != nil {
 		in, out := &in.Attrs, &out.Attrs
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -374,7 +372,7 @@ func (in *DotNet) DeepCopyInto(out *DotNet) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -417,7 +415,7 @@ func (in *Go) DeepCopyInto(out *Go) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -447,7 +445,7 @@ func (in *Ingress) DeepCopyInto(out *Ingress) {
 	}
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
-		*out = make([]networkingv1.IngressTLS, len(*in))
+		*out = make([]v1.IngressTLS, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -542,7 +540,7 @@ func (in *InstrumentationSpec) DeepCopyInto(out *InstrumentationSpec) {
 	out.Sampler = in.Sampler
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -591,7 +589,7 @@ func (in *Java) DeepCopyInto(out *Java) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -654,14 +652,14 @@ func (in *Nginx) DeepCopyInto(out *Nginx) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Attrs != nil {
 		in, out := &in.Attrs, &out.Attrs
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -689,7 +687,7 @@ func (in *NodeJS) DeepCopyInto(out *NodeJS) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -734,106 +732,6 @@ func (in *OpenShiftRoute) DeepCopy() *OpenShiftRoute {
 		return nil
 	}
 	out := new(OpenShiftRoute)
-	in.DeepCopyInto(out)
-	return out
-}
-
-// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
-func (in *OpenTelemetryTargetAllocator) DeepCopyInto(out *OpenTelemetryTargetAllocator) {
-	*out = *in
-	if in.Replicas != nil {
-		in, out := &in.Replicas, &out.Replicas
-		*out = new(int32)
-		**out = **in
-	}
-	if in.NodeSelector != nil {
-		in, out := &in.NodeSelector, &out.NodeSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-	in.Resources.DeepCopyInto(&out.Resources)
-	if in.Affinity != nil {
-		in, out := &in.Affinity, &out.Affinity
-		*out = new(v1.Affinity)
-		(*in).DeepCopyInto(*out)
-	}
-	in.PrometheusCR.DeepCopyInto(&out.PrometheusCR)
-	if in.SecurityContext != nil {
-		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(v1.PodSecurityContext)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.TopologySpreadConstraints != nil {
-		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
-		*out = make([]v1.TopologySpreadConstraint, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.Tolerations != nil {
-		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]v1.Toleration, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.Env != nil {
-		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	out.Observability = in.Observability
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(PodDisruptionBudgetSpec)
-		(*in).DeepCopyInto(*out)
-	}
-}
-
-// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new OpenTelemetryTargetAllocator.
-func (in *OpenTelemetryTargetAllocator) DeepCopy() *OpenTelemetryTargetAllocator {
-	if in == nil {
-		return nil
-	}
-	out := new(OpenTelemetryTargetAllocator)
-	in.DeepCopyInto(out)
-	return out
-}
-
-// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
-func (in *OpenTelemetryTargetAllocatorPrometheusCR) DeepCopyInto(out *OpenTelemetryTargetAllocatorPrometheusCR) {
-	*out = *in
-	if in.ScrapeInterval != nil {
-		in, out := &in.ScrapeInterval, &out.ScrapeInterval
-		*out = new(metav1.Duration)
-		**out = **in
-	}
-	if in.PodMonitorSelector != nil {
-		in, out := &in.PodMonitorSelector, &out.PodMonitorSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-	if in.ServiceMonitorSelector != nil {
-		in, out := &in.ServiceMonitorSelector, &out.ServiceMonitorSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-}
-
-// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new OpenTelemetryTargetAllocatorPrometheusCR.
-func (in *OpenTelemetryTargetAllocatorPrometheusCR) DeepCopy() *OpenTelemetryTargetAllocatorPrometheusCR {
-	if in == nil {
-		return nil
-	}
-	out := new(OpenTelemetryTargetAllocatorPrometheusCR)
 	in.DeepCopyInto(out)
 	return out
 }
@@ -918,7 +816,7 @@ func (in *Python) DeepCopyInto(out *Python) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

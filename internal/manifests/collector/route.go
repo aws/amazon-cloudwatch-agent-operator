@@ -11,13 +11,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil, nil
 	}
 

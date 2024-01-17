@@ -8,7 +8,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +22,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 // AmazonCloudWatchAgentReconciler reconciles a AmazonCloudWatchAgent object.
@@ -128,11 +126,6 @@ func (r *AmazonCloudWatchAgentReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Owns(&policyV1.PodDisruptionBudget{})
-
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		builder.Owns(&monitoringv1.ServiceMonitor{})
-		builder.Owns(&monitoringv1.PodMonitor{})
-	}
 
 	return builder.Complete(r)
 }

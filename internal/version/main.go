@@ -13,8 +13,6 @@ var (
 	version                        string
 	buildDate                      string
 	otelCol                        string
-	targetAllocator                string
-	operatorOpAMPBridge            string
 	autoInstrumentationJava        string
 	autoInstrumentationNodeJS      string
 	autoInstrumentationPython      string
@@ -28,10 +26,8 @@ var (
 type Version struct {
 	Operator                       string `json:"amazon-cloudwatch-agent-operator"`
 	BuildDate                      string `json:"build-date"`
-	AmazonCloudWatchAgent          string `json:"opentelemetry-collector-version"`
+	AmazonCloudWatchAgent          string `json:"amazon-cloudwatch-agent-version"`
 	Go                             string `json:"go-version"`
-	TargetAllocator                string `json:"target-allocator-version"`
-	OperatorOpAMPBridge            string `json:"operator-opamp-bridge"`
 	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
 	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
@@ -48,8 +44,6 @@ func Get() Version {
 		BuildDate:                      buildDate,
 		AmazonCloudWatchAgent:          AmazonCloudWatchAgent(),
 		Go:                             runtime.Version(),
-		TargetAllocator:                TargetAllocator(),
-		OperatorOpAMPBridge:            OperatorOpAMPBridge(),
 		AutoInstrumentationJava:        AutoInstrumentationJava(),
 		AutoInstrumentationNodeJS:      AutoInstrumentationNodeJS(),
 		AutoInstrumentationPython:      AutoInstrumentationPython(),
@@ -67,8 +61,6 @@ func (v Version) String() string {
 		v.BuildDate,
 		v.AmazonCloudWatchAgent,
 		v.Go,
-		v.TargetAllocator,
-		v.OperatorOpAMPBridge,
 		v.AutoInstrumentationJava,
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
@@ -84,28 +76,6 @@ func AmazonCloudWatchAgent() string {
 	if len(otelCol) > 0 {
 		// this should always be set, as it's specified during the build
 		return otelCol
-	}
-
-	// fallback value, useful for tests
-	return "0.0.0"
-}
-
-// TargetAllocator returns the default TargetAllocator to use when no versions are specified via CLI or configuration.
-func TargetAllocator() string {
-	if len(targetAllocator) > 0 {
-		// this should always be set, as it's specified during the build
-		return targetAllocator
-	}
-
-	// fallback value, useful for tests
-	return "0.0.0"
-}
-
-// OperatorOpAMPBridge returns the default OperatorOpAMPBridge to use when no versions are specified via CLI or configuration.
-func OperatorOpAMPBridge() string {
-	if len(operatorOpAMPBridge) > 0 {
-		// this should always be set, as it's specified during the build
-		return operatorOpAMPBridge
 	}
 
 	// fallback value, useful for tests

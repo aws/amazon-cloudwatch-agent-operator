@@ -68,9 +68,6 @@ type AmazonCloudWatchAgentSpec struct {
 	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
-	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
-	// +optional
-	TargetAllocator v1alpha1.OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode v1alpha1.Mode `json:"mode,omitempty"`
