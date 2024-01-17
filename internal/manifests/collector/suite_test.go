@@ -15,7 +15,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/autodetect/openshift"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
@@ -27,7 +26,6 @@ var (
 
 const (
 	defaultCollectorImage    = "default-collector"
-	defaultTaAllocationImage = "default-ta-allocator"
 )
 
 func deploymentParams() manifests.Params {
@@ -41,7 +39,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	return manifests.Params{
-		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage)),
 		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "cloudwatch.aws.amazon.com",
@@ -89,8 +87,6 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	cfg := config.New(
 		config.WithCollectorImage(defaultCollectorImage),
-		config.WithTargetAllocatorImage(defaultTaAllocationImage),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
 	)
 
 	return manifests.Params{
@@ -116,10 +112,6 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 					},
 					NodePort: 0,
 				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-					Enabled: true,
-					Image:   taContainerImage,
-				},
 				Replicas: &replicas,
 				Config:   string(configYAML),
 			},

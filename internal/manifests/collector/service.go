@@ -15,7 +15,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
 // headless label is to differentiate the headless service from the clusterIP service.
@@ -83,7 +82,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
-	ports := constants.CloudwatchAgentPorts
+	ports := PortMapToServicePortList(AppSignalsPortToServicePortMap)
 
 	if len(params.OtelCol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
