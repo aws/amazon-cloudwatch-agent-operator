@@ -151,27 +151,27 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 	return PortMapToServicePortList(servicePortsMap)
 }
 
-func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
+func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
 	if config.Metrics == nil || config.Metrics.MetricsCollected == nil {
 		return
 	}
 	//StatD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-statsd.html
 	if config.Metrics.MetricsCollected.StatsD != nil {
-		getReceiverServicePort(logger, config.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, corev1.ProtocolUDP, containerPortsMap)
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, corev1.ProtocolUDP, servicePortsMap)
 	}
 	//CollectD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-collectd.html
 	if config.Metrics.MetricsCollected.CollectD != nil {
-		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, containerPortsMap)
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, servicePortsMap)
 	}
 }
 
-func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, containerPortsMap map[int32]corev1.ServicePort) {
+func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32]corev1.ServicePort) {
 	if serviceAddress != "" {
 		port, err := portFromEndpoint(serviceAddress)
 		if err != nil {
 			logger.Error(err, "error parsing port from endpoint for receiver", zap.String("endpoint", serviceAddress), zap.String("receiver", receiverName))
 		} else {
-			if _, ok := containerPortsMap[port]; ok {
+			if _, ok := servicePortsMap[port]; ok {
 				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
 				sp := corev1.ServicePort{
@@ -179,11 +179,11 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 					Port:     port,
 					Protocol: protocol,
 				}
-				containerPortsMap[port] = sp
+				servicePortsMap[port] = sp
 			}
 		}
 	} else {
-		if _, ok := containerPortsMap[receiverDefaultPortsMap[receiverName]]; ok {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[receiverName]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[receiverName]))
 		} else {
 			sp := corev1.ServicePort{
@@ -191,27 +191,27 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 				Port:     receiverDefaultPortsMap[receiverName],
 				Protocol: protocol,
 			}
-			containerPortsMap[receiverDefaultPortsMap[receiverName]] = sp
+			servicePortsMap[receiverDefaultPortsMap[receiverName]] = sp
 		}
 	}
 }
 
-func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) {
+func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
 	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
 	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.EMF != nil {
-		if _, ok := containerPortsMap[receiverDefaultPortsMap[EMF]]; ok {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[EMF]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
 		} else {
 			sp := corev1.ServicePort{
 				Name: EMF,
 				Port: receiverDefaultPortsMap[EMF],
 			}
-			containerPortsMap[receiverDefaultPortsMap[EMF]] = sp
+			servicePortsMap[receiverDefaultPortsMap[EMF]] = sp
 		}
 	}
 }
 
-func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, containerPortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
 	var tracesPorts []corev1.ServicePort
 
 	if config.Traces == nil || config.Traces.TracesCollected == nil {
@@ -221,16 +221,16 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 	//OTLP
 	if config.Traces.TracesCollected.OTLP != nil {
 		//GRPC
-		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, containerPortsMap)
+		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
-		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, containerPortsMap)
+		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
 
 	}
 	//Xray
 	if config.Traces.TracesCollected.XRay != nil {
-		getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.BindAddress, XrayTraces, corev1.ProtocolUDP, containerPortsMap)
+		getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.BindAddress, XrayTraces, corev1.ProtocolUDP, servicePortsMap)
 		if config.Traces.TracesCollected.XRay.TCPProxy != nil {
-			getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, corev1.ProtocolTCP, containerPortsMap)
+			getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, corev1.ProtocolTCP, servicePortsMap)
 		}
 	}
 	return tracesPorts
