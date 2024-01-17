@@ -15,7 +15,7 @@ webhooks:
   name: mamazoncloudwatchagent.kb.io
   rules:
   - apiGroups:
-    - cloudwatch.aws.amazon.co
+    - cloudwatch.aws.amazon.com
     apiVersions:
     - v1alpha1
     operations:
