@@ -59,7 +59,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	name := naming.Service(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
-	ports := collector.CloudwatchAgentPorts
+	ports := collector.PortMapToServicePortList(collector.AppSignalsPortToServicePortMap)
 
 	if len(params.Instance.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
