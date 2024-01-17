@@ -16,12 +16,12 @@ spec:
   config: {{ .Values.agent.defaultConfig | toJson | quote }}
   {{- end }}
   resources:
-    limits:
-      cpu:  200m
-      memory: 200Mi
     requests:
-      cpu: 200m
-      memory: 200Mi
+      memory: "128Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
   env:
   - name: K8S_NODE_NAME
     valueFrom:
