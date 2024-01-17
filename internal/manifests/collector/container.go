@@ -32,9 +32,13 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		image = cfg.CollectorImage()
 	}
 
-	// Use defined cloudwatch agent ports
-	ports := map[string]corev1.ContainerPort{}
-	for _, p := range constants.CloudwatchAgentPorts {
+	// build container ports from service ports
+	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	if err != nil {
+		logger.Error(err, "container ports config")
+	}
+
+	for _, p := range otelcol.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
 			ContainerPort: p.Port,
@@ -150,46 +154,24 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 
 func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
-	c, err := adapters.ConfigFromString(cfg)
-	if err != nil {
-		logger.Error(err, "couldn't extract the configuration")
-		return ports, err
-	}
-	ps, err := adapters.ConfigToPorts(logger, c)
-	if err != nil {
-		return ports, err
-	}
-	if len(ps) > 0 {
-		for _, p := range ps {
-			truncName := naming.Truncate(p.Name, maxPortLen)
-			if p.Name != truncName {
-				logger.Info("truncating container port name",
-					"port.name.prev", p.Name, "port.name.new", truncName)
-			}
-			nameErrs := validation.IsValidPortName(truncName)
-			numErrs := validation.IsValidPortNum(int(p.Port))
-			if len(nameErrs) > 0 || len(numErrs) > 0 {
-				logger.Info("dropping invalid container port", "port.name", truncName, "port.num", p.Port,
-					"port.name.errs", nameErrs, "num.errs", numErrs)
-				continue
-			}
-			ports[truncName] = corev1.ContainerPort{
-				Name:          truncName,
-				ContainerPort: p.Port,
-				Protocol:      p.Protocol,
-			}
+	for _, p := range constants.CloudwatchAgentPorts {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if p.Name != truncName {
+			logger.Info("truncating container port name",
+				"port.name.prev", p.Name, "port.name.new", truncName)
 		}
-	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
-	if err != nil {
-		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
-	}
-	ports["metrics"] = corev1.ContainerPort{
-		Name:          "metrics",
-		ContainerPort: metricsPort,
-		Protocol:      corev1.ProtocolTCP,
+		nameErrs := validation.IsValidPortName(truncName)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			logger.Info("dropping invalid container port", "port.name", truncName, "port.num", p.Port,
+				"port.name.errs", nameErrs, "num.errs", numErrs)
+			continue
+		}
+		ports[truncName] = corev1.ContainerPort{
+			Name:          truncName,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
+		}
 	}
 
 	return ports, nil
