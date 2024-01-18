@@ -47,7 +47,7 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-         echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+         echo "eks_addon_matrix=$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))" >> $GITHUB_OUTPUT
 
       - name: Echo test plan matrix
         run: |
