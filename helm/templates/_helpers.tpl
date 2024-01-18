@@ -25,15 +25,17 @@ Get the current recommended cloudwatch agent image for a region
 {{- end -}}
 
 {{/*
+Get the current recommended cloudwatch agent image for a region
+*/}}
+{{- define "cloudwatch-agent-windows.image" -}}
+{{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/windows-container-internal:latest" -}}
+{{- end -}}
+
+{{/*
 Get the current recommended cloudwatch agent operator image for a region
 */}}
 {{- define "cloudwatch-agent-operator.image" -}}
-{{- $imageDomain := "" -}}
-{{- $imageDomain = index .Values.manager.image.repositoryDomainMap .Values.region -}}
-{{- if not $imageDomain -}}
-{{- $imageDomain = .Values.manager.image.repositoryDomainMap.public -}}
-{{- end -}}
-{{- printf "%s/%s:%s" $imageDomain .Values.manager.image.repository .Values.manager.image.tag -}}
+{{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-ciwindows-internal:latest" -}}
 {{- end -}}
 
 {{/*
@@ -46,6 +48,18 @@ Get the current recommended fluent-bit image for a region
 {{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
 {{- end -}}
 {{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tag -}}
+{{- end -}}
+
+{{/*
+Get the current recommended fluent-bit Windows image for a region
+*/}}
+{{- define "fluent-bit-windows.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.containerLogs.fluentBit.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tagWindows -}}
 {{- end -}}
 
 {{/*
