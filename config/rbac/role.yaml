@@ -68,6 +68,50 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - instrumentations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - amazoncloudwatchagents
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - amazoncloudwatchagents/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - amazoncloudwatchagents/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - instrumentations
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -101,68 +145,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - instrumentations
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opampbridges
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opampbridges/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opampbridges/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opentelemetrycollectors
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opentelemetrycollectors/finalizers
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opentelemetrycollectors/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - policy
   resources:

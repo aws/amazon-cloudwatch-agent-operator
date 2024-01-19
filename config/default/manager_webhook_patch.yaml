@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: system
+  namespace: amazon-cloudwatch
 spec:
   template:
     spec:
@@ -20,4 +20,4 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: opentelemetry-operator-controller-manager-service-cert
+          secretName: amazon-cloudwatch-agent-operator-controller-manager-service-cert

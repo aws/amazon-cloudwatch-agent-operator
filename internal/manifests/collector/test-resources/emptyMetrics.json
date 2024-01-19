@@ -1,0 +1,8 @@
+{
+  "agent": {
+    "metrics_collection_interval": 1,
+    "run_as_user": "root"
+  },
+  "metrics": {
+  }
+}

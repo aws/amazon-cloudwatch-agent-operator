@@ -1,16 +1,5 @@
-// Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -23,11 +12,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 const testFileIngress = "testdata/ingress_testdata.yaml"
@@ -37,8 +26,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressType("unknown"),
 					},
@@ -55,8 +44,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Config: "!!!",
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressTypeNginx,
@@ -75,8 +64,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Config: "---",
 					Ingress: v1alpha1.Ingress{
 						Type: v1alpha1.IngressTypeNginx,
@@ -124,7 +113,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Labels: map[string]string{
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
@@ -213,7 +202,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Labels: map[string]string{
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 			},
 			Spec: networkingv1.IngressSpec{

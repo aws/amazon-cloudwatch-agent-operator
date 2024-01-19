@@ -1,8 +1,11 @@
-module github.com/open-telemetry/opentelemetry-operator
+module github.com/aws/amazon-cloudwatch-agent-operator
 
-go 1.21
+go 1.20
 
 retract v1.51.0
+
+// openshift removed all tags from their repo, use the pseudoversion from the release-3.9 branch HEAD
+replace github.com/openshift/api v3.9.0+incompatible => github.com/openshift/api v0.0.0-20180801171038-322a19404e37
 
 require (
 	dario.cat/mergo v1.0.0

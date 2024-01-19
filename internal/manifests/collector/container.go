@@ -1,34 +1,26 @@
-// Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
 import (
 	"errors"
 	"fmt"
-	"path"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
+
+	"go.uber.org/zap"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 // maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
@@ -36,19 +28,14 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, addConfig bool) corev1.Container {
-	image := otelcol.Spec.Image
+func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloudWatchAgent, addConfig bool) corev1.Container {
+	image := agent.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
 	}
 
-	// build container ports from service ports
-	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
-	if err != nil {
-		logger.Error(err, "container ports config")
-	}
-
-	for _, p := range otelcol.Spec.Ports {
+	ports := getContainerPorts(logger, agent.Spec.Config)
+	for _, p := range agent.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
 			ContainerPort: p.Port,
@@ -57,33 +44,29 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var volumeMounts []corev1.VolumeMount
-	argsMap := otelcol.Spec.Args
+	argsMap := agent.Spec.Args
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
 	// defines the output (sorted) array for final output
 	var args []string
-	// When adding a config via v1alpha1.OpenTelemetryCollectorSpec.Config, we ensure that it is always the
+	// When adding a config via v1alpha1.AmazonCloudWatchAgentSpec.Config, we ensure that it is always the
 	// first item in the args. At the time of writing, although multiple configs are allowed in the
-	// opentelemetry collector, the operator has yet to implement such functionality.  When multiple configs
+	// cloudwatch agent, the operator has yet to implement such functionality.  When multiple configs
 	// are present they should be merged in a deterministic manner using the order given, and because
-	// v1alpha1.OpenTelemetryCollectorSpec.Config is a required field we assume that it will always be the
+	// v1alpha1.AmazonCloudWatchAgentSpec.Config is a required field we assume that it will always be the
 	// "primary" config and in the future additional configs can be appended to the container args in a simple manner.
+
 	if addConfig {
-		// if key exists then delete key and excluded from the iteration after this block
-		if _, exists := argsMap["config"]; exists {
-			logger.Info("the 'config' flag isn't allowed and is being ignored")
-			delete(argsMap, "config")
-		}
-		args = append(args, fmt.Sprintf("--config=/conf/%s", cfg.CollectorConfigMapEntry()))
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.ConfigMapVolume(),
-				MountPath: "/conf",
-			})
+				MountPath: "/etc/cwagentconfig",
+			},
+		)
 	}
 
-	// ensure that the v1alpha1.OpenTelemetryCollectorSpec.Args are ordered when moved to container.Args,
+	// ensure that the v1alpha1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
 	// where iterating over a map does not guarantee, so that reconcile will not be fooled by different
 	// ordering in args.
 	var sortedArgs []string
@@ -93,12 +76,12 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	sort.Strings(sortedArgs)
 	args = append(args, sortedArgs...)
 
-	if len(otelcol.Spec.VolumeMounts) > 0 {
-		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
+	if len(agent.Spec.VolumeMounts) > 0 {
+		volumeMounts = append(volumeMounts, agent.Spec.VolumeMounts...)
 	}
 
-	var envVars = otelcol.Spec.Env
-	if otelcol.Spec.Env == nil {
+	var envVars = agent.Spec.Env
+	if agent.Spec.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}
 
@@ -111,105 +94,160 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
-	if len(otelcol.Spec.ConfigMaps) > 0 {
-		for keyCfgMap := range otelcol.Spec.ConfigMaps {
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name),
-				MountPath: path.Join("/var/conf", otelcol.Spec.ConfigMaps[keyCfgMap].MountPath, naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name)),
-			})
-		}
+	if _, err := adapters.ConfigFromJSONString(agent.Spec.Config); err != nil {
+		logger.Error(err, "error parsing config")
 	}
 
-	if otelcol.Spec.TargetAllocator.Enabled {
-		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
-		// added by default by the Prometheus operator's config generator.
-		// All collector instances use SHARD == 0 as they only receive targets
-		// allocated to them and should not use the Prometheus hashmod-based
-		// allocation.
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "SHARD",
-			Value: "0",
-		})
-	}
-
-	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
-			livenessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("extensions not configured, skipping liveness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
-		} else {
-			logger.Error(err, "cannot create liveness probe.")
-		}
-	}
-
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
-		ImagePullPolicy: otelcol.Spec.ImagePullPolicy,
-		Ports:           portMapToList(ports),
+		ImagePullPolicy: agent.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
-		EnvFrom:         otelcol.Spec.EnvFrom,
-		Resources:       otelcol.Spec.Resources,
-		SecurityContext: otelcol.Spec.SecurityContext,
-		LivenessProbe:   livenessProbe,
-		Lifecycle:       otelcol.Spec.Lifecycle,
+		EnvFrom:         agent.Spec.EnvFrom,
+		Resources:       agent.Spec.Resources,
+		Ports:           portMapToContainerPortList(ports),
+		SecurityContext: agent.Spec.SecurityContext,
+		Lifecycle:       agent.Spec.Lifecycle,
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
+func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
-	c, err := adapters.ConfigFromString(cfg)
+	var servicePorts []corev1.ServicePort
+	config, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
-		logger.Error(err, "couldn't extract the configuration")
-		return ports, err
+		logger.Error(err, "error parsing cw agent config")
+		servicePorts = PortMapToServicePortList(AppSignalsPortToServicePortMap)
+	} else {
+		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
-	ps, err := adapters.ConfigToPorts(logger, c)
-	if err != nil {
-		return ports, err
-	}
-	if len(ps) > 0 {
-		for _, p := range ps {
-			truncName := naming.Truncate(p.Name, maxPortLen)
-			if p.Name != truncName {
-				logger.Info("truncating container port name",
-					"port.name.prev", p.Name, "port.name.new", truncName)
-			}
-			nameErrs := validation.IsValidPortName(truncName)
-			numErrs := validation.IsValidPortNum(int(p.Port))
-			if len(nameErrs) > 0 || len(numErrs) > 0 {
-				logger.Info("dropping invalid container port", "port.name", truncName, "port.num", p.Port,
-					"port.name.errs", nameErrs, "num.errs", numErrs)
-				continue
-			}
-			ports[truncName] = corev1.ContainerPort{
-				Name:          truncName,
-				ContainerPort: p.Port,
-				Protocol:      p.Protocol,
-			}
+
+	for _, p := range servicePorts {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if p.Name != truncName {
+			logger.Info("truncating container port name",
+				zap.String("port.name.prev", p.Name), zap.String("port.name.new", truncName))
+		}
+		nameErrs := validation.IsValidPortName(truncName)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			logger.Info("dropping invalid container port", zap.String("port.name", truncName), zap.Int32("port.num", p.Port),
+				zap.Strings("port.name.errs", nameErrs), zap.Strings("num.errs", numErrs))
+			continue
+		}
+		ports[truncName] = corev1.ContainerPort{
+			Name:          truncName,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
 		}
 	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
-	if err != nil {
-		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
-	}
-	ports["metrics"] = corev1.ContainerPort{
-		Name:          "metrics",
-		ContainerPort: metricsPort,
-		Protocol:      corev1.ProtocolTCP,
-	}
-
-	return ports, nil
+	return ports
 }
 
-func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
+func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
+	servicePortsMap := getAppSignalsServicePortsMap()
+	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
+	getLogsReceiversServicePorts(logger, config, servicePortsMap)
+	getTracesReceiversServicePorts(logger, config, servicePortsMap)
+	return PortMapToServicePortList(servicePortsMap)
+}
+
+func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
+	if config.Metrics == nil || config.Metrics.MetricsCollected == nil {
+		return
+	}
+	//StatD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-statsd.html
+	if config.Metrics.MetricsCollected.StatsD != nil {
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.StatsD.ServiceAddress, StatsD, corev1.ProtocolUDP, servicePortsMap)
+	}
+	//CollectD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-collectd.html
+	if config.Metrics.MetricsCollected.CollectD != nil {
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, servicePortsMap)
+	}
+}
+
+func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32]corev1.ServicePort) {
+	if serviceAddress != "" {
+		port, err := portFromEndpoint(serviceAddress)
+		if err != nil {
+			logger.Error(err, "error parsing port from endpoint for receiver", zap.String("endpoint", serviceAddress), zap.String("receiver", receiverName))
+		} else {
+			if _, ok := servicePortsMap[port]; ok {
+				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
+			} else {
+				sp := corev1.ServicePort{
+					Name:     CWA + receiverName,
+					Port:     port,
+					Protocol: protocol,
+				}
+				servicePortsMap[port] = sp
+			}
+		}
+	} else {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[receiverName]]; ok {
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[receiverName]))
+		} else {
+			sp := corev1.ServicePort{
+				Name:     receiverName,
+				Port:     receiverDefaultPortsMap[receiverName],
+				Protocol: protocol,
+			}
+			servicePortsMap[receiverDefaultPortsMap[receiverName]] = sp
+		}
+	}
+}
+
+func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
+	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
+	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.EMF != nil {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[EMF]]; ok {
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
+		} else {
+			sp := corev1.ServicePort{
+				Name: EMF,
+				Port: receiverDefaultPortsMap[EMF],
+			}
+			servicePortsMap[receiverDefaultPortsMap[EMF]] = sp
+		}
+	}
+}
+
+func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+	var tracesPorts []corev1.ServicePort
+
+	if config.Traces == nil || config.Traces.TracesCollected == nil {
+		return tracesPorts
+	}
+	//Traces - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html#CloudWatch-Agent-Configuration-File-Tracessection
+	//OTLP
+	if config.Traces.TracesCollected.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+
+	}
+	//Xray
+	if config.Traces.TracesCollected.XRay != nil {
+		getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.BindAddress, XrayTraces, corev1.ProtocolUDP, servicePortsMap)
+		if config.Traces.TracesCollected.XRay.TCPProxy != nil {
+			getReceiverServicePort(logger, config.Traces.TracesCollected.XRay.TCPProxy.BindAddress, XrayProxy, corev1.ProtocolTCP, servicePortsMap)
+		}
+	}
+	return tracesPorts
+}
+
+func getAppSignalsServicePortsMap() map[int32]corev1.ServicePort {
+	servicePortMap := make(map[int32]corev1.ServicePort)
+	for k, v := range AppSignalsPortToServicePortMap {
+		servicePortMap[k] = v
+	}
+	return servicePortMap
+}
+
+func portMapToContainerPortList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
 	ports := make([]corev1.ContainerPort, 0, len(portMap))
 	for _, p := range portMap {
 		ports = append(ports, p)
@@ -220,28 +258,23 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 	return ports
 }
 
-func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
-	probe, err := adapters.ConfigToContainerProbe(config)
-	if err != nil {
-		return nil, err
+func portFromEndpoint(endpoint string) (int32, error) {
+	var err error
+	var port int64
+
+	r := regexp.MustCompile(":[0-9]+")
+
+	if r.MatchString(endpoint) {
+		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
+
+		if err != nil {
+			return 0, err
+		}
 	}
-	if probeConfig != nil {
-		if probeConfig.InitialDelaySeconds != nil {
-			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
-		}
-		if probeConfig.PeriodSeconds != nil {
-			probe.PeriodSeconds = *probeConfig.PeriodSeconds
-		}
-		if probeConfig.FailureThreshold != nil {
-			probe.FailureThreshold = *probeConfig.FailureThreshold
-		}
-		if probeConfig.SuccessThreshold != nil {
-			probe.SuccessThreshold = *probeConfig.SuccessThreshold
-		}
-		if probeConfig.TimeoutSeconds != nil {
-			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
-		}
-		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+
+	if port == 0 {
+		return 0, errors.New("port should not be empty")
 	}
-	return probe, nil
+
+	return int32(port), err
 }

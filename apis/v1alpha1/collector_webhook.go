@@ -1,16 +1,5 @@
-// Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
@@ -26,9 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 var (
@@ -36,9 +23,9 @@ var (
 	_ admission.CustomDefaulter = &CollectorWebhook{}
 )
 
-// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=true,failurePolicy=fail,groups=cloudwatch.aws.amazon.co,resources=amazoncloudwatchagents,verbs=create;update,versions=v1alpha1,name=mamazoncloudwatchagent.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=false,failurePolicy=fail,groups=cloudwatch.aws.amazon.co,resources=amazoncloudwatchagents,versions=v1alpha1,name=vamazoncloudwatchagentcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=delete,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=false,failurePolicy=ignore,groups=cloudwatch.aws.amazon.co,resources=amazoncloudwatchagents,versions=v1alpha1,name=vamazoncloudwatchagentdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
@@ -48,38 +35,38 @@ type CollectorWebhook struct {
 }
 
 func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
+	otelcol, ok := obj.(*AmazonCloudWatchAgent)
 	if !ok {
-		return fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
+		return fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
 	return c.defaulter(otelcol)
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
+	otelcol, ok := obj.(*AmazonCloudWatchAgent)
 	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
 	return c.validate(otelcol)
 }
 
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*OpenTelemetryCollector)
+	otelcol, ok := newObj.(*AmazonCloudWatchAgent)
 	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", newObj)
 	}
 	return c.validate(otelcol)
 }
 
 func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
+	otelcol, ok := obj.(*AmazonCloudWatchAgent)
 	if !ok || otelcol == nil {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
 	return c.validate(otelcol)
 }
 
-func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
+func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	if len(r.Spec.Mode) == 0 {
 		r.Spec.Mode = ModeDeployment
 	}
@@ -91,7 +78,7 @@ func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
 		r.Labels = map[string]string{}
 	}
 	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+		r.Labels["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
 	}
 
 	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
@@ -99,9 +86,6 @@ func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
 	one := int32(1)
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
-	}
-	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
-		r.Spec.TargetAllocator.Replicas = &one
 	}
 
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
@@ -139,22 +123,6 @@ func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
 		}
 	}
 
-	// if pdb isn't provided for target allocator and it's enabled
-	// using a valid strategy (consistent-hashing),
-	// we set MaxUnavailable 1, which will work even if there is
-	// just one replica, not blocking node drains but preventing
-	// out-of-the-box from disruption generated by them with replicas > 1
-	if r.Spec.TargetAllocator.Enabled &&
-		r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing &&
-		r.Spec.TargetAllocator.PodDisruptionBudget == nil {
-		r.Spec.TargetAllocator.PodDisruptionBudget = &PodDisruptionBudgetSpec{
-			MaxUnavailable: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 1,
-			},
-		}
-	}
-
 	if r.Spec.Ingress.Type == IngressTypeRoute && r.Spec.Ingress.Route.Termination == "" {
 		r.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
@@ -169,7 +137,7 @@ func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
 	return nil
 }
 
-func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warnings, error) {
+func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
@@ -193,27 +161,6 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
-	}
-
-	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
-	}
-
-	// validate Prometheus config for target allocation
-	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
 	}
 
 	// validator port config
@@ -367,7 +314,7 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		cfg:    cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpenTelemetryCollector{}).
+		For(&AmazonCloudWatchAgent{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()

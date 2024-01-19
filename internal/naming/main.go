@@ -1,23 +1,12 @@
-// Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // Package naming is for determining the names for components (containers, services, ...).
 package naming
 
-// ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
+// ConfigMap builds the name for the config map used in the AmazonCloudWatchAgent containers.
 func ConfigMap(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
@@ -67,17 +56,17 @@ func OpAMPBridgeContainer() string {
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // HorizontalPodAutoscaler builds the autoscaler name based on the instance.
 func HorizontalPodAutoscaler(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // PodDisruptionBudget builds the pdb name based on the instance.
 func PodDisruptionBudget(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TAPodDisruptionBudget builds the pdb name based on the instance.
@@ -85,13 +74,13 @@ func TAPodDisruptionBudget(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
 }
 
-// OpenTelemetryCollector builds the collector (deployment/daemonset) name based on the instance.
-func OpenTelemetryCollector(otelcol string) string {
+// AmazonCloudWatchAgent builds the collector (deployment/daemonset) name based on the instance.
+func AmazonCloudWatchAgent(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
 
-// OpenTelemetryCollectorName builds the collector (deployment/daemonset) name based on the instance.
-func OpenTelemetryCollectorName(otelcolName string) string {
+// AmazonCloudWatchAgentName builds the collector (deployment/daemonset) name based on the instance.
+func AmazonCloudWatchAgentName(otelcolName string) string {
 	return DNSName(Truncate("%s", 63, otelcolName))
 }
 
@@ -117,7 +106,7 @@ func MonitoringService(otelcol string) string {
 
 // Service builds the service name based on the instance.
 func Service(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // Ingress builds the ingress name based on the instance.
@@ -142,17 +131,17 @@ func OpAMPBridgeService(opampBridge string) string {
 
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // ServiceMonitor builds the service Monitor name based on the instance.
 func ServiceMonitor(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // PodMonitor builds the pod Monitor name based on the instance.
 func PodMonitor(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+	return DNSName(Truncate("%s", 63, otelcol))
 }
 
 // TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.

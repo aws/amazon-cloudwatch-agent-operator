@@ -1,22 +1,12 @@
-// Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -26,10 +16,32 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
+
+func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default-namespace",
+		},
+	}
+	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+	podMutator := instPodMutator{
+		Client: fake.NewClientBuilder().Build(),
+		Logger: logr.Logger{},
+	}
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace)
+
+	assert.Nil(t, err)
+	assert.Equal(t, defaultInst, instrumentation)
+
+}
 
 func TestMutatePod(t *testing.T) {
 	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
