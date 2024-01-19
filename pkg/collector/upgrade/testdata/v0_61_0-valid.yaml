@@ -1,5 +1,0 @@
----
-receivers:
-  jaeger:
-    protocols:
-      grpc:

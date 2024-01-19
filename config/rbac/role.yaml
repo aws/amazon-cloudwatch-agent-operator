@@ -8,6 +8,9 @@ rules:
   - ""
   resources:
   - configmaps
+  - pods
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -31,45 +34,11 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - daemonsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - deployments
+  - statefulsets
   verbs:
   - create
   - delete
@@ -82,6 +51,26 @@ rules:
   - apps
   resources:
   - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloudwatch.aws.amazon.com
+  resources:
+  - instrumentations
   verbs:
   - get
   - list
@@ -132,9 +121,34 @@ rules:
   - list
   - update
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
   verbs:
   - create
   - delete

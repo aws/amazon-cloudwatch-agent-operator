@@ -9,11 +9,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
 const resourceAttributesEnvName = "OTEL_RESOURCE_ATTRIBUTES"
