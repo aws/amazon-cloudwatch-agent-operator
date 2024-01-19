@@ -7,6 +7,7 @@ package adapters
 import (
 	"encoding/json"
 	"errors"
+
 	"gopkg.in/yaml.v2"
 )
 

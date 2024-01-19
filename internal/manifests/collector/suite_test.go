@@ -25,7 +25,7 @@ var (
 )
 
 const (
-	defaultCollectorImage    = "default-collector"
+	defaultCollectorImage = "default-collector"
 )
 
 func deploymentParams() manifests.Params {

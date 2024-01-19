@@ -9,9 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
-	policyV1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -123,9 +121,7 @@ func (r *AmazonCloudWatchAgentReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
-		Owns(&policyV1.PodDisruptionBudget{})
+		Owns(&appsv1.StatefulSet{})
 
 	return builder.Complete(r)
 }

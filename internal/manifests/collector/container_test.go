@@ -1,11 +1,15 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package collector
 
 import (
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestStatsDGetContainerPorts(t *testing.T) {
