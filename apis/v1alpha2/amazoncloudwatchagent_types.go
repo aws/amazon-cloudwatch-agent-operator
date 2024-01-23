@@ -81,7 +81,6 @@ type AmazonCloudWatchAgentSpec struct {
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy v1alpha1.UpgradeStrategy `json:"upgradeStrategy"`
-
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`

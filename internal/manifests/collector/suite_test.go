@@ -34,7 +34,7 @@ func deploymentParams() manifests.Params {
 
 func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	replicas := int32(2)
-	configYAML, err := os.ReadFile("testdata/test.yaml")
+	configJSON, err := os.ReadFile("testdata/test.json")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
@@ -51,7 +51,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
+				Image: "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300031.1b317",
 				Ports: []v1.ServicePort{{
 					Name: "web",
 					Port: 80,
@@ -62,7 +62,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 					NodePort: 0,
 				}},
 				Replicas: &replicas,
-				Config:   string(configYAML),
+				Config:   string(configJSON),
 				Mode:     mode,
 			},
 		},
@@ -73,16 +73,16 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 
 func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	replicas := int32(1)
-	var configYAML []byte
+	var configJSON []byte
 	var err error
 
 	if file == "" {
-		configYAML, err = os.ReadFile("testdata/test.yaml")
+		configJSON, err = os.ReadFile("testdata/test.json")
 	} else {
-		configYAML, err = os.ReadFile(file)
+		configJSON, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return manifests.Params{}, fmt.Errorf("Error getting json file: %w", err)
 	}
 
 	cfg := config.New(
@@ -113,7 +113,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 					NodePort: 0,
 				}},
 				Replicas: &replicas,
-				Config:   string(configYAML),
+				Config:   string(configJSON),
 			},
 		},
 		Log: logger,

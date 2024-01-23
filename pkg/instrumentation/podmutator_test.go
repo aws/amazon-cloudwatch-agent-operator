@@ -22,7 +22,41 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
+const (
+	defaultJavaInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
+)
+
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
+	defaultInst := &v1alpha1.Instrumentation{
+		Status: v1alpha1.InstrumentationStatus{},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: defaultAPIVersion,
+			Kind:       defaultKind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultInstrumenation,
+			Namespace: defaultNamespace,
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			Propagators: []v1alpha1.Propagator{
+				v1alpha1.TraceContext,
+				v1alpha1.Baggage,
+				v1alpha1.B3,
+				v1alpha1.XRay,
+			},
+			Java: v1alpha1.Java{
+				Image: defaultJavaInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
+					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+				},
+			},
+		},
+	}
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",
