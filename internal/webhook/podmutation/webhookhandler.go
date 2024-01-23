@@ -21,7 +21,7 @@ import (
 // +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=ignore,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=get;list;watch
-// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.co,resources=instrumentations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=instrumentations,verbs=get;list;watch
 // +kubebuilder:rbac:groups="apps",resources=replicasets,verbs=get;list;watch
 
 var _ WebhookHandler = (*podMutationWebhook)(nil)

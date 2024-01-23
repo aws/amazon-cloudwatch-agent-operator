@@ -68,14 +68,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cloudwatch.aws.amazon.co
-  resources:
-  - instrumentations
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - cloudwatch.aws.amazon.com
   resources:
   - amazoncloudwatchagents
