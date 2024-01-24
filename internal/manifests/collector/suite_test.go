@@ -51,7 +51,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-				Image: "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300031.1b317",
+				Image: "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
 				Ports: []v1.ServicePort{{
 					Name: "web",
 					Port: 80,

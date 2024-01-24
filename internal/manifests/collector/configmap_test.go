@@ -20,7 +20,7 @@ func TestDesiredConfigMap(t *testing.T) {
 	t.Run("should return expected cwagent config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLables["app.kubernetes.io/name"] = "test-agent"
-		expectedLables["app.kubernetes.io/version"] = "1.300031.1b317"
+		expectedLables["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
 			"cwagentconfig.json": `{"logs":{"metrics_collected":{"app_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"app_signals":{}}}}`,
