@@ -196,9 +196,16 @@ resource "null_resource" "kubectl" {
   }
 }
 
+resource "time_sleep" "wait_15_min" {
+  depends_on = [helm_release.this]
+
+  create_duration = "15m"
+}
+
 resource "helm_release" "this" {
   depends_on = [
-    null_resource.kubectl
+    null_resource.kubectl,
+    time_sleep.wait_15_min
   ]
   name = "amazon-cloudwatch-observability"
   namespace = "amazon-cloudwatch"
@@ -208,7 +215,8 @@ resource "helm_release" "this" {
 
 resource "null_resource" "validator" {
   depends_on = [
-    helm_release.this
+    helm_release.this,
+    time_sleep.wait_15_min
   ]
   provisioner "local-exec" {
     command = "go test ${var.test_dir} -v --tags=windowslinux"

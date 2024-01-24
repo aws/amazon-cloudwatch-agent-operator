@@ -5,6 +5,11 @@ metadata:
   name: {{ template "cloudwatch-agent.name" . }}-windows
   namespace: {{ .Release.Namespace }}
 spec:
+  securityContext:
+    windowsOptions:
+      hostProcess: true
+      runAsUserName: "NT AUTHORITY\\Local service"
+  hostNetwork: true
   image: {{ template "cloudwatch-agent-windows.image" . }}
   mode: daemonset
   serviceAccount: {{ template "cloudwatch-agent.serviceAccountName" . }}
@@ -39,4 +44,6 @@ spec:
     valueFrom:
       fieldRef:
         fieldPath: metadata.namespace
+  - name: RUN_AS_HOST_PROCESS_CONTAINER
+    value: "true"
 {{- end }}
