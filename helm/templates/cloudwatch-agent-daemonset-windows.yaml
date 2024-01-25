@@ -11,6 +11,7 @@ spec:
       runAsUserName: "NT AUTHORITY\\Local service"
   hostNetwork: true
   image: {{ template "cloudwatch-agent-windows.image" . }}
+  command: ["%CONTAINER_SANDBOX_MOUNT_POINT%/Program Files/Amazon/AmazonCloudWatchAgent/start-amazon-cloudwatch-agent.exe"]
   mode: daemonset
   serviceAccount: {{ template "cloudwatch-agent.serviceAccountName" . }}
   nodeSelector:
@@ -45,5 +46,5 @@ spec:
       fieldRef:
         fieldPath: metadata.namespace
   - name: RUN_AS_HOST_PROCESS_CONTAINER
-    value: "true"
+    value: "True"
 {{- end }}
