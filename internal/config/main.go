@@ -15,6 +15,22 @@ const (
 	defaultCollectorConfigMapEntry = "cwagentconfig.json"
 )
 
+// AnnotationConfig details the resources that have enabled
+// auto-annotation for each instrumentation type.
+type AnnotationConfig struct {
+	Java   AnnotationResources `json:"java"`
+	Python AnnotationResources `json:"python"`
+}
+
+// AnnotationResources contains slices of resource names for each
+// of the supported workloads.
+type AnnotationResources struct {
+	Namespaces   []string `json:"namespaces,omitempty"`
+	Deployments  []string `json:"deployments,omitempty"`
+	DaemonSets   []string `json:"daemonsets,omitempty"`
+	StatefulSets []string `json:"statefulsets,omitempty"`
+}
+
 // Config holds the static configuration for this operator.
 type Config struct {
 	logger                              logr.Logger
@@ -28,6 +44,7 @@ type Config struct {
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
 	labelsFilter                        []string
+	annotationConfig                    AnnotationConfig
 }
 
 // New constructs a new configuration based on the given options.
@@ -54,6 +71,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,
+		annotationConfig:                    o.annotationConfig,
 	}
 }
 
@@ -105,4 +123,9 @@ func (c *Config) AutoInstrumentationNginxImage() string {
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// AnnotationConfig Returns the details for the resources that have enabled auto-annotation for each instrumentation type..
+func (c *Config) AnnotationConfig() AnnotationConfig {
+	return c.annotationConfig
 }

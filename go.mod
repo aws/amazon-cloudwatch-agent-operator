@@ -1,6 +1,6 @@
 module github.com/aws/amazon-cloudwatch-agent-operator
 
-go 1.20
+go 1.21
 
 retract v1.51.0
 
@@ -19,6 +19,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v0.77.0
 	go.opentelemetry.io/otel v1.21.0
 	go.uber.org/zap v1.25.0
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
@@ -131,7 +132,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect

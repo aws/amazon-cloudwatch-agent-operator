@@ -28,6 +28,7 @@ type options struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	labelsFilter                        []string
+	annotationConfig                    AnnotationConfig
 }
 
 func WithCollectorImage(s string) Option {
@@ -115,5 +116,13 @@ func WithLabelFilters(labelFilters []string) Option {
 		}
 
 		o.labelsFilter = filters
+	}
+}
+
+func WithAnnotationConfig(ns string) Option {
+	return func(o *options) {
+		a := AnnotationConfig{}
+		a.Java.Namespaces = []string{ns}
+		o.annotationConfig = a
 	}
 }

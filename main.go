@@ -31,7 +31,9 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/daemonsetmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/annotation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/sidecar"
@@ -190,6 +192,12 @@ func main() {
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
+				}),
+		})
+		mgr.GetWebhookServer().Register("/mutate-v1-daemonset", &webhook.Admission{
+			Handler: daemonsetmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("daemonset-webhook"), decoder, mgr.GetClient(),
+				[]daemonsetmutation.DaemonSetMutator{
+					annotation.NewMutator(logger, cfg, mgr.GetClient()),
 				}),
 		})
 
