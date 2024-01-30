@@ -30,7 +30,6 @@ jobs:
         id: filter
         with:
           list-files: shell
-          filters: .github/config/file-filters.yml
 
       - name: List all updated files
         run: |
