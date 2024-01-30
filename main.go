@@ -39,8 +39,9 @@ import (
 )
 
 const (
-	cloudwatchAgentImageRepository         = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
-	autoInstrumentationJavaImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
+	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
+	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
+	autoInstrumentationPythonImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python"
 )
 
 var (
@@ -83,13 +84,14 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr             string
-		probeAddr               string
-		pprofAddr               string
-		agentImage              string
-		autoInstrumentationJava string
-		webhookPort             int
-		tlsOpt                  tlsConfig
+		metricsAddr               string
+		probeAddr                 string
+		pprofAddr                 string
+		agentImage                string
+		autoInstrumentationJava   string
+		autoInstrumentationPython string
+		webhookPort               int
+		tlsOpt                    tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -97,10 +99,12 @@ func main() {
 	pflag.StringVar(&pprofAddr, "pprof-addr", "", "The address to expose the pprof server. Default is empty string which disables the pprof server.")
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
 	// set java instrumentation java image in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -109,6 +113,7 @@ func main() {
 		"amazon-cloudwatch-agent-operator", v.Operator,
 		"cloudwatch-agent", agentImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
+		"auto-instrumentation-python", autoInstrumentationPython,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -120,6 +125,7 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(agentImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
+		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
