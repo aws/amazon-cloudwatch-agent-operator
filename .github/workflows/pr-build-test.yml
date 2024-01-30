@@ -29,9 +29,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install make
-        run: choco install make
-
       - name: Unit Test
         run: make test
 
