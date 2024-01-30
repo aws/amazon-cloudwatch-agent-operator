@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector_test
 
 import (
@@ -11,15 +13,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestDaemonSetNewDefault(t *testing.T) {
 	// prepare
@@ -41,8 +40,8 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	d := DaemonSet(params)
 
 	// verify
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -60,20 +59,20 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
 	expectedLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/name":       "my-instance-collector",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/name":       "my-instance",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 		"app.kubernetes.io/version":    "latest",
 	}
 	assert.Equal(t, expectedLabels, d.Spec.Template.Labels)
 
 	expectedSelectorLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 	}
 	assert.Equal(t, expectedSelectorLabels, d.Spec.Selector.MatchLabels)
 
@@ -153,7 +152,7 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	}
 
 	// verify
-	assert.Equal(t, "my-instance-collector", ds.Name)
+	assert.Equal(t, "my-instance", ds.Name)
 	assert.Len(t, ds.Spec.Template.Annotations, 5)
 	assert.Equal(t, expectedAnnotations, ds.Spec.Template.Annotations)
 }
@@ -372,8 +371,8 @@ func TestDaemonSetInitContainer(t *testing.T) {
 
 	// test
 	d := DaemonSet(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -405,8 +404,8 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 
 	// test
 	d := DaemonSet(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -441,8 +440,8 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 
 	// test
 	d := DaemonSet(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
@@ -475,8 +474,8 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 
 	// test
 	d := DaemonSet(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)

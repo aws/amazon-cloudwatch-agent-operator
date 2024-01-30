@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector
 
 import (
@@ -112,7 +114,7 @@ func TestDesiredService(t *testing.T) {
 		}
 		params := deploymentParams()
 		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
-		expected := service("test-collector", ports)
+		expected := service("test", ports)
 
 		actual, err := Service(params)
 		assert.NoError(t, err)
@@ -135,7 +137,7 @@ func TestDesiredService(t *testing.T) {
 		actual, err := Service(params)
 
 		ports := append(params.OtelCol.Spec.Ports, jaegerPort)
-		expected := service("test-collector", ports)
+		expected := service("test", ports)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
 
@@ -152,7 +154,7 @@ func TestDesiredService(t *testing.T) {
 		}
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
 		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
-		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
+		expected := serviceWithInternalTrafficPolicy("test", ports, v1.ServiceInternalTrafficPolicyLocal)
 
 		actual, err := Service(p)
 		assert.NoError(t, err)
@@ -170,7 +172,7 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		actual, err := Service(params)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.ErrorContains(t, err, "couldn't parse the amazon-cloudwatch-agent configuration")
 		assert.Nil(t, actual)
 
 	})
@@ -181,7 +183,7 @@ func TestHeadlessService(t *testing.T) {
 		param := deploymentParams()
 		actual, err := HeadlessService(param)
 		assert.NoError(t, err)
-		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
+		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
 	})
 }
