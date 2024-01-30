@@ -1,0 +1,12 @@
+{
+  "traces": {
+    "traces_collected": {
+      "xray": {
+        "bind_address": "127.0.0.1:2800",
+        "tcp_proxy": {
+          "bind_address": "127.0.0.1:2900"
+        }
+      }
+    }
+  }
+}

@@ -12,19 +12,18 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector/reconcile"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/naming"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 const (
-	label      = "sidecar.opentelemetry.io/injected"
-	confEnvVar = "OTEL_CONFIG"
+	injectedLabel = "sidecar.opentelemetry.io/injected"
+	confEnvVar    = "OTEL_CONFIG"
 )
 
 // add a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
 func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	otelColCfg, err := reconcile.ReplaceConfig(otelcol)
+	otelColCfg, err := collector.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err
 	}
@@ -36,13 +35,14 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatc
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)
 	}
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
 	pod.Spec.Containers = append(pod.Spec.Containers, container)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
-	pod.Labels[label] = fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name)
+	pod.Labels[injectedLabel] = naming.Truncate("%s.%s", 63, otelcol.Namespace, otelcol.Name)
 
 	return pod, nil
 }

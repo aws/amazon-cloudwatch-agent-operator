@@ -5,10 +5,12 @@ package instrumentation
 
 import (
 	"errors"
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"os"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 const (
@@ -22,8 +24,10 @@ const (
 	otelTracesSamplerArgDefaultValue       = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
 	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
 	otelTracesSamplerDefaultValue          = "xray"
+	otelExporterOtlpProtocolKey            = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	otelExporterOtlpProtocolValue          = "http/protobuf"
 	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4315"
+	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"
 	otelExporterSmpEndpointKey             = "OTEL_AWS_SMP_EXPORTER_ENDPOINT"
 	otelExporterSmpEndpointDefaultValue    = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 	otelExporterMetricKey                  = "OTEL_METRICS_EXPORTER"
@@ -58,6 +62,7 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
+					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},

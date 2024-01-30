@@ -51,6 +51,8 @@ CONTROLLER_TOOLS_VERSION ?= v0.12.0
 ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 CW_AGENT_OPERATOR_IMPORT_PATH = "github.com/aws/amazon-cloudwatch-agent-operator"
 
+GOTEST_OPTS := $(shell go list ./... | grep -v integration-tests)
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -82,10 +84,10 @@ ci: test
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: generate fmt vet ensure-generate-is-noop envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+test: generate fmt vet envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS}
+	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS}
+	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS}
 
 # Build manager binary
 .PHONY: manager
@@ -115,7 +117,7 @@ set-image-controller: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply --server-side -f -
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
