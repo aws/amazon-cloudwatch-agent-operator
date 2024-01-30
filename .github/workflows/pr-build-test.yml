@@ -18,25 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Check changes
-    runs-on: ubuntu-latest
-    outputs:
-      build: ${{ steps.filter.outputs.build }}
-      lint: ${{ steps.filter.outputs.lint }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          list-files: shell
-
-      - name: List all updated files
-        run: |
-          for file in ${{ steps.filter.outputs.build_files }}; do
-            echo "$file"
-          done
-
   unit-test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
