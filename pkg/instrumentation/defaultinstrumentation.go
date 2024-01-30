@@ -84,6 +84,7 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 				Env: []corev1.EnvVar{
 					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
