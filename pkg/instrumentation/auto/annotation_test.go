@@ -117,7 +117,7 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 			for _, gotNamespace := range gotNamespaces.Items {
 				annotations, ok := testCase.want[gotNamespace.Name]
 				assert.True(t, ok)
-				assert.Equal(t, annotations, gotNamespace.GetAnnotations())
+				assert.Equalf(t, annotations, gotNamespace.GetAnnotations(), "Failed for %s", gotNamespace.Name)
 			}
 		})
 	}
@@ -181,9 +181,10 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 			gotDeployments := &appv1.DeploymentList{}
 			require.NoError(t, client.List(ctx, gotDeployments))
 			for _, gotDeployment := range gotDeployments.Items {
-				annotations, ok := testCase.want[namespacedName(gotDeployment.GetObjectMeta())]
+				name := namespacedName(gotDeployment.GetObjectMeta())
+				annotations, ok := testCase.want[name]
 				assert.True(t, ok)
-				assert.Equal(t, annotations, gotDeployment.Spec.Template.GetAnnotations())
+				assert.Equalf(t, annotations, gotDeployment.Spec.Template.GetAnnotations(), "Failed for %s", name)
 			}
 		})
 	}
@@ -247,9 +248,10 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 			gotDaemonSets := &appv1.DaemonSetList{}
 			require.NoError(t, client.List(ctx, gotDaemonSets))
 			for _, gotDaemonSet := range gotDaemonSets.Items {
-				annotations, ok := testCase.want[namespacedName(gotDaemonSet.GetObjectMeta())]
+				name := namespacedName(gotDaemonSet.GetObjectMeta())
+				annotations, ok := testCase.want[name]
 				assert.True(t, ok)
-				assert.Equal(t, annotations, gotDaemonSet.Spec.Template.GetAnnotations())
+				assert.Equalf(t, annotations, gotDaemonSet.Spec.Template.GetAnnotations(), "Failed for %s", name)
 			}
 		})
 	}
@@ -313,9 +315,10 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 			gotStatefulSets := &appv1.StatefulSetList{}
 			require.NoError(t, client.List(ctx, gotStatefulSets))
 			for _, gotStatefulSet := range gotStatefulSets.Items {
-				annotations, ok := testCase.want[namespacedName(gotStatefulSet.GetObjectMeta())]
+				name := namespacedName(gotStatefulSet.GetObjectMeta())
+				annotations, ok := testCase.want[name]
 				assert.True(t, ok)
-				assert.Equal(t, annotations, gotStatefulSet.Spec.Template.GetAnnotations())
+				assert.Equalf(t, annotations, gotStatefulSet.Spec.Template.GetAnnotations(), "Failed for %s", name)
 			}
 		})
 	}

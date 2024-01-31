@@ -51,22 +51,25 @@ func (m *AnnotationMutators) MutateNamespaces(ctx context.Context) {
 	}
 
 	for _, namespace := range namespaces.Items {
-		m.MutateNamespace(ctx, namespace)
+		if m.MutateNamespace(&namespace) {
+			if err := m.client.Update(ctx, &namespace); err != nil {
+				m.logger.Error(err, "Unable to send update",
+					"kind", namespace.Kind,
+					"name", namespace.Name,
+					"namespace", namespace.Namespace,
+				)
+			}
+		}
 	}
 }
 
 // MutateNamespace modifies a single namespace's annotations using the configured mutators.
-func (m *AnnotationMutators) MutateNamespace(ctx context.Context, namespace corev1.Namespace) {
+func (m *AnnotationMutators) MutateNamespace(namespace *corev1.Namespace) bool {
 	mutator, ok := m.namespaceMutators[namespace.Name]
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	if !mutator.Mutate(namespace.GetObjectMeta()) {
-		return
-	}
-	if err := m.client.Update(ctx, &namespace); err != nil {
-		m.logger.Error(err, "Unable to send update", "kind", namespace.Kind, "name", namespace.Name)
-	}
+	return mutator.Mutate(namespace.GetObjectMeta())
 }
 
 // MutateDeployments lists all deployments and runs MutateDeployment on each.
@@ -77,23 +80,26 @@ func (m *AnnotationMutators) MutateDeployments(ctx context.Context) {
 		return
 	}
 	for _, deployment := range deployments.Items {
-		m.MutateDeployment(ctx, deployment)
+		if m.MutateDeployment(&deployment) {
+			if err := m.client.Update(ctx, &deployment); err != nil {
+				m.logger.Error(err, "Unable to send update",
+					"kind", deployment.Kind,
+					"name", deployment.Name,
+					"namespace", deployment.Namespace,
+				)
+			}
+		}
 	}
 }
 
 // MutateDeployment modifies a single deployment's pod template spec annotations using the configured mutators.
-func (m *AnnotationMutators) MutateDeployment(ctx context.Context, deployment appsv1.Deployment) {
+func (m *AnnotationMutators) MutateDeployment(deployment *appsv1.Deployment) bool {
 	name := namespacedName(deployment.GetObjectMeta())
 	mutator, ok := m.deploymentMutators[name]
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	if !mutator.Mutate(deployment.Spec.Template.GetObjectMeta()) {
-		return
-	}
-	if err := m.client.Update(ctx, &deployment); err != nil {
-		m.logger.Error(err, "Unable to send update", "kind", deployment.Kind, "name", name)
-	}
+	return mutator.Mutate(deployment.Spec.Template.GetObjectMeta())
 }
 
 // MutateDaemonSets lists all daemonsets and runs MutateDaemonSet on each.
@@ -104,23 +110,26 @@ func (m *AnnotationMutators) MutateDaemonSets(ctx context.Context) {
 		return
 	}
 	for _, daemonSet := range daemonSets.Items {
-		m.MutateDaemonSet(ctx, daemonSet)
+		if m.MutateDaemonSet(&daemonSet) {
+			if err := m.client.Update(ctx, &daemonSet); err != nil {
+				m.logger.Error(err, "Unable to send update",
+					"kind", daemonSet.Kind,
+					"name", daemonSet.Name,
+					"namespace", daemonSet.Namespace,
+				)
+			}
+		}
 	}
 }
 
 // MutateDaemonSet modifies a single daemonset's pod template spec annotations using the configured mutators.
-func (m *AnnotationMutators) MutateDaemonSet(ctx context.Context, daemonSet appsv1.DaemonSet) {
+func (m *AnnotationMutators) MutateDaemonSet(daemonSet *appsv1.DaemonSet) bool {
 	name := namespacedName(daemonSet.GetObjectMeta())
 	mutator, ok := m.daemonSetMutators[name]
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	if !mutator.Mutate(daemonSet.Spec.Template.GetObjectMeta()) {
-		return
-	}
-	if err := m.client.Update(ctx, &daemonSet); err != nil {
-		m.logger.Error(err, "Unable to send update", "kind", daemonSet.Kind, "name", name)
-	}
+	return mutator.Mutate(daemonSet.Spec.Template.GetObjectMeta())
 }
 
 // MutateStatefulSets lists all statefulsets and runs MutateStatefulSet on each.
@@ -131,23 +140,26 @@ func (m *AnnotationMutators) MutateStatefulSets(ctx context.Context) {
 		return
 	}
 	for _, statefulSet := range statefulSets.Items {
-		m.MutateStatefulSet(ctx, statefulSet)
+		if m.MutateStatefulSet(&statefulSet) {
+			if err := m.client.Update(ctx, &statefulSet); err != nil {
+				m.logger.Error(err, "Unable to send update",
+					"kind", statefulSet.Kind,
+					"name", statefulSet.Name,
+					"namespace", statefulSet.Namespace,
+				)
+			}
+		}
 	}
 }
 
 // MutateStatefulSet modifies a single statefulset's pod template spec annotations using the configured mutators.
-func (m *AnnotationMutators) MutateStatefulSet(ctx context.Context, statefulSet appsv1.StatefulSet) {
+func (m *AnnotationMutators) MutateStatefulSet(statefulSet *appsv1.StatefulSet) bool {
 	name := namespacedName(statefulSet.GetObjectMeta())
 	mutator, ok := m.statefulSetMutators[name]
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	if !mutator.Mutate(statefulSet.Spec.Template.GetObjectMeta()) {
-		return
-	}
-	if err := m.client.Update(ctx, &statefulSet); err != nil {
-		m.logger.Error(err, "Unable to send update", "kind", statefulSet.Kind, "name", name)
-	}
+	return mutator.Mutate(statefulSet.Spec.Template.GetObjectMeta())
 }
 
 func namespacedName(obj metav1.Object) string {
@@ -227,8 +239,8 @@ func newMutatorBuilder(typeSet instrumentation.TypeSet) *mutatorBuilder {
 // Both are configured to only modify the annotations if all annotation keys are missing or present respectively.
 func buildMutations(instType instrumentation.Type) (instrumentation.AnnotationMutation, instrumentation.AnnotationMutation) {
 	annotations := buildAnnotations(instType)
-	return instrumentation.NewInsertAnnotationMutation(annotations, true),
-		instrumentation.NewRemoveAnnotationMutation(maps.Keys(annotations), true)
+	return instrumentation.NewInsertAnnotationMutation(annotations),
+		instrumentation.NewRemoveAnnotationMutation(maps.Keys(annotations))
 }
 
 // buildAnnotations creates an annotation map of the inject and auto-annotate keys.

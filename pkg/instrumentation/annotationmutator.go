@@ -14,12 +14,11 @@ type AnnotationMutation interface {
 }
 
 type insertAnnotationMutation struct {
-	insert     map[string]string
-	requireAll bool
+	insert map[string]string
 }
 
 func (m *insertAnnotationMutation) Mutate(annotations map[string]string) bool {
-	if m.requireAll && !m.validate(annotations) {
+	if !m.shouldMutate(annotations) {
 		return false
 	}
 	var mutated bool
@@ -32,7 +31,7 @@ func (m *insertAnnotationMutation) Mutate(annotations map[string]string) bool {
 	return mutated
 }
 
-func (m *insertAnnotationMutation) validate(annotations map[string]string) bool {
+func (m *insertAnnotationMutation) shouldMutate(annotations map[string]string) bool {
 	for key := range m.insert {
 		if _, ok := annotations[key]; ok {
 			return false
@@ -41,19 +40,18 @@ func (m *insertAnnotationMutation) validate(annotations map[string]string) bool 
 	return true
 }
 
-// NewInsertAnnotationMutation creates a new mutation that inserts annotations. If requireAll is enabled,
-// all provided annotation keys must be present for it to attempt to insert.
-func NewInsertAnnotationMutation(annotations map[string]string, requireAll bool) AnnotationMutation {
-	return &insertAnnotationMutation{insert: annotations, requireAll: requireAll}
+// NewInsertAnnotationMutation creates a new mutation that inserts annotations. All provided annotation keys
+// must be present for it to attempt to insert.
+func NewInsertAnnotationMutation(annotations map[string]string) AnnotationMutation {
+	return &insertAnnotationMutation{insert: annotations}
 }
 
 type removeAnnotationMutation struct {
-	remove     []string
-	requireAll bool
+	remove []string
 }
 
 func (m *removeAnnotationMutation) Mutate(annotations map[string]string) bool {
-	if m.requireAll && !m.validate(annotations) {
+	if !m.shouldMutate(annotations) {
 		return false
 	}
 	var mutated bool
@@ -66,7 +64,7 @@ func (m *removeAnnotationMutation) Mutate(annotations map[string]string) bool {
 	return mutated
 }
 
-func (m *removeAnnotationMutation) validate(annotations map[string]string) bool {
+func (m *removeAnnotationMutation) shouldMutate(annotations map[string]string) bool {
 	for _, key := range m.remove {
 		if _, ok := annotations[key]; !ok {
 			return false
@@ -75,10 +73,10 @@ func (m *removeAnnotationMutation) validate(annotations map[string]string) bool 
 	return true
 }
 
-// NewRemoveAnnotationMutation creates a new mutation that removes annotations. If requireAll is enabled,
-// all provided annotation keys must be present for it to attempt to remove them.
-func NewRemoveAnnotationMutation(annotations []string, requireAll bool) AnnotationMutation {
-	return &removeAnnotationMutation{remove: annotations, requireAll: requireAll}
+// NewRemoveAnnotationMutation creates a new mutation that removes annotations. All provided annotation keys
+// must be present for it to attempt to remove them.
+func NewRemoveAnnotationMutation(annotations []string) AnnotationMutation {
+	return &removeAnnotationMutation{remove: annotations}
 }
 
 type AnnotationMutator struct {

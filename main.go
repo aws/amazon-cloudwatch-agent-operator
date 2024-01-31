@@ -100,7 +100,7 @@ func main() {
 	pflag.StringVar(&pprofAddr, "pprof-addr", "", "The address to expose the pprof server. Default is empty string which disables the pprof server.")
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
-	pflag.StringVar(&autoAnnotationConfigStr, "auto-annotation-config", "", "The configuration for auto-annotation.")
+	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	pflag.Parse()
 
 	// set java instrumentation java image in environment variable to be used for default instrumentation
@@ -211,21 +211,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	var autoAnnotationConfig auto.AnnotationConfig
-	if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-		setupLog.Error(err, "unable to unmarshal auto-annotation config")
-	} else {
-		setupLog.Info("starting auto-annotator")
-		autoAnnotation := auto.NewAnnotationMutators(
-			mgr.GetClient(),
-			logger,
-			autoAnnotationConfig,
-			instrumentation.NewTypeSet(
-				instrumentation.TypeJava,
-				instrumentation.TypePython,
-			),
-		)
-		go autoAnnotation.MutateAll(ctx)
+	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
+		var autoAnnotationConfig auto.AnnotationConfig
+		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
+			setupLog.Error(err, "unable to unmarshal auto-annotation config")
+		} else {
+			setupLog.Info("starting auto-annotator")
+			autoAnnotation := auto.NewAnnotationMutators(
+				mgr.GetClient(),
+				logger,
+				autoAnnotationConfig,
+				instrumentation.NewTypeSet(
+					instrumentation.TypeJava,
+					instrumentation.TypePython,
+				),
+			)
+			go autoAnnotation.MutateAll(ctx)
+		}
 	}
 
 	setupLog.Info("starting manager")
