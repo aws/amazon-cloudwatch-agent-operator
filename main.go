@@ -33,6 +33,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
@@ -179,6 +180,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	var autoAnnotationConfig auto.AnnotationConfig
+	var autoAnnotation *auto.AnnotationMutators
+	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
+		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
+			setupLog.Error(err, "unable to unmarshal auto-annotation config")
+		} else {
+			autoAnnotation = auto.NewAnnotationMutators(
+				mgr.GetClient(),
+				mgr.GetAPIReader(),
+				logger,
+				autoAnnotationConfig,
+				instrumentation.NewTypeSet(
+					instrumentation.TypeJava,
+					instrumentation.TypePython,
+				),
+			)
+			go autoAnnotation.MutateAll(ctx)
+		}
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AmazonCloudWatchAgent")
@@ -196,7 +217,8 @@ func main() {
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
 				}),
 		})
-
+		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
+			Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotation)})
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}
@@ -209,25 +231,6 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
-	}
-
-	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
-		var autoAnnotationConfig auto.AnnotationConfig
-		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-			setupLog.Error(err, "unable to unmarshal auto-annotation config")
-		} else {
-			setupLog.Info("starting auto-annotator")
-			autoAnnotation := auto.NewAnnotationMutators(
-				mgr.GetClient(),
-				logger,
-				autoAnnotationConfig,
-				instrumentation.NewTypeSet(
-					instrumentation.TypeJava,
-					instrumentation.TypePython,
-				),
-			)
-			go autoAnnotation.MutateAll(ctx)
-		}
 	}
 
 	setupLog.Info("starting manager")

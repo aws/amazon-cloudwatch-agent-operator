@@ -32,6 +32,7 @@ rules:
   - namespaces
   verbs:
   - list
+  - update
   - watch
 - apiGroups:
   - apps

@@ -24,9 +24,12 @@ const (
 	defaultAnnotationValue = "true"
 )
 
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;update
+
 // AnnotationMutators has an AnnotationMutator resource name
 type AnnotationMutators struct {
 	client              client.Client
+	clientReader        client.Reader
 	logger              logr.Logger
 	namespaceMutators   map[string]instrumentation.AnnotationMutator
 	deploymentMutators  map[string]instrumentation.AnnotationMutator
@@ -46,7 +49,7 @@ func (m *AnnotationMutators) MutateAll(ctx context.Context) {
 // MutateNamespaces lists all namespaces and runs MutateNamespace on each.
 func (m *AnnotationMutators) MutateNamespaces(ctx context.Context) {
 	namespaces := &corev1.NamespaceList{}
-	if err := m.client.List(ctx, namespaces); err != nil {
+	if err := m.clientReader.List(ctx, namespaces); err != nil {
 		m.logger.Error(err, "Unable to list namespaces")
 		return
 	}
@@ -66,7 +69,7 @@ func (m *AnnotationMutators) MutateNamespaces(ctx context.Context) {
 // MutateDeployments lists all deployments and runs MutateDeployment on each.
 func (m *AnnotationMutators) MutateDeployments(ctx context.Context) {
 	deployments := &appsv1.DeploymentList{}
-	if err := m.client.List(ctx, deployments); err != nil {
+	if err := m.clientReader.List(ctx, deployments); err != nil {
 		m.logger.Error(err, "Unable to list deployments")
 		return
 	}
@@ -86,7 +89,7 @@ func (m *AnnotationMutators) MutateDeployments(ctx context.Context) {
 // MutateDaemonSets lists all daemonsets and runs MutateDaemonSet on each.
 func (m *AnnotationMutators) MutateDaemonSets(ctx context.Context) {
 	daemonSets := &appsv1.DaemonSetList{}
-	if err := m.client.List(ctx, daemonSets); err != nil {
+	if err := m.clientReader.List(ctx, daemonSets); err != nil {
 		m.logger.Error(err, "Unable to list daemonsets")
 		return
 	}
@@ -106,7 +109,7 @@ func (m *AnnotationMutators) MutateDaemonSets(ctx context.Context) {
 // MutateStatefulSets lists all statefulsets and runs MutateStatefulSet on each.
 func (m *AnnotationMutators) MutateStatefulSets(ctx context.Context) {
 	statefulSets := &appsv1.StatefulSetList{}
-	if err := m.client.List(ctx, statefulSets); err != nil {
+	if err := m.clientReader.List(ctx, statefulSets); err != nil {
 		m.logger.Error(err, "Unable to list statefulsets")
 		return
 	}
@@ -154,10 +157,11 @@ func namespacedName(obj metav1.Object) string {
 // NewAnnotationMutators creates mutators based on the AnnotationConfig provided and enabled instrumentation.TypeSet.
 // The default mutator, which is used for non-configured resources, removes all auto-annotated annotations in the type
 // set.
-func NewAnnotationMutators(client client.Client, logger logr.Logger, cfg AnnotationConfig, typeSet instrumentation.TypeSet) *AnnotationMutators {
+func NewAnnotationMutators(client client.Client, clientReader client.Reader, logger logr.Logger, cfg AnnotationConfig, typeSet instrumentation.TypeSet) *AnnotationMutators {
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		client:              client,
+		clientReader:        clientReader,
 		logger:              logger,
 		namespaceMutators:   builder.buildMutators(getResources(cfg, typeSet, getNamespaces)),
 		deploymentMutators:  builder.buildMutators(getResources(cfg, typeSet, getDeployments)),
