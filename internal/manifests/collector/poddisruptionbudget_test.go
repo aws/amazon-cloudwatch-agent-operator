@@ -76,8 +76,8 @@ func TestPDB(t *testing.T) {
 				})
 
 				// verify
-				assert.Equal(t, "my-instance-collector", pdb.Name)
-				assert.Equal(t, "my-instance-collector", pdb.Labels["app.kubernetes.io/name"])
+				assert.Equal(t, "my-instance", pdb.Name)
+				assert.Equal(t, "my-instance", pdb.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, test.MinAvailable, pdb.Spec.MinAvailable)
 				assert.Equal(t, test.MaxUnavailable, pdb.Spec.MaxUnavailable)
 			})

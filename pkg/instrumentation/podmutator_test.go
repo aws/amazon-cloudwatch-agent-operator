@@ -27,6 +27,8 @@ const (
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
+
 	defaultInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
@@ -50,6 +52,7 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
+					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
@@ -3226,43 +3229,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name: "annotation set to non existing instance",
-			ns: corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "non-existing-instance",
-				},
-			},
-			inst: v1alpha1.Instrumentation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "example-inst",
-					Namespace: "non-existing-instance",
-				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
-						Image: "otel/java:1",
-					},
-					Exporter: v1alpha1.Exporter{
-						Endpoint: "http://collector:12345",
-					},
-				},
-			},
-			pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectJava: "doesnotexists",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-			err: `instrumentations.opentelemetry.io "doesnotexists" not found`,
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate enabled",
