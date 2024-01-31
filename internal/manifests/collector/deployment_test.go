@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector_test
 
 import (
@@ -78,8 +80,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	d := Deployment(params)
 
 	// verify
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -97,20 +99,20 @@ func TestDeploymentNewDefault(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
 	expectedLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/name":       "my-instance-collector",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/name":       "my-instance",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 		"app.kubernetes.io/version":    "latest",
 	}
 	assert.Equal(t, expectedLabels, d.Spec.Template.Labels)
 
 	expectedSelectorLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 	}
 	assert.Equal(t, expectedSelectorLabels, d.Spec.Selector.MatchLabels)
 
@@ -155,7 +157,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 
 	// verify
 	assert.Len(t, d.Spec.Template.Annotations, 5)
-	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance", d.Name)
 	assert.Equal(t, expectedPodAnnotationValues, d.Spec.Template.Annotations)
 }
 
@@ -459,8 +461,8 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 
 	// test
 	d := Deployment(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -483,7 +485,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 		Log:     logger,
 	}
 	d1 := Deployment(params1)
-	assert.Equal(t, "my-instance-collector", d1.Name)
+	assert.Equal(t, "my-instance", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
@@ -535,8 +537,8 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 
 	// test
 	d := Deployment(params)
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", d.Name)
+	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])

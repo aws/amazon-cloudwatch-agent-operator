@@ -4568,7 +4568,7 @@ spec:
                 type: object
               podSecurityContext:
                 description: "PodSecurityContext configures the pod security context
-                  for the opentelemetry-collector pod, when running as a deployment,
+                  for the amazon-cloudwatch-agent pod, when running as a deployment,
                   daemonset, or statefulset. \n In sidecar mode, the amazon-cloudwatch-agent-operator
                   will ignore this setting."
                 properties:
@@ -4864,7 +4864,7 @@ spec:
                 type: object
               securityContext:
                 description: "SecurityContext configures the container security context
-                  for the opentelemetry-collector container. \n In deployment, daemonset,
+                  for the amazon-cloudwatch-agent container. \n In deployment, daemonset,
                   or statefulset mode, this controls the security context settings
                   for the primary application container. \n In sidecar mode, this
                   controls the security context for the injected sidecar container."

@@ -10,12 +10,15 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 )
+
+var logger = logf.Log.WithName("unit-tests")
 
 func TestHPA(t *testing.T) {
 	type test struct {
@@ -72,8 +75,8 @@ func TestHPA(t *testing.T) {
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
 				// verify
-				assert.Equal(t, "my-instance-collector", hpa.Name)
-				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
+				assert.Equal(t, "my-instance", hpa.Name)
+				assert.Equal(t, "my-instance", hpa.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
 				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
 				assert.Equal(t, 2, len(hpa.Spec.Metrics))

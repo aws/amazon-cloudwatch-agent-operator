@@ -66,7 +66,7 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 		"app.kubernetes.io/component":  component,
 	}
 }

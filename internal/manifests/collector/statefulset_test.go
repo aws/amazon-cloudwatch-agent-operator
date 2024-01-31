@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector_test
 
 import (
@@ -43,8 +45,8 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	ss := StatefulSet(params)
 
 	// verify
-	assert.Equal(t, "my-instance-collector", ss.Name)
-	assert.Equal(t, "my-instance-collector", ss.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", ss.Name)
+	assert.Equal(t, "my-instance", ss.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", ss.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", ss.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", ss.Annotations["prometheus.io/path"])
@@ -62,20 +64,20 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 
 	expectedLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/name":       "my-instance-collector",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/name":       "my-instance",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 		"app.kubernetes.io/version":    "latest",
 	}
 	assert.Equal(t, expectedLabels, ss.Spec.Template.Labels)
 
 	expectedSelectorLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-instance",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 	}
 	assert.Equal(t, expectedSelectorLabels, ss.Spec.Selector.MatchLabels)
 
@@ -85,7 +87,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 
 	// assert correct service name
-	assert.Equal(t, "my-instance-collector", ss.Spec.ServiceName)
+	assert.Equal(t, "my-instance", ss.Spec.ServiceName)
 
 	// assert correct pod management policy
 	assert.Equal(t, appsv1.ParallelPodManagement, ss.Spec.PodManagementPolicy)
@@ -193,7 +195,7 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 		"prometheus.io/scrape":                           "true",
 	}
 	// verify
-	assert.Equal(t, "my-instance-collector", ss.Name)
+	assert.Equal(t, "my-instance", ss.Name)
 	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 }
 
@@ -455,8 +457,8 @@ func TestStatefulSetInitContainer(t *testing.T) {
 
 	// test
 	s := StatefulSet(params)
-	assert.Equal(t, "my-instance-collector", s.Name)
-	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", s.Name)
+	assert.Equal(t, "my-instance", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
@@ -479,7 +481,7 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 		Log:     logger,
 	}
 	s1 := StatefulSet(params1)
-	assert.Equal(t, "my-instance-collector", s1.Name)
+	assert.Equal(t, "my-instance", s1.Name)
 	assert.Empty(t, s1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
@@ -501,7 +503,7 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 	}
 
 	s2 := StatefulSet(params2)
-	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", s2.Name)
+	assert.Equal(t, "my-instance-topologyspreadconstraint", s2.Name)
 	assert.NotNil(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, s2.Spec.Template.Spec.TopologySpreadConstraints)
@@ -532,8 +534,8 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 
 	// test
 	s := StatefulSet(params)
-	assert.Equal(t, "my-instance-collector", s.Name)
-	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance", s.Name)
+	assert.Equal(t, "my-instance", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])

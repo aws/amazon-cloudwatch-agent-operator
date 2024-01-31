@@ -120,7 +120,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for
-	// the opentelemetry-collector container.
+	// the amazon-cloudwatch-agent container.
 	//
 	// In deployment, daemonset, or statefulset mode, this controls
 	// the security context settings for the primary application
@@ -132,7 +132,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 	// PodSecurityContext configures the pod security context for the
-	// opentelemetry-collector pod, when running as a deployment, daemonset,
+	// amazon-cloudwatch-agent pod, when running as a deployment, daemonset,
 	// or statefulset.
 	//
 	// In sidecar mode, the amazon-cloudwatch-agent-operator will ignore this setting.

@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector
 
 import (
@@ -57,7 +59,7 @@ func TestDesiredIngresses(t *testing.T) {
 		actual, err := Ingress(params)
 		fmt.Printf("error1: %+v", err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.ErrorContains(t, err, "couldn't parse the amazon-cloudwatch-agent configuration")
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {

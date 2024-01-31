@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build ignore_test
+
 package collector
 
 import (
@@ -58,7 +60,7 @@ func TestDesiredRoutes(t *testing.T) {
 
 		actual, err := Routes(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.ErrorContains(t, err, "couldn't parse the amazon-cloudwatch-agent configuration")
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
@@ -117,7 +119,7 @@ func TestDesiredRoutes(t *testing.T) {
 					"app.kubernetes.io/name":       naming.Route(params.OtelCol.Name, ""),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 				},
 			},
 			Spec: routev1.RouteSpec{

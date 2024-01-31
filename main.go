@@ -4,6 +4,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -34,6 +35,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
@@ -90,6 +92,7 @@ func main() {
 		agentImage                string
 		autoInstrumentationJava   string
 		autoInstrumentationPython string
+    autoAnnotationConfigStr string
 		webhookPort               int
 		tlsOpt                    tlsConfig
 	)
@@ -100,6 +103,7 @@ func main() {
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	pflag.Parse()
 
 	// set java instrumentation java image in environment variable to be used for default instrumentation
@@ -211,6 +215,25 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+
+	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
+		var autoAnnotationConfig auto.AnnotationConfig
+		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
+			setupLog.Error(err, "unable to unmarshal auto-annotation config")
+		} else {
+			setupLog.Info("starting auto-annotator")
+			autoAnnotation := auto.NewAnnotationMutators(
+				mgr.GetClient(),
+				logger,
+				autoAnnotationConfig,
+				instrumentation.NewTypeSet(
+					instrumentation.TypeJava,
+					instrumentation.TypePython,
+				),
+			)
+			go autoAnnotation.MutateAll(ctx)
+		}
 	}
 
 	setupLog.Info("starting manager")
