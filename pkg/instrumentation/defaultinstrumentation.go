@@ -35,9 +35,9 @@ const (
 	otelExporterMetricDefaultValue         = "none"
 
 	otelPythonDistro                   = "OTEL_PYTHON_DISTRO"
-	otelPythonDistroDefaultValue       = "aws-distro"
+	otelPythonDistroDefaultValue       = "aws_distro"
 	otelPythonConfigurator             = "OTEL_PYTHON_CONFIGURATOR"
-	otelPythonConfiguratorDefaultValue = "aws-configurator"
+	otelPythonConfiguratorDefaultValue = "aws_configurator"
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {

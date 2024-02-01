@@ -92,7 +92,7 @@ func main() {
 		agentImage                string
 		autoInstrumentationJava   string
 		autoInstrumentationPython string
-    autoAnnotationConfigStr string
+		autoAnnotationConfigStr   string
 		webhookPort               int
 		tlsOpt                    tlsConfig
 	)
