@@ -32,27 +32,32 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	client             client.Client
-	decoder            *admission.Decoder
-	logger             logr.Logger
-	config             config.Config
-	annotationMutation *auto.AnnotationMutators
+	client            client.Client
+	decoder           *admission.Decoder
+	logger            logr.Logger
+	config            config.Config
+	annotationMutator *auto.AnnotationMutators
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
 func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, annotationMutation *auto.AnnotationMutators) WebhookHandler {
 	return &workloadMutationWebhook{
-		config:             cfg,
-		decoder:            decoder,
-		logger:             logger,
-		client:             cl,
-		annotationMutation: annotationMutation,
+		config:            cfg,
+		decoder:           decoder,
+		logger:            logger,
+		client:            cl,
+		annotationMutator: annotationMutation,
 	}
 }
 
 func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	if p.annotationMutation == nil {
-		return admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal annotation config"))
+	if p.annotationMutator == nil {
+		// By default, admission.Errored sets Allowed to false which blocks workload creation even though the failurePolicy=ignore.
+		// Allowed set to true makes sure failure does not block workload creation in case of an error.
+		// Returning http.StatusBadRequest does not create any event.
+		res := admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal annotation config"))
+		res.Allowed = true
+		return res
 	}
 
 	var err error
@@ -65,7 +70,6 @@ func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Requ
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		p.annotationMutation.MutateDaemonSet(&ds)
 		object = &ds
 	case "Deployment":
 		d := appsv1.Deployment{}
@@ -73,7 +77,6 @@ func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Requ
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		p.annotationMutation.MutateDeployment(&d)
 		object = &d
 	case "StatefulSet":
 		ss := appsv1.StatefulSet{}
@@ -81,12 +84,12 @@ func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Requ
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		p.annotationMutation.MutateStatefulSet(&ss)
 		object = &ss
 	default:
 		return admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal request object"))
 	}
 
+	p.annotationMutator.Mutate(object)
 	marshaledObject, err = json.Marshal(object)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

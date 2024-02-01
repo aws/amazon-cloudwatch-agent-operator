@@ -181,12 +181,12 @@ func main() {
 	}
 
 	var autoAnnotationConfig auto.AnnotationConfig
-	var autoAnnotation *auto.AnnotationMutators
+	var autoAnnotationMutator *auto.AnnotationMutators
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
 		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "unable to unmarshal auto-annotation config")
 		} else {
-			autoAnnotation = auto.NewAnnotationMutators(
+			autoAnnotationMutator = auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,
@@ -196,7 +196,7 @@ func main() {
 					instrumentation.TypePython,
 				),
 			)
-			go autoAnnotation.MutateAll(ctx)
+			go autoAnnotationMutator.MutateAll(ctx)
 		}
 	}
 
@@ -218,7 +218,7 @@ func main() {
 				}),
 		})
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-			Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotation)})
+			Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutator)})
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}
