@@ -180,6 +180,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	decoder := admission.NewDecoder(mgr.GetScheme())
+
 	var autoAnnotationConfig auto.AnnotationConfig
 	var autoAnnotationMutator *auto.AnnotationMutators
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
@@ -196,6 +198,8 @@ func main() {
 					instrumentation.TypePython,
 				),
 			)
+			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
+				Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutator)})
 			go autoAnnotationMutator.MutateAll(ctx)
 		}
 	}
@@ -209,7 +213,6 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
-		decoder := admission.NewDecoder(mgr.GetScheme())
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
@@ -217,8 +220,6 @@ func main() {
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
 				}),
 		})
-		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-			Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutator)})
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}

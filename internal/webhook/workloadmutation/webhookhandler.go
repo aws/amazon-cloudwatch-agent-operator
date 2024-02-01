@@ -51,15 +51,6 @@ func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission
 }
 
 func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	if p.annotationMutator == nil {
-		// By default, admission.Errored sets Allowed to false which blocks workload creation even though the failurePolicy=ignore.
-		// Allowed set to true makes sure failure does not block workload creation in case of an error.
-		// Returning http.StatusBadRequest does not create any event.
-		res := admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal annotation config"))
-		res.Allowed = true
-		return res
-	}
-
 	var err error
 	var marshaledObject []byte
 	var object runtime.Object
