@@ -23,11 +23,13 @@ import (
 )
 
 const (
-	defaultJavaInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
+	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
+	defaultPythonInstrumentationImage = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.43b0"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 
 	defaultInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -56,6 +58,19 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+				},
+			},
+			Python: v1alpha1.Python{
+				Image: defaultPythonInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
+					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
+					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
 				},
 			},
 		},

@@ -27,6 +27,7 @@ spec:
       - image: {{ template "cloudwatch-agent-operator.image" . }}
         args:
         - "--auto-instrumentation-java-image={{ .Values.manager.autoInstrumentationImage.java.repository }}:{{ .Values.manager.autoInstrumentationImage.java.tag }}"
+        - "--auto-instrumentation-python-image={{ .Values.manager.autoInstrumentationImage.python.repository }}:{{ .Values.manager.autoInstrumentationImage.python.tag }}"
         command:
         - /manager
         name: manager

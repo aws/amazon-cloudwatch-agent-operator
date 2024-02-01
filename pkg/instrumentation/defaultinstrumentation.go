@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	defaultAPIVersion                      = "cloudwatch.aws.amazon.com/v1alpha1"
-	defaultInstrumenation                  = "java-instrumentation"
-	defaultNamespace                       = "default"
-	defaultKind                            = "Instrumentation"
+	defaultAPIVersion     = "cloudwatch.aws.amazon.com/v1alpha1"
+	defaultInstrumenation = "java-instrumentation"
+	defaultNamespace      = "default"
+	defaultKind           = "Instrumentation"
+
 	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED"
 	otelSampleEnabledDefaultValue          = "true"
 	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
@@ -32,13 +33,23 @@ const (
 	otelExporterSmpEndpointDefaultValue    = "http://cloudwatch-agent.amazon-cloudwatch:4315"
 	otelExporterMetricKey                  = "OTEL_METRICS_EXPORTER"
 	otelExporterMetricDefaultValue         = "none"
+
+	otelPythonDistro                   = "OTEL_PYTHON_DISTRO"
+	otelPythonDistroDefaultValue       = "aws_distro"
+	otelPythonConfigurator             = "OTEL_PYTHON_CONFIGURATOR"
+	otelPythonConfiguratorDefaultValue = "aws_configurator"
 )
 
 func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
-	instrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
+	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
-		return nil, errors.New("unable to determine instrumentation image")
+		return nil, errors.New("unable to determine java instrumentation image")
 	}
+	pythonInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON")
+	if !ok {
+		return nil, errors.New("unable to determine python instrumentation image")
+	}
+
 	return &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
@@ -57,7 +68,7 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
-				Image: instrumentationImage,
+				Image: javaInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
@@ -66,6 +77,19 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+				},
+			},
+			Python: v1alpha1.Python{
+				Image: pythonInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
+					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
+					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
 				},
 			},
 		},
