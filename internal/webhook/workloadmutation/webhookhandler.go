@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -32,56 +31,43 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	client            client.Client
-	decoder           *admission.Decoder
-	logger            logr.Logger
-	config            config.Config
-	annotationMutator *auto.AnnotationMutators
+	client             client.Client
+	decoder            *admission.Decoder
+	logger             logr.Logger
+	config             config.Config
+	annotationMutators *auto.AnnotationMutators
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, annotationMutation *auto.AnnotationMutators) WebhookHandler {
+func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, annotationMutators *auto.AnnotationMutators) WebhookHandler {
 	return &workloadMutationWebhook{
-		config:            cfg,
-		decoder:           decoder,
-		logger:            logger,
-		client:            cl,
-		annotationMutator: annotationMutation,
+		config:             cfg,
+		decoder:            decoder,
+		logger:             logger,
+		client:             cl,
+		annotationMutators: annotationMutators,
 	}
 }
 
-func (p *workloadMutationWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	var err error
-	var marshaledObject []byte
-	var object runtime.Object
+func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Request) admission.Response {
+	var obj client.Object
 	switch objectKind := req.Kind.Kind; objectKind {
 	case "DaemonSet":
-		ds := appsv1.DaemonSet{}
-		err = p.decoder.Decode(req, &ds)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		object = &ds
+		obj = &appsv1.DaemonSet{}
 	case "Deployment":
-		d := appsv1.Deployment{}
-		err = p.decoder.Decode(req, &d)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		object = &d
+		obj = &appsv1.Deployment{}
 	case "StatefulSet":
-		ss := appsv1.StatefulSet{}
-		err = p.decoder.Decode(req, &ss)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		object = &ss
+		obj = &appsv1.StatefulSet{}
 	default:
 		return admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal request object"))
 	}
 
-	p.annotationMutator.Mutate(object)
-	marshaledObject, err = json.Marshal(object)
+	if err := p.decoder.Decode(req, obj); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	p.annotationMutators.MutateObject(obj)
+	marshaledObject, err := json.Marshal(obj)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)
 		res.Allowed = true
