@@ -182,13 +182,12 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	var autoAnnotationConfig auto.AnnotationConfig
-	var autoAnnotationMutator *auto.AnnotationMutators
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
+		var autoAnnotationConfig auto.AnnotationConfig
 		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "unable to unmarshal auto-annotation config")
 		} else {
-			autoAnnotationMutator = auto.NewAnnotationMutators(
+			autoAnnotationMutator := auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,

@@ -5,7 +5,6 @@ package workloadmutation
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -28,42 +27,35 @@ var (
 
 func TestInvalidRequest(t *testing.T) {
 	for _, tt := range []struct {
-		req               admission.Request
-		autoAnnotationStr string
-		name              string
-		expected          int32
-		allowed           bool
+		req                  admission.Request
+		autoAnnotationConfig auto.AnnotationConfig
+		name                 string
+		expected             int32
+		allowed              bool
 	}{
 		{
-			name:              "invalid payload",
-			req:               admission.Request{},
-			expected:          http.StatusBadRequest,
-			allowed:           false,
-			autoAnnotationStr: "{\"java\":{\"namespaces\":[\"test\"],\"daemonsets\":[\"default/prometheus-daemonset\"]}}",
-		},
-		{
-			name:              "invalid annotation config",
-			req:               admission.Request{},
-			expected:          http.StatusBadRequest,
-			allowed:           false,
-			autoAnnotationStr: "{\"language\":{\"workloads\":[\"test\"],\"workload1\":[\"default/workload-name\"]}}",
+			name:     "invalid payload",
+			req:      admission.Request{},
+			expected: http.StatusBadRequest,
+			allowed:  false,
+			autoAnnotationConfig: auto.AnnotationConfig{
+				Java: auto.AnnotationResources{
+					Namespaces: []string{"keep-auto-java"},
+				},
+			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			// prepare
 			cfg := config.New()
 			decoder := admission.NewDecoder(scheme.Scheme)
-
-			var autoAnnotationConfig auto.AnnotationConfig
-			assert.NoError(t, json.Unmarshal([]byte(tt.autoAnnotationStr), &autoAnnotationConfig))
 			mutators := auto.NewAnnotationMutators(
 				k8sClient,
 				k8sClient,
 				logr.Logger{},
-				autoAnnotationConfig,
+				tt.autoAnnotationConfig,
 				instrumentation.NewTypeSet(instrumentation.TypeJava),
 			)
-
 			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, mutators)
 
 			// test
