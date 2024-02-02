@@ -23,7 +23,7 @@ spec:
       securityContext:
         windowsOptions:
           hostProcess: true
-          runAsUserName: "NT AUTHORITY\\Local service"
+          runAsUserName: "NT AUTHORITY\\System"
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: windows
@@ -31,7 +31,7 @@ spec:
       - name: fluent-bit
         image: {{ template "fluent-bit-windows.image" . }}
         imagePullPolicy: Always
-        command: ["%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/bin/fluent-bit.exe", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/kinesis.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/firehose.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/cloudwatch.dll", "-c", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/etc/fluent-bit.conf"]
+        command: ["%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/bin/fluent-bit.exe", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/kinesis.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/firehose.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/cloudwatch.dll", "-c", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/configuration/fluent-bit.conf"]
         env:
         - name: AWS_REGION
           value: {{ .Values.region }}
@@ -62,6 +62,13 @@ spec:
           requests:
             cpu: 50m
             memory: 25Mi
+        volumeMounts:
+          - name: fluent-bit-config
+            mountPath: fluent-bit\configuration\
+      volumes:
+        - name: fluent-bit-config
+          configMap:
+            name: fluent-bit-windows-config
       terminationGracePeriodSeconds: 10
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: {{ template "cloudwatch-agent.serviceAccountName" . }}
