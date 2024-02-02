@@ -63,21 +63,6 @@ data:
         Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
-    [FILTER]
-        Name                kubernetes
-        Match               application.*
-        Kube_URL            https://kubernetes.default.svc:443
-        Kube_Tag_Prefix     application.C.var.log.containers.
-        Merge_Log           On
-        Merge_Log_Key       log_processed
-        K8S-Logging.Parser  On
-        K8S-Logging.Exclude Off
-        Labels              Off
-        Annotations         Off
-        Use_Kubelet         On
-        Kubelet_Port        10250
-        Buffer_Size         0
-
     [OUTPUT]
         Name                cloudwatch_logs
         Match               application.*
@@ -133,17 +118,17 @@ data:
     [INPUT]
         Name                winlog
         Channels            EKS, System
-        DB                  /var/fluent-bit/state/flb_system_winlog.db
+        DB                  C:\\var\\fluent-bit\\state\\flb_system_winlog.db
         Interval_Sec        10
 
     [FILTER]
         Name                aws
-        Match               host.*
+        Match               winlog.*
         imds_version        v2
 
     [OUTPUT]
         Name                cloudwatch_logs
-        Match               host.*
+        Match               winlog.*
         region              ${AWS_REGION}
         log_group_name      /aws/containerinsights/${CLUSTER_NAME}/host
         log_stream_prefix   ${HOST_NAME}.
