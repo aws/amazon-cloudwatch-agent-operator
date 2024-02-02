@@ -107,6 +107,7 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 			client := fake.NewClientBuilder().WithLists(&corev1.NamespaceList{Items: namespaces}).Build()
 			mutators := NewAnnotationMutators(
 				client,
+				client,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
@@ -172,6 +173,7 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 			ctx := context.Background()
 			client := fake.NewClientBuilder().WithLists(&appv1.DeploymentList{Items: deployments}).Build()
 			mutators := NewAnnotationMutators(
+				client,
 				client,
 				logr.Logger{},
 				testCase.cfg,
@@ -240,6 +242,7 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 			client := fake.NewClientBuilder().WithLists(&appv1.DaemonSetList{Items: daemonSets}).Build()
 			mutators := NewAnnotationMutators(
 				client,
+				client,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
@@ -306,6 +309,7 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 			ctx := context.Background()
 			client := fake.NewClientBuilder().WithLists(&appv1.StatefulSetList{Items: statefulSets}).Build()
 			mutators := NewAnnotationMutators(
+				client,
 				client,
 				logr.Logger{},
 				testCase.cfg,
