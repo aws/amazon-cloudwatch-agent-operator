@@ -1,0 +1,16 @@
+{
+    "traces": {
+        "traces_collected": {
+            "xray": {
+                "bind_address": "127.0.0.1:2000",
+                "tcp_proxy": {
+                    "bind_address": "127.0.0.1:2000"
+                }
+            },
+            "otlp": {
+                "grpc_endpoint": "127.0.0.1:4327",
+                "http_endpoint": "127.0.0.1:4328"
+            }
+        }
+    }
+}

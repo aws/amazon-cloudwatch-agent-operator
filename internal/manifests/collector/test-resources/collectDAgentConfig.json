@@ -1,0 +1,19 @@
+{
+  "agent": {
+    "metrics_collection_interval": 1,
+    "run_as_user": "root"
+  },
+  "metrics": {
+    "namespace": "CloudWatchAgentPerformance",
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}"
+    },
+    "metrics_collected": {
+      "collectd": {
+        "service_address": ":25936",
+        "name_prefix": "My_collectd_metrics_",
+        "metrics_aggregation_interval": 120
+      }
+    }
+  }
+}

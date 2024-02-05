@@ -1,12 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package controllers contains the main controller, where the reconciliation starts.
 package controllers
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +18,8 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/collector/reconcile"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
 )
 
 // AmazonCloudWatchAgentReconciler reconciles a AmazonCloudWatchAgent object.
@@ -29,26 +29,26 @@ type AmazonCloudWatchAgentReconciler struct {
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
-
-	tasks   []Task
-	muTasks sync.RWMutex
 }
 
-// Task represents a reconciliation task to be executed by the reconciler.
-type Task struct {
-	Do          func(context.Context, reconcile.Params) error
-	Name        string
-	BailOnError bool
-}
-
-// Params is the set of options to build a new amazonCloudWatchAgentReconciler.
+// Params is the set of options to build a new AmazonCloudWatchAgentReconciler.
 type Params struct {
 	client.Client
 	Recorder record.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Tasks    []Task
 	Config   config.Config
+}
+
+func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) manifests.Params {
+	return manifests.Params{
+		Config:   r.config,
+		Client:   r.Client,
+		OtelCol:  instance,
+		Log:      r.log,
+		Scheme:   r.scheme,
+		Recorder: r.recorder,
+	}
 }
 
 // NewReconciler creates a new reconciler for AmazonCloudWatchAgent objects.
@@ -58,56 +58,25 @@ func NewReconciler(p Params) *AmazonCloudWatchAgentReconciler {
 		log:      p.Log,
 		scheme:   p.Scheme,
 		config:   p.Config,
-		tasks:    p.Tasks,
 		recorder: p.Recorder,
-	}
-
-	if len(r.tasks) == 0 {
-		r.tasks = []Task{
-			{
-				reconcile.ConfigMaps,
-				"config maps",
-				true,
-			},
-			{
-				reconcile.ServiceAccounts,
-				"service accounts",
-				true,
-			},
-			{
-				reconcile.Services,
-				"services",
-				true,
-			},
-			{
-				reconcile.Deployments,
-				"deployments",
-				true,
-			},
-			{
-				reconcile.DaemonSets,
-				"daemon sets",
-				true,
-			},
-			{
-				reconcile.Self,
-				"amazon-cloudwatch-agent",
-				true,
-			},
-		}
 	}
 	return r
 }
 
+// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/finalizers,verbs=get;update;patch
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
-// Reconcile the current state of an Amazon CloudWatch Agent resource with the desired state.
+// Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("amazoncloudwatchagent", req.NamespacedName)
 
@@ -122,42 +91,25 @@ func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctr
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	params := reconcile.Params{
-		Config:   r.config,
-		Client:   r.Client,
-		Instance: instance,
-		Log:      log,
-		Scheme:   r.scheme,
-		Recorder: r.recorder,
+	// We have a deletion, short circuit and let the deletion happen
+	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		return ctrl.Result{}, nil
 	}
 
-	if err := r.RunTasks(ctx, params); err != nil {
-		return ctrl.Result{}, err
+	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
+		log.Info("Skipping reconciliation for unmanaged AmazonCloudWatchAgent resource", "name", req.String())
+		// Stop requeueing for unmanaged AmazonCloudWatchAgent custom resources
+		return ctrl.Result{}, nil
 	}
 
-	return ctrl.Result{}, nil
-}
+	params := r.getParams(instance)
 
-// RunTasks runs all the tasks associated with this reconciler.
-func (r *AmazonCloudWatchAgentReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
-	r.muTasks.RLock()
-	defer r.muTasks.RUnlock()
-	for _, task := range r.tasks {
-		if err := task.Do(ctx, params); err != nil {
-			// If we get an error that occurs because a pod is being terminated, then exit this loop
-			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.Instance.Namespace)
-				return nil
-			}
-			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
-			if task.BailOnError {
-				return err
-			}
-		}
+	desiredObjects, buildErr := BuildCollector(params)
+	if buildErr != nil {
+		return ctrl.Result{}, buildErr
 	}
-
-	return nil
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
@@ -168,8 +120,8 @@ func (r *AmazonCloudWatchAgentReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&appsv1.DaemonSet{})
-		//Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.DaemonSet{}).
+		Owns(&appsv1.StatefulSet{})
 
 	return builder.Complete(r)
 }

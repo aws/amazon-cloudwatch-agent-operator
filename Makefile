@@ -4,6 +4,7 @@ VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-java-instrumentation | awk -F= '{print $$2}')"
+AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-python-instrumentation | awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
@@ -51,6 +52,8 @@ CONTROLLER_TOOLS_VERSION ?= v0.12.0
 ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 CW_AGENT_OPERATOR_IMPORT_PATH = "github.com/aws/amazon-cloudwatch-agent-operator"
 
+GOTEST_OPTS := $(shell go list ./... | grep -v integration-tests)
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -82,10 +85,8 @@ ci: test
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: generate fmt vet ensure-generate-is-noop envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+test: generate fmt vet envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS}
 
 # Build manager binary
 .PHONY: manager
@@ -115,7 +116,7 @@ set-image-controller: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply --server-side -f -
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
@@ -150,7 +151,7 @@ generate: controller-gen api-docs
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} .
+	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push

@@ -1,0 +1,15 @@
+{
+  "logs": {
+    "metrics_collected": {
+      "kubernetes": {
+        "enhanced_container_insights": true
+      },
+      "app_signals": { }
+    }
+  },
+  "traces": {
+    "traces_collected": {
+      "app_signals": { }
+    }
+  }
+}

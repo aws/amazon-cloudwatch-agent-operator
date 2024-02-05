@@ -1,0 +1,36 @@
+{
+  "agent": {
+    "omit_hostname": true
+  },
+  "metrics": {
+    "metrics_collected": {
+      "statsd": {
+        "service_address": ":8135"
+      },
+      "collectd": {
+        "service_address": ":25936",
+        "name_prefix": "My_collectd_metrics_",
+        "metrics_aggregation_interval": 120
+      }
+    }
+  },
+  "logs": {
+    "metrics_collected": {
+      "emf": {}
+    }
+  },
+  "traces": {
+    "traces_collected": {
+      "xray": {
+        "bind_address": "127.0.0.1:2800",
+        "tcp_proxy": {
+          "bind_address": "127.0.0.1:2900"
+        }
+      },
+      "otlp": {
+        "grpc_endpoint": "127.0.0.1:4327",
+        "http_endpoint": "127.0.0.1:4328"
+      }
+    }
+  }
+}

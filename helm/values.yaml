@@ -48,6 +48,9 @@ manager:
     java:
       repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
       tag: v1.31.1
+    python:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
+      tag: 0.43b0
   ports:
     containerPort: 9443
     metricsPort: 8080

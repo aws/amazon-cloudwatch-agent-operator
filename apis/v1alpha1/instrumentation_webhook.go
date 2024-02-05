@@ -4,40 +4,84 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
-	envPrefix                                = "OTEL_"
+	envPrefix       = "OTEL_"
+	envSplunkPrefix = "SPLUNK_"
 )
 
-// log is for logging in this package.
-var instrumentationlog = logf.Log.WithName("instrumentation-resource")
+var (
+	_                                  admission.CustomValidator = &InstrumentationWebhook{}
+	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
+	initContainerDefaultLimitResources                           = corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("500m"),
+		corev1.ResourceMemory: resource.MustParse("128Mi"),
+	}
+	initContainerDefaultRequestedResources = corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("1m"),
+		corev1.ResourceMemory: resource.MustParse("128Mi"),
+	}
+)
 
-func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
+// +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=true,failurePolicy=fail,sideEffects=None,groups=cloudwatch.aws.amazon.com,resources=instrumentations,verbs=create;update,versions=v1alpha1,name=minstrumentation.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=false,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=instrumentations,versions=v1alpha1,name=vinstrumentationcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=delete,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=false,failurePolicy=ignore,groups=cloudwatch.aws.amazon.com,resources=instrumentations,versions=v1alpha1,name=vinstrumentationdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:object:generate=false
+
+type InstrumentationWebhook struct {
+	logger logr.Logger
+	cfg    config.Config
+	scheme *runtime.Scheme
 }
 
-//+kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=true,failurePolicy=fail,sideEffects=None,groups=cloudwatch.aws.amazon.com,resources=instrumentations,verbs=create;update,versions=v1alpha1,name=minstrumentation.kb.io,admissionReviewVersions=v1
+func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	instrumentation, ok := obj.(*Instrumentation)
+	if !ok {
+		return fmt.Errorf("expected an Instrumentation, received %T", obj)
+	}
+	return w.defaulter(instrumentation)
+}
 
-var _ webhook.Defaulter = &Instrumentation{}
+func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	inst, ok := obj.(*Instrumentation)
+	if !ok {
+		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
+	}
+	return w.validate(inst)
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *Instrumentation) Default() {
-	instrumentationlog.Info("default", "name", r.Name)
+func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	inst, ok := newObj.(*Instrumentation)
+	if !ok {
+		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
+	}
+	return w.validate(inst)
+}
+
+func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	inst, ok := obj.(*Instrumentation)
+	if !ok || inst == nil {
+		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
+	}
+	return w.validate(inst)
+}
+
+func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
@@ -46,9 +90,7 @@ func (r *Instrumentation) Default() {
 	}
 
 	if r.Spec.Java.Image == "" {
-		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationJava]; ok {
-			r.Spec.Java.Image = val
-		}
+		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage()
 	}
 	if r.Spec.Java.Resources.Limits == nil {
 		r.Spec.Java.Resources.Limits = corev1.ResourceList{
@@ -62,29 +104,172 @@ func (r *Instrumentation) Default() {
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
+	if r.Spec.NodeJS.Image == "" {
+		r.Spec.NodeJS.Image = w.cfg.AutoInstrumentationNodeJSImage()
+	}
+	if r.Spec.NodeJS.Resources.Limits == nil {
+		r.Spec.NodeJS.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.NodeJS.Resources.Requests == nil {
+		r.Spec.NodeJS.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.Python.Image == "" {
+		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage()
+	}
+	if r.Spec.Python.Resources.Limits == nil {
+		r.Spec.Python.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Python.Resources.Requests == nil {
+		r.Spec.Python.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.DotNet.Image == "" {
+		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage()
+	}
+	if r.Spec.DotNet.Resources.Limits == nil {
+		r.Spec.DotNet.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.DotNet.Resources.Requests == nil {
+		r.Spec.DotNet.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.Go.Image == "" {
+		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage()
+	}
+	if r.Spec.Go.Resources.Limits == nil {
+		r.Spec.Go.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Go.Resources.Requests == nil {
+		r.Spec.Go.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.ApacheHttpd.Image == "" {
+		r.Spec.ApacheHttpd.Image = w.cfg.AutoInstrumentationApacheHttpdImage()
+	}
+	if r.Spec.ApacheHttpd.Resources.Limits == nil {
+		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
+	}
+	if r.Spec.ApacheHttpd.Resources.Requests == nil {
+		r.Spec.ApacheHttpd.Resources.Requests = initContainerDefaultRequestedResources
+	}
+	if r.Spec.ApacheHttpd.Version == "" {
+		r.Spec.ApacheHttpd.Version = "2.4"
+	}
+	if r.Spec.ApacheHttpd.ConfigPath == "" {
+		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
+	}
+	if r.Spec.Nginx.Image == "" {
+		r.Spec.Nginx.Image = w.cfg.AutoInstrumentationNginxImage()
+	}
+	if r.Spec.Nginx.Resources.Limits == nil {
+		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
+	}
+	if r.Spec.Nginx.Resources.Requests == nil {
+		r.Spec.Nginx.Resources.Requests = initContainerDefaultRequestedResources
+	}
+	if r.Spec.Nginx.ConfigFile == "" {
+		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
+	}
+	// Set the defaulting annotations
+	if r.Annotations == nil {
+		r.Annotations = map[string]string{}
+	}
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = w.cfg.AutoInstrumentationNginxImage()
+	return nil
 }
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=false,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=instrumentations,versions=v1alpha1,name=vinstrumentationcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=delete,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-instrumentation,mutating=false,failurePolicy=ignore,groups=cloudwatch.aws.amazon.com,resources=instrumentations,versions=v1alpha1,name=vinstrumentationdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
+func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+	var warnings []string
+	switch r.Spec.Sampler.Type {
+	case "":
+		warnings = append(warnings, "sampler type not set")
+	case TraceIDRatio, ParentBasedTraceIDRatio:
+		if r.Spec.Sampler.Argument != "" {
+			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
+			if err != nil {
+				return warnings, fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Sampler.Argument)
+			}
+			if rate < 0 || rate > 1 {
+				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
+			}
+		}
+	case JaegerRemote, ParentBasedJaegerRemote:
+		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
+		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
+		if r.Spec.Sampler.Argument != "" {
+			err := validateJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
 
-var _ webhook.Validator = &Instrumentation{}
+			if err != nil {
+				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
+			}
+		}
+	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	default:
+		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
+	}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateCreate() (admission.Warnings, error) {
-	instrumentationlog.Info("validate create", "name", r.Name)
-	return nil, r.validate()
+	// validate env vars
+	if err := w.validateEnv(r.Spec.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.Java.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.NodeJS.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.Python.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.DotNet.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.Go.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
+		return warnings, err
+	}
+	if err := w.validateEnv(r.Spec.Nginx.Env); err != nil {
+		return warnings, err
+	}
+	return warnings, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	instrumentationlog.Info("validate update", "name", r.Name)
-	return nil, r.validate()
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateDelete() (admission.Warnings, error) {
-	instrumentationlog.Info("validate delete", "name", r.Name)
-	return nil, nil
+func (w InstrumentationWebhook) validateEnv(envs []corev1.EnvVar) error {
+	for _, env := range envs {
+		if !strings.HasPrefix(env.Name, envPrefix) && !strings.HasPrefix(env.Name, envSplunkPrefix) {
+			return fmt.Errorf("env name should start with \"OTEL_\" or \"SPLUNK_\": %s", env.Name)
+		}
+	}
+	return nil
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {
@@ -118,46 +303,23 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 	return nil
 }
 
-func (r *Instrumentation) validate() error {
-	switch r.Spec.Sampler.Type {
-	case "": // not set, do nothing
-	case TraceIDRatio, ParentBasedTraceIDRatio:
-		if r.Spec.Sampler.Argument != "" {
-			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
-			if err != nil {
-				return fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Sampler.Argument)
-			}
-			if rate < 0 || rate > 1 {
-				return fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
-			}
-		}
-	case JaegerRemote, ParentBasedJaegerRemote:
-		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
-		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
-		if r.Spec.Sampler.Argument != "" {
-			err := validateJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
-
-			if err != nil {
-				return fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
-			}
-		}
-	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
-	default:
-		return fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
+func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg config.Config) *InstrumentationWebhook {
+	return &InstrumentationWebhook{
+		logger: logger,
+		scheme: scheme,
+		cfg:    cfg,
 	}
-	// validate env vars
-	if err := r.validateEnv(r.Spec.Java.Env); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func (r *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
-	for _, env := range envs {
-		if !strings.HasPrefix(env.Name, envPrefix) {
-			return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
-		}
-	}
-	return nil
+func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
+	ivw := NewInstrumentationWebhook(
+		mgr.GetLogger().WithValues("handler", "InstrumentationWebhook"),
+		mgr.GetScheme(),
+		cfg,
+	)
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(&Instrumentation{}).
+		WithValidator(ivw).
+		WithDefaulter(ivw).
+		Complete()
 }
