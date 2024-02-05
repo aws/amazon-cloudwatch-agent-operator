@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,10 +24,14 @@ func chainCallbacks(fns ...objectCallbackFunc) objectCallbackFunc {
 	}
 }
 
-func (m *AnnotationMutators) updateFunc(ctx context.Context) objectCallbackFunc {
+func (m *AnnotationMutators) patchFunc(ctx context.Context, callback objectCallbackFunc) objectCallbackFunc {
 	return func(obj client.Object) bool {
-		if err := m.clientWriter.Update(ctx, obj); err != nil {
-			m.logger.Error(err, "Unable to send update",
+		patch := client.StrategicMergeFrom(obj.DeepCopyObject().(client.Object))
+		if !callback(obj) {
+			return false
+		}
+		if err := m.clientWriter.Patch(ctx, obj, patch); err != nil {
+			m.logger.Error(err, "Unable to send patch",
 				"kind", fmt.Sprintf("%T", obj),
 				"name", obj.GetName(),
 				"namespace", obj.GetNamespace(),
@@ -40,15 +43,12 @@ func (m *AnnotationMutators) updateFunc(ctx context.Context) objectCallbackFunc 
 }
 
 func (m *AnnotationMutators) restartNamespaceFunc(ctx context.Context) objectCallbackFunc {
-	restartAndUpdateFunc := chainCallbacks(restart, m.updateFunc(ctx))
 	return func(obj client.Object) bool {
 		namespace, ok := obj.(*corev1.Namespace)
 		if !ok {
 			return false
 		}
-		m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndUpdateFunc)
-		m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), restartAndUpdateFunc)
-		m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), restartAndUpdateFunc)
+		m.RestartNamespace(ctx, namespace)
 		return true
 	}
 }

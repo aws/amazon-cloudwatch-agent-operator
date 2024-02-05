@@ -23,7 +23,7 @@ const (
 	defaultAnnotationValue = "true"
 )
 
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;patch
 
 // AnnotationMutators contains functions that can be used to mutate annotations
 // on all supported objects based on the configured mutators.
@@ -38,15 +38,23 @@ type AnnotationMutators struct {
 	defaultMutator      instrumentation.AnnotationMutator
 }
 
-// MutateAndUpdateAll runs the mutators for each of the support resources and updates them.
-func (m *AnnotationMutators) MutateAndUpdateAll(ctx context.Context) {
-	mutateAndUpdateFunc := chainCallbacks(m.MutateObject, m.updateFunc(ctx))
+// RestartNamespace sets the restartedAtAnnotation for each of the namespaces supported resources and patched them.
+func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
+	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+}
+
+// MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
+func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
+	mutateAndPatchFunc := m.patchFunc(ctx, m.MutateObject)
 	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(mutateAndUpdateFunc, m.restartNamespaceFunc(ctx)),
+		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
 	)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndUpdateFunc)
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndUpdateFunc)
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndUpdateFunc)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.

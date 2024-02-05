@@ -25,13 +25,13 @@ type restartAnnotationMutation struct {
 
 var _ instrumentation.AnnotationMutation = (*restartAnnotationMutation)(nil)
 
-func (m restartAnnotationMutation) Mutate(annotations map[string]string) bool {
+func (m *restartAnnotationMutation) Mutate(annotations map[string]string) bool {
 	annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
 	return true
 }
 
-// restart based on kubectl implementation https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
-func restart(obj client.Object) bool {
+// restart mutates the object's restartedAtAnnotation with the current time.
+func setRestartAnnotation(obj client.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		restartAnnotationMutator.Mutate(o.Spec.Template.GetObjectMeta())

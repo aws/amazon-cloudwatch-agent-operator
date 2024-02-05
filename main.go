@@ -208,7 +208,7 @@ func main() {
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
 				Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutators)})
 			setupLog.Info("Starting auto-annotation")
-			go autoAnnotationMutators.MutateAndUpdateAll(ctx)
+			go autoAnnotationMutators.MutateAndPatchAll(ctx)
 		}
 	}
 
