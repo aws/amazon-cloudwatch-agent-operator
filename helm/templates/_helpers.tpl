@@ -6,6 +6,59 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Name of k8s cluster
+*/}}
+{{- define "kubernetes-cluster.name" -}}
+{{- if eq .Values.clusterName "EKS_CLUSTER_NAME" }}
+{{- default "" (printf "k8s-cluster-%s" (sha256sum .Release.Name | trunc 7)) }}
+{{- else }}
+{{- default "" .Values.clusterName }}
+{{- end }}
+{{- end }}
+
+{{/*
+Helper function to modify cloudwatch-agent config
+*/}}
+{{- define "cloudwatch-agent.config-modifier" -}}
+{{- $configCopy := deepCopy .Values.agent.config }}
+
+{{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
+{{- if empty $appSignals.hosted_in }}
+{{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
+{{- end }}
+
+{{- $containerInsights := pluck "kubernetes" $configCopy.logs.metrics_collected | first }}
+{{- if empty $containerInsights.cluster_name }}
+{{- $containerInsights := set $containerInsights "cluster_name" (include "kubernetes-cluster.name" .) }}
+{{- end }}
+
+{{- default ""  $configCopy | toJson | quote }}
+{{- end }}
+
+{{/*
+Helper function to modify customer supplied agent config if ContainerInsights or ApplicationSignals is enabled
+*/}}
+{{- define "cloudwatch-agent.supplied-config" -}}
+{{- if or (hasKey .Values.agent.config.logs "app_signals") (and (hasKey .Values.agent.config.logs "metrics_collected") (hasKey .Values.agent.config.logs.metrics_collected "kubernetes")) }}
+{{- include "cloudwatch-agent.config-modifier" . }}
+{{- else }}
+{{- default "" .Values.agent.config | toJson | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Helper function to modify default agent config
+*/}}
+{{- define "cloudwatch-agent.modify-default-config" -}}
+{{- $configCopy := deepCopy .Values.agent.defaultConfig }}
+{{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
+{{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
+{{- $containerInsights := pluck "kubernetes" $configCopy.logs.metrics_collected | first }}
+{{- $containerInsights := set $containerInsights "cluster_name" (include "kubernetes-cluster.name" .) }}
+{{- default ""  $configCopy | toJson | quote }}
+{{- end }}
+
+{{/*
 Name for cloudwatch-agent
 */}}
 {{- define "cloudwatch-agent.name" -}}

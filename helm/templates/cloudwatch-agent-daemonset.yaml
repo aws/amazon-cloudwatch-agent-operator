@@ -9,9 +9,9 @@ spec:
   mode: daemonset
   serviceAccount: {{ template "cloudwatch-agent.serviceAccountName" . }}
   {{- if .Values.agent.config }}
-  config: {{ .Values.agent.config | toJson | quote }}
+  config: {{ template "cloudwatch-agent.supplied-config" . }}
   {{- else }}
-  config: {{ .Values.agent.defaultConfig | toJson | quote }}
+  config: {{ template "cloudwatch-agent.modify-default-config" . }}
   {{- end }}
   resources:
     requests:
