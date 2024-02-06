@@ -38,7 +38,7 @@ type AnnotationMutators struct {
 	defaultMutator      instrumentation.AnnotationMutator
 }
 
-// RestartNamespace sets the restartedAtAnnotation for each of the namespaces supported resources and patched them.
+// RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
 func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
 	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
 	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)

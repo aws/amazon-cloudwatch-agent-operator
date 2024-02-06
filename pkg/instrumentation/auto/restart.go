@@ -34,6 +34,9 @@ func (m *restartAnnotationMutation) Mutate(annotations map[string]string) bool {
 func setRestartAnnotation(obj client.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
+		if o.Spec.Paused {
+			return false
+		}
 		restartAnnotationMutator.Mutate(o.Spec.Template.GetObjectMeta())
 	case *appsv1.DaemonSet:
 		restartAnnotationMutator.Mutate(o.Spec.Template.GetObjectMeta())
