@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	restartedAtAnnotation = "kubectl.kubernetes.io/restartedAt"
+	restartedAtAnnotation = "cloudwatch.aws.amazon.com/restartedAt"
 )
 
 var (
