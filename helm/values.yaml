@@ -17,6 +17,10 @@ clusterName: EKS_CLUSTER_NAME
 ## Provide the Region (optional when installing via EKS add-on)
 region: AWS_REGION_NAME
 
+gpuNodeLabelKey: eks.amazonaws.com/nodegroup
+## NVIDIA GPU instance types
+gpuInstances: [ g3, g3s, g4dn, g5, g5g, p2, p3, p3dn, p4d, p5 ]
+
 containerLogs:
   enabled: true
   fluentBit:
@@ -35,10 +39,12 @@ containerLogs:
 manager:
   name:
   image:
-    repository: cloudwatch-agent-operator
+    # repository: cloudwatch-agent-operator
+    repository: cwagent-operator-release
     tag: 1.0.2
     repositoryDomainMap:
-      public: public.ecr.aws/cloudwatch-agent
+      # public: public.ecr.aws/cloudwatch-agent
+      public: 231392302985.dkr.ecr.us-west-2.amazonaws.com
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -123,10 +129,13 @@ admissionWebhooks:
 agent:
   name:
   image:
-    repository: cloudwatch-agent
-    tag: 1.300031.1b317
+    # repository: cloudwatch-agent
+    # tag: 1.300031.1b317
+    repository: tupperware
+    tag: latest
     repositoryDomainMap:
-      public: public.ecr.aws/cloudwatch-agent
+      # public: public.ecr.aws/cloudwatch-agent
+      public: 231392302985.dkr.ecr.us-west-2.amazonaws.com
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -137,6 +146,9 @@ agent:
   config: # optional config that can be provided to override the defaultConfig
   defaultConfig:
     {
+      "agent": {
+        "debug": true
+      },
       "logs": {
         "metrics_collected": {
           "kubernetes": {
@@ -151,3 +163,31 @@ agent:
         }
       }
     }
+  enableGpuConfig: 
+    {
+      "logs": {
+        "metrics_collected": {
+          "kubernetes": {
+            "gpu_metrics": true
+          },
+        }
+      }
+    }
+
+dcgmExporter:
+  name:
+  image:
+    repository: nvcr.io/nvidia/k8s/dcgm-exporter
+    tag: 3.3.3-3.3.1-ubuntu22.04
+  # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
+  service:
+    enable: true
+    type: ClusterIP
+    port: 9400
+    address: ":9400"
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    capabilities:
+      add: ["SYS_ADMIN"]
+  kubeletPath: "/var/lib/kubelet/pod-resources"

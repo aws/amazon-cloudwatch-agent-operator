@@ -7,11 +7,8 @@ metadata:
   name: {{ template "cloudwatch-agent.name" . }}-role
 rules:
 - apiGroups: [ "" ]
-  resources: [ "pods", "pods/logs", "nodes", "nodes/proxy", "namespaces", "endpoints" ]
+  resources: [ "pods", "pods/logs", "nodes", "nodes/proxy", "namespaces", "endpoints", "services" ]
   verbs: [ "list", "watch", "get" ]
-- apiGroups: [ "" ]
-  resources: [ "services" ]
-  verbs: [ "list", "watch" ]
 - apiGroups: [ "apps" ]
   resources: [ "replicasets", "daemonsets", "deployments", "statefulsets" ]
   verbs: [ "list", "watch", "get" ]
@@ -23,7 +20,10 @@ rules:
   verbs: [ "create", "get" ]
 - apiGroups: [ "" ]
   resources: [ "configmaps" ]
-  verbs: [ "update" ]
+  verbs: [ "update", "get" ]
+- apiGroups: [ "extensions" ]
+  resources: [ "ingresses" ]
+  verbs: [ "list", "watch", "get" ]
 - nonResourceURLs: [ "/metrics" ]
   verbs: [ "get", "list", "watch" ]
 {{- end }}
