@@ -137,6 +137,8 @@ agent:
   config: # optional config that can be provided to override the defaultConfig
   defaultConfig:
     {
+      "agent": {
+      },
       "logs": {
         "metrics_collected": {
           "kubernetes": {

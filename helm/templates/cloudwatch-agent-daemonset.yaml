@@ -1,4 +1,7 @@
 {{- if .Values.agent.enabled }}
+{{- if eq .Values.region "AWS_REGION_NAME" }}
+{{- fail "region is a required field" }}
+{{- end }}
 apiVersion: cloudwatch.aws.amazon.com/v1alpha1
 kind: AmazonCloudWatchAgent
 metadata:

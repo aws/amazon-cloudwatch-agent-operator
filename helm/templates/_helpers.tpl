@@ -22,6 +22,11 @@ Helper function to modify cloudwatch-agent config
 {{- define "cloudwatch-agent.config-modifier" -}}
 {{- $configCopy := deepCopy .Values.agent.config }}
 
+{{- $agent := pluck "agent" $configCopy | first }}
+{{- if and (empty $agent) (empty $agent.region) }}
+{{- $agent := set $agent "region" .Values.region }}
+{{- end }}
+
 {{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
 {{- if empty $appSignals.hosted_in }}
 {{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
@@ -51,6 +56,8 @@ Helper function to modify default agent config
 */}}
 {{- define "cloudwatch-agent.modify-default-config" -}}
 {{- $configCopy := deepCopy .Values.agent.defaultConfig }}
+{{- $agent := pluck "agent" $configCopy | first }}
+{{- $agent := set $agent "region" .Values.region }}
 {{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
 {{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
 {{- $containerInsights := pluck "kubernetes" $configCopy.logs.metrics_collected | first }}
