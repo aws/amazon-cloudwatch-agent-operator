@@ -56,8 +56,8 @@ Helper function to modify default agent config
 */}}
 {{- define "cloudwatch-agent.modify-default-config" -}}
 {{- $configCopy := deepCopy .Values.agent.defaultConfig }}
-{{- $agent := pluck "agent" $configCopy | first }}
-{{- $agent := set $agent "region" .Values.region }}
+{{- $agentRegion := dict "region" .Values.region }}
+{{- $agent := set $configCopy "agent" $agentRegion }}
 {{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
 {{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
 {{- $containerInsights := pluck "kubernetes" $configCopy.logs.metrics_collected | first }}
@@ -116,7 +116,7 @@ Common labels
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: "AmazonCloudWatchAgentOperator"
+app.kubernetes.io/managed-by: "amazon-cloudwatch-agent-operator"
 {{- end }}
 
 {{/*
