@@ -5,15 +5,18 @@ package auto
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	appv1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
@@ -104,23 +107,101 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 				})
 			}
 			ctx := context.Background()
-			client := fake.NewClientBuilder().WithLists(&corev1.NamespaceList{Items: namespaces}).Build()
+			fakeClient := fake.NewClientBuilder().WithLists(&corev1.NamespaceList{Items: namespaces}).Build()
 			mutators := NewAnnotationMutators(
-				client,
-				client,
+				fakeClient,
+				fakeClient,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			mutators.MutateAll(ctx)
+			mutators.MutateAndPatchAll(ctx)
 			gotNamespaces := &corev1.NamespaceList{}
-			require.NoError(t, client.List(ctx, gotNamespaces))
+			require.NoError(t, fakeClient.List(ctx, gotNamespaces))
 			for _, gotNamespace := range gotNamespaces.Items {
 				annotations, ok := testCase.want[gotNamespace.Name]
 				assert.True(t, ok)
 				assert.Equalf(t, annotations, gotNamespace.GetAnnotations(), "Failed for %s", gotNamespace.Name)
 			}
 		})
+	}
+}
+
+func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
+	cfg := AnnotationConfig{
+		Java: AnnotationResources{
+			Namespaces: []string{"default"},
+		},
+	}
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default",
+		},
+	}
+	defaultDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace.Name,
+			Name:      "deployment",
+		},
+	}
+	daemonSet := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace.Name,
+			Name:      "daemonset",
+		},
+	}
+	statefulSet := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace.Name,
+			Name:      "statefulset",
+		},
+	}
+	otherDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "other",
+			Name:      "deployment",
+		},
+	}
+	namespacedResources := []client.Object{defaultDeployment, daemonSet, statefulSet}
+	fakeClient := fake.NewFakeClient(namespace, defaultDeployment, daemonSet, statefulSet, otherDeployment)
+	mutators := NewAnnotationMutators(
+		fakeClient,
+		fakeClient,
+		logr.Logger{},
+		cfg,
+		instrumentation.NewTypeSet(instrumentation.TypeJava),
+	)
+	mutators.MutateAndPatchAll(context.Background())
+	ctx := context.Background()
+	for _, namespacedResource := range namespacedResources {
+		assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(namespacedResource), namespacedResource))
+		obj := getAnnotationObjectMeta(namespacedResource)
+		assert.NotNil(t, obj)
+		annotations := obj.GetAnnotations()
+		assert.NotNil(t, annotations)
+		assert.NotEmpty(t, annotations[restartedAtAnnotation])
+	}
+
+	// non-configured namespace is not restarted/updated
+	assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(otherDeployment), otherDeployment))
+	obj := getAnnotationObjectMeta(otherDeployment)
+	assert.NotNil(t, obj)
+	annotations := obj.GetAnnotations()
+	assert.Nil(t, annotations)
+}
+
+func getAnnotationObjectMeta(obj client.Object) metav1.Object {
+	switch o := obj.(type) {
+	case *corev1.Namespace:
+		return o.GetObjectMeta()
+	case *appsv1.Deployment:
+		return o.Spec.Template.GetObjectMeta()
+	case *appsv1.DaemonSet:
+		return o.Spec.Template.GetObjectMeta()
+	case *appsv1.StatefulSet:
+		return o.Spec.Template.GetObjectMeta()
+	default:
+		return nil
 	}
 }
 
@@ -152,16 +233,16 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 	}
 	for testName, testCase := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			var deployments []appv1.Deployment
+			var deployments []appsv1.Deployment
 			for name, annotations := range testCase.deployments {
 				var namespace string
 				namespace, name, _ = strings.Cut(name, "/")
-				deployments = append(deployments, appv1.Deployment{
+				deployments = append(deployments, appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: appv1.DeploymentSpec{
+					Spec: appsv1.DeploymentSpec{
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Annotations: annotations,
@@ -171,17 +252,17 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 				})
 			}
 			ctx := context.Background()
-			client := fake.NewClientBuilder().WithLists(&appv1.DeploymentList{Items: deployments}).Build()
+			fakeClient := fake.NewClientBuilder().WithLists(&appsv1.DeploymentList{Items: deployments}).Build()
 			mutators := NewAnnotationMutators(
-				client,
-				client,
+				fakeClient,
+				fakeClient,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			mutators.MutateAll(ctx)
-			gotDeployments := &appv1.DeploymentList{}
-			require.NoError(t, client.List(ctx, gotDeployments))
+			mutators.MutateAndPatchAll(ctx)
+			gotDeployments := &appsv1.DeploymentList{}
+			require.NoError(t, fakeClient.List(ctx, gotDeployments))
 			for _, gotDeployment := range gotDeployments.Items {
 				name := namespacedName(gotDeployment.GetObjectMeta())
 				annotations, ok := testCase.want[name]
@@ -220,16 +301,16 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 	}
 	for testName, testCase := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			var daemonSets []appv1.DaemonSet
+			var daemonSets []appsv1.DaemonSet
 			for name, annotations := range testCase.daemonSets {
 				var namespace string
 				namespace, name, _ = strings.Cut(name, "/")
-				daemonSets = append(daemonSets, appv1.DaemonSet{
+				daemonSets = append(daemonSets, appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: appv1.DaemonSetSpec{
+					Spec: appsv1.DaemonSetSpec{
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Annotations: annotations,
@@ -239,17 +320,17 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 				})
 			}
 			ctx := context.Background()
-			client := fake.NewClientBuilder().WithLists(&appv1.DaemonSetList{Items: daemonSets}).Build()
+			fakeClient := fake.NewClientBuilder().WithLists(&appsv1.DaemonSetList{Items: daemonSets}).Build()
 			mutators := NewAnnotationMutators(
-				client,
-				client,
+				fakeClient,
+				fakeClient,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			mutators.MutateAll(ctx)
-			gotDaemonSets := &appv1.DaemonSetList{}
-			require.NoError(t, client.List(ctx, gotDaemonSets))
+			mutators.MutateAndPatchAll(ctx)
+			gotDaemonSets := &appsv1.DaemonSetList{}
+			require.NoError(t, fakeClient.List(ctx, gotDaemonSets))
 			for _, gotDaemonSet := range gotDaemonSets.Items {
 				name := namespacedName(gotDaemonSet.GetObjectMeta())
 				annotations, ok := testCase.want[name]
@@ -288,16 +369,16 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 	}
 	for testName, testCase := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			var statefulSets []appv1.StatefulSet
+			var statefulSets []appsv1.StatefulSet
 			for name, annotations := range testCase.statefulSets {
 				var namespace string
 				namespace, name, _ = strings.Cut(name, "/")
-				statefulSets = append(statefulSets, appv1.StatefulSet{
+				statefulSets = append(statefulSets, appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: appv1.StatefulSetSpec{
+					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Annotations: annotations,
@@ -307,17 +388,17 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 				})
 			}
 			ctx := context.Background()
-			client := fake.NewClientBuilder().WithLists(&appv1.StatefulSetList{Items: statefulSets}).Build()
+			fakeClient := fake.NewClientBuilder().WithLists(&appsv1.StatefulSetList{Items: statefulSets}).Build()
 			mutators := NewAnnotationMutators(
-				client,
-				client,
+				fakeClient,
+				fakeClient,
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			mutators.MutateAll(ctx)
-			gotStatefulSets := &appv1.StatefulSetList{}
-			require.NoError(t, client.List(ctx, gotStatefulSets))
+			mutators.MutateAndPatchAll(ctx)
+			gotStatefulSets := &appsv1.StatefulSetList{}
+			require.NoError(t, fakeClient.List(ctx, gotStatefulSets))
 			for _, gotStatefulSet := range gotStatefulSets.Items {
 				name := namespacedName(gotStatefulSet.GetObjectMeta())
 				annotations, ok := testCase.want[name]
@@ -326,6 +407,67 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockClient struct {
+	mock.Mock
+	client.Writer
+	client.Reader
+}
+
+func (c *mockClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	args := c.Called(ctx, list, opts)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Error(0)
+}
+
+func (c *mockClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	args := c.Called(ctx, obj, opts)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Error(0)
+}
+
+func (c *mockClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	args := c.Called(ctx, obj, patch, opts)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Error(0)
+}
+
+func TestAnnotationMutators_ClientErrors(t *testing.T) {
+	err := errors.New("test error")
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+	}
+	cfg := AnnotationConfig{
+		Java: AnnotationResources{
+			Namespaces: []string{"test"},
+		},
+	}
+	errClient := new(mockClient)
+	errClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(err)
+	errClient.On("Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(err)
+	fakeClient := fake.NewClientBuilder().WithLists(&corev1.NamespaceList{Items: []corev1.Namespace{namespace}}).Build()
+	mutators := NewAnnotationMutators(
+		fakeClient,
+		errClient,
+		logr.Logger{},
+		cfg,
+		instrumentation.NewTypeSet(instrumentation.TypeJava),
+	)
+	mutators.MutateAndPatchAll(context.Background())
+	errClient.AssertCalled(t, "List", mock.Anything, mock.Anything, mock.Anything)
+	mutators.clientWriter = errClient
+	mutators.clientReader = fakeClient
+	mutators.MutateAndPatchAll(context.Background())
+	errClient.AssertCalled(t, "Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 
 func TestAnnotateKey(t *testing.T) {

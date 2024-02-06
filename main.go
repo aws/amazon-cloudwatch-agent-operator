@@ -188,12 +188,14 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	if os.Getenv("DISABLE_AUTO_ANNOTATION") != "true" {
+	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
+		setupLog.Info("Auto-annotation is disabled")
+	} else {
 		var autoAnnotationConfig auto.AnnotationConfig
-		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-			setupLog.Error(err, "unable to unmarshal auto-annotation config")
+		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
+			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
-			autoAnnotationMutator := auto.NewAnnotationMutators(
+			autoAnnotationMutators := auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,
@@ -204,8 +206,9 @@ func main() {
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-				Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutator)})
-			go autoAnnotationMutator.MutateAll(ctx)
+				Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutators)})
+			setupLog.Info("Starting auto-annotation")
+			go autoAnnotationMutators.MutateAndPatchAll(ctx)
 		}
 	}
 

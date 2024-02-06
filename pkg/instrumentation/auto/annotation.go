@@ -13,7 +13,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
@@ -24,11 +23,12 @@ const (
 	defaultAnnotationValue = "true"
 )
 
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;patch
 
-// AnnotationMutators has an AnnotationMutator resource name
+// AnnotationMutators contains functions that can be used to mutate annotations
+// on all supported objects based on the configured mutators.
 type AnnotationMutators struct {
-	client              client.Client
+	clientWriter        client.Writer
 	clientReader        client.Reader
 	logger              logr.Logger
 	namespaceMutators   map[string]instrumentation.AnnotationMutator
@@ -38,96 +38,27 @@ type AnnotationMutators struct {
 	defaultMutator      instrumentation.AnnotationMutator
 }
 
-// MutateAll runs the mutators for each of the configured resources.
-func (m *AnnotationMutators) MutateAll(ctx context.Context) {
-	m.MutateNamespaces(ctx)
-	m.MutateDeployments(ctx)
-	m.MutateDaemonSets(ctx)
-	m.MutateStatefulSets(ctx)
+// RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
+func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
+	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
 }
 
-// MutateNamespaces lists all namespaces and runs MutateNamespace on each.
-func (m *AnnotationMutators) MutateNamespaces(ctx context.Context) {
-	namespaces := &corev1.NamespaceList{}
-	if err := m.clientReader.List(ctx, namespaces); err != nil {
-		m.logger.Error(err, "Unable to list namespaces")
-		return
-	}
-
-	for _, namespace := range namespaces.Items {
-		if m.Mutate(&namespace) {
-			if err := m.client.Update(ctx, &namespace); err != nil {
-				m.logger.Error(err, "Unable to send update",
-					"kind", namespace.Kind,
-					"name", namespace.Name,
-				)
-			}
-		}
-	}
+// MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
+func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
+	mutateAndPatchFunc := m.patchFunc(ctx, m.MutateObject)
+	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
+		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
+	)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
 }
 
-// MutateDeployments lists all deployments and runs MutateDeployment on each.
-func (m *AnnotationMutators) MutateDeployments(ctx context.Context) {
-	deployments := &appsv1.DeploymentList{}
-	if err := m.clientReader.List(ctx, deployments); err != nil {
-		m.logger.Error(err, "Unable to list deployments")
-		return
-	}
-	for _, deployment := range deployments.Items {
-		if m.Mutate(&deployment) {
-			if err := m.client.Update(ctx, &deployment); err != nil {
-				m.logger.Error(err, "Unable to send update",
-					"kind", deployment.Kind,
-					"name", deployment.Name,
-					"namespace", deployment.Namespace,
-				)
-			}
-		}
-	}
-}
-
-// MutateDaemonSets lists all daemonsets and runs MutateDaemonSet on each.
-func (m *AnnotationMutators) MutateDaemonSets(ctx context.Context) {
-	daemonSets := &appsv1.DaemonSetList{}
-	if err := m.clientReader.List(ctx, daemonSets); err != nil {
-		m.logger.Error(err, "Unable to list daemonsets")
-		return
-	}
-	for _, daemonSet := range daemonSets.Items {
-		if m.Mutate(&daemonSet) {
-			if err := m.client.Update(ctx, &daemonSet); err != nil {
-				m.logger.Error(err, "Unable to send update",
-					"kind", daemonSet.Kind,
-					"name", daemonSet.Name,
-					"namespace", daemonSet.Namespace,
-				)
-			}
-		}
-	}
-}
-
-// MutateStatefulSets lists all statefulsets and runs MutateStatefulSet on each.
-func (m *AnnotationMutators) MutateStatefulSets(ctx context.Context) {
-	statefulSets := &appsv1.StatefulSetList{}
-	if err := m.clientReader.List(ctx, statefulSets); err != nil {
-		m.logger.Error(err, "Unable to list statefulsets")
-		return
-	}
-	for _, statefulSet := range statefulSets.Items {
-		if m.Mutate(&statefulSet) {
-			if err := m.client.Update(ctx, &statefulSet); err != nil {
-				m.logger.Error(err, "Unable to send update",
-					"kind", statefulSet.Kind,
-					"name", statefulSet.Name,
-					"namespace", statefulSet.Namespace,
-				)
-			}
-		}
-	}
-}
-
-// Mutate modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) Mutate(obj runtime.Object) bool {
+// MutateObject modifies annotations for a single object using the configured mutators.
+func (m *AnnotationMutators) MutateObject(obj client.Object) bool {
 	switch o := obj.(type) {
 	case *corev1.Namespace:
 		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta())
@@ -139,6 +70,33 @@ func (m *AnnotationMutators) Mutate(obj runtime.Object) bool {
 		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta())
 	default:
 		return false
+	}
+}
+
+func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
+	if err := m.clientReader.List(ctx, list, option); err != nil {
+		m.logger.Error(err, "Unable to list objects",
+			"kind", fmt.Sprintf("%T", list),
+		)
+		return
+	}
+	switch l := list.(type) {
+	case *corev1.NamespaceList:
+		for _, item := range l.Items {
+			fn(&item)
+		}
+	case *appsv1.DeploymentList:
+		for _, item := range l.Items {
+			fn(&item)
+		}
+	case *appsv1.DaemonSetList:
+		for _, item := range l.Items {
+			fn(&item)
+		}
+	case *appsv1.StatefulSetList:
+		for _, item := range l.Items {
+			fn(&item)
+		}
 	}
 }
 
@@ -157,10 +115,16 @@ func namespacedName(obj metav1.Object) string {
 // NewAnnotationMutators creates mutators based on the AnnotationConfig provided and enabled instrumentation.TypeSet.
 // The default mutator, which is used for non-configured resources, removes all auto-annotated annotations in the type
 // set.
-func NewAnnotationMutators(client client.Client, clientReader client.Reader, logger logr.Logger, cfg AnnotationConfig, typeSet instrumentation.TypeSet) *AnnotationMutators {
+func NewAnnotationMutators(
+	clientWriter client.Writer,
+	clientReader client.Reader,
+	logger logr.Logger,
+	cfg AnnotationConfig,
+	typeSet instrumentation.TypeSet,
+) *AnnotationMutators {
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
-		client:              client,
+		clientWriter:        clientWriter,
 		clientReader:        clientReader,
 		logger:              logger,
 		namespaceMutators:   builder.buildMutators(getResources(cfg, typeSet, getNamespaces)),
@@ -171,7 +135,11 @@ func NewAnnotationMutators(client client.Client, clientReader client.Reader, log
 	}
 }
 
-func getResources(cfg AnnotationConfig, typeSet instrumentation.TypeSet, resourceFn func(AnnotationResources) []string) map[instrumentation.Type][]string {
+func getResources(
+	cfg AnnotationConfig,
+	typeSet instrumentation.TypeSet,
+	resourceFn func(AnnotationResources) []string,
+) map[instrumentation.Type][]string {
 	resources := map[instrumentation.Type][]string{}
 	for instType := range typeSet {
 		resources[instType] = resourceFn(cfg.getResources(instType))
