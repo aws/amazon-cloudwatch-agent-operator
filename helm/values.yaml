@@ -17,6 +17,10 @@ clusterName: EKS_CLUSTER_NAME
 ## Provide the Region (optional when installing via EKS add-on)
 region: AWS_REGION_NAME
 
+gpuNodeLabelKey: node.kubernetes.io/instance-type
+## NVIDIA GPU instance types
+gpuInstances: [ g3s.xlarge, g3.4xlarge, g3.8xlarge, g3.16xlarge, g4dn.12xlarge, g4dn.xlarge, g4dn.2xlarge, g4dn.4xlarge, g4dn.8xlarge, g4dn.16xlarge, g4dn.metal, g5.xlarge, g5.2xlarge, g5.4xlarge, g5.8xlarge, g5.16xlarge, g5.24xlarge, g5.48xlarge, g5.8xlarge, g5g.xlarge, g5g.2xlarge, g5g.4xlarge, g5g.8xlarge, g5g.16xlarge, g5g.metal, p2.xlarge, p2.8xlarge, p2.16xlarg, p3.2xlarge, p3.8xlarge, p3.16xlarge, p3dn.24xlarge, p4d.24xlarge, p4de.24xlarge, p5.48xlarge ]
+
 containerLogs:
   enabled: true
   fluentBit:
@@ -129,7 +133,7 @@ agent:
     repository: cloudwatch-agent
     tag: 1.300031.1b317
     repositoryDomainMap:
-      public: public.ecr.aws/cloudwatch-agent
+      # public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -154,3 +158,23 @@ agent:
         }
       }
     }
+
+dcgmExporter:
+  name:
+  image:
+    repository: nvcr.io/nvidia/k8s/dcgm-exporter
+    tag: 3.3.3-3.3.1-ubuntu22.04
+  # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
+  service:
+    enable: true
+    type: ClusterIP
+    port: 9400
+    address: ":9400"
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    capabilities:
+      add: ["SYS_ADMIN"]
+  kubeletPath: "/var/lib/kubelet/pod-resources"
+  serviceAccount:
+    name: # override exporter service account name
