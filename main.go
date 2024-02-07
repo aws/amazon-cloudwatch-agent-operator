@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
+
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
@@ -206,7 +208,10 @@ func main() {
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-				Handler: workloadmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("workload-webhook"), decoder, mgr.GetClient(), autoAnnotationMutators)})
+				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators)})
+			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
+				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators),
+			})
 			setupLog.Info("Starting auto-annotation")
 			go autoAnnotationMutators.MutateAndPatchAll(ctx)
 		}

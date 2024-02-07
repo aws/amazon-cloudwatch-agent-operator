@@ -19,17 +19,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
 var (
 	k8sClient client.Client
-	logger    = logf.Log.WithName("unit-tests")
 )
 
 func TestHandle(t *testing.T) {
@@ -119,7 +116,6 @@ func TestHandle(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			// prepare
-			cfg := config.New()
 			decoder := admission.NewDecoder(scheme.Scheme)
 			autoAnnotationConfig := auto.AnnotationConfig{
 				Java: auto.AnnotationResources{
@@ -133,7 +129,7 @@ func TestHandle(t *testing.T) {
 				autoAnnotationConfig,
 				instrumentation.NewTypeSet(instrumentation.TypeJava),
 			)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, mutators)
+			injector := NewWebhookHandler(decoder, mutators)
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)
