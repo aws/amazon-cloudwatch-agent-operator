@@ -11,8 +11,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
-
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
@@ -34,6 +32,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
