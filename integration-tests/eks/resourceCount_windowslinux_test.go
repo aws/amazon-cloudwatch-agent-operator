@@ -12,5 +12,5 @@ const (
 	daemonsetCountLinux   = 2
 	daemonsetCountWindows = 2
 	podCountLinux         = 3
-	podCountWindows       = 2
+	podCountWindows       = 4
 )
