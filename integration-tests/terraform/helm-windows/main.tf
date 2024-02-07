@@ -233,9 +233,24 @@ resource "helm_release" "this" {
   chart      = "${var.helm_dir}"
 }
 
+resource "null_resource" "deployment_wait" {
+  depends_on = [
+    helm_release.this,
+  ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      chmod +x kubectl
+      ./kubectl rollout status daemonset fluent-bit-windows -n amazon-cloudwatch --timeout 600s
+      ./kubectl rollout status daemonset cloudwatch-agent-windows -n amazon-cloudwatch --timeout 600s
+    EOT
+  }
+}
+
 resource "null_resource" "validator" {
   depends_on = [
-    helm_release.this
+    helm_release.this,
+    null_resource.deployment_wait
   ]
   provisioner "local-exec" {
     command = "go test ${var.test_dir} -v --tags=windowslinux"
