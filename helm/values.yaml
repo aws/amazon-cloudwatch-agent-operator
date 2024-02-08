@@ -11,11 +11,11 @@ nameOverride: ""
 ## Reference one or more secrets to be used when pulling images from authenticated repositories.
 imagePullSecrets: [ ]
 
-## Provide the ClusterName (optional when installing via EKS add-on)
-clusterName: EKS_CLUSTER_NAME
+## Provide the ClusterName
+clusterName:
 
-## Provide the Region (optional when installing via EKS add-on)
-region: AWS_REGION_NAME
+## Provide the Region
+region:
 
 containerLogs:
   enabled: true

@@ -1,3 +1,6 @@
+{{- if empty .Values.region }}
+{{- fail "region is a required field" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -28,7 +31,7 @@ spec:
         - name: AWS_REGION
           value: {{ .Values.region }}
         - name: CLUSTER_NAME
-          value: {{ .Values.clusterName | quote }}
+          value: {{ include "kubernetes-cluster.name" . }}
         - name: READ_FROM_HEAD
           value: "Off"
         - name: READ_FROM_TAIL
