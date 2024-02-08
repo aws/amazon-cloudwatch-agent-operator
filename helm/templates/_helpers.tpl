@@ -9,7 +9,7 @@ Expand the name of the chart.
 Name of k8s cluster
 */}}
 {{- define "kubernetes-cluster.name" -}}
-{{- if eq .Values.clusterName "EKS_CLUSTER_NAME" }}
+{{- if empty .Values.clusterName }}
 {{- default "" (printf "k8s-cluster-%s" (sha256sum .Release.Name | trunc 7)) }}
 {{- else }}
 {{- default "" .Values.clusterName }}

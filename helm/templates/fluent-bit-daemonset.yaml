@@ -1,4 +1,4 @@
-{{- if eq .Values.region "AWS_REGION_NAME" }}
+{{- if empty .Values.region }}
 {{- fail "region is a required field" }}
 {{- end }}
 apiVersion: apps/v1
