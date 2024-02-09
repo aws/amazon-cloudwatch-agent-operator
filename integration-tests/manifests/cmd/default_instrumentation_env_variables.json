@@ -1,10 +1,12 @@
 {
   "OTEL_SMP_ENABLED": "true",
+  "OTEL_AWS_APP_SIGNALS_ENABLED": "true",
   "OTEL_TRACES_SAMPLER_ARG": "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000",
   "OTEL_TRACES_SAMPLER": "xray",
   "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
   "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces",
   "OTEL_AWS_SMP_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4315",
+  "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4315",
   "OTEL_METRICS_EXPORTER": "none",
   "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 }
