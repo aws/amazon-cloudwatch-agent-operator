@@ -16,6 +16,7 @@ data:
         storage.path              /var/fluent-bit/state/flb-storage/
         storage.sync              normal
         storage.checksum          off
+        net.dns.resolver          LEGACY
         storage.backlog.mem_limit 5M
 
 {{- if .Values.containerLogs.enabled }}
