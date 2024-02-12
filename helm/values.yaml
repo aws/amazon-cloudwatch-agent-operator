@@ -50,7 +50,7 @@ manager:
     python:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
       tag: 0.43b0
-  autoAnnotation:
+  autoAnnotateAutoInstrumentation:
     java:
       namespaces: [ ]
       deployments: [ ]
