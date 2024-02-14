@@ -51,23 +51,25 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 			Java: v1alpha1.Java{
 				Image: defaultJavaInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue}, //TODO: remove in favor of new name once safe
+					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue}, //TODO: remove in favor of new name once safe
+					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
 				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
 					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
 					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
