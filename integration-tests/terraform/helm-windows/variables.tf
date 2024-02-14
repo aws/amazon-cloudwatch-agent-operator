@@ -31,3 +31,8 @@ variable "cluster_name" {
   type    = string
   default = "cwagent-operator-helm-integ"
 }
+
+variable "windows_os_version" {
+  type    = string
+  default = "WINDOWS_CORE_2022_x86_64"
+}
