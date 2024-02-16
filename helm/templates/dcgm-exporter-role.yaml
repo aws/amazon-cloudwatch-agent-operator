@@ -1,11 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: "{{ template "dcgm-exporter.name" . }}-role"
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
-  name: {{ template "dcgm-exporter.name" . }}-role
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
-  resourceNames: ["exporter-metrics-config-map"]
+  resourceNames: ["{{ .Release.Namespace }}:{{ .Values.dcgmExporter.configmap }}"]
   verbs: ["get"]

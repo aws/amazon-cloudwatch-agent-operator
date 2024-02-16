@@ -7,9 +7,9 @@ metadata:
       {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
 roleRef:
   kind: Role
-  name: {{ template "dcgm-exporter.name" . }}-role
+  name: "{{ template "dcgm-exporter.name" . }}-role"
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: ServiceAccount
-  name: {{ template "dcgm-exporter.name" . }}-service
+  name: {{ template "dcgm-exporter.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}

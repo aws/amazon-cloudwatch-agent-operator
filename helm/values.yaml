@@ -144,7 +144,7 @@ agent:
     repository: cloudwatch-agent
     tag: 1.300031.1b317
     repositoryDomainMap:
-      # public: public.ecr.aws/cloudwatch-agent
+      public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -175,6 +175,7 @@ dcgmExporter:
   image:
     repository: nvcr.io/nvidia/k8s/dcgm-exporter
     tag: 3.3.3-3.3.1-ubuntu22.04
+  configmap: dcgm-exporter-config-map
   # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
   service:
     enable: true
