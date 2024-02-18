@@ -16,7 +16,6 @@ spec:
         k8s-app: dcgm-exporter
         version: v1
     spec:
-      priorityClassName: system-node-critical
       serviceAccountName: {{ template "dcgm-exporter.serviceAccountName" . }}
       affinity:
         nodeAffinity:
@@ -28,8 +27,6 @@ spec:
                 values: {{ .Values.gpuInstances | toYaml | nindent 16 }}
       containers:
       - name: dcgm-exporter
-        securityContext:
-          privileged: true
         image: "{{ .Values.dcgmExporter.image.repository }}:{{ .Values.dcgmExporter.image.tag }}"
         args:
         {{- range $.Values.dcgmExporter.arguments }}
