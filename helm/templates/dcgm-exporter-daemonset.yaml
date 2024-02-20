@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: dcgm-exporter
+  name: {{ include "dcgm-exporter.name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    k8s-app: dcgm-exporter
+    k8s-app: {{ include "dcgm-exporter.name" . }}
     version: v1
 spec:
   selector:
     matchLabels:
-      k8s-app: dcgm-exporter
+      k8s-app: {{ include "dcgm-exporter.name" . }}
   template:
     metadata:
       labels:
-        k8s-app: dcgm-exporter
+        k8s-app: {{ include "dcgm-exporter.name" . }}
         version: v1
     spec:
       serviceAccountName: {{ template "dcgm-exporter.serviceAccountName" . }}

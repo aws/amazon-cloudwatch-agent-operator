@@ -8,5 +8,5 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
-  resourceNames: ["{{ .Release.Namespace }}:{{ .Values.dcgmExporter.configmap }}"]
+  resourceNames: ["{{ .Values.dcgmExporter.configmap }}"]
   verbs: ["get"]
