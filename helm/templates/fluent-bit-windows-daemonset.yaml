@@ -31,7 +31,7 @@ spec:
       - name: fluent-bit
         image: {{ template "fluent-bit-windows.image" . }}
         imagePullPolicy: Always
-        command: ["%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/bin/fluent-bit.exe", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/kinesis.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/firehose.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/cloudwatch.dll", "-c", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/configuration/fluent-bit.conf"]
+        command: ["powershell.exe", "-Command", "New-Item -ItemType Directory -Path C:\\var\\fluent-bit\\state -Force;", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/bin/fluent-bit.exe", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/kinesis.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/firehose.dll", "-e", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/cloudwatch.dll", "-c", "%CONTAINER_SANDBOX_MOUNT_POINT%/fluent-bit/configuration/fluent-bit.conf"]
         env:
         - name: AWS_REGION
           value: {{ .Values.region }}
@@ -54,14 +54,14 @@ spec:
           limits:
           {{- if .Values.containerLogs.enabled }}
             cpu: 500m
-            memory: 250Mi
+            memory: 600Mi
           {{ else }}
             cpu: 50m
             memory: 25Mi
           {{ end }}
           requests:
-            cpu: 50m
-            memory: 25Mi
+            cpu: 500m
+            memory: 600Mi
         volumeMounts:
           - name: fluent-bit-config
             mountPath: fluent-bit\configuration\

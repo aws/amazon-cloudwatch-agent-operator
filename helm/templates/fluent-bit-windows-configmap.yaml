@@ -8,15 +8,11 @@ metadata:
 data:
   fluent-bit.conf: |
     [SERVICE]
-        Flush                     5
-        Grace                     30
-        Log_Level                 error
-        Daemon                    off
-        Parsers_File              parsers.conf
-        storage.path              /var/fluent-bit/state/flb-storage/
-        storage.sync              normal
-        storage.checksum          off
-        storage.backlog.mem_limit 5M
+        Flush                       5
+        Log_Level                   error
+        Daemon                      off
+        net.dns.resolver            LEGACY
+        Parsers_File                parsers.conf
 
 {{- if .Values.containerLogs.enabled }}
     @INCLUDE application-log.conf
@@ -29,16 +25,12 @@ data:
         Tag                 application.*
         Exclude_Path        C:\\var\\log\\containers\\fluent-bit*, C:\\var\\log\\containers\\cloudwatch-agent*
         Path                C:\\var\\log\\containers\\*.log
-        Docker_Mode         On
-        Docker_Mode_Flush   5
-        Docker_Mode_Parser  container_firstline
         Parser              docker
         DB                  C:\\var\\fluent-bit\\state\\flb_container.db
         Mem_Buf_Limit       50MB
         Skip_Long_Lines     On
-        Refresh_Interval    10
         Rotate_Wait         30
-        storage.type        filesystem
+        Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
     [INPUT]
@@ -49,6 +41,7 @@ data:
         DB                  C:\\var\\fluent-bit\\state\\flb_log.db
         Mem_Buf_Limit       5MB
         Skip_Long_Lines     On
+        Rotate_Wait         30
         Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
@@ -60,6 +53,7 @@ data:
         DB                  C:\\var\\fluent-bit\\state\\flb_cwagent.db
         Mem_Buf_Limit       5MB
         Skip_Long_Lines     On
+        Rotate_Wait         30
         Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
@@ -79,11 +73,10 @@ data:
         Path                C:\\ProgramData\\containerd\\root\\*.log, C:\\ProgramData\\Amazon\\EKS\\logs\\*.log
         Parser              dataplane_firstline
         DB                  C:\\var\\fluent-bit\\state\\flb_dataplane_tail.db
-        Mem_Buf_Limit       50MB
+        Mem_Buf_Limit       5MB
         Skip_Long_Lines     On
-        Refresh_Interval    10
         Rotate_Wait         30
-        storage.type        filesystem
+        Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
     [INPUT]
@@ -93,11 +86,10 @@ data:
         Path_Key            file_name
         Parser              dataplane_firstline
         DB                  C:\\var\\fluent-bit\\state\\flb_dataplane_cni_tail.db
-        Mem_Buf_Limit       50MB
+        Mem_Buf_Limit       5MB
         Skip_Long_Lines     On
-        Refresh_Interval    10
         Rotate_Wait         30
-        storage.type        filesystem
+        Refresh_Interval    10
         Read_from_Head      ${READ_FROM_HEAD}
 
     [FILTER]
@@ -119,7 +111,7 @@ data:
         Name                winlog
         Channels            EKS, System
         DB                  C:\\var\\fluent-bit\\state\\flb_system_winlog.db
-        Interval_Sec        10
+        Interval_Sec        60
 
     [FILTER]
         Name                aws
