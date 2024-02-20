@@ -171,11 +171,6 @@ dcgmExporter:
     type: ClusterIP
     port: 9400
     address: ":9400"
-  securityContext:
-    runAsNonRoot: false
-    runAsUser: 0
-    capabilities:
-      add: ["SYS_ADMIN"]
   kubeletPath: "/var/lib/kubelet/pod-resources"
   serviceAccount:
     name: # override exporter service account name

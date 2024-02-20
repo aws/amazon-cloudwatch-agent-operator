@@ -58,7 +58,7 @@ spec:
           path: /var/lib/kubelet/pod-resources
       - name: "dcgm-config"
         configMap:
-          name: dcgm-exporter-config-map
+          name: {{ .Values.dcgmExporter.configmap }}
       resources:
         requests:
           cpu: 250m
