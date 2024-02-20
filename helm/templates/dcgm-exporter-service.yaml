@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "dcgm-exporter.name" . }}-service
+  name: dcgm-exporter-service
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "amazon-cloudwatch-observability.labels" . | nindent 4 }}
-    k8s-app: {{ include "dcgm-exporter.name" . }}-service
+    k8s-app: dcgm-exporter-service
   annotations:
     prometheus.io/scrape: "true"
 spec:
@@ -17,6 +17,6 @@ spec:
     targetPort: {{ .Values.dcgmExporter.service.port }}
     protocol: TCP
   selector:
-    k8s-app: dcgm-exporter
+    k8s-app: {{ include "dcgm-exporter.name" . }}
   internalTrafficPolicy: Local
 {{- end }}
