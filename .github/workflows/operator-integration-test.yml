@@ -89,11 +89,11 @@ jobs:
       - name: Test for defined instrumentation resources
         run: |
           cd integration-tests/manifests
-          kubectl apply -f ./sample-instrumentation.yaml
+          kubectl apply -f ./sample-instrumentation-java.yaml
           sleep 60
           kubectl rollout restart deployment nginx
           sleep 60
           kubectl get pods -A
           kubectl describe pods -n default
           cd ./cmd
-          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          go run validate_instrumentation_vars.go default ns_instrumentation_java_env_variables.json

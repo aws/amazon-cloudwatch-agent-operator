@@ -12,8 +12,5 @@
   "OTEL_TRACES_EXPORTER":                    "otlp",
   "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL":      "http/protobuf",
   "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL":     "http/protobuf",
-  "OTEL_SERVICE_NAME":                      "nginx",
-  "OTEL_RESOURCE_ATTRIBUTES_POD_NAME":       "nginx-6bd945d866-dntdc (v1:metadata.name)",
-  "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME":       "(v1:spec.nodeName)",
   "OTEL_PROPAGATORS":                        "tracecontext,baggage,b3,xray"
 }
