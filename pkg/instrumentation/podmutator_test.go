@@ -60,6 +60,7 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue}, //TODO: remove in favor of new name once safe
 					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -74,6 +75,7 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
 					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
 					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
+					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
 				},
 			},
 		},
