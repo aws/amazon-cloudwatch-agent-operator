@@ -6,25 +6,36 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Function to generate a random name and store it in .Release
+*/}}
+{{- define "generate_static_name_randomiser" -}}
+{{- if not (index .Release "randomiser") -}}
+{{- $_ := set .Release "randomiser" dict -}}
+{{- end -}}
+{{- $key := printf "%s_%s" .Release.Name "randomiser" -}}
+{{- if not (index .Release.randomiser $key) -}}
+{{- $_ := set .Release.randomiser $key (randAlphaNum 3) -}}
+{{- end -}}
+{{- index .Release.randomiser $key -}}
+{{- end -}}
+
+{{/*
 Name of k8s cluster
 */}}
 {{- define "kubernetes-cluster.name" -}}
-{{- if empty .Values.clusterName }}
-{{- default "" (printf "k8s-cluster-%s" (sha256sum .Release.Name | trunc 7)) }}
-{{- else }}
-{{- default "" .Values.clusterName }}
-{{- end }}
+{{- default (printf "k8s-cluster-%s-%s" (sha256sum .Release.Name | trunc 7) (include "generate_static_name_randomiser" .)) .Values.clusterName }}
 {{- end }}
 
 {{/*
 Helper function to modify cloudwatch-agent config
 */}}
 {{- define "cloudwatch-agent.config-modifier" -}}
-{{- $configCopy := deepCopy .Values.agent.config }}
+{{- $configCopy := deepCopy .Config }}
 
 {{- $agent := pluck "agent" $configCopy | first }}
 {{- if and (empty $agent) (empty $agent.region) }}
-{{- $agent := set $agent "region" .Values.region }}
+{{- $agentRegion := dict "region" .Values.region }}
+{{- $agent := set $configCopy "agent" $agentRegion }}
 {{- end }}
 
 {{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
@@ -43,26 +54,12 @@ Helper function to modify cloudwatch-agent config
 {{/*
 Helper function to modify customer supplied agent config if ContainerInsights or ApplicationSignals is enabled
 */}}
-{{- define "cloudwatch-agent.supplied-config" -}}
-{{- if or (hasKey .Values.agent.config.logs "app_signals") (and (hasKey .Values.agent.config.logs "metrics_collected") (hasKey .Values.agent.config.logs.metrics_collected "kubernetes")) }}
+{{- define "cloudwatch-agent.modify-config" -}}
+{{- if or (hasKey .Config.logs "app_signals") (and (hasKey .Config.logs "metrics_collected") (hasKey .Config.logs.metrics_collected "kubernetes")) }}
 {{- include "cloudwatch-agent.config-modifier" . }}
 {{- else }}
-{{- default "" .Values.agent.config | toJson | quote }}
+{{- default "" .Config | toJson | quote }}
 {{- end }}
-{{- end }}
-
-{{/*
-Helper function to modify default agent config
-*/}}
-{{- define "cloudwatch-agent.modify-default-config" -}}
-{{- $configCopy := deepCopy .Values.agent.defaultConfig }}
-{{- $agentRegion := dict "region" .Values.region }}
-{{- $agent := set $configCopy "agent" $agentRegion }}
-{{- $appSignals := pluck "app_signals" $configCopy.logs.metrics_collected | first }}
-{{- $appSignals := set $appSignals "hosted_in" (include "kubernetes-cluster.name" .) }}
-{{- $containerInsights := pluck "kubernetes" $configCopy.logs.metrics_collected | first }}
-{{- $containerInsights := set $containerInsights "cluster_name" (include "kubernetes-cluster.name" .) }}
-{{- default ""  $configCopy | toJson | quote }}
 {{- end }}
 
 {{/*
@@ -88,6 +85,7 @@ Get the current recommended cloudwatch agent image for a region
 Get the current recommended cloudwatch agent operator image for a region
 */}}
 {{- define "cloudwatch-agent-operator.image" -}}
+{{- $region := .Values.region | required ".Values.region is required." -}}
 {{- $imageDomain := "" -}}
 {{- $imageDomain = index .Values.manager.image.repositoryDomainMap .Values.region -}}
 {{- if not $imageDomain -}}
@@ -100,6 +98,7 @@ Get the current recommended cloudwatch agent operator image for a region
 Get the current recommended fluent-bit image for a region
 */}}
 {{- define "fluent-bit.image" -}}
+{{- $region := .Values.region | required ".Values.region is required." -}}
 {{- $imageDomain := "" -}}
 {{- $imageDomain = index .Values.containerLogs.fluentBit.image.repositoryDomainMap .Values.region -}}
 {{- if not $imageDomain -}}
