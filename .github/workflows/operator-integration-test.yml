@@ -68,16 +68,24 @@ jobs:
             echo "Pod is created test case: PASS"
           fi
 
-      - name: Test for default instrumentation resources
+      - name: Test for default instrumentation resources for Java
         run: |
           cd integration-tests/manifests
-          kubectl apply -f ./sample-deployment.yaml
+          kubectl apply -f ./sample-deployment-java.yaml
           sleep 60
           kubectl get pods -A 
           kubectl describe pods -n default
           cd ./cmd
-          go run validate_instrumentation_vars.go default default_instrumentation_env_variables.json
-
+          go run validate_instrumentation_vars.go default default_instrumentation_java_env_variables.json
+      - name: Test for default instrumentation resources for Java
+        run: |
+          cd integration-tests/manifests
+          kubectl apply -f ./sample-deployment-python.yaml
+          sleep 60
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          cd ./cmd
+          go run validate_instrumentation_vars.go default default_instrumentation_python_env_variables.json
       - name: Test for defined instrumentation resources
         run: |
           cd integration-tests/manifests
