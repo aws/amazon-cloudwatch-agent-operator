@@ -96,4 +96,4 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           cd ./cmd
-          go run validate_instrumentation_vars.go default ns_instrumentation_java_env_variables.json
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
