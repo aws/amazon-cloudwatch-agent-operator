@@ -101,7 +101,7 @@ jobs:
           go run validate_instrumentation_vars.go default default_instrumentation_python_env_variables.json
 
 
-      - name: Test for defined instrumentation resources for java
+      - name: Test for defined instrumentation resources for python
         run: |
           cd integration-tests/manifests
           kubectl apply -f ./sample-instrumentation.yaml
