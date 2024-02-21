@@ -12,10 +12,10 @@ nameOverride: ""
 imagePullSecrets: [ ]
 
 ## Provide the ClusterName
-clusterName: NewClusterForPulse
+clusterName:
 
 ## Provide the Region
-region: us-west-2
+region:
 
 containerLogs:
   enabled: true
