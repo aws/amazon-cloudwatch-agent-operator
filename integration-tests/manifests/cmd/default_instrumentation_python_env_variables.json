@@ -8,7 +8,7 @@
   "OTEL_METRICS_EXPORTER":                   "none",
   "OTEL_PYTHON_DISTRO":                     "aws_distro",
   "OTEL_PYTHON_CONFIGURATOR":                "aws_configurator",
-  "PYTHONPATH":                              "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python"
+  "PYTHONPATH":                              "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python",
   "OTEL_TRACES_EXPORTER":                    "otlp",
   "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL":      "http/protobuf",
   "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL":     "http/protobuf",
