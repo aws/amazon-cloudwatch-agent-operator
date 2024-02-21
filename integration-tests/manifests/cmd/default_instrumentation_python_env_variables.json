@@ -12,5 +12,5 @@
   "OTEL_TRACES_EXPORTER":                    "otlp",
   "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL":      "http/protobuf",
   "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL":     "http/protobuf",
-  "OTEL_PROPAGATORS":                        "tracecontext,baggage,b3,xray"
+  "OTEL_PROPAGATORS":                        "tracecontext,baggage,b3"
 }

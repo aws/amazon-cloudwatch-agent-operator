@@ -95,6 +95,8 @@ jobs:
           cd integration-tests/manifests
           kubectl apply -f ./sample-deployment-python.yaml
           sleep 60
+          kubectl rollout restart deployment nginx
+          sleep 60
           kubectl get pods -A 
           kubectl describe pods -n default
           cd ./cmd
