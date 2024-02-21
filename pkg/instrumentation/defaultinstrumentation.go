@@ -19,24 +19,24 @@ const (
 	defaultNamespace      = "default"
 	defaultKind           = "Instrumentation"
 
-	otelSampleEnabledKey                   = "OTEL_SMP_ENABLED" //TODO: remove in favor of new name once safe
-	otelSampleEnabledDefaultValue          = "true" //TODO: remove in favor of new name once safe
-	otelAppSignalsEnabledKey               = "OTEL_AWS_APP_SIGNALS_ENABLED"
-	otelAppSignalsEnabledDefaultValue      = "true"
-	otelTracesSamplerArgKey                = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue       = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
-	otelTracesSamplerKey                   = "OTEL_TRACES_SAMPLER"
-	otelTracesSamplerDefaultValue          = "xray"
-	otelExporterOtlpProtocolKey            = "OTEL_EXPORTER_OTLP_PROTOCOL"
-	otelExporterOtlpProtocolValue          = "http/protobuf"
-	otelExporterTracesEndpointKey          = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"
-	otelExporterSmpEndpointKey             = "OTEL_AWS_SMP_EXPORTER_ENDPOINT" //TODO: remove in favor of new name once safe
-	otelExporterSmpEndpointDefaultValue    = "http://cloudwatch-agent.amazon-cloudwatch:4315" //TODO: remove in favor of new name once safe
-	otelExporterAppSignalsEndpointKey      = "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT"
+	otelSampleEnabledKey                       = "OTEL_SMP_ENABLED" //TODO: remove in favor of new name once safe
+	otelSampleEnabledDefaultValue              = "true"             //TODO: remove in favor of new name once safe
+	otelAppSignalsEnabledKey                   = "OTEL_AWS_APP_SIGNALS_ENABLED"
+	otelAppSignalsEnabledDefaultValue          = "true"
+	otelTracesSamplerArgKey                    = "OTEL_TRACES_SAMPLER_ARG"
+	otelTracesSamplerArgDefaultValue           = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
+	otelTracesSamplerKey                       = "OTEL_TRACES_SAMPLER"
+	otelTracesSamplerDefaultValue              = "xray"
+	otelExporterOtlpProtocolKey                = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	otelExporterOtlpProtocolValue              = "http/protobuf"
+	otelExporterTracesEndpointKey              = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+	otelExporterTracesEndpointDefaultValue     = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"
+	otelExporterSmpEndpointKey                 = "OTEL_AWS_SMP_EXPORTER_ENDPOINT"                 //TODO: remove in favor of new name once safe
+	otelExporterSmpEndpointDefaultValue        = "http://cloudwatch-agent.amazon-cloudwatch:4315" //TODO: remove in favor of new name once safe
+	otelExporterAppSignalsEndpointKey          = "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT"
 	otelExporterAppSignalsEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4315"
-	otelExporterMetricKey                  = "OTEL_METRICS_EXPORTER"
-	otelExporterMetricDefaultValue         = "none"
+	otelExporterMetricKey                      = "OTEL_METRICS_EXPORTER"
+	otelExporterMetricDefaultValue             = "none"
 
 	otelPythonDistro                   = "OTEL_PYTHON_DISTRO"
 	otelPythonDistroDefaultValue       = "aws_distro"
