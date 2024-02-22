@@ -79,6 +79,15 @@ var (
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
+
+	// SkipMultiInstrumentationContainerValidation is the feature gate that controls whether the operator will skip
+	// container name validation during pod mutation for multi-instrumentation. Enabling this feature allows multiple
+	// instrumentations for pods without specified container name annotations. Does not prevent specification
+	// annotations from being used.
+	SkipMultiInstrumentationContainerValidation = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.multi-instrumentation.skip-container-validation",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator validates the container annotations when multi-instrumentation is enabled"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
