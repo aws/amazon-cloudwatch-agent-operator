@@ -147,7 +147,7 @@ agent:
       us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   enabled: true
   serviceAccount:
-    name: # override agent service account name
+     name: # override agent service account name
   config: # optional config that can be provided to override the defaultConfig
   defaultConfig:
     {
