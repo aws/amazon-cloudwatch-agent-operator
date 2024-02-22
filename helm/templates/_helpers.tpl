@@ -20,6 +20,13 @@ Name for dcgm-exporter
 {{- end }}
 
 {{/*
+Name for neuron-monitor
+*/}}
+{{- define "neuron-monitor.name" -}}
+{{- default "neuron-monitor" .Values.neuronMonitor.name }}
+{{- end }}
+
+{{/*
 Get the current recommended cloudwatch agent image for a region
 */}}
 {{- define "cloudwatch-agent.image" -}}
@@ -68,6 +75,18 @@ Get the current recommended dcgm-exporter image for a region
 {{- end -}}
 
 {{/*
+Get the current recommended neuron-monitor image for a region
+*/}}
+{{- define "neuron-monitor.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.containerLogs.neuronMonitor.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.containerLogs.neuronMonitor.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.neuron.image.repository .Values.containerLogs.neuron.image.tag -}}
+{{- end -}}
+
+{{/*
 Common labels
 */}}
 {{- define "amazon-cloudwatch-observability.labels" -}}
@@ -113,6 +132,13 @@ Create the name of the service account to use fro dcgm exporter
 */}}
 {{- define "dcgm-exporter.serviceAccountName" -}}
 {{- default "dcgm-exporter-service-acct" .Values.dcgmExporter.serviceAccount.name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use for neuron monitor
+*/}}
+{{- define "neuron-monitor.serviceAccountName" -}}
+{{- default "neuron-monitor-svc-acc" .Values.neuronMonitor.serviceAccount.name }}
 {{- end }}
 
 {{- define "amazon-cloudwatch-observability.podAnnotations" -}}

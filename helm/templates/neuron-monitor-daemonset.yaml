@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: neuron-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neuron-monitor
+spec:
+  selector:
+    matchLabels:
+      app: neuron-monitor
+  template:
+    metadata:
+      labels:
+        app: neuron-monitor
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+                  - key: {{ .Values.nodeLabelKey }}
+                    operator: In
+                    values: {{ .Values.neuronInstances | toYaml | nindent 20 }}
+      containers:
+      - name: neuron-monitor-prometheus
+        image: {{ .Values.neuronMonitor.image.repository }}:{{ .Values.neuronMonitor.image.tag }}
+        ports:
+        - containerPort: {{ .Values.neuronMonitor.service.port }}
+        command:
+        - sh
+        - -c
+        - /opt/aws/neuron/bin/neuron-monitor | /opt/aws/neuron/bin/neuron-monitor-prometheus.py
+        resources:
+          limits:
+            cpu: 10m
+            memory: 80Mi
+          requests:
+            cpu: 10m
+            memory: 80Mi
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: PATH
+          value: /usr/local/bin:/usr/bin:/bin:/opt/aws/neuron/bin
+
+        volumeMounts:
+          - name: localtime
+            mountPath: /etc/localtime
+            readOnly: true
+
+      serviceAccountName: {{ template "neuron-monitor.serviceAccountName" . }}
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
