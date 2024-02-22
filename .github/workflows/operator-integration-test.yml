@@ -54,6 +54,20 @@ jobs:
         run: | 
           make deploy
 
+      - name: Test case for AmazonCloudWatchAgent pod creation
+        run: |
+          helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
+          sleep 60
+          kubectl describe pods -n amazon-cloudwatch
+          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
+          if [ -z "$pod_name" ]; then
+            echo "Pod $pod_name is not created. Exiting with ERROR."
+            echo "Pod is not created test case: FAIL"
+          else
+            echo "Pod $pod_name is created."
+            echo "Pod is created test case: PASS"
+          fi
+
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
@@ -94,17 +108,3 @@ jobs:
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
