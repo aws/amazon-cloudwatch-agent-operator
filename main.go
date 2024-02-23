@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -211,8 +213,15 @@ func main() {
 			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
 				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators),
 			})
-			setupLog.Info("Starting auto-annotation")
-			go autoAnnotationMutators.MutateAndPatchAll(ctx)
+			setupLog.Info("Auto-annotation is enabled")
+			go waitForWebhookServerStart(
+				ctx,
+				mgr.GetWebhookServer().StartedChecker(),
+				func(ctx context.Context) {
+					setupLog.Info("Applying auto-annotation")
+					autoAnnotationMutators.MutateAndPatchAll(ctx)
+				},
+			)
 		}
 	}
 
@@ -250,6 +259,23 @@ func main() {
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
+	}
+}
+
+func waitForWebhookServerStart(ctx context.Context, checker healthz.Checker, callback func(context.Context)) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if err := checker(nil); err == nil {
+				setupLog.Info("Webhook server has started")
+				callback(ctx)
+				return
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

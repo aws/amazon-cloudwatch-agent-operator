@@ -95,10 +95,11 @@ func (m *AnnotationMutator) Mutate(obj metav1.Object) bool {
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
-	var mutated bool
+	var anyMutated bool
 	for _, mutation := range m.mutations {
-		mutated = mutated || mutation.Mutate(annotations)
+		mutated := mutation.Mutate(annotations)
+		anyMutated = anyMutated || mutated
 	}
 	obj.SetAnnotations(annotations)
-	return mutated
+	return anyMutated
 }
