@@ -26,6 +26,7 @@ Get the current recommended cloudwatch agent image for a region
 
 {{/*
 Get the current recommended cloudwatch agent image for a region
+todo: replace this with latest official cw image for Windows
 */}}
 {{- define "cloudwatch-agent-windows.image" -}}
 {{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/windows-container-internal:latest" -}}
@@ -33,6 +34,7 @@ Get the current recommended cloudwatch agent image for a region
 
 {{/*
 Get the current recommended cloudwatch agent operator image for a region
+todo: replace this with latest official operator
 */}}
 {{- define "cloudwatch-agent-operator.image" -}}
 {{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-ciwindows-internal:latest" -}}
