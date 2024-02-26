@@ -42,7 +42,6 @@ spec:
           requests:
             cpu: 10m
             memory: 80Mi
-        imagePullPolicy: Always
         securityContext:
           privileged: true
         env:
@@ -53,16 +52,8 @@ spec:
         - name: PATH
           value: /usr/local/bin:/usr/bin:/bin:/opt/aws/neuron/bin
 
-        volumeMounts:
-          - name: localtime
-            mountPath: /etc/localtime
-            readOnly: true
 
       serviceAccountName: {{ template "neuron-monitor.serviceAccountName" . }}
-      volumes:
-      - name: localtime
-        hostPath:
-          path: /etc/localtime
 
       tolerations:
       - effect: NoSchedule

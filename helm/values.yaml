@@ -181,9 +181,8 @@ dcgmExporter:
 neuronMonitor:
   name:
   image:
-    repository: 361112861879.dkr.ecr.us-west-2.amazonaws.com/hello-world
-    tag: neuron-monitor
-  # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
+    repository: 037647485236.dkr.ecr.eu-west-1.amazonaws.com/neuronmonitortesting
+    tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6185745418-0
   service:
     enable: true
     type: ClusterIP
