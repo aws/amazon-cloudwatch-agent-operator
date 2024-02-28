@@ -4,15 +4,17 @@ metadata:
   name: neuron-monitor
   namespace: {{ .Release.Namespace }}
   labels:
-    app: neuron-monitor
+    k8s-app: neuron-monitor
+    version: v1
 spec:
   selector:
     matchLabels:
-      app: neuron-monitor
+      k8s-app: neuron-monitor
   template:
     metadata:
       labels:
-        app: neuron-monitor
+        k8s-app: neuron-monitor
+        version: v1
     spec:
       affinity:
         nodeAffinity:

@@ -17,6 +17,6 @@ spec:
     targetPort: {{ .Values.neuronMonitor.service.port }}
     protocol: TCP
   selector:
-    k8s-app: {{ include "dcgm-exporter.name" . }}
+    k8s-app: {{ include "neuron-monitor.name" . }}
   internalTrafficPolicy: Local
 {{- end }}
