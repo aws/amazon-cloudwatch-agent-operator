@@ -15,11 +15,7 @@ spec:
   serviceAccount: {{ template "cloudwatch-agent.serviceAccountName" . }}
   nodeSelector:
     kubernetes.io/os: windows
-  {{- if .Values.agent.config }}
-  config: {{ .Values.agent.config | toJson | quote }}
-  {{- else }}
   config: {{ .Values.agent.windowsDefaultConfig | toJson | quote }}
-  {{- end }}
   resources:
     requests:
       memory: "128Mi"

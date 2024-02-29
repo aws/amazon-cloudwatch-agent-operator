@@ -56,12 +56,12 @@ spec:
             cpu: 500m
             memory: 600Mi
           {{ else }}
-            cpu: 50m
-            memory: 25Mi
+            cpu: 300m
+            memory: 300Mi
           {{ end }}
           requests:
-            cpu: 500m
-            memory: 600Mi
+            cpu: 300m
+            memory: 300Mi
         volumeMounts:
           - name: fluent-bit-config
             mountPath: fluent-bit\configuration\
