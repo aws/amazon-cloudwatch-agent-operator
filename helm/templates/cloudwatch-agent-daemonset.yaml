@@ -39,6 +39,10 @@ spec:
   - mountPath: /dev/disk
     name: devdisk
     readOnly: true
+  - mountPath: /etc/amazon-cloudwatch-observability-appsignals-cert
+    name: appsignalstls
+    readOnly: true
+
   volumes:
   - name: rootfs
     hostPath:
@@ -58,6 +62,9 @@ spec:
   - hostPath:
       path: /dev/disk/
     name: devdisk
+  - name: appsignalstls
+    secret:
+      secretName: amazon-cloudwatch-observability-appsignals-cert
   env:
   - name: K8S_NODE_NAME
     valueFrom:

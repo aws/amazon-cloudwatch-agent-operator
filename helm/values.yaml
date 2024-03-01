@@ -176,7 +176,7 @@ dcgmExporter:
     repository: nvcr.io/nvidia/k8s/dcgm-exporter
     tag: 3.3.3-3.3.1-ubuntu22.04
   configmap: dcgm-exporter-config-map
-  # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
+  arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
   service:
     enable: true
     type: ClusterIP
