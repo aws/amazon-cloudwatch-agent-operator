@@ -56,6 +56,13 @@ spec:
         {{- range $.Values.dcgmExporter.arguments }}
         - {{ . }}
         {{- end }}
+        resources:
+          requests:
+            cpu: 250m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 250Mi
         env:
         - name: "DCGM_EXPORTER_KUBERNETES"
           value: "true"
@@ -89,10 +96,3 @@ spec:
       - name: "dcgm-config"
         configMap:
           name: {{ .Values.dcgmExporter.configmap }}
-      resources:
-        requests:
-          cpu: 250m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 250Mi
