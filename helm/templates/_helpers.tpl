@@ -55,7 +55,7 @@ Helper function to modify cloudwatch-agent config
 Helper function to modify customer supplied agent config if ContainerInsights or ApplicationSignals is enabled
 */}}
 {{- define "cloudwatch-agent.modify-config" -}}
-{{- if or (and (hasKey .Config.logs "metrics_collected") (hasKey .Config.logs.metrics_collected "app_signals")) (and (hasKey .Config.logs "metrics_collected") (hasKey .Config.logs.metrics_collected "kubernetes")) }}
+{{- if and (hasKey .Config "logs") (or (and (hasKey .Config.logs "metrics_collected") (hasKey .Config.logs.metrics_collected "app_signals")) (and (hasKey .Config.logs "metrics_collected") (hasKey .Config.logs.metrics_collected "kubernetes"))) }}
 {{- include "cloudwatch-agent.config-modifier" . }}
 {{- else }}
 {{- default "" .Config | toJson | quote }}
