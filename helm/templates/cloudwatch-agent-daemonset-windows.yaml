@@ -10,7 +10,7 @@ spec:
       hostProcess: true
       runAsUserName: "NT AUTHORITY\\System"
   hostNetwork: true
-  image: {{ template "cloudwatch-agent-windows.image" . }}
+  image: {{ template "cloudwatch-agent.image" . }}
   mode: daemonset
   serviceAccount: {{ template "cloudwatch-agent.serviceAccountName" . }}
   nodeSelector:
