@@ -1,3 +1,4 @@
+{{- $region := .Values.region | required ".Values.region is required." -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
