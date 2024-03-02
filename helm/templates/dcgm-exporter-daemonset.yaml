@@ -6,7 +6,7 @@ kind: Secret
 metadata:
   labels:
     {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
-  name: "amazon-cloudwatch-observability-appsignals-cert"
+  name: "amazon-cloudwatch-observability-agent-cert"
   namespace: {{ .Release.Namespace }}
 data:
   tls-ca.crt: {{ $ca.Cert | b64enc }}
