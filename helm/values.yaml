@@ -182,7 +182,7 @@ neuronMonitor:
   name:
   image:
     repository: 037647485236.dkr.ecr.eu-west-1.amazonaws.com/neuronmonitortesting
-    tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6185745418-0
+    tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-adantre-1
   service:
     enable: true
     type: ClusterIP
