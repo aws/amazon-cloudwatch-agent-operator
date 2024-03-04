@@ -204,6 +204,10 @@ resource "helm_release" "this" {
   namespace = "amazon-cloudwatch"
   create_namespace = true
   chart      = "${var.helm_dir}"
+  set {
+    name  = "region"
+    value = "${var.region}"
+  }
 }
 
 resource "null_resource" "deployment_wait" {
