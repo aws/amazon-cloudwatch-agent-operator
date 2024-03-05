@@ -26,8 +26,8 @@ spec:
   subject:
     organizationalUnits:
     - {{ template "amazon-cloudwatch-observability.name" . }}
-{{- if not .Values.admissionWebhooks.certManager.issuerRef }}
 ---
+{{- if not .Values.admissionWebhooks.certManager.issuerRef }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -43,3 +43,48 @@ spec:
   selfSigned: { }
 {{- end }}
 {{- end }}
+---
+{{- if ( .Values.dcgmExporter.certManager.enabled) -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
+  name: "amazon-cloudwatch-observability-dcgm-cert"
+  namespace: {{ .Release.Namespace }}
+spec:
+  dnsNames:
+    - "dcgm-exporter-service"
+    - {{ (include "amazon-cloudwatch-observability.name" .)}}
+    - "dcgm-exporter-service.amazon-cloudwatch.svc"
+  issuerRef:
+    kind: Issuer
+    name: "dcgm-exporter-service-ca"
+  secretName: "amazon-cloudwatch-observability-dcgm-cert"
+
+---
+{{- if not .Values.dcgmExporter.certManager.issuerRef }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  {{- if .Values.dcgmExporter.certManager.issuerAnnotations }}
+  annotations:
+  {{- toYaml .Values.dcgmExporter.certManager.issuerAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
+  name: "dcgm-exporter-service-ca"
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: { }
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
+  name: "amazon-cloudwatch-observability-dcgm-cert"
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+

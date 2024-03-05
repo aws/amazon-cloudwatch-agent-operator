@@ -1,16 +1,7 @@
+{{- if and (.Values.dcgmExporter.autoGenerateCert.enabled) (not .Values.dcgmExporter.certManager.enabled) -}}
 {{$altNames := list ("dcgm-exporter-service") ("dcgm-exporter-service.amazon-cloudwatch.svc")  (include "amazon-cloudwatch-observability.name" .)  }}
-{{- $ca := genCA ( printf "%s-ca" ("dcgm-exporter-service") )  ( .Values.admissionWebhooks.autoGenerateCert.expiryDays | int ) -}}
+{{- $ca := genCA ( printf "%s-ca" ("dcgm-exporter-service") )  ( .Values.dcgmExporter.autoGenerateCert.expiryDays | int ) -}}
 {{- $cert := genSignedCert ("dcgm-exporter-service") nil $altNames ( .Values.admissionWebhooks.autoGenerateCert.expiryDays | int ) $ca -}}
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    {{- include "amazon-cloudwatch-observability.labels" . | nindent 4}}
-  name: "amazon-cloudwatch-observability-agent-cert"
-  namespace: {{ .Release.Namespace }}
-data:
-  tls-ca.crt: {{ $ca.Cert | b64enc }}
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -19,9 +10,11 @@ metadata:
   name: "amazon-cloudwatch-observability-dcgm-cert"
   namespace: {{ .Release.Namespace }}
 data:
-  server.crt: {{ $cert.Cert | b64enc }}
-  server.key: {{ $cert.Key | b64enc }}
+  ca.crt: {{ $ca.Cert | b64enc }}
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
 ---
+{{- end -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -90,6 +83,11 @@ spec:
       - name: dcgmtls
         secret:
           secretName: amazon-cloudwatch-observability-dcgm-cert
+          items:
+            - key: tls.crt
+              path: server.crt
+            - key:  tls.key
+              path: server.key
       - name: "pod-gpu-resources"
         hostPath:
           path: /var/lib/kubelet/pod-resources

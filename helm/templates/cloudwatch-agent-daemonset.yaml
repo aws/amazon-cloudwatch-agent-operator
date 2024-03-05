@@ -40,7 +40,7 @@ spec:
     name: devdisk
     readOnly: true
   - mountPath: /etc/amazon-cloudwatch-observability-agent-cert
-    name: appsignalstls
+    name: agenttls
     readOnly: true
 
   volumes:
@@ -62,9 +62,12 @@ spec:
   - hostPath:
       path: /dev/disk/
     name: devdisk
-  - name: appsignalstls
+  - name: agenttls
     secret:
-      secretName: amazon-cloudwatch-observability-agent-cert
+      secretName: amazon-cloudwatch-observability-dcgm-cert
+      items:
+        - key: ca.crt
+          path: tls-ca.crt
   env:
   - name: K8S_NODE_NAME
     valueFrom:
