@@ -39,10 +39,10 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-#      - name: Verify minikube and cert-manager
-#        run: |
-#          sleep 10
-#          kubectl get pods -A
+      #      - name: Verify minikube and cert-manager
+      #        run: |
+      #          sleep 10
+      #          kubectl get pods -A
 
       - name: Build image
         run: |
@@ -51,7 +51,7 @@ jobs:
           docker images
 
       - name: Deploy operator to minikube
-        run: | 
+        run: |
           make deploy
 
       - name: Test case for AmazonCloudWatchAgent pod creation
@@ -100,6 +100,28 @@ jobs:
 
 
       - name: Test for defined instrumentation resources for python
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          sleep 5
+          kubectl get pods -A
+          kubectl describe pods -n default
+          cd integration-tests/manifests/cmd
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
+      - name: Test for default instrumentation resources for python and java
+        run: |
+          kubectl apply -f integration-tests/pythonjava/sample-deployment-pythonjava.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          sleep 5
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/pythonjava/default_instrumentation_pythonjava_env_variables.json
+
+
+      - name: Test for defined instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5
