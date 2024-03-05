@@ -12,10 +12,10 @@ nameOverride: ""
 imagePullSecrets: [ ]
 
 ## Provide the ClusterName (optional parameter, if not provided, a generated name will be used)
-clusterName: pythonandjavacluster
+clusterName:
 
 ## Provide the Region (this is a required parameter)
-region: us-west-2
+region:
 
 containerLogs:
   enabled: true
