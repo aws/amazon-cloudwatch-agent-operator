@@ -48,7 +48,7 @@ manager:
       repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
       tag: v1.31.1
     python:
-      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
+      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-python
       tag: 0.43b0
   autoAnnotateAutoInstrumentation:
     java:
