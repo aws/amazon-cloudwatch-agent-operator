@@ -132,7 +132,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	// - dcgm-exporter-service-acct
 	assert.True(t, validateServiceAccount(serviceAccounts, addOnName+"-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, agentName))
-	assert.True(t, validateServiceAccount(serviceAccounts, dcgmExporterName+"service-acct"))
+	assert.True(t, validateServiceAccount(serviceAccounts, dcgmExporterName+"-service-acct"))
 
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientSet)
