@@ -24,7 +24,7 @@ import (
 
 const (
 	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
-	defaultPythonInstrumentationImage = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.43b0"
+	defaultPythonInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.0.1"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {

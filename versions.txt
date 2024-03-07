@@ -6,4 +6,4 @@ operator=1.1.0
 
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.1
-aws-otel-python-instrumentation=0.43b0
+aws-otel-python-instrumentation=v0.0.1
