@@ -8,9 +8,6 @@ env:
   ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
   workflow_call:
 
