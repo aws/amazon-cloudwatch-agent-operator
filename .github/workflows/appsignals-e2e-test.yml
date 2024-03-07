@@ -126,7 +126,7 @@ jobs:
 
       - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
         run: |
-          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}]'
+          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
           kubectl delete pods --all -n amazon-cloudwatch
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
