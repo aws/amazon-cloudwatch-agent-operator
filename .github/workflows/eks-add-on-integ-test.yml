@@ -42,7 +42,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
+          aws-region: ap-northeast-2
 
       - name: Generate matrix
         id: set-matrix
@@ -74,7 +74,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
+          aws-region: ap-northeast-2
 
       - name: Verify Terraform version
         run: terraform --version
