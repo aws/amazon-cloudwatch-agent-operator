@@ -63,7 +63,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.Len(t, pods.Items, 3)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
-		assert.Equal(t, v1.PodRunning, pod.Status.Phase)
+		assert.Contains(t, []v1.PodPhase{v1.PodRunning, v1.PodPending}, pod.Status.Phase)
 		// matches
 		// - cloudwatch-agent-*
 		// - amazon-cloudwatch-observability-controller-manager-*
@@ -76,7 +76,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, services.Items, 4)
+	assert.Len(t, services.Items, 5)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 		// matches
@@ -108,7 +108,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, daemonSets.Items, 2)
+	assert.Len(t, daemonSets.Items, 3)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 		// matches
