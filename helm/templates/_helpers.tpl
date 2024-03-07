@@ -118,7 +118,13 @@ Get the current recommended fluent-bit image for a region
 Get the current recommended dcgm-exporter image for a region
 */}}
 {{- define "dcgm-exporter.image" -}}
-{{- printf "%s/%s:%s" .Values.dcgmExporter.image.repositoryDomain .Values.dcgmExporter.image.repository .Values.dcgmExporter.image.tag -}}
+{{- $region := .Values.region | required ".Values.region is required." -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.dcgmExporter.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.dcgmExporter.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.dcgmExporter.image.repository .Values.dcgmExporter.image.tag -}}
 {{- end -}}
 
 {{/*
