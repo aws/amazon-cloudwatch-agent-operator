@@ -150,8 +150,7 @@ agent:
       "logs": {
         "metrics_collected": {
           "kubernetes": {
-            "enhanced_container_insights": true,
-            "aws_neuron_metrics": true,
+            "enhanced_container_insights": true
           },
           "app_signals": { }
         }
