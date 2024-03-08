@@ -7,6 +7,7 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: App Signals Enablement E2E Testing
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       # Ensure two tests do not run on the same cluster at the same time through GitHub Action concurrency
