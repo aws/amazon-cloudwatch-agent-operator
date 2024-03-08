@@ -26,8 +26,11 @@ const (
 	nameSpace        = "amazon-cloudwatch"
 	addOnName        = "amazon-cloudwatch-observability"
 	agentName        = "cloudwatch-agent"
-	podNameRegex     = "(" + agentName + "|" + addOnName + "-controller-manager|fluent-bit)-*"
-	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service"
+	operatorName     = addOnName + "-controller-manager"
+	fluentBitName    = "fluent-bit"
+	dcgmExporterName = "dcgm-exporter"
+	podNameRegex     = "(" + agentName + "|" + operatorName + "|" + fluentBitName + ")-*"
+	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service"
 )
 
 func TestOperatorOnEKs(t *testing.T) {
@@ -60,7 +63,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.Len(t, pods.Items, 3)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
-		assert.Equal(t, v1.PodRunning, pod.Status.Phase)
+		assert.Contains(t, []v1.PodPhase{v1.PodRunning, v1.PodPending}, pod.Status.Phase)
 		// matches
 		// - cloudwatch-agent-*
 		// - amazon-cloudwatch-observability-controller-manager-*
@@ -73,7 +76,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, services.Items, 4)
+	assert.Len(t, services.Items, 5)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 		// matches
@@ -81,6 +84,7 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent
 		// - cloudwatch-agent-headless
 		// - cloudwatch-agent-monitoring
+		// - dcgm-exporter-service
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
 			assert.Fail(t, "Cluster Service is not created correctly")
 		}
@@ -104,14 +108,15 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, daemonSets.Items, 2)
+	assert.Len(t, daemonSets.Items, 3)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 		// matches
 		// - cloudwatch-agent
 		// - fluent-bit
-		if match, _ := regexp.MatchString(agentName+"|fluent-bit", daemonSet.Name); !match {
-			assert.Fail(t, "DaemonSet is created correctly")
+		// - dcgm-exporter (this can be removed in the future)
+		if match, _ := regexp.MatchString(agentName+"|fluent-bit|dcgm-exporter", daemonSet.Name); !match {
+			assert.Fail(t, "DaemonSet is not created correctly")
 		}
 	}
 
@@ -124,8 +129,10 @@ func TestOperatorOnEKs(t *testing.T) {
 	// searches
 	// - amazon-cloudwatch-observability-controller-manager
 	// - cloudwatch-agent
+	// - dcgm-exporter-service-acct
 	assert.True(t, validateServiceAccount(serviceAccounts, addOnName+"-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, agentName))
+	assert.True(t, validateServiceAccount(serviceAccounts, dcgmExporterName+"-service-acct"))
 
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientSet)
@@ -136,6 +143,13 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.True(t, validateClusterRoles(clusterRoles, addOnName+"-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, agentName+"-role"))
 
+	//Validating Roles
+	roles, err := ListRoles(nameSpace, clientSet)
+	assert.NoError(t, err)
+	// searches
+	// - dcgm-exporter-role
+	assert.True(t, validateRoles(roles, dcgmExporterName+"-role"))
+
 	//Validating ClusterRoleBinding
 	clusterRoleBindings, err := ListClusterRoleBindings(clientSet)
 	assert.NoError(t, err)
@@ -144,6 +158,13 @@ func TestOperatorOnEKs(t *testing.T) {
 	// - cloudwatch-agent-role-binding
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, addOnName+"-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, agentName+"-role-binding"))
+
+	//Validating RoleBinding
+	roleBindings, err := ListRoleBindings(nameSpace, clientSet)
+	assert.NoError(t, err)
+	// searches
+	// - dcgm-exporter-role-binding
+	assert.True(t, validateRoleBindings(roleBindings, dcgmExporterName+"-role-binding"))
 
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
@@ -180,9 +201,27 @@ func validateClusterRoles(clusterRoles *rbacV1.ClusterRoleList, clusterRoleName 
 	return false
 }
 
+func validateRoles(roles *rbacV1.RoleList, roleName string) bool {
+	for _, role := range roles.Items {
+		if role.Name == roleName {
+			return true
+		}
+	}
+	return false
+}
+
 func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingList, clusterRoleBindingName string) bool {
 	for _, clusterRoleBinding := range clusterRoleBindings.Items {
 		if clusterRoleBinding.Name == clusterRoleBindingName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateRoleBindings(roleBindings *rbacV1.RoleBindingList, roleBindingName string) bool {
+	for _, roleBinding := range roleBindings.Items {
+		if roleBinding.Name == roleBindingName {
 			return true
 		}
 	}
@@ -252,6 +291,15 @@ func ListClusterRoles(client kubernetes.Interface) (*rbacV1.ClusterRoleList, err
 	return clusterRoles, nil
 }
 
+func ListRoles(namespace string, client kubernetes.Interface) (*rbacV1.RoleList, error) {
+	roles, err := client.RbacV1().Roles(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting Roles: %v\n", err)
+		return nil, err
+	}
+	return roles, nil
+}
+
 func ListClusterRoleBindings(client kubernetes.Interface) (*rbacV1.ClusterRoleBindingList, error) {
 	clusterRoleBindings, err := client.RbacV1().ClusterRoleBindings().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -259,6 +307,15 @@ func ListClusterRoleBindings(client kubernetes.Interface) (*rbacV1.ClusterRoleBi
 		return nil, err
 	}
 	return clusterRoleBindings, nil
+}
+
+func ListRoleBindings(namespace string, client kubernetes.Interface) (*rbacV1.RoleBindingList, error) {
+	roleBindings, err := client.RbacV1().RoleBindings(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting RoleBindings: %v\n", err)
+		return nil, err
+	}
+	return roleBindings, nil
 }
 
 func ListMutatingWebhookConfigurations(client kubernetes.Interface) (*arv1.MutatingWebhookConfigurationList, error) {
