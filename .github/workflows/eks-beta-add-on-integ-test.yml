@@ -54,9 +54,9 @@ jobs:
           echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
           echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
 
-  EKSAddOnBetaClusterIntegrationTest:
+  EKSAddOnIntegrationTest:
     needs: [GenerateTestMatrix]
-    name: EKSAddOnBetaClusterIntegrationTest
+    name: EKSAddOnIntegrationTest
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -89,10 +89,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="beta=true" -auto-approve
+            if terraform apply -var="addon_name=${{  github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -auto-approve
             else
-              terraform destroy -var="beta=true" -auto-approve && exit 1
+              terraform destroy -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -105,4 +105,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="beta=true" --auto-approve
+            terraform destroy --auto-approve
