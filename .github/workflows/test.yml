@@ -1,0 +1,22 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build And Upload Staging Artifact
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+
+on:
+  push:
+
+jobs:
+  e2e-test:
+    uses: ./.github/workflows/appsignals-e2e-test.yml
+    secrets: inherit
+    # Two E2E tests should not run at the same time in the same EKS cluster
+    concurrency:
+      group: 'e2e-cw-agent-operator-test'
+      cancel-in-progress: false
+    with:
+      test-cluster-name: 'e2e-cw-agent-operator-test'
