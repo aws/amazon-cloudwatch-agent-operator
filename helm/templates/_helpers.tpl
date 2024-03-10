@@ -169,7 +169,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the name of the service account to use fro dcgm exporter
+Create the name of the service account to use for dcgm exporter
 */}}
 {{- define "dcgm-exporter.serviceAccountName" -}}
 {{- default "dcgm-exporter-service-acct" .Values.dcgmExporter.serviceAccount.name }}

@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: dcgm-exporter-service
+  name: {{ include "dcgm-exporter.name" . }}-service
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "amazon-cloudwatch-observability.labels" . | nindent 4 }}
-    k8s-app: dcgm-exporter-service
+    k8s-app: {{ include "dcgm-exporter.name" . }}-service
   annotations:
     prometheus.io/scrape: "true"
 spec:
