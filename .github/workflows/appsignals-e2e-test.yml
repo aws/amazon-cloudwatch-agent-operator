@@ -128,9 +128,6 @@ jobs:
           echo "OLD_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
           jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_ENV
 
-      - name: Describe CW Agent Operator Deployment
-        run: kubectl describe deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager
-
       - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
         run: |
           kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}, {"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": ["--auto-instrumentation-java-image=611364707713.dkr.ecr.us-west-2.amazonaws.com/adot-autoinstrumentation-java-operator-staging:1.33.0-SNAPSHOT-93870a5"]}]]'
