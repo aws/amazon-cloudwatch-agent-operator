@@ -41,6 +41,10 @@ jobs:
           repository: aws-observability/aws-application-signals-test-framework
           ref: main
 
+      - name: Update validation template with new changes
+        run: |
+          sed -i "s#e2e-test-bucket-name#::s3:::e2e-test-bucket-name#g" ./validator/src/main/resources/expected-data-template/eks/aws-sdk-call-metric.mustache
+
       - name: Download enablement script
         uses: actions/checkout@v4
         with:
@@ -127,7 +131,7 @@ jobs:
 
       - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
         run: |
-          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
+          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_IMAGE }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}, {"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": ["--auto-instrumentation-java-image=611364707713.dkr.ecr.us-west-2.amazonaws.com/adot-autoinstrumentation-java-operator-staging:1.33.0-SNAPSHOT-93870a5"]}]]'
           kubectl delete pods --all -n amazon-cloudwatch
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
