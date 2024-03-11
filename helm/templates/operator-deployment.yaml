@@ -28,7 +28,7 @@ spec:
         args:
         - {{ printf "--auto-annotation-config=%s" (.Values.manager.autoAnnotateAutoInstrumentation | toJson) | quote }}
         - "--auto-instrumentation-java-image={{ .Values.manager.autoInstrumentationImage.java.repository }}:{{ .Values.manager.autoInstrumentationImage.java.tag }}"
-        # - "--auto-instrumentation-python-image={{ .Values.manager.autoInstrumentationImage.python.repository }}:{{ .Values.manager.autoInstrumentationImage.python.tag }}"
+        - "--auto-instrumentation-python-image={{ .Values.manager.autoInstrumentationImage.python.repository }}:{{ .Values.manager.autoInstrumentationImage.python.tag }}"
         - "--feature-gates=operator.autoinstrumentation.multi-instrumentation,operator.autoinstrumentation.multi-instrumentation.skip-container-validation"
         command:
         - /manager
