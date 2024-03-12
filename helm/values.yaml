@@ -49,10 +49,12 @@ manager:
       us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   autoInstrumentationImage:
     java:
-      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
+      repositoryDomain: public.ecr.aws/aws-observability
+      repository: adot-autoinstrumentation-java
       tag: v1.31.1
     python:
-      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-python
+      repositoryDomain: public.ecr.aws/aws-observability
+      repository: adot-autoinstrumentation-python
       tag: v0.0.1
   autoAnnotateAutoInstrumentation:
     java:
