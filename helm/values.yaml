@@ -15,7 +15,7 @@ imagePullSecrets: [ ]
 clusterName:
 
 ## Provide the Region (this is a required parameter)
-region:
+region: AWS_REGION
 
 nodeLabelKey: node.kubernetes.io/instance-type
 ## NVIDIA GPU instance types
@@ -217,8 +217,8 @@ dcgmExporter:
 neuronMonitor:
   name:
   image:
-    repository: 037647485236.dkr.ecr.eu-west-1.amazonaws.com/neuronmonitortesting
-    tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6185745418-0
+    repository:  654654461386.dkr.ecr.us-west-2.amazonaws.com/alpha-neuron-monitor
+    tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6191385556-0
   service:
     enable: true
     type: ClusterIP
