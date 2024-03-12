@@ -11,11 +11,11 @@ nameOverride: ""
 ## Reference one or more secrets to be used when pulling images from authenticated repositories.
 imagePullSecrets: [ ]
 
-## Provide the ClusterName (optional when installing via EKS add-on)
-clusterName: EKS_CLUSTER_NAME
+## Provide the ClusterName (optional parameter, if not provided, a generated name will be used)
+clusterName:
 
-## Provide the Region (optional when installing via EKS add-on)
-region: AWS_REGION_NAME
+## Provide the Region (this is a required parameter)
+region:
 
 nodeLabelKey: node.kubernetes.io/instance-type
 ## NVIDIA GPU instance types
@@ -29,7 +29,7 @@ containerLogs:
   fluentBit:
     image:
       repository: aws-for-fluent-bit
-      tag: 2.31.12.20230911
+      tag: 2.32.0.20240304
       repositoryDomainMap:
         public: public.ecr.aws/aws-observability
         cn-north-1: 128054284489.dkr.ecr.cn-north-1.amazonaws.com.cn
@@ -43,7 +43,7 @@ manager:
   name:
   image:
     repository: cloudwatch-agent-operator
-    tag: 1.0.2
+    tag: 1.0.4
     repositoryDomainMap:
       public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
@@ -55,8 +55,19 @@ manager:
       repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
       tag: v1.31.1
     python:
-      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
-      tag: 0.43b0
+      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-python
+      tag: v0.0.1
+  autoAnnotateAutoInstrumentation:
+    java:
+      namespaces: [ ]
+      deployments: [ ]
+      daemonsets: [ ]
+      statefulsets: [ ]
+    python:
+      namespaces: [ ]
+      deployments: [ ]
+      daemonsets: [ ]
+      statefulsets: [ ]
   ports:
     containerPort: 9443
     metricsPort: 8080
@@ -134,7 +145,7 @@ agent:
   name:
   image:
     repository: cloudwatch-agent
-    tag: 1.300031.1b317
+    tag: 1.300034.0b498
     repositoryDomainMap:
       public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
@@ -142,8 +153,27 @@ agent:
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
       us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   enabled: true
+  ## TLS Certificate Option 1: Use Helm to automatically generate self-signed certificate.
+  ## autoGenerateCert must be enabled. This is the default option.
+  ## If true, Helm will automatically create a self-signed cert and secret for you.
+  autoGenerateCert:
+    enabled: true
+    expiryDays: 3650 # 10 years
+
+  ## TLS Certificate Option 2: Use certManager to generate self-signed certificate.
+  ## certManager must be enabled. If enabled, it takes precedence over option 1.
+  certManager:
+    enabled:  false
+    ## Provide the issuer kind and name to do the cert auth job.
+    ## By default, OpenTelemetry Operator will use self-signer issuer.
+    issuerRef: { }
+    # kind:
+    # name:
+    ## Annotations for the cert and issuer if cert-manager is enabled.
+    certificateAnnotations: { }
+    issuerAnnotations: { }
   serviceAccount:
-    name: # override agent service account name 
+    name: # override agent service account name
   config: # optional config that can be provided to override the defaultConfig
   defaultConfig:
     {
@@ -165,10 +195,16 @@ agent:
 dcgmExporter:
   name:
   image:
-    repository: nvcr.io/nvidia/k8s/dcgm-exporter
+    repository: dcgm-exporter
     tag: 3.3.3-3.3.1-ubuntu22.04
+    repositoryDomainMap:
+      public: nvcr.io/nvidia/k8s
+      cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
+      cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
+      us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
+      us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   configmap: dcgm-exporter-config-map
-  # arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
+  arguments: ["--web-config-file=/etc/dcgm-exporter/web-config.yaml"]
   service:
     enable: true
     type: ClusterIP

@@ -10,12 +10,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
@@ -31,20 +29,14 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	client             client.Client
 	decoder            *admission.Decoder
-	logger             logr.Logger
-	config             config.Config
 	annotationMutators *auto.AnnotationMutators
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, annotationMutators *auto.AnnotationMutators) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) WebhookHandler {
 	return &workloadMutationWebhook{
-		config:             cfg,
 		decoder:            decoder,
-		logger:             logger,
-		client:             cl,
 		annotationMutators: annotationMutators,
 	}
 }

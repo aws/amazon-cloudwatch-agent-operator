@@ -87,6 +87,10 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 	var instrWithContainers int
 	var allContainers []string
 
+	if featuregate.SkipMultiInstrumentationContainerValidation.IsEnabled() {
+		return true, nil
+	}
+
 	// Check for instrumentations with and without containers.
 	if langInsts.Java.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Java)

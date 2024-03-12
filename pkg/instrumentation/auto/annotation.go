@@ -23,7 +23,8 @@ const (
 	defaultAnnotationValue = "true"
 )
 
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;patch
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;patch
+// +kubebuilder:rbac:groups="apps",resources=daemonsets;deployments;statefulsets,verbs=list;patch
 
 // AnnotationMutators contains functions that can be used to mutate annotations
 // on all supported objects based on the configured mutators.

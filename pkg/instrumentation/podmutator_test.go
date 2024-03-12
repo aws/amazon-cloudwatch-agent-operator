@@ -24,7 +24,7 @@ import (
 
 const (
 	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
-	defaultPythonInstrumentationImage = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.43b0"
+	defaultPythonInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.0.1"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
@@ -51,26 +51,31 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 			Java: v1alpha1.Java{
 				Image: defaultJavaInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue}, //TODO: remove in favor of new name once safe
+					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
 					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue}, //TODO: remove in favor of new name once safe
+					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
+					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
 				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue},
+					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
 					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
+					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
 					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
 					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue},
+					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
 					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
 					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
 					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
+					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
 				},
 			},
 		},
