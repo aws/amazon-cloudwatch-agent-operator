@@ -5,10 +5,14 @@ package eks_addon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
+	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -101,6 +105,61 @@ func TestOperatorOnEKs(t *testing.T) {
 	}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
+	//updating operator deployment
+	args := deployments.Items[0].Spec.Template.Spec.Containers[0].Args
+
+	indexOfAutoAnnotationConfigString := findMatchingPrefix("--auto-annotation-config=", args)
+
+	annotationConfig := auto.AnnotationConfig{
+		Java: auto.AnnotationResources{
+			Namespaces:   []string{""},
+			DaemonSets:   []string{""},
+			Deployments:  []string{"default/nginx"},
+			StatefulSets: []string{""},
+		},
+	}
+	jsonStr, err := json.Marshal(annotationConfig)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
+	fmt.Println("AutoAnnotationConfiguration: " + args[indexOfAutoAnnotationConfigString])
+
+	// Update the Deployment
+	_, err = clientSet.AppsV1().Deployments("namespace").Update(context.TODO(), &deployments.Items[0], metav1.UpdateOptions{})
+	if err != nil {
+		fmt.Printf("Error updating Deployment: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Deployment updated successfully!")
+
+	//check if deployement has annotations.
+	deployment, err := clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("Failed to get nginx deployment: %s", err.Error())
+	}
+
+	// List pods belonging to the nginx deployment
+	set := labels.Set(deployment.Spec.Selector.MatchLabels)
+	deploymentPods, err := clientSet.CoreV1().Pods(deployment.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: set.AsSelector().String(),
+	})
+	if err != nil {
+		t.Fatalf("Error listing pods for nginx deployment: %s", err.Error())
+	}
+
+	for _, pod := range deploymentPods.Items {
+		assert.Equal(t, "true", pod.Annotations["cloudwatch.aws.amazon.com/auto-annotate-java"], "Pod %s in namespace %s does not have cloudwatch annotation", pod.Name, pod.Namespace)
+		assert.Equal(t, "true", pod.Annotations["instrumentation.opentelemetry.io/inject-java"], "Pod %s in namespace %s does not have opentelemetry annotation", pod.Name, pod.Namespace)
+	}
+
+	fmt.Printf("All nginx pods have the correct annotations\n")
+	if err != nil {
+		t.Fatalf("Error listing pods: %s", err.Error())
+	}
+
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
@@ -161,7 +220,14 @@ func TestOperatorOnEKs(t *testing.T) {
 	// - amazon-cloudwatch-observability-validating-webhook-configuration
 	assert.Equal(t, addOnName+"-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 }
-
+func findMatchingPrefix(str string, strs []string) int {
+	for i, s := range strs {
+		if strings.HasPrefix(s, str) {
+			return i
+		}
+	}
+	return -1 // Return -1 if no matching prefix is found
+}
 func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccountName string) bool {
 	for _, serviceAccount := range serviceAccounts.Items {
 		if serviceAccount.Name == serviceAccountName {
