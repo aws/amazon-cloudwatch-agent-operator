@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
+	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.1"
 	defaultPythonInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.0.1"
 )
 
