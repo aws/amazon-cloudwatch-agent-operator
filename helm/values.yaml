@@ -45,7 +45,7 @@ manager:
     repository: cloudwatch-agent-operator
     tag: 1.0.4
     repositoryDomainMap:
-      public: public.ecr.aws/cloudwatch-agent
+      public: 506463145083.dkr.ecr.us-west-2.amazonaws.com
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -147,7 +147,7 @@ agent:
     repository: cloudwatch-agent
     tag: 1.300034.0b498
     repositoryDomainMap:
-      public: public.ecr.aws/cloudwatch-agent
+      public: 037647485236.dkr.ecr.us-east-1.amazonaws.com
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
@@ -217,7 +217,7 @@ dcgmExporter:
 neuronMonitor:
   name:
   image:
-    repository:  654654461386.dkr.ecr.us-west-2.amazonaws.com/alpha-neuron-monitor
+    repository: 654654461386.dkr.ecr.us-west-2.amazonaws.com/alpha-neuron-monitor
     tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6191385556-0
   service:
     enable: true

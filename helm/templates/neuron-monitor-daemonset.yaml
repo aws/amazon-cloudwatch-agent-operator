@@ -36,8 +36,11 @@ spec:
         command:
         - sh
         - -c
-        - /opt/aws/neuron/bin/neuron-monitor | /opt/aws/neuron/bin/neuron-monitor-prometheus.py --port ${PROMETHEUS_PORT:-8000} --cert-file /etc/amazon-cloudwatch-observability-neuron-cert/server.crt  --key-file /etc/amazon-cloudwatch-observability-neuron-cert/server.key
+        - /opt/aws/neuron/bin/neuron-monitor | /opt/aws/neuron/bin/neuron-monitor-prometheus.py --port ${PROMETHEUS_PORT:-8000} --cert-file /etc/amazon-cloudwatch-observability-neuron-cert/server.crt --key-file /etc/amazon-cloudwatch-observability-neuron-cert/server.key
         resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
           requests:
             cpu: 256m
             memory: 128Mi
@@ -57,6 +60,7 @@ spec:
         - mountPath: /etc/amazon-cloudwatch-observability-neuron-cert/
           name: neurontls
           readOnly: true
+      
       volumes:
       - name: neurontls
         secret:
@@ -66,6 +70,9 @@ spec:
               path: server.crt
             - key:  tls.key
               path: server.key
+
+      serviceAccountName: {{ template "neuron-monitor.serviceAccountName" . }}
+
       tolerations:
       - effect: NoSchedule
         operator: Exists
