@@ -39,11 +39,11 @@ spec:
         - /opt/aws/neuron/bin/neuron-monitor | /opt/aws/neuron/bin/neuron-monitor-prometheus.py
         resources:
           limits:
-            cpu: 30m
-            memory: 200Mi
+            cpu: 500m
+            memory: 256Mi
           requests:
-            cpu: 30m
-            memory: 200Mi
+            cpu: 250m
+            memory: 128Mi
         securityContext:
           privileged: true
         env:
