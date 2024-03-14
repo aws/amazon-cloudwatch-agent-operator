@@ -147,6 +147,20 @@ Get the current recommended neuron-monitor image for a region
 {{- end -}}
 
 {{/*
+Get the current recommended auto instrumentation java image
+*/}}
+{{- define "auto-instrumentation-java.image" -}}
+{{- printf "%s/%s:%s" .Values.manager.autoInstrumentationImage.java.repositoryDomain .Values.manager.autoInstrumentationImage.java.repository .Values.manager.autoInstrumentationImage.java.tag -}}
+{{- end -}}
+
+{{/*
+Get the current recommended auto instrumentation python image
+*/}}
+{{- define "auto-instrumentation-python.image" -}}
+{{- printf "%s/%s:%s" .Values.manager.autoInstrumentationImage.python.repositoryDomain .Values.manager.autoInstrumentationImage.python.repository .Values.manager.autoInstrumentationImage.python.tag -}}
+{{- end -}}
+
+{{/*
 Common labels
 */}}
 {{- define "amazon-cloudwatch-observability.labels" -}}

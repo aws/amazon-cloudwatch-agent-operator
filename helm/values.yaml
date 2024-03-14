@@ -15,11 +15,11 @@ imagePullSecrets: [ ]
 clusterName:
 
 ## Provide the Region (this is a required parameter)
-region: us-east-1
+region:
 
 nodeLabelKey: node.kubernetes.io/instance-type
 ## NVIDIA GPU instance types
-gpuInstances: [ g3s.xlarge, g3.4xlarge, g3.8xlarge, g3.16xlarge, g4dn.12xlarge, g4dn.xlarge, g4dn.2xlarge, g4dn.4xlarge, g4dn.8xlarge, g4dn.16xlarge, g4dn.metal, g5.xlarge, g5.2xlarge, g5.4xlarge, g5.8xlarge, g5.16xlarge, g5.24xlarge, g5.48xlarge, g5.8xlarge, g5g.xlarge, g5g.2xlarge, g5g.4xlarge, g5g.8xlarge, g5g.16xlarge, g5g.metal, p2.xlarge, p2.8xlarge, p2.16xlarg, p3.2xlarge, p3.8xlarge, p3.16xlarge, p3dn.24xlarge, p4d.24xlarge, p4de.24xlarge, p5.48xlarge ]
+gpuInstances: [ p2.xlarge, p2.8xlarge, p2.16xlarge, p3.2xlarge, p3.8xlarge, p3.16xlarge, p3dn.24xlarge, p4d.24xlarge, p4de.24xlarge, p5.48xlarge, g3s.xlarge, g3.4xlarge, g3.8xlarge, g3.16xlarge, g4dn.xlarge, g4dn.2xlarge, g4dn.4xlarge, g4dn.8xlarge, g4dn.16xlarge, g4dn.12xlarge, g4dn.metal, g4ad.xlarge, g4ad.2xlarge, g4ad.4xlarge, g4ad.8xlarge, g4ad.16xlarge, g5.xlarge, g5.2xlarge, g5.4xlarge, g5.8xlarge, g5.16xlarge, g5.12xlarge, g5.24xlarge, g5.48xlarge, g5g.xlarge, g5g.2xlarge, g5g.4xlarge, g5g.8xlarge, g5g.16xlarge, g5g.metal ]
 
 ## Tranium/Infrentia instance types
 neuronInstances: [ trn1.2xlarge, trn1.32xlarge, trn1n.32xlarge, inf1.xlarge, inf1.2xlarge, inf1.6xlarge, inf1.24xlarge, inf2.xlarge, inf2.8xlarge, inf2.24xlarge, inf2.48xlarge ]
@@ -42,20 +42,22 @@ containerLogs:
 manager:
   name:
   image:
-    repository: cwagent-operator-pre-release
-    tag: latest
+    repository: cloudwatch-agent-operator
+    tag: 1.0.4
     repositoryDomainMap:
-      public: 506463145083.dkr.ecr.us-west-2.amazonaws.com
+      public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
       us-gov-west-1: 743662458514.dkr.ecr.us-gov-west-1.amazonaws.com
   autoInstrumentationImage:
     java:
-      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-java
+      repositoryDomain: public.ecr.aws/aws-observability
+      repository: adot-autoinstrumentation-java
       tag: v1.31.1
     python:
-      repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-python
+      repositoryDomain: public.ecr.aws/aws-observability
+      repository: adot-autoinstrumentation-python
       tag: v0.0.1
   autoAnnotateAutoInstrumentation:
     java:
@@ -144,10 +146,10 @@ admissionWebhooks:
 agent:
   name:
   image:
-    repository: ssamartp-ti
-    tag: latest
+    repository: cloudwatch-agent
+    tag: 1.300034.0b498
     repositoryDomainMap:
-      public: 037647485236.dkr.ecr.us-east-1.amazonaws.com
+      public: public.ecr.aws/cloudwatch-agent
       cn-north-1: 934860584483.dkr.ecr.cn-north-1.amazonaws.com.cn
       cn-northwest-1: 934860584483.dkr.ecr.cn-northwest-1.amazonaws.com.cn
       us-gov-east-1: 743662458514.dkr.ecr.us-gov-east-1.amazonaws.com
