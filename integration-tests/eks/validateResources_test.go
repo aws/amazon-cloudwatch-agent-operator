@@ -169,7 +169,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 3)
+	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 5)
 	// searches
 	// - amazon-cloudwatch-observability-mutating-webhook-configuration
 	assert.Equal(t, addOnName+"-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
