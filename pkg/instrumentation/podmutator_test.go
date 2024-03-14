@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	defaultJavaInstrumentationImage   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1"
-	defaultPythonInstrumentationImage = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.0.1"
+	defaultJavaInstrumentationImage   = "test.registry/adot-autoinstrumentation-java:test-tag"
+	defaultPythonInstrumentationImage = "test.registry/adot-autoinstrumentation-python:test-tag"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
