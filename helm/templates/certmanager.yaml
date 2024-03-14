@@ -43,8 +43,8 @@ spec:
   selfSigned: { }
 {{- end }}
 {{- end }}
----
 {{- if ( .Values.agent.certManager.enabled) -}}
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -62,9 +62,8 @@ spec:
     kind: Issuer
     name: "agent-ca"
   secretName: "amazon-cloudwatch-observability-agent-cert"
-
----
 {{- if not .Values.agent.certManager.issuerRef }}
+---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
