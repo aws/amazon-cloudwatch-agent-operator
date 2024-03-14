@@ -70,6 +70,13 @@ Name for cloudwatch-agent
 {{- end }}
 
 {{/*
+Name for dcgm-exporter
+*/}}
+{{- define "dcgm-exporter.name" -}}
+{{- default "dcgm-exporter" .Values.dcgmExporter.name }}
+{{- end }}
+
+{{/*
 Get the current recommended cloudwatch agent image for a region
 */}}
 {{- define "cloudwatch-agent.image" -}}
@@ -105,6 +112,18 @@ Get the current recommended fluent-bit image for a region
 {{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
 {{- end -}}
 {{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tag -}}
+{{- end -}}
+
+{{/*
+Get the current recommended dcgm-exporter image for a region
+*/}}
+{{- define "dcgm-exporter.image" -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.containerLogs.dcgmExporter.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.containerLogs.dcgmExporter.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.dcgmExporter.image.repository .Values.containerLogs.dcgmExporter.image.tag -}}
 {{- end -}}
 
 {{/*
@@ -146,6 +165,13 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.agent.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use fro dcgm exporter
+*/}}
+{{- define "dcgm-exporter.serviceAccountName" -}}
+{{- default "dcgm-exporter-service-acct" .Values.dcgmExporter.serviceAccount.name }}
 {{- end }}
 
 {{- define "amazon-cloudwatch-observability.podAnnotations" -}}
