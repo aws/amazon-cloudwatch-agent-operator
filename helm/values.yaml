@@ -221,6 +221,7 @@ neuronMonitor:
   image:
     repository: 654654461386.dkr.ecr.us-west-2.amazonaws.com/alpha-neuron-monitor
     tag: sdk2.17.0-ubuntu20.04-neuronmonitorbuilder-development-6191385556-0
+  configmap: neuron-monitor-config-map
   service:
     enable: true
     type: ClusterIP
