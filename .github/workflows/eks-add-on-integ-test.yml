@@ -76,6 +76,22 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
+      - name: Confirm EKS Version Support
+        run: |
+          if [[ 
+            $(go list -m k8s.io/client-go | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/apimachinery | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/component-base | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/kubectl | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+          ]]; then 
+          echo k8s.io/client-go $(go list -m k8s.io/client-go) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/apimachinery $(go list -m k8s.io/apimachinery) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/component-base $(go list -m k8s.io/component-base) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/kubectl $(go list -m k8s.io/kubectl) is less than ${{ matrix.arrays.k8sVersion }}, fail test
+          echo "please run go get -u && go mod tidy"
+          exit 1; 
+          fi
+
       - name: Verify Terraform version
         run: terraform --version
 
