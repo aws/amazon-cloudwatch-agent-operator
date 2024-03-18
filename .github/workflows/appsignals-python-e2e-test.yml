@@ -10,7 +10,7 @@ on:
   workflow_call:
     inputs:
       # Ensure two tests do not run on the same cluster at the same time through GitHub Action concurrency
-      test-cluster-name:
+      test-python-cluster-name:
         required: true
         type: string
 
@@ -58,7 +58,7 @@ jobs:
         run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }}
+        run: aws eks update-kubeconfig --name ${{ inputs.test-python-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Install eksctl
         run: |
@@ -73,7 +73,7 @@ jobs:
           eksctl create iamserviceaccount \
           --name service-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
-          --cluster ${{ inputs.test-cluster-name }} \
+          --cluster ${{ inputs.test-python-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ env.AWS_DEFAULT_REGION }} \
@@ -89,7 +89,7 @@ jobs:
       - name: Edit Helm values for Amazon Cloudwatch Agent Operator
         working-directory: helm/
         run: |
-          sed -i 's/clusterName:/clusterName: ${{ inputs.test-cluster-name }}/g' values.yaml
+          sed -i 's/clusterName:/clusterName: ${{ inputs.test-python-cluster-name }}/g' values.yaml
           sed -i 's/region:/region: ${{ env.AWS_DEFAULT_REGION }}/g' values.yaml
           sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values.yaml
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
@@ -135,7 +135,7 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
-            -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+            -var="eks_cluster_name=${{ inputs.test-python-cluster-name }}" \
             -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-acc-${{ env.TESTING_ID }}" \
@@ -155,12 +155,12 @@ jobs:
           kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
           
           # Attach policies to cluster node group roles that are required for AppSignals
-          aws eks list-nodegroups --cluster-name ${{ inputs.test-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }} |\
+          aws eks list-nodegroups --cluster-name ${{ inputs.test-python-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }} |\
           jq -r '.nodegroups[]' |\
           while read -r node_group;
           do
             node_role=$(\
-              aws eks describe-nodegroup  --cluster-name ${{ inputs.test-cluster-name }} --nodegroup-name $node_group --region ${{ env.AWS_DEFAULT_REGION }} |\
+              aws eks describe-nodegroup  --cluster-name ${{ inputs.test-python-cluster-name }} --nodegroup-name $node_group --region ${{ env.AWS_DEFAULT_REGION }} |\
               jq -r '.nodegroup.nodeRole' |\
               cut -d'/' -f2
             )
@@ -239,7 +239,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-python-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
@@ -257,7 +257,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-python-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
@@ -276,7 +276,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --platform-info ${{ inputs.test-python-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
@@ -304,7 +304,7 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
-            -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+            -var="eks_cluster_name=${{ inputs.test-python-cluster-name }}" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-acc-${{ env.TESTING_ID }}" \
             -var="python_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}:latest" \
@@ -317,5 +317,5 @@ jobs:
           eksctl delete iamserviceaccount \
           --name service-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
-          --cluster ${{ inputs.test-cluster-name }} \
+          --cluster ${{ inputs.test-python-cluster-name }} \
           --region ${{ env.AWS_DEFAULT_REGION }}
