@@ -121,7 +121,7 @@ jobs:
           sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
-          go run integration-tests/manifests/cmd/validate_annotations.go amazon-cloudwatch
+          go run integration-tests/manifests/cmd/validate_annotations.go
           kubectl get pods -A
           kubectl describe pods -n default
 

@@ -19,9 +19,6 @@ import (
 
 func main() {
 
-	args := os.Args
-	namespace := args[1]
-
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Printf("error getting user home dir: %v\n\n", err)
@@ -39,9 +36,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
-	deployments, err := ListDeployments(namespace, clientSet)
-
-	success := verifyAutoAnnotation(deployments, clientSet)
+	success := verifyAutoAnnotation(clientSet)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -50,7 +45,7 @@ func main() {
 	}
 }
 
-func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kubernetes.Clientset) bool {
+func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	//updating operator deployment
 	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
@@ -757,9 +752,7 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 
 	// Attempt to get the deployment by name
 	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
-	//fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	deployment.Spec.Template.Spec.Containers[0].Args = Args
-	//fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	if err != nil {
 		fmt.Printf("Failed to get deployment: %v\n", err)
 		return false
@@ -797,10 +790,6 @@ func checkIfAnnotationsExistJava(deploymentPods *v1.PodList) bool {
 }
 func checkIfAnnotationsExistPython(deploymentPods *v1.PodList) bool {
 	for _, pod := range deploymentPods.Items {
-
-		//fmt.Printf("This is the key: %v, this is value: %v\n", "instrumentation.opentelemetry.io/inject-python", pod.ObjectMeta.Annotations["instrumentation.opentelemetry.io/inject-python"])
-		//fmt.Println("pod name: ", pod.Name)
-
 		if pod.ObjectMeta.Annotations["instrumentation.opentelemetry.io/inject-python"] != "true" {
 			return false
 		}
@@ -815,31 +804,15 @@ func checkIfAnnotationsExistPython(deploymentPods *v1.PodList) bool {
 }
 
 func updateAnnotationConfig(indexOfAutoAnnotationConfigString int, deployment *appsV1.Deployment, jsonStr string) int {
-	//fmt.Printf("Index of annotation %v and this is length of deployment args %v \n", indexOfAutoAnnotationConfigString, len(deployments.Items[0].Spec.Template.Spec.Containers[0].Args))
 	//if auto annotation not part of config, we will add it
 	if indexOfAutoAnnotationConfigString < 0 || indexOfAutoAnnotationConfigString >= len(deployment.Spec.Template.Spec.Containers[0].Args) {
-		//fmt.Println("We are in the if statement")
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--auto-annotation-config="+jsonStr)
 		indexOfAutoAnnotationConfigString = len(deployment.Spec.Template.Spec.Containers[0].Args) - 1
-		//fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
-		//fmt.Println("This is the updated index of annotation: ", indexOfAutoAnnotationConfigString)
-		//fmt.Println("These are the args: ", deployments.Items[0].Spec.Template.Spec.Containers[0].Args)
 	} else {
-		//fmt.Println("We are in the else statement")
 		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + jsonStr
-		//fmt.Println("AutoAnnotationConfiguration: " + deployments.Items[0].Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
 	}
 	return indexOfAutoAnnotationConfigString
 }
-func ListDeployments(namespace string, client kubernetes.Interface) (*appsV1.DeploymentList, error) {
-	deployments, err := client.AppsV1().Deployments(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("error getting Deploymets: %v\n", err)
-		return nil, err
-	}
-	return deployments, nil
-}
-
 func findMatchingPrefix(str string, strs []string) int {
 	for i, s := range strs {
 		if strings.HasPrefix(s, str) {
