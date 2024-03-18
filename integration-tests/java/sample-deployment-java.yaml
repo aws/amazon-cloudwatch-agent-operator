@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: nginx
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
     spec:
       containers:
         - name: nginx
