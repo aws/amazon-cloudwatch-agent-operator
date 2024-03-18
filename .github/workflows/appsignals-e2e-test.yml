@@ -15,7 +15,7 @@ on:
         required: false
         default: 'e2e-cw-agent-operator-python-test'
         type: string
-    push:
+  push:
 
 jobs:
   java-e2e-tests:
