@@ -1,6 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build linuxonly || windowslinux
+// +build linuxonly windowslinux
+
 package eks_addon
 
 import (
@@ -23,14 +26,23 @@ import (
 )
 
 const (
-	nameSpace        = "amazon-cloudwatch"
-	addOnName        = "amazon-cloudwatch-observability"
-	agentName        = "cloudwatch-agent"
-	operatorName     = addOnName + "-controller-manager"
-	fluentBitName    = "fluent-bit"
-	dcgmExporterName = "dcgm-exporter"
-	podNameRegex     = "(" + agentName + "|" + operatorName + "|" + fluentBitName + ")-*"
-	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service"
+	nameSpace            = "amazon-cloudwatch"
+	addOnName            = "amazon-cloudwatch-observability"
+	agentName            = "cloudwatch-agent"
+	agentNameWindows     = "cloudwatch-agent-windows"
+	operatorName         = addOnName + "-controller-manager"
+	fluentBitName        = "fluent-bit"
+	fluentBitNameWindows = "fluent-bit-windows"
+	dcgmExporterName     = "dcgm-exporter"
+	podNameRegex         = "(" + agentName + "|" + agentNameWindows + "|" + operatorName + "|" + fluentBitName + "|" + fluentBitNameWindows + ")-*"
+	serviceNameRegex     = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service"
+)
+
+const (
+	deploymentCount = 1
+	podCount        = podCountLinux + podCountWindows
+	serviceCount    = serviceCountLinux + serviceCountWindows
+	daemonsetCount  = daemonsetCountLinux + daemonsetCountWindows
 )
 
 func TestOperatorOnEKs(t *testing.T) {
@@ -60,14 +72,16 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the number of pods and status
 	pods, err := ListPods(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, pods.Items, 3)
+	assert.Len(t, pods.Items, podCount)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
 		assert.Contains(t, []v1.PodPhase{v1.PodRunning, v1.PodPending}, pod.Status.Phase)
 		// matches
 		// - cloudwatch-agent-*
+		// - cloudwatch-agent-windows-*
 		// - amazon-cloudwatch-observability-controller-manager-*
 		// - fluent-bit-*
+		// - fluent-bit-windows-*
 		if match, _ := regexp.MatchString(podNameRegex, pod.Name); !match {
 			assert.Fail(t, "Cluster Pods are not created correctly")
 		}
@@ -76,7 +90,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, services.Items, 5)
+	assert.Len(t, services.Items, serviceCount)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 		// matches
@@ -84,6 +98,9 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent
 		// - cloudwatch-agent-headless
 		// - cloudwatch-agent-monitoring
+		// - cloudwatch-agent-windows
+		// - cloudwatch-agent-windows-headless
+		// - cloudwatch-agent-windows-monitoring
 		// - dcgm-exporter-service
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
 			assert.Fail(t, "Cluster Service is not created correctly")
@@ -96,7 +113,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	for _, deployment := range deployments.Items {
 		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
 	}
-	assert.Len(t, deployments.Items, 1)
+	assert.Len(t, deployments.Items, deploymentCount)
 	// matches
 	// - amazon-cloudwatch-observability-controller-manager
 	assert.Equal(t, addOnName+"-controller-manager", deployments.Items[0].Name)
@@ -108,12 +125,14 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, daemonSets.Items, 3)
+	assert.Len(t, daemonSets.Items, daemonsetCount)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 		// matches
 		// - cloudwatch-agent
+		// - cloudwatch-agent-windows
 		// - fluent-bit
+		// - fluent-bit-windows
 		// - dcgm-exporter (this can be removed in the future)
 		if match, _ := regexp.MatchString(agentName+"|fluent-bit|dcgm-exporter", daemonSet.Name); !match {
 			assert.Fail(t, "DaemonSet is not created correctly")
