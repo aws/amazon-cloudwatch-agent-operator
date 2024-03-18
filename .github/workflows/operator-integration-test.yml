@@ -52,7 +52,7 @@ jobs:
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          helm template amazon-cloudwatch-observability ./helm  --include-crds --namespace amazon-cloudwatch --set region="us-west-2"| kubectl apply --namespace amazon-cloudwatch --server-side -f -
 
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
