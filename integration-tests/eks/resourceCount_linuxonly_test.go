@@ -8,9 +8,9 @@ package eks_addon
 
 const (
 	serviceCountLinux     = 5
-	serviceCountWindows   = 0
+	serviceCountWindows   = 3
 	daemonsetCountLinux   = 3
-	daemonsetCountWindows = 0
+	daemonsetCountWindows = 2
 	podCountLinux         = 3
 	podCountWindows       = 0
 )
