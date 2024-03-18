@@ -53,13 +53,12 @@ func main() {
 func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kubernetes.Clientset) bool {
 
 	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
 	args := deployment.Spec.Template.Spec.Containers[0].Args
-	fmt.Println("These are the args: ", args)
 	indexOfAutoAnnotationConfigString := findMatchingPrefix("--auto-annotation-config=", args)
 
 	//---------------------------USE CASE 1 (Java and Python on Deployment) ----------------------------------------------
@@ -82,7 +81,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -94,7 +93,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
@@ -145,7 +143,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		return false
 	}
 
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -157,7 +155,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
@@ -208,7 +205,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -221,7 +218,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
@@ -274,7 +270,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		return false
 	}
 
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -286,7 +282,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		return false
 	}
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
-	time.Sleep(15 * time.Second)
 
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets("default").Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
@@ -309,7 +304,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistPython(daemonPods) {
 		return false
 	}
-	fmt.Printf("All fluent-bit pods have the correct annotations\n")
 	//---------------------------Use Case 4 End-------------------------------------
 
 	//---------------------------USE CASE 5 (Java on DaemonSet and Python should be removed)------------------------------
@@ -333,7 +327,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -344,7 +338,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
 
@@ -369,7 +362,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistJava(daemonPods) {
 		return false
 	}
-	fmt.Printf("All fluent-bit pods have the correct annotations\n")
 	//---------------------------Use Case 5 End-------------------------------------
 
 	//---------------------------USE CASE 6 (Python on DaemonSet Java annotation should be removed)------------------------------
@@ -393,7 +385,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -405,7 +397,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		return false
 	}
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
-	time.Sleep(15 * time.Second)
 
 	// Get the fluent-bit DaemonSet
 	daemonSet, err = clientSet.AppsV1().DaemonSets("default").Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
@@ -429,7 +420,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistPython(daemonPods) {
 		return false
 	}
-	fmt.Printf("All fluent-bit pods have the correct annotations\n")
 	//---------------------------Use Case 6 End-------------------------------------
 
 	//---------------------------USE CASE 7 (Java and Python on Namespace) ----------------------------------------------
@@ -453,7 +443,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -466,7 +456,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
@@ -503,7 +492,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -516,7 +505,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	ns, err = clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
@@ -554,7 +542,7 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -567,7 +555,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	ns, err = clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
@@ -612,7 +599,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
 
@@ -636,7 +622,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistPython(statefulSetPods) {
 		return false
 	}
-	fmt.Printf("All my-statefulset pods have the correct annotations\n")
 	//---------------------------Use Case 10 End-------------------------------------
 
 	//---------------------------USE CASE 11 (Java on Stateful set and Python should be removed)------------------------------
@@ -667,7 +652,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
 
@@ -691,7 +675,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistJava(statefulSetPods) {
 		return false
 	}
-	fmt.Printf("All my-statefulset pods have the correct annotations\n")
 	//---------------------------Use Case 11 End-------------------------------------
 
 	//---------------------------USE CASE 12 (Python on Stateful set and java should be removed)------------------------------
@@ -722,7 +705,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !updateOperator(clientSet, deployment.Spec.Template.Spec.Containers[0].Args) {
 		return false
 	}
-	time.Sleep(15 * time.Second)
 
 	fmt.Println(indexOfAutoAnnotationConfigString, string(jsonStr))
 
@@ -746,7 +728,6 @@ func verifyAutoAnnotation(deployments *appsV1.DeploymentList, clientSet *kuberne
 	if !checkIfAnnotationsExistPython(statefulSetPods) {
 		return false
 	}
-	fmt.Printf("All my-statefulset pods have the correct annotations\n")
 	//---------------------------Use Case 12 End-------------------------------------
 
 	return true
@@ -775,10 +756,10 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 	var err error
 
 	// Attempt to get the deployment by name
-	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
-	fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
+	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	//fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	deployment.Spec.Template.Spec.Containers[0].Args = Args
-	fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
+	//fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	if err != nil {
 		fmt.Printf("Failed to get deployment: %v\n", err)
 		return false
@@ -792,7 +773,7 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(50 * time.Second)
+	time.Sleep(60 * time.Second)
 	return true
 
 }
@@ -811,14 +792,14 @@ func checkIfAnnotationsExistJava(deploymentPods *v1.PodList) bool {
 
 	}
 
-	fmt.Printf("All pods have the correct annotations\n")
+	fmt.Printf("All pods have the correct Java annotations\n")
 	return true
 }
 func checkIfAnnotationsExistPython(deploymentPods *v1.PodList) bool {
 	for _, pod := range deploymentPods.Items {
 
-		fmt.Printf("This is the key: %v, this is value: %v\n", "instrumentation.opentelemetry.io/inject-python", pod.ObjectMeta.Annotations["instrumentation.opentelemetry.io/inject-python"])
-		fmt.Println("pod name: ", pod.Name)
+		//fmt.Printf("This is the key: %v, this is value: %v\n", "instrumentation.opentelemetry.io/inject-python", pod.ObjectMeta.Annotations["instrumentation.opentelemetry.io/inject-python"])
+		//fmt.Println("pod name: ", pod.Name)
 
 		if pod.ObjectMeta.Annotations["instrumentation.opentelemetry.io/inject-python"] != "true" {
 			return false
@@ -829,24 +810,24 @@ func checkIfAnnotationsExistPython(deploymentPods *v1.PodList) bool {
 
 	}
 
-	fmt.Printf("All pods have the correct annotations\n")
+	fmt.Printf("All pods have the correct Python annotations\n")
 	return true
 }
 
 func updateAnnotationConfig(indexOfAutoAnnotationConfigString int, deployment *appsV1.Deployment, jsonStr string) int {
-	fmt.Printf("Index of annotation %v and this is length of deployment args %v \n", indexOfAutoAnnotationConfigString, len(deployment.Spec.Template.Spec.Containers[0].Args))
+	//fmt.Printf("Index of annotation %v and this is length of deployment args %v \n", indexOfAutoAnnotationConfigString, len(deployments.Items[0].Spec.Template.Spec.Containers[0].Args))
 	//if auto annotation not part of config, we will add it
 	if indexOfAutoAnnotationConfigString < 0 || indexOfAutoAnnotationConfigString >= len(deployment.Spec.Template.Spec.Containers[0].Args) {
-		fmt.Println("We are in the if statement")
+		//fmt.Println("We are in the if statement")
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--auto-annotation-config="+jsonStr)
 		indexOfAutoAnnotationConfigString = len(deployment.Spec.Template.Spec.Containers[0].Args) - 1
-		fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
-		fmt.Println("This is the updated index of annotation: ", indexOfAutoAnnotationConfigString)
-		fmt.Println("These are the args: ", deployment.Spec.Template.Spec.Containers[0].Args)
+		//fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
+		//fmt.Println("This is the updated index of annotation: ", indexOfAutoAnnotationConfigString)
+		//fmt.Println("These are the args: ", deployments.Items[0].Spec.Template.Spec.Containers[0].Args)
 	} else {
-		fmt.Println("We are in the else statement")
+		//fmt.Println("We are in the else statement")
 		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + jsonStr
-		fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
+		//fmt.Println("AutoAnnotationConfiguration: " + deployments.Items[0].Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
 	}
 	return indexOfAutoAnnotationConfigString
 }
