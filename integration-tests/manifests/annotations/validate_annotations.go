@@ -48,7 +48,7 @@ func main() {
 func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -76,7 +76,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -138,7 +138,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		return false
 	}
 
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -200,7 +200,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -265,7 +265,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		return false
 	}
 
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -322,7 +322,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -380,7 +380,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -438,7 +438,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -487,7 +487,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -537,7 +537,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err = clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
@@ -751,7 +751,7 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 	var err error
 
 	// Attempt to get the deployment by name
-	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "amazon-cloudwatch-observability-controller-manager", metav1.GetOptions{})
+	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manage", metav1.GetOptions{})
 	deployment.Spec.Template.Spec.Containers[0].Args = Args
 	if err != nil {
 		fmt.Printf("Failed to get deployment: %v\n", err)
