@@ -15,7 +15,6 @@ on:
         required: false
         default: 'e2e-cw-agent-operator-python-test'
         type: string
-  push:
 
 permissions:
   id-token: write
