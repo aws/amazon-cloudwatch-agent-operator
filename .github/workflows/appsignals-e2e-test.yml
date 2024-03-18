@@ -17,27 +17,27 @@ on:
         type: string
   push:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   java-e2e-tests:
-    runs-on: ubuntu-latest
     # Two E2E tests should not run at the same time in the same EKS cluster
     concurrency:
       group: 'e2e-cw-agent-java-operator-test'
       cancel-in-progress: false
-    steps:
-      - name: Run Java E2E Test
-        uses: ./.github/workflows/appsignals-e2e-test.yml
-        with:
-          test-Java-cluster-name: ${{ inputs.test-Java-cluster-name }}
+    secrets: inherit
+    uses: ./.github/workflows/appsignals-java-e2e-test.yml
+    with:
+      test-Java-cluster-name: 'e2e-cw-agent-operator-test'
 
   python-e2e-tests:
-    runs-on: ubuntu-latest
     # Two E2E tests should not run at the same time in the same EKS cluster
     concurrency:
       group: 'e2e-cw-agent-python-operator-test'
       cancel-in-progress: false
-    steps:
-      - name: Run Python E2E Test
-        uses: ./.github/workflows/appsignals-python-e2e-test.yml
-        with:
-          test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
+    secrets: inherit
+    uses: ./.github/workflows/appsignals-python-e2e-test.yml
+    with:
+      test-python-cluster-name: 'e2e-cw-agent-operator-python-test'
