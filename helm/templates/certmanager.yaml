@@ -26,8 +26,8 @@ spec:
   subject:
     organizationalUnits:
     - {{ template "amazon-cloudwatch-observability.name" . }}
----
 {{- if not .Values.admissionWebhooks.certManager.issuerRef }}
+---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -43,8 +43,8 @@ spec:
   selfSigned: { }
 {{- end }}
 {{- end }}
----
 {{- if ( .Values.agent.certManager.enabled) -}}
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -55,15 +55,13 @@ metadata:
 spec:
   dnsNames:
     - "dcgm-exporter-service"
-    - {{ (include "amazon-cloudwatch-observability.name" .)}}
     - "dcgm-exporter-service.amazon-cloudwatch.svc"
   issuerRef:
     kind: Issuer
     name: "agent-ca"
   secretName: "amazon-cloudwatch-observability-agent-cert"
-
----
 {{- if not .Values.agent.certManager.issuerRef }}
+---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

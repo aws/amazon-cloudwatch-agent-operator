@@ -47,7 +47,7 @@ import (
 const (
 	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
-	autoInstrumentationPythonImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python"
+	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
 )
 
 var (

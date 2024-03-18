@@ -32,7 +32,7 @@ jobs:
     name: 'GenerateTestMatrix'
     runs-on: ubuntu-latest
     outputs:
-     eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
+      eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -47,12 +47,12 @@ jobs:
       - name: Generate matrix
         id: set-matrix
         run: |
-         echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
+          echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
       - name: Echo test plan matrix
         run: |
-         echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-         echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
+          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
+          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
 
   EKSAddOnIntegrationTest:
     needs: [GenerateTestMatrix]
@@ -76,6 +76,22 @@ jobs:
           role-to-assume: ${{ env.TERRAFORM_AWS_ASSUME_ROLE }}
           aws-region: us-west-2
 
+      - name: Confirm EKS Version Support
+        run: |
+          if [[ 
+            $(go list -m k8s.io/client-go | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/apimachinery | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/component-base | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+            || $(go list -m k8s.io/kubectl | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
+          ]]; then 
+          echo k8s.io/client-go $(go list -m k8s.io/client-go) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/apimachinery $(go list -m k8s.io/apimachinery) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/component-base $(go list -m k8s.io/component-base) is less than ${{ matrix.arrays.k8sVersion }}
+          echo or k8s.io/kubectl $(go list -m k8s.io/kubectl) is less than ${{ matrix.arrays.k8sVersion }}, fail test
+          echo "please run go get -u && go mod tidy"
+          exit 1; 
+          fi
+
       - name: Verify Terraform version
         run: terraform --version
 
@@ -89,10 +105,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="addon_name=${{  github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -auto-approve
+            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=true" -auto-approve
             else
-              terraform destroy -auto-approve && exit 1
+              terraform destroy -var="beta=true" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -105,4 +121,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy --auto-approve
+            terraform destroy -var="beta=true" --auto-approve

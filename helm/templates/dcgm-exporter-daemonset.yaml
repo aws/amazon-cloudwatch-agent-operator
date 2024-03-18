@@ -27,7 +27,7 @@ spec:
                 values: {{ .Values.gpuInstances | toYaml | nindent 16 }}
       containers:
       - name: dcgm-exporter
-        image: "{{ .Values.dcgmExporter.image.repository }}:{{ .Values.dcgmExporter.image.tag }}"
+        image: {{ template "dcgm-exporter.image" . }}
         args:
         {{- range $.Values.dcgmExporter.arguments }}
         - {{ . }}
