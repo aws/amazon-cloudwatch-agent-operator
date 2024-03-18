@@ -80,12 +80,7 @@ Name for dcgm-exporter
 Get the current recommended cloudwatch agent image for a region
 */}}
 {{- define "cloudwatch-agent.image" -}}
-{{- $imageDomain := "" -}}
-{{- $imageDomain = index .Values.agent.image.repositoryDomainMap .Values.region -}}
-{{- if not $imageDomain -}}
-{{- $imageDomain = .Values.agent.image.repositoryDomainMap.public -}}
-{{- end -}}
-{{- printf "%s/%s:%s" $imageDomain .Values.agent.image.repository .Values.agent.image.tag -}}
+{{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/windows-container-internal:latest" -}}
 {{- end -}}
 
 {{/*
@@ -93,12 +88,7 @@ Get the current recommended cloudwatch agent operator image for a region
 */}}
 {{- define "cloudwatch-agent-operator.image" -}}
 {{- $region := .Values.region | required ".Values.region is required." -}}
-{{- $imageDomain := "" -}}
-{{- $imageDomain = index .Values.manager.image.repositoryDomainMap .Values.region -}}
-{{- if not $imageDomain -}}
-{{- $imageDomain = .Values.manager.image.repositoryDomainMap.public -}}
-{{- end -}}
-{{- printf "%s/%s:%s" $imageDomain .Values.manager.image.repository .Values.manager.image.tag -}}
+{{- default "506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-ciwindows-internal:latest" -}}
 {{- end -}}
 
 {{/*
