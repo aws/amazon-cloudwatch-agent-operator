@@ -92,7 +92,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get nginx deployment: %s", err.Error())
+		fmt.Printf("Failed to get nginx deployment: %s", err.Error())
 		return false
 	}
 
@@ -217,7 +217,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get nginx deployment: %s", err.Error())
+		fmt.Printf("Failed to get nginx deployment: %s", err.Error())
 		return false
 	}
 
@@ -227,7 +227,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		fmt.Println("Error listing pods for nginx deployment: %s", err.Error())
+		fmt.Printf("Error listing pods for nginx deployment: %s", err.Error())
 		return false
 	}
 
@@ -281,7 +281,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets("default").Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
@@ -291,7 +291,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	})
 
 	if err != nil {
-		fmt.Println("Error listing pods for fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	if !checkIfAnnotationsExistJava(daemonPods) {
 		return false
@@ -339,7 +339,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	// Get the fluent-bit DaemonSet
 	daemonSet, err = clientSet.AppsV1().DaemonSets("default").Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
@@ -348,7 +348,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		fmt.Println("Error listing pods for fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	//Python should not exist on pods
 	if checkIfAnnotationsExistPython(daemonPods) {
@@ -396,7 +396,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	// Get the fluent-bit DaemonSet
 	daemonSet, err = clientSet.AppsV1().DaemonSets("default").Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
@@ -406,7 +406,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	})
 
 	if err != nil {
-		fmt.Println("Error listing pods for fluent-bit daemonset: %s", err.Error())
+		fmt.Printf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	//java annotations should be removed
 	if checkIfAnnotationsExistJava(daemonPods) {
@@ -454,7 +454,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Error getting namespace %s", err.Error())
+		fmt.Printf("Error getting namespace %s", err.Error())
 		return false
 	}
 	if !checkNameSpaceAnnotationsJava(ns) {
@@ -503,7 +503,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	ns, err = clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Error getting namespace %s", err.Error())
+		fmt.Printf("Error getting namespace %s", err.Error())
 		return false
 	}
 
@@ -553,7 +553,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	ns, err = clientSet.CoreV1().Namespaces().Get(context.TODO(), "default", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Error getting namespace %s", err.Error())
+		fmt.Printf("Error getting namespace %s", err.Error())
 		return false
 	}
 	//java annotations should not exist anymore
