@@ -71,7 +71,7 @@ jobs:
         id: create_service_account
         run: |
           eksctl create iamserviceaccount \
-          --name service-acc-${{ env.TESTING_ID }} \
+          --name srvc-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-python-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
@@ -138,7 +138,7 @@ jobs:
             -var="eks_cluster_name=${{ inputs.test-python-cluster-name }}" \
             -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=service-acc-${{ env.TESTING_ID }}" \
+            -var="service_account_aws_access=srvc-acc-${{ env.TESTING_ID }}" \
             -var="python_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}:latest" \
             -var="python_remote_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}:latest"
 
@@ -306,7 +306,7 @@ jobs:
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-python-cluster-name }}" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=service-acc-${{ env.TESTING_ID }}" \
+            -var="service_account_aws_access=srvc-acc-${{ env.TESTING_ID }}" \
             -var="python_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}:latest" \
             -var="python_remote_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}:latest"
 
@@ -315,7 +315,7 @@ jobs:
         continue-on-error: true
         run: |
           eksctl delete iamserviceaccount \
-          --name service-acc-${{ env.TESTING_ID }} \
+          --name srvc-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-python-cluster-name }} \
           --region ${{ env.AWS_DEFAULT_REGION }}
