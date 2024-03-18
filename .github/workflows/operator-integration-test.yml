@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: operator Integration Test
+name: Operator Integration Test
 on:
   push:
     branches:
@@ -20,6 +20,16 @@ permissions:
   contents: read
 
 jobs:
+  BuildAndUpload:
+    if: contains(github.head_ref, 'main') || contains(github.head_ref, 'release')
+    uses: ./.github/workflows/build-and-upload.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      release: false
+      staging_postfix: '-operator-integration-test'
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
     runs-on: ubuntu-latest
