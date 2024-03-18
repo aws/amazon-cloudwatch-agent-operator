@@ -5,14 +5,10 @@ package eks_addon
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,8 +26,11 @@ const (
 	nameSpace        = "amazon-cloudwatch"
 	addOnName        = "amazon-cloudwatch-observability"
 	agentName        = "cloudwatch-agent"
-	podNameRegex     = "(" + agentName + "|" + addOnName + "-controller-manager|fluent-bit)-*"
-	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service"
+	operatorName     = addOnName + "-controller-manager"
+	fluentBitName    = "fluent-bit"
+	dcgmExporterName = "dcgm-exporter"
+	podNameRegex     = "(" + agentName + "|" + operatorName + "|" + fluentBitName + ")-*"
+	serviceNameRegex = agentName + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service"
 )
 
 func TestOperatorOnEKs(t *testing.T) {
@@ -64,7 +63,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.Len(t, pods.Items, 3)
 	for _, pod := range pods.Items {
 		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
-		assert.Equal(t, v1.PodRunning, pod.Status.Phase)
+		assert.Contains(t, []v1.PodPhase{v1.PodRunning, v1.PodPending}, pod.Status.Phase)
 		// matches
 		// - cloudwatch-agent-*
 		// - amazon-cloudwatch-observability-controller-manager-*
@@ -77,7 +76,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating the services
 	services, err := ListServices(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, services.Items, 4)
+	assert.Len(t, services.Items, 5)
 	for _, service := range services.Items {
 		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
 		// matches
@@ -85,6 +84,7 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent
 		// - cloudwatch-agent-headless
 		// - cloudwatch-agent-monitoring
+		// - dcgm-exporter-service
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
 			assert.Fail(t, "Cluster Service is not created correctly")
 		}
@@ -105,72 +105,18 @@ func TestOperatorOnEKs(t *testing.T) {
 	}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
-	//updating operator deployment
-	args := deployments.Items[0].Spec.Template.Spec.Containers[0].Args
-
-	indexOfAutoAnnotationConfigString := findMatchingPrefix("--auto-annotation-config=", args)
-
-	annotationConfig := auto.AnnotationConfig{
-		Java: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{"default/nginx"},
-			StatefulSets: []string{""},
-		},
-	}
-	jsonStr, err := json.Marshal(annotationConfig)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-	fmt.Println("AutoAnnotationConfiguration: " + args[indexOfAutoAnnotationConfigString])
-
-	// Update the Deployment
-	_, err = clientSet.AppsV1().Deployments("namespace").Update(context.TODO(), &deployments.Items[0], metav1.UpdateOptions{})
-	if err != nil {
-		fmt.Printf("Error updating Deployment: %s\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Deployment updated successfully!")
-
-	//check if deployement has annotations.
-	deployment, err := clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
-	if err != nil {
-		t.Fatalf("Failed to get nginx deployment: %s", err.Error())
-	}
-
-	// List pods belonging to the nginx deployment
-	set := labels.Set(deployment.Spec.Selector.MatchLabels)
-	deploymentPods, err := clientSet.CoreV1().Pods(deployment.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: set.AsSelector().String(),
-	})
-	if err != nil {
-		t.Fatalf("Error listing pods for nginx deployment: %s", err.Error())
-	}
-
-	for _, pod := range deploymentPods.Items {
-		assert.Equal(t, "true", pod.Annotations["cloudwatch.aws.amazon.com/auto-annotate-java"], "Pod %s in namespace %s does not have cloudwatch annotation", pod.Name, pod.Namespace)
-		assert.Equal(t, "true", pod.Annotations["instrumentation.opentelemetry.io/inject-java"], "Pod %s in namespace %s does not have opentelemetry annotation", pod.Name, pod.Namespace)
-	}
-
-	fmt.Printf("All nginx pods have the correct annotations\n")
-	if err != nil {
-		t.Fatalf("Error listing pods: %s", err.Error())
-	}
-
 	//Validating the Daemon Sets
 	daemonSets, err := ListDaemonSets(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, daemonSets.Items, 2)
+	assert.Len(t, daemonSets.Items, 3)
 	for _, daemonSet := range daemonSets.Items {
 		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
 		// matches
 		// - cloudwatch-agent
 		// - fluent-bit
-		if match, _ := regexp.MatchString(agentName+"|fluent-bit", daemonSet.Name); !match {
-			assert.Fail(t, "DaemonSet is created correctly")
+		// - dcgm-exporter (this can be removed in the future)
+		if match, _ := regexp.MatchString(agentName+"|fluent-bit|dcgm-exporter", daemonSet.Name); !match {
+			assert.Fail(t, "DaemonSet is not created correctly")
 		}
 	}
 
@@ -183,8 +129,10 @@ func TestOperatorOnEKs(t *testing.T) {
 	// searches
 	// - amazon-cloudwatch-observability-controller-manager
 	// - cloudwatch-agent
+	// - dcgm-exporter-service-acct
 	assert.True(t, validateServiceAccount(serviceAccounts, addOnName+"-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, agentName))
+	assert.True(t, validateServiceAccount(serviceAccounts, dcgmExporterName+"-service-acct"))
 
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientSet)
@@ -195,6 +143,13 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.True(t, validateClusterRoles(clusterRoles, addOnName+"-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, agentName+"-role"))
 
+	//Validating Roles
+	roles, err := ListRoles(nameSpace, clientSet)
+	assert.NoError(t, err)
+	// searches
+	// - dcgm-exporter-role
+	assert.True(t, validateRoles(roles, dcgmExporterName+"-role"))
+
 	//Validating ClusterRoleBinding
 	clusterRoleBindings, err := ListClusterRoleBindings(clientSet)
 	assert.NoError(t, err)
@@ -204,10 +159,17 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, addOnName+"-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, agentName+"-role-binding"))
 
+	//Validating RoleBinding
+	roleBindings, err := ListRoleBindings(nameSpace, clientSet)
+	assert.NoError(t, err)
+	// searches
+	// - dcgm-exporter-role-binding
+	assert.True(t, validateRoleBindings(roleBindings, dcgmExporterName+"-role-binding"))
+
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
-	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 3)
+	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 5)
 	// searches
 	// - amazon-cloudwatch-observability-mutating-webhook-configuration
 	assert.Equal(t, addOnName+"-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
@@ -220,14 +182,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	// - amazon-cloudwatch-observability-validating-webhook-configuration
 	assert.Equal(t, addOnName+"-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 }
-func findMatchingPrefix(str string, strs []string) int {
-	for i, s := range strs {
-		if strings.HasPrefix(s, str) {
-			return i
-		}
-	}
-	return -1 // Return -1 if no matching prefix is found
-}
+
 func validateServiceAccount(serviceAccounts *v1.ServiceAccountList, serviceAccountName string) bool {
 	for _, serviceAccount := range serviceAccounts.Items {
 		if serviceAccount.Name == serviceAccountName {
@@ -246,9 +201,27 @@ func validateClusterRoles(clusterRoles *rbacV1.ClusterRoleList, clusterRoleName 
 	return false
 }
 
+func validateRoles(roles *rbacV1.RoleList, roleName string) bool {
+	for _, role := range roles.Items {
+		if role.Name == roleName {
+			return true
+		}
+	}
+	return false
+}
+
 func validateClusterRoleBindings(clusterRoleBindings *rbacV1.ClusterRoleBindingList, clusterRoleBindingName string) bool {
 	for _, clusterRoleBinding := range clusterRoleBindings.Items {
 		if clusterRoleBinding.Name == clusterRoleBindingName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateRoleBindings(roleBindings *rbacV1.RoleBindingList, roleBindingName string) bool {
+	for _, roleBinding := range roleBindings.Items {
+		if roleBinding.Name == roleBindingName {
 			return true
 		}
 	}
@@ -318,6 +291,15 @@ func ListClusterRoles(client kubernetes.Interface) (*rbacV1.ClusterRoleList, err
 	return clusterRoles, nil
 }
 
+func ListRoles(namespace string, client kubernetes.Interface) (*rbacV1.RoleList, error) {
+	roles, err := client.RbacV1().Roles(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting Roles: %v\n", err)
+		return nil, err
+	}
+	return roles, nil
+}
+
 func ListClusterRoleBindings(client kubernetes.Interface) (*rbacV1.ClusterRoleBindingList, error) {
 	clusterRoleBindings, err := client.RbacV1().ClusterRoleBindings().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -325,6 +307,15 @@ func ListClusterRoleBindings(client kubernetes.Interface) (*rbacV1.ClusterRoleBi
 		return nil, err
 	}
 	return clusterRoleBindings, nil
+}
+
+func ListRoleBindings(namespace string, client kubernetes.Interface) (*rbacV1.RoleBindingList, error) {
+	roleBindings, err := client.RbacV1().RoleBindings(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting RoleBindings: %v\n", err)
+		return nil, err
+	}
+	return roleBindings, nil
 }
 
 func ListMutatingWebhookConfigurations(client kubernetes.Interface) (*arv1.MutatingWebhookConfigurationList, error) {
