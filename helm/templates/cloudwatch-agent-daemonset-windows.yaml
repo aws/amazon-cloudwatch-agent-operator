@@ -18,7 +18,7 @@ spec:
   {{- if .Values.agent.config }}
   config: {{ .Values.agent.config | toJson | quote }}
   {{- else }}
-  config: {{ .Values.agent.defaultConfig | toJson | quote }}
+  config: {{ .Values.agent.windowsDefaultConfig | toJson | quote }}
   {{- end }}
   resources:
     requests:
