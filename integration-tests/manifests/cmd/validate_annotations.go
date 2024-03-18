@@ -776,7 +776,7 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 
 	// Attempt to get the deployment by name
 	deployment, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-controller-manager", metav1.GetOptions{})
-	//fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
+	fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	deployment.Spec.Template.Spec.Containers[0].Args = Args
 	fmt.Println("This is the deployment args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	if err != nil {
@@ -792,7 +792,7 @@ func updateOperator(clientSet *kubernetes.Clientset, Args []string) bool {
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(5 * time.Second)
+	time.Sleep(50 * time.Second)
 	return true
 
 }
@@ -834,19 +834,19 @@ func checkIfAnnotationsExistPython(deploymentPods *v1.PodList) bool {
 }
 
 func updateAnnotationConfig(indexOfAutoAnnotationConfigString int, deployment *appsV1.Deployment, jsonStr string) int {
-	//fmt.Printf("Index of annotation %v and this is length of deployment args %v \n", indexOfAutoAnnotationConfigString, len(deployments.Items[0].Spec.Template.Spec.Containers[0].Args))
+	fmt.Printf("Index of annotation %v and this is length of deployment args %v \n", indexOfAutoAnnotationConfigString, len(deployment.Spec.Template.Spec.Containers[0].Args))
 	//if auto annotation not part of config, we will add it
 	if indexOfAutoAnnotationConfigString < 0 || indexOfAutoAnnotationConfigString >= len(deployment.Spec.Template.Spec.Containers[0].Args) {
 		fmt.Println("We are in the if statement")
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--auto-annotation-config="+jsonStr)
 		indexOfAutoAnnotationConfigString = len(deployment.Spec.Template.Spec.Containers[0].Args) - 1
 		fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
-		//fmt.Println("This is the updated index of annotation: ", indexOfAutoAnnotationConfigString)
-		//fmt.Println("These are the args: ", deployments.Items[0].Spec.Template.Spec.Containers[0].Args)
+		fmt.Println("This is the updated index of annotation: ", indexOfAutoAnnotationConfigString)
+		fmt.Println("These are the args: ", deployment.Spec.Template.Spec.Containers[0].Args)
 	} else {
-		//fmt.Println("We are in the else statement")
+		fmt.Println("We are in the else statement")
 		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + jsonStr
-		//fmt.Println("AutoAnnotationConfiguration: " + deployments.Items[0].Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
+		fmt.Println("AutoAnnotationConfiguration: " + deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString])
 	}
 	return indexOfAutoAnnotationConfigString
 }
