@@ -7,7 +7,7 @@ on:
   workflow_call:
     inputs:
       # Ensure two tests do not run on the same cluster at the same time through GitHub Action concurrency
-      test-Java-cluster-name:
+      test-java-cluster-name:
         required: false
         default: 'e2e-cw-agent-operator-test'
         type: string
@@ -30,7 +30,7 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/appsignals-java-e2e-test.yml
     with:
-      test-Java-cluster-name: 'e2e-cw-agent-operator-test'
+      test-java-cluster-name: 'e2e-cw-agent-operator-test'
 
   python-e2e-tests:
     # Two E2E tests should not run at the same time in the same EKS cluster
