@@ -102,7 +102,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		fmt.Println("Error listing pods for nginx deployment: %s", err.Error())
+		fmt.Printf("Error listing pods for nginx deployment: %s", err.Error())
 		return false
 	}
 	//wait for pods to update
@@ -116,7 +116,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
 	//---------------------------------------------------USE CASE 1 End ---------------------------------------------------------
 
-	//---------------------------USE CASE 2 (Java on Deployment and Python Should be Remove Python)------------------------------
+	//---------------------------USE CASE 2 (Java on Deployment and Python Should be Removed)------------------------------
 
 	annotationConfig = auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -154,7 +154,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments("default").Get(context.TODO(), "nginx", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("Failed to get nginx deployment: %s", err.Error())
+		fmt.Printf("Failed to get nginx deployment: %s", err.Error())
 		return false
 	}
 
@@ -164,7 +164,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		fmt.Println("Error listing pods for nginx deployment: %s", err.Error())
+		fmt.Printf("Error listing pods for nginx deployment: %s", err.Error())
 		return false
 	}
 
