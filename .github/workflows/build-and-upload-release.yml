@@ -1,15 +1,38 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Build And Upload Staging Artifact
+name: Build And Upload Artifact
 env:
   # Use terraform assume role for uploading to ecr
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release Artifact'
+        required: false
+        default: false
+        type: boolean
+      tag:
+        description: 'Staging Artifact Tag'
+        required: false
+        default: 'staging'
+        type: string
   workflow_call:
+    inputs:
+      release:
+        description: 'Release Artifact'
+        required: false
+        default: false
+        type: boolean
+      tag:
+        description: 'Staging Artifact Tag'
+        required: false
+        default: 'integration'
+        type: string
 
 jobs:
   MakeBinary:
@@ -55,7 +78,7 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: ${{ env.ECR_OPERATOR_STAGING_IMAGE }}
+          tags: ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
 
   e2e-test:
@@ -68,3 +91,33 @@ jobs:
       cancel-in-progress: false
     with:
       test-cluster-name: 'e2e-cw-agent-operator-test'
+      tag: ${{ inputs.tag }}
+
+  push-release-ecr:
+    if: ${{ inputs.release }}
+    needs: e2e-test
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: us-west-2 # Uploads only to us-west-2 for now
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push image to release ECR
+        run: |
+          docker buildx imagetools create \
+          -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
+          ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
