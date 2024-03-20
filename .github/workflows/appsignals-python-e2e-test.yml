@@ -13,6 +13,11 @@ on:
       test-python-cluster-name:
         required: true
         type: string
+      tag:
+        description: 'Staging Artifact Tag'
+        required: false
+        default: 'staging'
+        type: string
 
 permissions:
   id-token: write
@@ -26,7 +31,7 @@ env:
   APP_SIGNALS_PYTHON_E2E_RE_SA_IMG: appsignals-python-django-remote-service
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP: /aws/appsignals/eks
-#  ECR_OPERATOR_STAGING_IMAGE: ${{ secrets.ECR_OPERATOR_STAGING_IMAGE }}
+#  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
 
 
 jobs:
