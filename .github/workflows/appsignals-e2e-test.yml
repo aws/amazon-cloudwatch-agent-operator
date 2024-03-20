@@ -35,7 +35,8 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/appsignals-java-e2e-test.yml
     with:
-      test-java-cluster-name: ${{ inputs.test-java-cluster-name }}
+#      test-java-cluster-name: ${{ inputs.test-java-cluster-name }}
+      test-java-cluster-name: 'e2e-cw-agent-operator-test'
       tag: ${{ inputs.tag }}
 
   python-e2e-tests:
@@ -46,5 +47,6 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/appsignals-python-e2e-test.yml
     with:
-      test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
+#      test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
+      test-python-cluster-name: 'e2e-cw-agent-operator-python-test'
       tag: ${{ inputs.tag }}
