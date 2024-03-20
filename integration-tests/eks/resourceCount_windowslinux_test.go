@@ -7,10 +7,15 @@
 package eks_addon
 
 const (
-	serviceCountLinux     = 5
-	serviceCountWindows   = 3
+	// Services count for CW agent on Linux and Windows
+	serviceCountLinux   = 5
+	serviceCountWindows = 3
+
+	// DaemonSet count for CW agent on Linux and Windows
 	daemonsetCountLinux   = 3
 	daemonsetCountWindows = 2
-	podCountLinux         = 3
-	podCountWindows       = 2
+
+	// Pods count for CW agent on Linux and Windows
+	podCountLinux   = 3
+	podCountWindows = 2
 )
