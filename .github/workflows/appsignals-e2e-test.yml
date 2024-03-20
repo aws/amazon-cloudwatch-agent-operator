@@ -37,7 +37,7 @@ jobs:
     with:
 #      test-java-cluster-name: ${{ inputs.test-java-cluster-name }}
       test-java-cluster-name: 'e2e-cw-agent-operator-test'
-      tag: ${{ inputs.tag }}
+      tag: 'staging'
 
   python-e2e-tests:
     # Two E2E tests should not run at the same time in the same EKS cluster
@@ -49,4 +49,4 @@ jobs:
     with:
 #      test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
       test-python-cluster-name: 'e2e-cw-agent-operator-python-test'
-      tag: ${{ inputs.tag }}
+      tag: 'staging'
