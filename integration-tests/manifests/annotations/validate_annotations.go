@@ -243,13 +243,13 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	annotationConfig = auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
-			DaemonSets:   []string{"amazon-cloudwatch/fluent-bit"},
+			DaemonSets:   []string{"default/fluent-bit"},
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
 		Python: auto.AnnotationResources{
 			Namespaces:   []string{""},
-			DaemonSets:   []string{"amazon-cloudwatch/fluent-bit"},
+			DaemonSets:   []string{"default/fluent-bit"},
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
@@ -271,14 +271,14 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	}
 
 	// Get the fluent-bit DaemonSet
-	daemonSet, err := clientSet.AppsV1().DaemonSets(amazonCloudwatchNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
+	daemonSet, err := clientSet.AppsV1().DaemonSets(defaultNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
 	set = labels.Set(daemonSet.Spec.Selector.MatchLabels)
-	daemonPods, err := clientSet.CoreV1().Pods(amazonCloudwatchNamespace).List(context.TODO(), metav1.ListOptions{
+	daemonPods, err := clientSet.CoreV1().Pods(defaultNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 
@@ -296,7 +296,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	annotationConfig = auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
-			DaemonSets:   []string{"amazon-cloudwatch/fluent-bit"},
+			DaemonSets:   []string{"default/fluent-bit"},
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
@@ -323,14 +323,14 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	}
 
 	// Get the fluent-bit DaemonSet
-	daemonSet, err = clientSet.AppsV1().DaemonSets(amazonCloudwatchNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
+	daemonSet, err = clientSet.AppsV1().DaemonSets(defaultNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
 	set = labels.Set(daemonSet.Spec.Selector.MatchLabels)
-	daemonPods, err = clientSet.CoreV1().Pods(amazonCloudwatchNamespace).List(context.TODO(), metav1.ListOptions{
+	daemonPods, err = clientSet.CoreV1().Pods(defaultNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
@@ -358,7 +358,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		},
 		Python: auto.AnnotationResources{
 			Namespaces:   []string{""},
-			DaemonSets:   []string{"amazon-cloudwatch/fluent-bit"},
+			DaemonSets:   []string{"default/fluent-bit"},
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
@@ -378,14 +378,14 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		return false
 	}
 	// Get the fluent-bit DaemonSet
-	daemonSet, err = clientSet.AppsV1().DaemonSets(amazonCloudwatchNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
+	daemonSet, err = clientSet.AppsV1().DaemonSets(defaultNamespace).Get(context.TODO(), "fluent-bit", metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
 	set = labels.Set(daemonSet.Spec.Selector.MatchLabels)
-	daemonPods, err = clientSet.CoreV1().Pods(amazonCloudwatchNamespace).List(context.TODO(), metav1.ListOptions{
+	daemonPods, err = clientSet.CoreV1().Pods(defaultNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 
