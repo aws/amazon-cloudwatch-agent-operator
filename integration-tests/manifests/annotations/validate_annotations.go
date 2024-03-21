@@ -53,7 +53,7 @@ const defaultNamespace = "default"
 const deploymentName = "nginx"
 const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 

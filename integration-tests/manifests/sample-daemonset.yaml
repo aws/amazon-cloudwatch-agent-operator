@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fluent-bit
-          image: nginx/latest
+          image: nginx:latest
           ports:
             - containerPort: 2020
       tolerations:
