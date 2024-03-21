@@ -63,8 +63,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	args := deployment.Spec.Template.Spec.Containers[0].Args
-	indexOfAutoAnnotationConfigString := findIndexOfPrefix("--auto-annotation-config=", args)
 
 	//---------------------------USE CASE 1 (Java and Python on Deployment) ----------------------------------------------
 	annotationConfig := auto.AnnotationConfig{
@@ -207,8 +205,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 
 	if !updateOperator(clientSet, deployment) {
@@ -270,8 +266,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -323,8 +317,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -380,8 +372,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -438,8 +428,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -481,8 +469,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -529,8 +515,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
-
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -570,8 +554,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
 
 	if !updateOperator(clientSet, deployment) {
 		return false
@@ -617,8 +599,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
 
 	if !updateOperator(clientSet, deployment) {
 		return false
@@ -668,8 +648,6 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
-	deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + string(jsonStr)
 
 	if !updateOperator(clientSet, deployment) {
 		return false
