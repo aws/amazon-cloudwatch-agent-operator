@@ -53,7 +53,7 @@ const defaultNamespace = "default"
 const deploymentName = "nginx"
 const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
@@ -205,8 +205,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
-	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
-
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -266,6 +265,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -317,6 +317,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -372,6 +373,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -428,6 +430,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -469,6 +472,8 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -515,6 +520,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Printf("Error getting deployment: %v\n\n", err)
 		os.Exit(1)
 	}
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -554,7 +560,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -599,7 +605,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -648,7 +654,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 		fmt.Println("Error:", err)
 		return false
 	}
-
+	updateAnnotationConfig(deployment, string(jsonStr))
 	if !updateOperator(clientSet, deployment) {
 		return false
 	}
@@ -710,7 +716,7 @@ func updateOperator(clientSet *kubernetes.Clientset, deployment *appsV1.Deployme
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(30 * time.Second)
+	time.Sleep(60 * time.Second)
 	return true
 
 }
