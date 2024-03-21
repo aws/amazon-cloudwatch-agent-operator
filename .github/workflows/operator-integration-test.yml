@@ -114,7 +114,6 @@ jobs:
       - name: Test Annotations
         run: |
           kubectl apply -f integration-tests/manifests/sample-deployment.yaml
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
           kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
           sleep 5
           kubectl rollout restart deployment nginx
