@@ -1,0 +1,10 @@
+========================================================================
+Amazon CloudWatch Agent Operator v1.1.0 (2024-03-06)
+========================================================================
+Bug fixes:
+* [Fluent-bit Helm Chart] Fix the issue with cluster name containing only numeric values (#47)
+
+Enhancements:
+* [Collector Config] Use CWAgent Config Instead Of OTEL Collector (#62)
+* [Auto Instrumentation] Create feature flag to allow multi-instrumentation (#99)
+* [Agent Receivers] Get Agent Receiver Ports From Agent Config (#58)
