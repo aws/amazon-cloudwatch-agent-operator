@@ -53,7 +53,7 @@ const defaultNamespace = "default"
 const deploymentName = "nginx"
 const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 
@@ -683,7 +683,7 @@ func verifyAutoAnnotation(clientSet *kubernetes.Clientset) bool {
 	}
 
 	//---------------------------Use Case 12 End-------------------------------------
-
+	fmt.Println("It is trueee")
 	return true
 
 }
@@ -716,7 +716,7 @@ func updateOperator(clientSet *kubernetes.Clientset, deployment *appsV1.Deployme
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(60 * time.Second)
+	time.Sleep(70 * time.Second)
 	return true
 
 }
