@@ -32,7 +32,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "fluent-bit"
 
-const amazonControllerManager = "cloudwatch--controller-manager"
+const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -947,7 +947,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(60 * time.Second)
+	time.Sleep(30 * time.Second)
 	return true
 
 }
