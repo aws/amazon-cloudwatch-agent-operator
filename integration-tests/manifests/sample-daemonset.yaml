@@ -1,25 +1,18 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: fluent-bit
-  labels:
-    app: fluent-bit
+  name: sample-daemonset
 spec:
   selector:
     matchLabels:
-      name: fluent-bit
+      app: nginx-app
   template:
     metadata:
       labels:
-        name: fluent-bit
+        app: nginx-app
     spec:
       containers:
-        - name: fluent-bit
-          image: fluent/fluent-bit:latest
+        - name: nginx-container
+          image: nginx
           ports:
-            - containerPort: 2020
-      tolerations:
-        - key: "node-role.kubernetes.io/master"
-          effect: "NoSchedule"
-      nodeSelector:
-        kubernetes.io/os: linux
+            - containerPort: 80

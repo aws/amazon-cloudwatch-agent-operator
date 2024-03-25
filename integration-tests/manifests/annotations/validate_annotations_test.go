@@ -27,10 +27,10 @@ const autoAnnotateJavaAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-java
 const injectPythonAnnotation = "instrumentation.opentelemetry.io/inject-python"
 const autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
 const deploymentName = "nginx"
-const statefulSetName = "my-statefulset"
+const statefulSetName = "sample-statefulset"
 const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
-const daemonSetName = "fluent-bit"
+const daemonSetName = "sample-daemonset"
 
 const amazonControllerManager = "cloudwatch-controller-manager"
 
