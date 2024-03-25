@@ -227,6 +227,17 @@ func TestInvalidConfigGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 }
 
+func TestGetVolumeMounts(t *testing.T) {
+	volumeMount := getVolumeMounts("windows")
+	assert.Equal(t, volumeMount.MountPath, "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\cwagentconfig")
+
+	volumeMount = getVolumeMounts("linux")
+	assert.Equal(t, volumeMount.MountPath, "/etc/cwagentconfig")
+
+	volumeMount = getVolumeMounts("")
+	assert.Equal(t, volumeMount.MountPath, "/etc/cwagentconfig")
+}
+
 func getJSONStringFromFile(path string) string {
 	buf, err := os.ReadFile(path)
 	if err != nil {
