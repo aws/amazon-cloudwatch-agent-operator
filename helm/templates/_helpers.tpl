@@ -115,6 +115,19 @@ Get the current recommended fluent-bit image for a region
 {{- end -}}
 
 {{/*
+Get the current recommended fluent-bit Windows image for a region
+*/}}
+{{- define "fluent-bit-windows.image" -}}
+{{- $region := .Values.region | required ".Values.region is required." -}}
+{{- $imageDomain := "" -}}
+{{- $imageDomain = index .Values.containerLogs.fluentBit.image.repositoryDomainMap .Values.region -}}
+{{- if not $imageDomain -}}
+{{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
+{{- end -}}
+{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tagWindows -}}
+{{- end -}}
+
+{{/*
 Get the current recommended dcgm-exporter image for a region
 */}}
 {{- define "dcgm-exporter.image" -}}
@@ -139,19 +152,6 @@ Get the current recommended auto instrumentation python image
 */}}
 {{- define "auto-instrumentation-python.image" -}}
 {{- printf "%s/%s:%s" .Values.manager.autoInstrumentationImage.python.repositoryDomain .Values.manager.autoInstrumentationImage.python.repository .Values.manager.autoInstrumentationImage.python.tag -}}
-{{- end -}}
-
-{{/*
-Get the current recommended fluent-bit Windows image for a region
-*/}}
-{{- define "fluent-bit-windows.image" -}}
-{{- $region := .Values.region | required ".Values.region is required." -}}
-{{- $imageDomain := "" -}}
-{{- $imageDomain = index .Values.containerLogs.fluentBit.image.repositoryDomainMap .Values.region -}}
-{{- if not $imageDomain -}}
-{{- $imageDomain = .Values.containerLogs.fluentBit.image.repositoryDomainMap.public -}}
-{{- end -}}
-{{- printf "%s/%s:%s" $imageDomain .Values.containerLogs.fluentBit.image.repository .Values.containerLogs.fluentBit.image.tagWindows -}}
 {{- end -}}
 
 {{/*
