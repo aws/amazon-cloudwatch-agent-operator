@@ -26,13 +26,13 @@ const injectJavaAnnotation = "instrumentation.opentelemetry.io/inject-java"
 const autoAnnotateJavaAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-java"
 const injectPythonAnnotation = "instrumentation.opentelemetry.io/inject-python"
 const autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
-const deploymentName = "nginx"
+const deploymentName = "sample-deployment"
 const statefulSetName = "sample-statefulset"
 const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -85,16 +85,16 @@ func TestUseCase1(t *testing.T) {
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
-		t.Errorf("Failed to get nginx deployment: %s", err.Error())
+		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	// List pods belonging to the nginx deployment
+	// List pods belonging to the deployment
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		t.Errorf("Error listing pods for nginx deployment: %s", err.Error())
+		t.Errorf("Error listing pods for deployment: %s", err.Error())
 	}
 
 	//wait for pods to update
@@ -154,11 +154,11 @@ func TestUseCase2(t *testing.T) {
 	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		if err != nil {
-			t.Errorf("Error listing pods for nginx deployment: %s", err.Error())
+			t.Errorf("Error listing pods for deployment: %s", err.Error())
 		}
 	}
 
-	// List pods belonging to the nginx deployment
+	// List pods belonging to the deployment
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
@@ -225,16 +225,16 @@ func TestUseCase3(t *testing.T) {
 	//check if deployment has annotations.
 	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
-		t.Errorf("Failed to get nginx deployment: %s", err.Error())
+		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
 
-	// List pods belonging to the nginx deployment
+	// List pods belonging to the deployment
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		t.Errorf("Error listing pods for nginx deployment: %s", err.Error())
+		t.Errorf("Error listing pods for deployment: %s", err.Error())
 	}
 
 	//java shouldn't be annotated in this case
