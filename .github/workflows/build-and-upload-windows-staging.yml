@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main-ciwindows
+      - test-main-ciwindows-final
   workflow_dispatch:
   workflow_call:
 
