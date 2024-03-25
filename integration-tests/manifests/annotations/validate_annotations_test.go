@@ -858,7 +858,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 		return err
 	}
 
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 	// Apply each YAML file
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(filepath.Join("..", file), name)
@@ -867,7 +867,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 			return err
 		}
 	}
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	return nil
 }
@@ -947,7 +947,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(60 * time.Second)
+	time.Sleep(45 * time.Second)
 	return true
 
 }
