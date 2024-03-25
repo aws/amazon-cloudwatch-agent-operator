@@ -79,7 +79,7 @@ jobs:
           --name srvc-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-python-cluster-name }} \
-          --role-name eks-s3-access-${{ env.TESTING_ID }} \
+          --role-name eks-s3-access-python-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ env.AWS_DEFAULT_REGION }} \
           --approve
