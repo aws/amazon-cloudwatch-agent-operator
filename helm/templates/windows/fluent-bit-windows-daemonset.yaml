@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/fluent-bit-windows-configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/windows/fluent-bit-windows-configmap.yaml") . | sha256sum }}
       labels:
         k8s-app: fluent-bit
         version: v1
