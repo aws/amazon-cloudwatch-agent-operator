@@ -947,7 +947,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(60 * time.Second)
+	time.Sleep(70 * time.Second)
 	return true
 
 }
