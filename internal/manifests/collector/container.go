@@ -58,21 +58,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 	// "primary" config and in the future additional configs can be appended to the container args in a simple manner.
 
 	if addConfig {
-		if agent.Spec.NodeSelector["kubernetes.io/os"] == "windows" {
-			volumeMounts = append(volumeMounts,
-				corev1.VolumeMount{
-					Name:      naming.ConfigMapVolume(),
-					MountPath: "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\cwagentconfig",
-				},
-			)
-		} else {
-			volumeMounts = append(volumeMounts,
-				corev1.VolumeMount{
-					Name:      naming.ConfigMapVolume(),
-					MountPath: "/etc/cwagentconfig",
-				},
-			)
-		}
+		volumeMounts = append(volumeMounts, getVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
 	}
 
 	// ensure that the v1alpha1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
@@ -120,6 +106,22 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		SecurityContext: agent.Spec.SecurityContext,
 		Lifecycle:       agent.Spec.Lifecycle,
 	}
+}
+
+func getVolumeMounts(os string) corev1.VolumeMount {
+	var volumeMount corev1.VolumeMount
+	if os == "windows" {
+		volumeMount = corev1.VolumeMount{
+			Name:      naming.ConfigMapVolume(),
+			MountPath: "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\cwagentconfig",
+		}
+	} else {
+		volumeMount = corev1.VolumeMount{
+			Name:      naming.ConfigMapVolume(),
+			MountPath: "/etc/cwagentconfig",
+		}
+	}
+	return volumeMount
 }
 
 func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
