@@ -690,7 +690,7 @@ func TestUseCase10(t *testing.T) {
 	}
 
 	// Get the StatefulSet
-	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), "my-statefulset", metav1.GetOptions{})
+	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), statefulSetName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get my-statefulset StatefulSet: %s\n", err.Error())
 	}
@@ -754,7 +754,7 @@ func TestUseCase11(t *testing.T) {
 	}
 
 	// Get the StatefulSet
-	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), "my-statefulset", metav1.GetOptions{})
+	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), statefulSetName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get my-statefulset StatefulSet: %s\n", err.Error())
 	}
@@ -822,9 +822,9 @@ func TestUseCase12(t *testing.T) {
 	}
 
 	// Get the StatefulSet
-	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), "my-statefulset", metav1.GetOptions{})
+	statefulSet, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), statefulSetName, metav1.GetOptions{})
 	if err != nil {
-		t.Errorf("Failed to get my-statefulset StatefulSet: %s\n", err.Error())
+		t.Errorf("Failed to get StatefulSet: %s\n", err.Error())
 	}
 
 	// List pods belonging to the StatefulSet
@@ -833,7 +833,7 @@ func TestUseCase12(t *testing.T) {
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
-		t.Errorf("Error listing pods for my-statefulset StatefulSet: %s\n", err.Error())
+		t.Errorf("Error listing pods for StatefulSet: %s\n", err.Error())
 	}
 
 	//java shouldn't be annotated in this case
