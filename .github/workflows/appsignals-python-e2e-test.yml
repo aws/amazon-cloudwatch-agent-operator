@@ -141,14 +141,16 @@ jobs:
 
       - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
         run: |
-          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}, {"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": ["--auto-instrumentation-java-image=611364707713.dkr.ecr.us-west-2.amazonaws.com/adot-autoinstrumentation-java-operator-staging:1.33.0-SNAPSHOT-93870a5"]}]]'
+          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}, {"op": "replace", "path": "/spec/template/spec/containers/0/args", "value": ["--auto-instrumentation-python-image=public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.0.1"]}]]'
           kubectl delete pods --all -n amazon-cloudwatch
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       # Application pods need to be restarted for the
       # app signals instrumentation to take effect
       - name: Restart the app pods
-        run: kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
+        run: |
+          kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
+          kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Wait for sample app pods to come up
         run: |
