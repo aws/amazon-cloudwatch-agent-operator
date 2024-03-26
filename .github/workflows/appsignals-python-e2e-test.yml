@@ -49,13 +49,10 @@ jobs:
             scripts/eks/appsignals/clean-app-signals.sh
           sparse-checkout-cone-mode: false
 
-      - name: Use latest addon version
+      - name: Resolve Add-on configuration conflict
         working-directory: enablement-script/scripts/eks/appsignals
         run: |
           sed -i 's/aws eks create-addon \\/aws eks create-addon \\\n        --resolve-conflicts OVERWRITE \\/' enable-app-signals.sh
-          sed -i 's/if \[\[ "$addon_version" < "v1\.2\.0" \]\]/if [[ "$addon_version" < "v1.4.0" ]]/' enable-app-signals.sh
-          sed -i 's/--addon-version v1\.2\.0-eksbuild\.1/--addon-version v1.4.0-eksbuild.1/' enable-app-signals.sh
-          cat enable-app-signals.sh
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -151,10 +148,7 @@ jobs:
         run: |
           kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
           kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }}
-
-      - name: Wait for sample app pods to come up
-        run: |
-          kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }} \
+          kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Get remote service deployment name and IP
         run: |
