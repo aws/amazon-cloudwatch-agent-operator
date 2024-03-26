@@ -101,7 +101,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: python_add_on
+          ref: main
           path: aws-application-signals-test-framework
 
       - name: Set up terraform
