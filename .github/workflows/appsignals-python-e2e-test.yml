@@ -154,7 +154,6 @@ jobs:
 
       - name: Wait for sample app pods to come up
         run: |
-          sleep 20
           kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }} \
 
       - name: Get remote service deployment name and IP
@@ -279,7 +278,6 @@ jobs:
           --rollup'
 
       # Clean up Procedures
-
       - name: Remove log group deletion command
         if: always()
         working-directory: enablement-script/scripts/eks/appsignals
