@@ -53,7 +53,7 @@ jobs:
         working-directory: enablement-script/scripts/eks/appsignals
         run: |
           sed -i 's/aws eks create-addon \\/aws eks create-addon \\\n        --resolve-conflicts OVERWRITE \\/' enable-app-signals.sh
-          sed -i 's/if \[\[ "$addon_version" < "v1\.2\.0" \]\]/if [[ "$addon_version" < "v1.5.0" ]]/' enable-app-signals.sh
+          sed -i 's/if \[\[ "$addon_version" < "v1\.2\.0" \]\]/if [[ "$addon_version" < "v1.4.0" ]]/' enable-app-signals.sh
           sed -i 's/--addon-version v1\.2\.0-eksbuild\.1/--addon-version v1.4.0-eksbuild.1/' enable-app-signals.sh
           cat enable-app-signals.sh
 
