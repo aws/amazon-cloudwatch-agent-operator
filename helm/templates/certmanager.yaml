@@ -56,6 +56,8 @@ spec:
   dnsNames:
     - "dcgm-exporter-service"
     - "dcgm-exporter-service.amazon-cloudwatch.svc"
+    - "neuron-monitor-service"
+    - "neuron-monitor-service.amazon-cloudwatch.svc"
   issuerRef:
     kind: Issuer
     name: "agent-ca"
@@ -85,4 +87,3 @@ metadata:
   name: "amazon-cloudwatch-observability-agent-cert"
   namespace: {{ .Release.Namespace }}
 {{- end }}
-
