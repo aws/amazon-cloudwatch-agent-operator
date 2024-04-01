@@ -115,16 +115,25 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
 	opMutex.Lock() // Lock the mutex at the beginning
 	defer opMutex.Unlock()
+	var err error
+	args := deployment.Spec.Template.Spec.Containers[0].Args
+	// Attempt to get the deployment by name
+	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+	deployment.Spec.Template.Spec.Containers[0].Args = args
+	if err != nil {
+		t.Errorf("Failed to get deployment: %v\n", err)
+		return false
+	}
 
 	// Update the deployment
-	_, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+	_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Failed to update deployment: %v\n", err)
 		return false
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(70 * time.Second)
+	time.Sleep(60 * time.Second)
 	return true
 
 }

@@ -148,6 +148,7 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
+	//updating operator deployment
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
