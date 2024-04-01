@@ -73,7 +73,7 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "statefulset-Java-Only"
+	uniqueNamespace := "statefulset-java-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
