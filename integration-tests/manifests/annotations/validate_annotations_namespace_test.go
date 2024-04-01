@@ -12,11 +12,11 @@ import (
 )
 
 // ---------------------------USE CASE 7 (Java and Python on Namespace) ----------------------------------------------
-func TestUseCase7(t *testing.T) {
+func TestJavaAndPythonNamespace(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	sampleNamespace := "sample-namespace-7"
+	sampleNamespace := "namespace-java-python"
 
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
@@ -27,11 +27,6 @@ func TestUseCase7(t *testing.T) {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
 	}()
-	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -51,31 +46,24 @@ func TestUseCase7(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-		//	}
-		updateAnnotationConfig(deployment, string(jsonStr))
-		if !updateOperator(t, clientSet, deployment) {
-			t.Error("Failed to update Operator")
-		}
-		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
-		if err != nil {
-			t.Errorf("Error getting namespace %s", err.Error())
-		}
-		if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-			t.Error("Incorrect Annotations")
-		}
 
+	updateTheOperator(t, clientSet, string(jsonStr))
+	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("Error getting namespace %s", err.Error())
 	}
+	if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+		t.Error("Missing java and python annotations")
+	}
+
 }
 
 // ---------------------------USE CASE 8 (Java on Namespace Python should be removed) ----------------------------------------------
-func TestUseCase8(t *testing.T) {
+func TestJavaOnlyNamespace(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	sampleNamespace := "sample-namespace-8"
+	sampleNamespace := "namespace-java-only"
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -103,15 +91,8 @@ func TestUseCase8(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
 
-	updateAnnotationConfig(deployment, string(jsonStr))
-	if !updateOperator(t, clientSet, deployment) {
-		t.Error("Failed to update Operator")
-	}
+	updateTheOperator(t, clientSet, string(jsonStr))
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting namespace %s", err.Error())
@@ -119,23 +100,23 @@ func TestUseCase8(t *testing.T) {
 
 	//python should not exist
 	if checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Python annotations should not exist")
 
 	}
 
 	if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Java annotations")
 	}
 	//------------------------------------USE CASE 8 End ----------------------------------------------
 
 }
 
 // ---------------------------USE CASE 9 (Python on Namespace and Java annotation should not exist) ----------------------------------------------
-func TestUseCase9(t *testing.T) {
+func TestPythonOnlyNamespace(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	sampleNamespace := "sample-namespace-9"
+	sampleNamespace := "namespace-python-only"
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -145,11 +126,6 @@ func TestUseCase9(t *testing.T) {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
 	}()
-	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -169,24 +145,18 @@ func TestUseCase9(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
-	updateAnnotationConfig(deployment, string(jsonStr))
-	if !updateOperator(t, clientSet, deployment) {
-		t.Error("Failed to update Operator")
-	}
+
+	updateTheOperator(t, clientSet, string(jsonStr))
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting namespace %s", err.Error())
 	}
 	//java annotations should not exist anymore
 	if checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Java annotations should not exist")
 	}
 	if !checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Python annotations")
 	}
 
 }

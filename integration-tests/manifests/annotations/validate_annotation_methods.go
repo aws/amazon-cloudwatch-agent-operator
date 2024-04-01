@@ -115,18 +115,9 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
 	opMutex.Lock() // Lock the mutex at the beginning
 	defer opMutex.Unlock()
-	var err error
-	args := deployment.Spec.Template.Spec.Containers[0].Args
-	// Attempt to get the deployment by name
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	deployment.Spec.Template.Spec.Containers[0].Args = args
-	if err != nil {
-		t.Errorf("Failed to get deployment: %v\n", err)
-		return false
-	}
 
 	// Update the deployment
-	_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+	_, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		t.Errorf("Failed to update deployment: %v\n", err)
 		return false
@@ -192,7 +183,7 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	if err != nil {
 		t.Errorf("Error getting deployment: %v\n\n", err)
 	}
-	updateAnnotationConfig(deployment, string(jsonStr))
+	updateAnnotationConfig(deployment, jsonStr)
 	if !updateOperator(t, clientSet, deployment) {
 		t.Error("Failed to update Operator")
 	}

@@ -15,11 +15,11 @@ import (
 )
 
 // ---------------------------USE CASE 1 (Java and Python on Deployment) ----------------------------------------------
-func TestUseCase1(t *testing.T) {
+func TestJavaAndPythonDeployment(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-1"
+	uniqueNamespace := "deployment-namespace-java-python"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -47,14 +47,11 @@ func TestUseCase1(t *testing.T) {
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	assert.Nil(t, err)
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
+
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	//check if deployment has annotations.
-	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
@@ -70,17 +67,17 @@ func TestUseCase1(t *testing.T) {
 
 	//wait for pods to update
 	if !checkIfAnnotationExists(deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Java and Python Annotations")
 	}
 
 }
 
 // ---------------------------USE CASE 2 (Java on Deployment and Python Should be Removed)------------------------------
-func TestUseCase2(t *testing.T) {
+func TestJavaOnlyDeployment(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-2"
+	uniqueNamespace := "deployment-namespace-java-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -110,16 +107,11 @@ func TestUseCase2(t *testing.T) {
 		t.Errorf("Failed to marshal: %v\n", err)
 	}
 
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n", err)
-	}
-
 	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	//check if deployment has annotations.
-	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		if err != nil {
 			t.Errorf("Error listing pods for deployment: %s", err.Error())
@@ -137,22 +129,22 @@ func TestUseCase2(t *testing.T) {
 	}
 
 	if checkIfAnnotationExists(deploymentPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Python Annotation should not exist")
 
 	}
 	//wait for pods to update
 	if !checkIfAnnotationExists(deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Java Annotations")
 	}
 
 }
 
 // ---------------------------USE CASE 3 (Python on Deployment and java annotations should be removed) ----------------------------------------------
-func TestUseCase3(t *testing.T) {
+func TestPythonOnlyDeployment(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-3"
+	uniqueNamespace := "deployment-namespace-python-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -201,12 +193,12 @@ func TestUseCase3(t *testing.T) {
 
 	//java shouldn't be annotated in this case
 	if checkIfAnnotationExists(deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Java Annotations should not exist")
 
 	}
 	//wait for pods to update
 	if !checkIfAnnotationExists(deploymentPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Python Annotations")
 	}
 
 }

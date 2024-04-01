@@ -14,11 +14,11 @@ import (
 )
 
 // ---------------------------USE CASE 4 (Python and Java on DaemonSet)------------------------------
-func TestUseCase4(t *testing.T) {
+func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-4"
+	uniqueNamespace := "daemonset-namespace-java-python"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -28,11 +28,6 @@ func TestUseCase4(t *testing.T) {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
-	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -53,14 +48,7 @@ func TestUseCase4(t *testing.T) {
 		t.Error("Error:", err)
 	}
 
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
-	updateAnnotationConfig(deployment, string(jsonStr))
-	if !updateOperator(t, clientSet, deployment) {
-		t.Error("Failed to update Operator")
-	}
+	updateTheOperator(t, clientSet, string(jsonStr))
 
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
@@ -78,17 +66,17 @@ func TestUseCase4(t *testing.T) {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	if !checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Java and Python annotations")
 	}
 
 }
 
 // ---------------------------USE CASE 5 (Java on DaemonSet and Python should be removed)------------------------------
-func TestUseCase5(t *testing.T) {
+func TestJavaOnlyDaemonSet(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-5"
+	uniqueNamespace := "daemonset-namespace-java-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -98,11 +86,6 @@ func TestUseCase5(t *testing.T) {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
-	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n", err)
-	}
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -120,16 +103,10 @@ func TestUseCase5(t *testing.T) {
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
-		t.Error("Error:", err)
+		t.Error("Error: ", err)
 	}
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n", err)
-	}
-	updateAnnotationConfig(deployment, string(jsonStr))
-	if !updateOperator(t, clientSet, deployment) {
-		t.Error("Failed to update Operator")
-	}
+
+	updateTheOperator(t, clientSet, string(jsonStr))
 
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
@@ -148,20 +125,20 @@ func TestUseCase5(t *testing.T) {
 	//Python should not exist on pods
 	//Python should have been removed
 	if checkIfAnnotationExists(daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Python annotations should not exist")
 	}
 	if !checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Java annotations")
 	}
 
 }
 
 // ---------------------------USE CASE 6 (Python on DaemonSet Java annotation should be removed)------------------------------
-func TestUseCase6(t *testing.T) {
+func TestPythonOnlyDaemonSet(t *testing.T) {
 
 	t.Parallel()
 	clientSet := setupTest(t)
-	uniqueNamespace := "sample-namespace-6"
+	uniqueNamespace := "daemonset-namespace-python-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -171,11 +148,6 @@ func TestUseCase6(t *testing.T) {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
-	//updating operator deployment
-	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -195,14 +167,8 @@ func TestUseCase6(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting deployment: %v\n\n", err)
-	}
-	updateAnnotationConfig(deployment, string(jsonStr))
-	if !updateOperator(t, clientSet, deployment) {
-		t.Errorf("Failed to update Operator")
-	}
+	updateTheOperator(t, clientSet, string(jsonStr))
+
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -222,10 +188,10 @@ func TestUseCase6(t *testing.T) {
 
 	//java shouldn't be annotated in this case
 	if checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Java annotations should not exist")
 	}
 	if !checkIfAnnotationExists(daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Incorrect Annotations")
+		t.Error("Missing Python annotations")
 	}
 
 }
