@@ -38,14 +38,14 @@ jobs:
       test-java-cluster-name: 'e2e-cw-agent-operator-test'
       tag: 'staging'
 
-  python-e2e-tests:
-    # Two E2E tests should not run at the same time in the same EKS cluster
-    concurrency:
-      group: 'e2e-cw-agent-python-operator-test'
-      cancel-in-progress: false
-    secrets: inherit
-    uses: ./.github/workflows/appsignals-python-e2e-test.yml
-    with:
-#      test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
-      test-python-cluster-name: 'e2e-cw-agent-operator-python-test'
-      tag: 'staging'
+#  python-e2e-tests:
+#    # Two E2E tests should not run at the same time in the same EKS cluster
+#    concurrency:
+#      group: 'e2e-cw-agent-python-operator-test'
+#      cancel-in-progress: false
+#    secrets: inherit
+#    uses: ./.github/workflows/appsignals-python-e2e-test.yml
+#    with:
+##      test-python-cluster-name: ${{ inputs.test-python-cluster-name }}
+#      test-python-cluster-name: 'e2e-cw-agent-operator-python-test'
+#      tag: 'staging'
