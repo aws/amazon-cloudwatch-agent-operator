@@ -49,6 +49,7 @@ jobs:
             scripts/eks/appsignals/clean-app-signals.sh
           sparse-checkout-cone-mode: false
 
+#       Resolve conflict to clean up the redundant configuration files deployed by helm.
       - name: Resolve Add-on configuration conflict
         working-directory: enablement-script/scripts/eks/appsignals
         run: |
