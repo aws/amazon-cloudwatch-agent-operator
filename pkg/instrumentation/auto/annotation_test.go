@@ -29,7 +29,7 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 		cfg        AnnotationConfig
 		want       map[string]map[string]string
 	}{
-		"SkipManualAnnotations": {
+		"SingleAnnotation": {
 			typeSet: instrumentation.NewTypeSet(instrumentation.TypeJava),
 			namespaces: map[string]map[string]string{
 				"manual-inject": {
@@ -47,9 +47,11 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 			want: map[string]map[string]string{
 				"manual-inject": {
 					instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue,
+					AnnotateKey(instrumentation.TypeJava):                         defaultAnnotationValue,
 				},
 				"manual-auto": {
-					AnnotateKey(instrumentation.TypeJava): defaultAnnotationValue,
+					instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue,
+					AnnotateKey(instrumentation.TypeJava):                         defaultAnnotationValue,
 				},
 			},
 		},
@@ -130,7 +132,8 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 	cfg := AnnotationConfig{
 		Java: AnnotationResources{
-			Namespaces: []string{"default"},
+			Namespaces:  []string{"default"},
+			Deployments: []string{"default/deployment-no-restart"},
 		},
 	}
 	namespace := &corev1.Namespace{
@@ -142,6 +145,12 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace.Name,
 			Name:      "deployment",
+		},
+	}
+	deploymentNoRestart := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace.Name,
+			Name:      "deployment-no-restart",
 		},
 	}
 	daemonSet := &appsv1.DaemonSet{
@@ -162,8 +171,12 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 			Name:      "deployment",
 		},
 	}
-	namespacedResources := []client.Object{defaultDeployment, daemonSet, statefulSet}
-	fakeClient := fake.NewFakeClient(namespace, defaultDeployment, daemonSet, statefulSet, otherDeployment)
+	namespacedRestartExpectedResources := []client.Object{defaultDeployment, daemonSet, statefulSet}
+	namespacedRestartNotExpectedResources := []client.Object{
+		deploymentNoRestart, // already instrumented resource should not be restarted
+		otherDeployment,     // non-configured namespace should not be restarted/updated
+	}
+	fakeClient := fake.NewFakeClient(namespace, defaultDeployment, deploymentNoRestart, daemonSet, statefulSet, otherDeployment)
 	mutators := NewAnnotationMutators(
 		fakeClient,
 		fakeClient,
@@ -173,7 +186,7 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 	)
 	mutators.MutateAndPatchAll(context.Background())
 	ctx := context.Background()
-	for _, namespacedResource := range namespacedResources {
+	for _, namespacedResource := range namespacedRestartExpectedResources {
 		assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(namespacedResource), namespacedResource))
 		obj := getAnnotationObjectMeta(namespacedResource)
 		assert.NotNil(t, obj)
@@ -181,13 +194,15 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 		assert.NotNil(t, annotations)
 		assert.NotEmpty(t, annotations[restartedAtAnnotation])
 	}
-
-	// non-configured namespace is not restarted/updated
-	assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(otherDeployment), otherDeployment))
-	obj := getAnnotationObjectMeta(otherDeployment)
-	assert.NotNil(t, obj)
-	annotations := obj.GetAnnotations()
-	assert.Nil(t, annotations)
+	for _, namespacedResource := range namespacedRestartNotExpectedResources {
+		assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(namespacedResource), namespacedResource))
+		obj := getAnnotationObjectMeta(namespacedResource)
+		assert.NotNil(t, obj)
+		annotations := obj.GetAnnotations()
+		if annotations != nil {
+			assert.Empty(t, annotations[restartedAtAnnotation])
+		}
+	}
 }
 
 func getAnnotationObjectMeta(obj client.Object) metav1.Object {

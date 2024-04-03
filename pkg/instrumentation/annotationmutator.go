@@ -18,9 +18,6 @@ type insertAnnotationMutation struct {
 }
 
 func (m *insertAnnotationMutation) Mutate(annotations map[string]string) bool {
-	if !m.shouldMutate(annotations) {
-		return false
-	}
 	var mutated bool
 	for key, value := range m.insert {
 		if _, ok := annotations[key]; !ok {
@@ -29,15 +26,6 @@ func (m *insertAnnotationMutation) Mutate(annotations map[string]string) bool {
 		}
 	}
 	return mutated
-}
-
-func (m *insertAnnotationMutation) shouldMutate(annotations map[string]string) bool {
-	for key := range m.insert {
-		if _, ok := annotations[key]; ok {
-			return false
-		}
-	}
-	return true
 }
 
 // NewInsertAnnotationMutation creates a new mutation that inserts annotations. All provided annotation keys

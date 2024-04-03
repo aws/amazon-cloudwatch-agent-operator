@@ -37,25 +37,27 @@ type AnnotationMutators struct {
 	daemonSetMutators   map[string]instrumentation.AnnotationMutator
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
+	injectAnnotations   map[string]struct{}
 }
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
 func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
 	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+	checkDifferentInjectAnnotationsFunc := m.checkDifferentInjectAnnotationsFunc(namespace)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
 	mutateAndPatchFunc := m.patchFunc(ctx, m.MutateObject)
-	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
-	)
 	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
 	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
 	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
+		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
+	)
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
@@ -133,6 +135,7 @@ func NewAnnotationMutators(
 		daemonSetMutators:   builder.buildMutators(getResources(cfg, typeSet, getDaemonSets)),
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
+		injectAnnotations:   injectAnnotations(typeSet),
 	}
 }
 
@@ -194,7 +197,8 @@ func newMutatorBuilder(typeSet instrumentation.TypeSet) *mutatorBuilder {
 }
 
 // buildMutations builds insert and remove annotation mutations for the instrumentation.Type.
-// Both are configured to only modify the annotations if all annotation keys are missing or present respectively.
+// The insert mutation is configured to modify for any missing annotation key.
+// The remove mutation is configured to only modify if all annotation keys are present.
 func buildMutations(instType instrumentation.Type) (instrumentation.AnnotationMutation, instrumentation.AnnotationMutation) {
 	annotations := buildAnnotations(instType)
 	return instrumentation.NewInsertAnnotationMutation(annotations),
@@ -207,6 +211,15 @@ func buildAnnotations(instType instrumentation.Type) map[string]string {
 		instrumentation.InjectAnnotationKey(instType): defaultAnnotationValue,
 		AnnotateKey(instType):                         defaultAnnotationValue,
 	}
+}
+
+// injectAnnotations returns the set of inject annotations corresponding to the instrumentation types
+func injectAnnotations(instTypeSet instrumentation.TypeSet) map[string]struct{} {
+	ret := map[string]struct{}{}
+	for instType := range instTypeSet {
+		ret[instrumentation.InjectAnnotationKey(instType)] = struct{}{}
+	}
+	return ret
 }
 
 // AnnotateKey joins the auto-annotate annotation prefix with the provided instrumentation.Type.

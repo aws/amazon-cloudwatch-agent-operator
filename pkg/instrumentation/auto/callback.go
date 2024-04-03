@@ -7,6 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,6 +20,8 @@ import (
 
 type objectCallbackFunc func(client.Object) bool
 
+// chainCallbacks is a func that invokes functions in a callback chain one after another as long as each function
+// returns true. Eventually returns true if all callbacks in chain are executed and false otherwise.
 func chainCallbacks(fns ...objectCallbackFunc) objectCallbackFunc {
 	return func(obj client.Object) bool {
 		for _, fn := range fns {
@@ -94,4 +100,43 @@ func (m *AnnotationMutators) restartNamespaceFunc(ctx context.Context) objectCal
 		m.RestartNamespace(ctx, namespace)
 		return true
 	}
+}
+
+// checkDifferentInjectAnnotationsFunc returns a func that checks if a namespace and an object have the same set of
+// inject annotations
+func (m *AnnotationMutators) checkDifferentInjectAnnotationsFunc(namespace *corev1.Namespace) objectCallbackFunc {
+	return func(obj client.Object) bool {
+		switch o := obj.(type) {
+		case *appsv1.Deployment:
+			return m.checkDifferentInjectAnnotations(namespace.GetObjectMeta(), o.Spec.Template.GetObjectMeta())
+		case *appsv1.DaemonSet:
+			return m.checkDifferentInjectAnnotations(namespace.GetObjectMeta(), o.Spec.Template.GetObjectMeta())
+		case *appsv1.StatefulSet:
+			return m.checkDifferentInjectAnnotations(namespace.GetObjectMeta(), o.Spec.Template.GetObjectMeta())
+		default:
+			return false
+		}
+	}
+}
+
+// checkDifferentInjectAnnotations returns true if both the objects do NOT have identical inject annotations and false
+// otherwise. If both objects do not have any inject annotations, return false.
+func (m *AnnotationMutators) checkDifferentInjectAnnotations(obj1, obj2 metav1.Object) bool {
+	obj1InjectAnnotations := make(map[string]string)
+	if annotations := obj1.GetAnnotations(); annotations != nil {
+		for annotation, value := range annotations {
+			if _, ok := m.injectAnnotations[annotation]; ok {
+				obj1InjectAnnotations[annotation] = value
+			}
+		}
+	}
+	obj2InjectAnnotations := make(map[string]string)
+	if annotations := obj2.GetAnnotations(); annotations != nil {
+		for annotation, value := range annotations {
+			if _, ok := m.injectAnnotations[annotation]; ok {
+				obj2InjectAnnotations[annotation] = value
+			}
+		}
+	}
+	return !reflect.DeepEqual(obj1InjectAnnotations, obj2InjectAnnotations)
 }

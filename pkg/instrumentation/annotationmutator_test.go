@@ -31,8 +31,9 @@ func TestMutateAnnotations(t *testing.T) {
 			wantAnnotations: map[string]string{
 				"keyA": "1",
 				"keyB": "2",
+				"keyC": "4",
 			},
-			wantMutated: false,
+			wantMutated: true,
 		},
 		"TestInsert/NoConflicts": {
 			annotations: nil,
