@@ -113,9 +113,7 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	//check if deployment has annotations.
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
-		if err != nil {
-			t.Errorf("Error listing pods for deployment: %s", err.Error())
-		}
+		t.Errorf("Error listing pods for deployment: %s", err.Error())
 	}
 
 	// List pods belonging to the deployment
