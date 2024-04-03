@@ -31,20 +31,29 @@ env:
   APP_SIGNALS_PYTHON_E2E_RE_SA_IMG: appsignals-python-django-remote-service
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP: /aws/appsignals/eks
-#  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
 
 
 jobs:
   appsignals-e2e-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Download enablement script
+        uses: actions/checkout@v4
         with:
-          # TODO: This step is used for custom pre-release instrumentation
-          # Uisng SHA as of March 4. It is a temporary measure until the cw add-on is released with python support
-          ref: abf75babe672412cb63c56cbcf1c5ce2d8c97a1c
-          fetch-depth: 0
+          repository: aws-observability/application-signals-demo
+          ref: main
+          path: enablement-script
+          sparse-checkout: |
+            scripts/eks/appsignals/enable-app-signals.sh
+            scripts/eks/appsignals/clean-app-signals.sh
+          sparse-checkout-cone-mode: false
+
+#       Resolve conflict to clean up the redundant configuration files deployed by helm.
+      - name: Resolve Add-on configuration conflict
+        working-directory: enablement-script/scripts/eks/appsignals
+        run: |
+          sed -i 's/aws eks create-addon \\/aws eks create-addon \\\n        --resolve-conflicts OVERWRITE \\/' enable-app-signals.sh
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -79,43 +88,10 @@ jobs:
           --name srvc-acc-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-python-cluster-name }} \
-          --role-name eks-s3-access-${{ env.TESTING_ID }} \
+          --role-name eks-s3-access-python-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ env.AWS_DEFAULT_REGION }} \
           --approve
-
-      # TODO: This step is used for custom pre-release instrumentation
-      # It is a temporary measure until the cw add-on is released with python support
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
-
-      # TODO: This step is used for custom pre-release instrumentation
-      # It is a temporary measure until the cw add-on is released with python support
-      - name: Edit Helm values for Amazon Cloudwatch Agent Operator
-        working-directory: helm/
-        run: |
-          sed -i 's/clusterName:/clusterName: ${{ inputs.test-python-cluster-name }}/g' values.yaml
-          sed -i 's/region:/region: ${{ env.AWS_DEFAULT_REGION }}/g' values.yaml
-          sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values.yaml
-          sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
-          sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: 506463145083.dkr.ecr.us-west-2.amazonaws.com/' values.yaml
-          sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: public.ecr.aws/aws-observability/adot-autoinstrumentation-python~g' values.yaml
-          sed -i 's/tag: 0.43b0/tag: v0.0.1/g' values.yaml
-          cat values.yaml
-
-      # TODO: This step is used for custom pre-release instrumentation
-      # It is a temporary measure until the cw add-on is released with python support
-      - name: Create CWA Operator Namespace file
-        run: |
-          cat <<EOF > ./namespace.yaml
-          apiVersion: v1
-          kind: Namespace
-          metadata:
-            name: amazon-cloudwatch
-            labels:
-              name: amazon-cloudwatch
-          EOF
-
 
       # This step avoids code duplication for terraform templates and the validator
       # To simplify, we get the entire repo
@@ -147,31 +123,33 @@ jobs:
             -var="python_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}:latest" \
             -var="python_remote_app_image=${{ env.TEST_ACCOUNT }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}:latest"
 
-      - name: Wait for sample app pods to come up
+      # Enable App Signals on the test cluster
+      - name: Enable App Signals
+        working-directory: enablement-script/scripts/eks/appsignals
         run: |
-          kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }} \
-          
-          echo "Installing app signals to the sample app"
-          kubectl apply -f namespace.yaml
-          helm template amazon-cloudwatch-observability ./helm --debug  --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
+          ./enable-app-signals.sh \
+          ${{ inputs.test-python-cluster-name }} \
+          ${{ env.AWS_DEFAULT_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
 
+      - name: Save CloudWatch Agent Operator image to environment before patching
+        run: |
+          echo "OLD_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+          jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_ENV
+
+      - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
+        run: |
+          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
+          kubectl delete pods --all -n amazon-cloudwatch
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+      # Application pods need to be restarted for the
+      # app signals instrumentation to take effect
+      - name: Restart the app pods
+        run: |
           kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
+          kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }}
           kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          
-          # Attach policies to cluster node group roles that are required for AppSignals
-          aws eks list-nodegroups --cluster-name ${{ inputs.test-python-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }} |\
-          jq -r '.nodegroups[]' |\
-          while read -r node_group;
-          do
-            node_role=$(\
-              aws eks describe-nodegroup  --cluster-name ${{ inputs.test-python-cluster-name }} --nodegroup-name $node_group --region ${{ env.AWS_DEFAULT_REGION }} |\
-              jq -r '.nodegroup.nodeRole' |\
-              cut -d'/' -f2
-            )
-            aws iam attach-role-policy --role-name $node_role --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy --region ${{ env.AWS_DEFAULT_REGION }}
-            aws iam attach-role-policy --role-name $node_role --policy-arn arn:aws:iam::aws:policy/AWSXRayWriteOnlyAccess --region ${{ env.AWS_DEFAULT_REGION }}
-          done
 
       - name: Get remote service deployment name and IP
         run: |
@@ -200,6 +178,13 @@ jobs:
           
           echo "NEW_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
           jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_ENV
+
+      - name: Check if CW Agent Operator image has changed
+        run: |
+          if [ ${{ env.OLD_CW_AGENT_OPERATOR_IMAGE }} = ${{ env.NEW_CW_AGENT_OPERATOR_IMAGE }} ]; then
+            echo "Operator image did not change"
+            exit 1
+          fi
 
       - name: Get the sample app endpoint
         run: |
@@ -287,11 +272,23 @@ jobs:
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
+      # Clean up Procedures
+      - name: Remove log group deletion command
+        if: always()
+        working-directory: enablement-script/scripts/eks/appsignals
+        run: |
+          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP }}' --region \$REGION"
+          sed -i "s#$delete_log_group##g" clean-app-signals.sh
+
       - name: Clean Up App Signals
         if: always()
         continue-on-error: true
+        working-directory: enablement-script/scripts/eks/appsignals
         run: |
-          kubectl delete -f ./namespace.yaml
+          ./clean-app-signals.sh \
+          ${{ inputs.test-python-cluster-name }} \
+          ${{ env.AWS_DEFAULT_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
 
       # This step also deletes lingering resources from previous test runs
       - name: Delete all sample app resources
