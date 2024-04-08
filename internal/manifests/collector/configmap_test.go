@@ -23,7 +23,7 @@ func TestDesiredConfigMap(t *testing.T) {
 		expectedLables["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
-			"cwagentconfig.json": `{"logs":{"metrics_collected":{"app_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"app_signals":{}}}}`,
+			"cwagentconfig.json": `{"logs":{"metrics_collected":{"application_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"application_signals":{}}}}`,
 		}
 
 		param := deploymentParams()
