@@ -9,27 +9,30 @@ import (
 
 // AnnotationMutation is used to modify an annotation map.
 type AnnotationMutation interface {
-	// Mutate attempts to modify the annotations map. Returns whether the function changed the annotations.
-	Mutate(annotations map[string]string) bool
+	// Mutate attempts to modify the annotations map. Returns the mutated annotations if any and whether the function
+	// changed the annotations.
+	Mutate(annotations map[string]string) (map[string]string, bool)
 }
 
 type insertAnnotationMutation struct {
 	insert map[string]string
 }
 
-func (m *insertAnnotationMutation) Mutate(annotations map[string]string) bool {
+func (m *insertAnnotationMutation) Mutate(annotations map[string]string) (map[string]string, bool) {
 	var mutated bool
+	mutatedAnnotations := make(map[string]string)
 	for key, value := range m.insert {
 		if _, ok := annotations[key]; !ok {
 			annotations[key] = value
+			mutatedAnnotations[key] = value
 			mutated = true
 		}
 	}
-	return mutated
+	return mutatedAnnotations, mutated
 }
 
-// NewInsertAnnotationMutation creates a new mutation that inserts annotations. All provided annotation keys
-// must be present for it to attempt to insert.
+// NewInsertAnnotationMutation creates a new mutation that inserts annotations. Any missing annotation key
+// is sufficient for it to attempt to insert.
 func NewInsertAnnotationMutation(annotations map[string]string) AnnotationMutation {
 	return &insertAnnotationMutation{insert: annotations}
 }
@@ -38,18 +41,20 @@ type removeAnnotationMutation struct {
 	remove []string
 }
 
-func (m *removeAnnotationMutation) Mutate(annotations map[string]string) bool {
+func (m *removeAnnotationMutation) Mutate(annotations map[string]string) (map[string]string, bool) {
 	if !m.shouldMutate(annotations) {
-		return false
+		return nil, false
 	}
 	var mutated bool
+	mutatedAnnotations := make(map[string]string)
 	for _, key := range m.remove {
-		if _, ok := annotations[key]; ok {
+		if value, ok := annotations[key]; ok {
 			delete(annotations, key)
+			mutatedAnnotations[key] = value
 			mutated = true
 		}
 	}
-	return mutated
+	return mutatedAnnotations, mutated
 }
 
 func (m *removeAnnotationMutation) shouldMutate(annotations map[string]string) bool {
@@ -78,16 +83,22 @@ func NewAnnotationMutator(mutations []AnnotationMutation) AnnotationMutator {
 
 // Mutate modifies the object's annotations based on the mutator's mutations. Returns whether any of the
 // mutations changed the annotations.
-func (m *AnnotationMutator) Mutate(obj metav1.Object) bool {
+func (m *AnnotationMutator) Mutate(obj metav1.Object) (map[string]string, bool) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
 	var anyMutated bool
+	allMutatedAnnotations := make(map[string]string)
 	for _, mutation := range m.mutations {
-		mutated := mutation.Mutate(annotations)
+		mutatedAnnotations, mutated := mutation.Mutate(annotations)
 		anyMutated = anyMutated || mutated
+		if mutated {
+			for k, v := range mutatedAnnotations {
+				allMutatedAnnotations[k] = v
+			}
+		}
 	}
 	obj.SetAnnotations(annotations)
-	return anyMutated
+	return allMutatedAnnotations, anyMutated
 }

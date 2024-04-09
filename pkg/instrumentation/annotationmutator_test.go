@@ -138,7 +138,8 @@ func TestMutateAnnotations(t *testing.T) {
 				Annotations: testCase.annotations,
 			}
 			m := NewAnnotationMutator(testCase.mutations)
-			assert.Equal(t, testCase.wantMutated, m.Mutate(&obj))
+			_, isMutated := m.Mutate(&obj)
+			assert.Equal(t, testCase.wantMutated, isMutated)
 			assert.Equal(t, testCase.wantAnnotations, obj.GetAnnotations())
 		})
 	}

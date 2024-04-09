@@ -41,17 +41,19 @@ type AnnotationMutators struct {
 }
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
-func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
+func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
 	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
-	checkDifferentInjectAnnotationsFunc := m.checkDifferentInjectAnnotationsFunc(namespace)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), chainCallbacks(checkDifferentInjectAnnotationsFunc, restartAndPatchFunc))
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	mutateAndPatchFunc := m.patchFunc(ctx, m.MutateObject)
+	mutateAndPatchFunc := m.patchFunc(ctx, m.mutateObject)
 	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
 	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
 	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
@@ -61,7 +63,12 @@ func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) MutateObject(obj client.Object) bool {
+func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
+	return m.mutateObject(obj, nil)
+}
+
+// mutateObject modifies annotations for a single object using the configured mutators.
+func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) {
 	switch o := obj.(type) {
 	case *corev1.Namespace:
 		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta())
@@ -72,7 +79,7 @@ func (m *AnnotationMutators) MutateObject(obj client.Object) bool {
 	case *appsv1.StatefulSet:
 		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta())
 	default:
-		return false
+		return nil, false
 	}
 }
 
@@ -86,24 +93,24 @@ func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.Ob
 	switch l := list.(type) {
 	case *corev1.NamespaceList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.DeploymentList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.DaemonSetList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.StatefulSetList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	}
 }
 
-func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) bool {
+func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
 	mutator, ok := mutators[name]
 	if !ok {
 		mutator = m.defaultMutator
@@ -135,7 +142,7 @@ func NewAnnotationMutators(
 		daemonSetMutators:   builder.buildMutators(getResources(cfg, typeSet, getDaemonSets)),
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
-		injectAnnotations:   injectAnnotations(typeSet),
+		injectAnnotations:   buildInjectAnnotations(typeSet),
 	}
 }
 
@@ -213,8 +220,8 @@ func buildAnnotations(instType instrumentation.Type) map[string]string {
 	}
 }
 
-// injectAnnotations returns the set of inject annotations corresponding to the instrumentation types
-func injectAnnotations(instTypeSet instrumentation.TypeSet) map[string]struct{} {
+// buildInjectAnnotations returns the set of inject annotations corresponding to the instrumentation types
+func buildInjectAnnotations(instTypeSet instrumentation.TypeSet) map[string]struct{} {
 	ret := map[string]struct{}{}
 	for instType := range instTypeSet {
 		ret[instrumentation.InjectAnnotationKey(instType)] = struct{}{}

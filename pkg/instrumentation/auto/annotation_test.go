@@ -159,6 +159,21 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 			Name:      "daemonset",
 		},
 	}
+	daemonSetNoRestart := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace.Name,
+			Name:      "daemonset-no-restart",
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue,
+					},
+				},
+			},
+		},
+	}
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace.Name,
@@ -173,10 +188,12 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 	}
 	namespacedRestartExpectedResources := []client.Object{defaultDeployment, daemonSet, statefulSet}
 	namespacedRestartNotExpectedResources := []client.Object{
-		deploymentNoRestart, // already instrumented resource should not be restarted
-		otherDeployment,     // non-configured namespace should not be restarted/updated
+		deploymentNoRestart, // explicitly auto-annotated instrumented resource should not be restarted
+		daemonSetNoRestart,  // manually instrumented resource should not be restarted
+		otherDeployment,     // resource in non-configured namespace should not be restarted/updated
 	}
-	fakeClient := fake.NewFakeClient(namespace, defaultDeployment, deploymentNoRestart, daemonSet, statefulSet, otherDeployment)
+	fakeClient := fake.NewFakeClient(namespace, defaultDeployment, deploymentNoRestart, daemonSet, daemonSetNoRestart,
+		statefulSet, otherDeployment)
 	mutators := NewAnnotationMutators(
 		fakeClient,
 		fakeClient,

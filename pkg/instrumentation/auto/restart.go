@@ -25,17 +25,18 @@ type restartAnnotationMutation struct {
 
 var _ instrumentation.AnnotationMutation = (*restartAnnotationMutation)(nil)
 
-func (m *restartAnnotationMutation) Mutate(annotations map[string]string) bool {
-	annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
-	return true
+func (m *restartAnnotationMutation) Mutate(annotations map[string]string) (map[string]string, bool) {
+	restartedAt := time.Now().Format(time.RFC3339)
+	annotations[restartedAtAnnotation] = restartedAt
+	return map[string]string{restartedAtAnnotation: restartedAt}, true
 }
 
 // restart mutates the object's restartedAtAnnotation with the current time.
-func setRestartAnnotation(obj client.Object) bool {
+func setRestartAnnotation(obj client.Object, _ any) (any, bool) {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		if o.Spec.Paused {
-			return false
+			return nil, false
 		}
 		restartAnnotationMutator.Mutate(o.Spec.Template.GetObjectMeta())
 	case *appsv1.DaemonSet:
@@ -43,5 +44,5 @@ func setRestartAnnotation(obj client.Object) bool {
 	case *appsv1.StatefulSet:
 		restartAnnotationMutator.Mutate(o.Spec.Template.GetObjectMeta())
 	}
-	return true
+	return nil, true
 }
