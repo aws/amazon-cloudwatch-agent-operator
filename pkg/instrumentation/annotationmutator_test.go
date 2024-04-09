@@ -12,10 +12,11 @@ import (
 
 func TestMutateAnnotations(t *testing.T) {
 	testCases := map[string]struct {
-		annotations     map[string]string
-		mutations       []AnnotationMutation
-		wantAnnotations map[string]string
-		wantMutated     bool
+		annotations            map[string]string
+		mutations              []AnnotationMutation
+		wantAnnotations        map[string]string
+		wantMutatedAnnotations map[string]string
+		wantMutated            bool
 	}{
 		"TestInsert/Conflicts": {
 			annotations: map[string]string{
@@ -33,6 +34,9 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 				"keyC": "4",
 			},
+			wantMutatedAnnotations: map[string]string{
+				"keyC": "4",
+			},
 			wantMutated: true,
 		},
 		"TestInsert/NoConflicts": {
@@ -44,6 +48,10 @@ func TestMutateAnnotations(t *testing.T) {
 				}),
 			},
 			wantAnnotations: map[string]string{
+				"keyA": "3",
+				"keyC": "4",
+			},
+			wantMutatedAnnotations: map[string]string{
 				"keyA": "3",
 				"keyC": "4",
 			},
@@ -60,6 +68,10 @@ func TestMutateAnnotations(t *testing.T) {
 				}),
 			},
 			wantAnnotations: map[string]string{
+				"keyA": "3",
+				"keyC": "4",
+			},
+			wantMutatedAnnotations: map[string]string{
 				"keyA": "3",
 				"keyC": "4",
 			},
@@ -80,7 +92,8 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "1",
 				"keyB": "2",
 			},
-			wantMutated: false,
+			wantMutatedAnnotations: map[string]string{},
+			wantMutated:            false,
 		},
 		"TestRemove/NoConflicts": {
 			annotations: map[string]string{
@@ -94,7 +107,11 @@ func TestMutateAnnotations(t *testing.T) {
 				}),
 			},
 			wantAnnotations: map[string]string{},
-			wantMutated:     true,
+			wantMutatedAnnotations: map[string]string{
+				"keyA": "1",
+				"keyB": "2",
+			},
+			wantMutated: true,
 		},
 		"TestRemove/Multiple": {
 			annotations: map[string]string{
@@ -110,7 +127,11 @@ func TestMutateAnnotations(t *testing.T) {
 				}),
 			},
 			wantAnnotations: map[string]string{},
-			wantMutated:     true,
+			wantMutatedAnnotations: map[string]string{
+				"keyA": "1",
+				"keyB": "2",
+			},
+			wantMutated: true,
 		},
 		"TestBoth": {
 			annotations: map[string]string{
@@ -129,6 +150,9 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "3",
 				"keyB": "2",
 			},
+			wantMutatedAnnotations: map[string]string{
+				"keyA": "3",
+			},
 			wantMutated: true,
 		},
 	}
@@ -138,8 +162,9 @@ func TestMutateAnnotations(t *testing.T) {
 				Annotations: testCase.annotations,
 			}
 			m := NewAnnotationMutator(testCase.mutations)
-			_, isMutated := m.Mutate(&obj)
+			mutatedAnnotations, isMutated := m.Mutate(&obj)
 			assert.Equal(t, testCase.wantMutated, isMutated)
+			assert.Equal(t, testCase.wantMutatedAnnotations, mutatedAnnotations)
 			assert.Equal(t, testCase.wantAnnotations, obj.GetAnnotations())
 		})
 	}

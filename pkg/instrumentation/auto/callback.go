@@ -19,7 +19,8 @@ import (
 type objectCallbackFunc func(client.Object, any) (any, bool)
 
 // chainCallbacks is a func that invokes functions in a callback chain one after another as long as each function
-// returns true. Eventually returns true if all callbacks in chain are executed and false otherwise.
+// returns true. The result of each function in the callback is passed along to the next. Eventually returns true if
+// all callbacks in chain are executed and false otherwise.
 func chainCallbacks(fns ...objectCallbackFunc) objectCallbackFunc {
 	return func(obj client.Object, passToNext any) (any, bool) {
 		var ok bool
