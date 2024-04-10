@@ -22,7 +22,7 @@ on:
         required: true
         type: boolean
         default: true
-        description: "Run in EKS Addon Beta environment ?"
+        description: "Run in EKS Addon Beta environment"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
