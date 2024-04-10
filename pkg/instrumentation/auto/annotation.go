@@ -42,23 +42,21 @@ type AnnotationMutators struct {
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
 func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
-	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
 	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
 	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
 	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), restartAndPatchFunc))
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	mutateAndPatchFunc := m.patchFunc(ctx, m.mutateObject)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
 	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
+		chainCallbacks(m.patchFunc(ctx, m.mutateObject), m.restartNamespaceFunc(ctx)),
 	)
 }
 
@@ -115,7 +113,8 @@ func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumenta
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	return mutator.Mutate(obj)
+	mutatedAnnotations := mutator.Mutate(obj)
+	return mutatedAnnotations, len(mutatedAnnotations) != 0
 }
 
 func namespacedName(obj metav1.Object) string {

@@ -16,7 +16,6 @@ func TestMutateAnnotations(t *testing.T) {
 		mutations              []AnnotationMutation
 		wantAnnotations        map[string]string
 		wantMutatedAnnotations map[string]string
-		wantMutated            bool
 	}{
 		"TestInsert/Conflicts": {
 			annotations: map[string]string{
@@ -37,7 +36,6 @@ func TestMutateAnnotations(t *testing.T) {
 			wantMutatedAnnotations: map[string]string{
 				"keyC": "4",
 			},
-			wantMutated: true,
 		},
 		"TestInsert/NoConflicts": {
 			annotations: nil,
@@ -55,7 +53,6 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "3",
 				"keyC": "4",
 			},
-			wantMutated: true,
 		},
 		"TestInsert/Multiple": {
 			annotations: nil,
@@ -75,7 +72,6 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "3",
 				"keyC": "4",
 			},
-			wantMutated: true,
 		},
 		"TestRemove/Conflicts": {
 			annotations: map[string]string{
@@ -93,7 +89,6 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 			},
 			wantMutatedAnnotations: map[string]string{},
-			wantMutated:            false,
 		},
 		"TestRemove/NoConflicts": {
 			annotations: map[string]string{
@@ -111,7 +106,6 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "1",
 				"keyB": "2",
 			},
-			wantMutated: true,
 		},
 		"TestRemove/Multiple": {
 			annotations: map[string]string{
@@ -131,7 +125,6 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyA": "1",
 				"keyB": "2",
 			},
-			wantMutated: true,
 		},
 		"TestBoth": {
 			annotations: map[string]string{
@@ -153,7 +146,6 @@ func TestMutateAnnotations(t *testing.T) {
 			wantMutatedAnnotations: map[string]string{
 				"keyA": "3",
 			},
-			wantMutated: true,
 		},
 	}
 	for name, testCase := range testCases {
@@ -162,8 +154,7 @@ func TestMutateAnnotations(t *testing.T) {
 				Annotations: testCase.annotations,
 			}
 			m := NewAnnotationMutator(testCase.mutations)
-			mutatedAnnotations, isMutated := m.Mutate(&obj)
-			assert.Equal(t, testCase.wantMutated, isMutated)
+			mutatedAnnotations := m.Mutate(&obj)
 			assert.Equal(t, testCase.wantMutatedAnnotations, mutatedAnnotations)
 			assert.Equal(t, testCase.wantAnnotations, obj.GetAnnotations())
 		})

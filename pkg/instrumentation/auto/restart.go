@@ -25,10 +25,10 @@ type restartAnnotationMutation struct {
 
 var _ instrumentation.AnnotationMutation = (*restartAnnotationMutation)(nil)
 
-func (m *restartAnnotationMutation) Mutate(annotations map[string]string) (map[string]string, bool) {
+func (m *restartAnnotationMutation) Mutate(annotations map[string]string) map[string]string {
 	restartedAt := time.Now().Format(time.RFC3339)
 	annotations[restartedAtAnnotation] = restartedAt
-	return map[string]string{restartedAtAnnotation: restartedAt}, true
+	return map[string]string{restartedAtAnnotation: restartedAt}
 }
 
 // restart mutates the object's restartedAtAnnotation with the current time.

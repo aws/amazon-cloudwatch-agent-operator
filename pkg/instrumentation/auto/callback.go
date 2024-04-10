@@ -94,8 +94,8 @@ func (m *AnnotationMutators) patchFunc(ctx context.Context, callback objectCallb
 }
 
 func (m *AnnotationMutators) restartNamespaceFunc(ctx context.Context) objectCallbackFunc {
-	return func(obj client.Object, mutatedAnnotations_ any) (any, bool) {
-		mutatedAnnotations, ok := mutatedAnnotations_.(map[string]string)
+	return func(obj client.Object, previousResult any) (any, bool) {
+		mutatedAnnotations, ok := previousResult.(map[string]string)
 		if !ok {
 			return nil, false
 		}
