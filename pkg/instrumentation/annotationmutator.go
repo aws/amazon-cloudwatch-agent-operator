@@ -76,8 +76,7 @@ func NewAnnotationMutator(mutations []AnnotationMutation) AnnotationMutator {
 	return AnnotationMutator{mutations: mutations}
 }
 
-// Mutate modifies the object's annotations based on the mutator's mutations. Returns all the mutated annotations and
-// whether any of the mutations changed the annotations.
+// Mutate modifies the object's annotations based on the mutator's mutations. Returns all the mutated annotations.
 func (m *AnnotationMutator) Mutate(obj metav1.Object) map[string]string {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
