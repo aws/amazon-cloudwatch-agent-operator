@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
@@ -391,10 +392,26 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	switch s := len(otelInsts.Items); {
 	case s == 0:
 		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
-		return getDefaultInstrumentation()
+		cr := GetAmazonCloudWatchAgentResource(pm.Client, "cloudwatch-agent")
+		config, err := adapters.ConfigStructFromJSONString(cr.Spec.Config)
+		if err != nil {
+			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
+		}
+		return getDefaultInstrumentation(config)
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
 		return &otelInsts.Items[0], nil
 	}
+}
+
+func GetAmazonCloudWatchAgentResource(c client.Client, name string) v1alpha1.AmazonCloudWatchAgent {
+	cr := &v1alpha1.AmazonCloudWatchAgent{}
+
+	_ = c.Get(context.TODO(), client.ObjectKey{
+		Namespace: "amazon-cloudwatch",
+		Name:      name,
+	}, cr)
+
+	return *cr
 }

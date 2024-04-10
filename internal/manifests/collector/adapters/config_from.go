@@ -38,33 +38,34 @@ func ConfigFromJSONString(configStr string) (map[string]interface{}, error) {
 }
 
 type CwaConfig struct {
-	Metrics *metric `json:"metrics,omitempty"`
-	Logs    *log    `json:"logs,omitempty"`
-	Traces  *trace  `json:"traces,omitempty"`
+	Metrics *Metrics `json:"metrics,omitempty"`
+	Logs    *Logs    `json:"logs,omitempty"`
+	Traces  *Traces  `json:"traces,omitempty"`
 }
 
-type metric struct {
-	MetricsCollected *metricCollected `json:"metrics_collected,omitempty"`
+type Metrics struct {
+	MetricsCollected *MetricsCollected `json:"metrics_collected,omitempty"`
 }
 
-type log struct {
-	LogMetricsCollected *logMetricCollected `json:"metrics_collected,omitempty"`
+type Logs struct {
+	LogMetricsCollected *LogMetricsCollected `json:"metrics_collected,omitempty"`
 }
 
-type trace struct {
-	TracesCollected *traceCollected `json:"traces_collected,omitempty"`
+type Traces struct {
+	TracesCollected *TracesCollected `json:"traces_collected,omitempty"`
 }
 
-type metricCollected struct {
+type MetricsCollected struct {
 	StatsD   *statsD   `json:"statsd,omitempty"`
 	CollectD *collectD `json:"collectd,omitempty"`
+	AppSignals *appSignals `json:"app_signals,omitempty"`
 }
 
-type logMetricCollected struct {
+type LogMetricsCollected struct {
 	EMF *emf `json:"emf,omitempty"`
 }
 
-type traceCollected struct {
+type TracesCollected struct {
 	XRay *xray `json:"xray,omitempty"`
 	OTLP *otlp `json:"otlp,omitempty"`
 }
@@ -75,6 +76,10 @@ type statsD struct {
 
 type collectD struct {
 	ServiceAddress string `json:"service_address,omitempty"`
+}
+
+type appSignals struct {
+	TLS *tls `json:"tls,omitempty"`
 }
 
 type emf struct {
@@ -92,6 +97,11 @@ type tcpProxy struct {
 type otlp struct {
 	GRPCEndpoint string `json:"grpc_endpoint,omitempty"`
 	HTTPEndpoint string `json:"http_endpoint,omitempty"`
+}
+
+type tls struct {
+	CertFile string `json:"cert_file,omitempty"`
+	KeyFile string `json:"key_file,omitempty"`
 }
 
 func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
