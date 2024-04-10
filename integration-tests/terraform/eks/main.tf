@@ -122,6 +122,6 @@ resource "null_resource" "validator" {
     aws_eks_addon.this
   ]
   provisioner "local-exec" {
-    command = "go test ${var.test_dir} -v"
+    command = "go test ${var.test_dir} -v --tags=linuxonly"
   }
 }
