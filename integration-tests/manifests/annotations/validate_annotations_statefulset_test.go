@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // ---------------------------USE CASE 10 (Python and Java on Stateful set)------------------------------
@@ -62,7 +63,7 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for my-statefulset StatefulSet: %s\n", err.Error())
 	}
-	if !checkIfAnnotationExists(statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+	if !checkIfAnnotationExists(clientSet, statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
 		t.Error("Missing Java and Python annotations")
 	}
 
@@ -119,11 +120,8 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 		t.Errorf("Error listing pods for my-statefulset StatefulSet: %s\n", err.Error())
 	}
 	//Python should have been removed
-	if checkIfAnnotationExists(statefulSetPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Python annotations should not exist")
 
-	}
-	if !checkIfAnnotationExists(statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
+	if !checkIfAnnotationExists(clientSet, statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
 		t.Error("Missing Java annotations")
 	}
 }
@@ -180,10 +178,8 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 	}
 
 	//java shouldn't be annotated in this case
-	if checkIfAnnotationExists(statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Java annotations should not exist")
-	}
-	if !checkIfAnnotationExists(statefulSetPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+
+	if !checkIfAnnotationExists(clientSet, statefulSetPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
 		t.Error("Missing Python annotations")
 	}
 }

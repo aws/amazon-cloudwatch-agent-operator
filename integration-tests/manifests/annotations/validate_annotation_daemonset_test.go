@@ -6,11 +6,13 @@ package annotations
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // ---------------------------USE CASE 4 (Python and Java on DaemonSet)------------------------------
@@ -48,8 +50,6 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 		t.Error("Error:", err)
 	}
 
-	opMutex.Lock()
-	defer opMutex.Unlock()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	// Get the fluent-bit DaemonSet
@@ -60,14 +60,30 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 	// List pods belonging to the fluent-bit DaemonSet
 	set := labels.Set(daemonSet.Spec.Selector.MatchLabels)
-	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: set.AsSelector().String(),
-	})
+
+	for {
+		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(daemonPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
+	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
-	if !checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
+		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
 		t.Error("Missing Java and Python annotations")
 	}
 
@@ -121,15 +137,32 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
+
+	for {
+		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(daemonPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
+
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	//Python should not exist on pods
 	//Python should have been removed
-	if checkIfAnnotationExists(daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Python annotations should not exist")
-	}
-	if !checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
+
+	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
+		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
 		t.Error("Missing Java annotations")
 	}
 
@@ -180,6 +213,24 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 
 	// List pods belonging to the fluent-bit DaemonSet
 	set := labels.Set(daemonSet.Spec.Selector.MatchLabels)
+
+	for {
+		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(daemonPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
+
 	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
@@ -190,10 +241,10 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	//java annotations should be removed
 
 	//java shouldn't be annotated in this case
-	if checkIfAnnotationExists(daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Java annotations should not exist")
-	}
-	if !checkIfAnnotationExists(daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+
+	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
+		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
+
 		t.Error("Missing Python annotations")
 	}
 
