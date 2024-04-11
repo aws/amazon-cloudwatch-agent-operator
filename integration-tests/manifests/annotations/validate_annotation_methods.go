@@ -113,7 +113,6 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 	return true
 }
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
-	// Lock the mutex at the beginning
 	var err error
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	// Attempt to get the deployment by name
