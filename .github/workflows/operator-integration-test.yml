@@ -39,9 +39,10 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-      - name: Verify minikube and cert-manager
+      - name: Wait for kube-system and cert-manager pods to be ready
         run: |
-          sleep 10
+          kubectl wait --for=condition=Ready pod --all -n kube-system
+          kubectl wait --for=condition=Ready pod --all -n cert-manager
           kubectl get pods -A
 
       - name: Build image
@@ -53,12 +54,14 @@ jobs:
       - name: Deploy operator to minikube
         run: | 
           make deploy
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
           helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
           kubectl describe pods -n amazon-cloudwatch
+
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
           if [ -z "$pod_name" ]; then
             echo "Pod $pod_name is not created. Exiting with ERROR."
@@ -71,18 +74,17 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          sleep 5
-          kubectl get pods -A 
+          kubectl wait --for=condition=Ready pod --all -n default
+
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
 
       - name: Test for defined instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
-          kubectl get pods -A
+          kubectl wait --for=condition=Ready pod --all -n default
+
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json     
@@ -91,10 +93,9 @@ jobs:
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
-          sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
-          kubectl get pods -A 
+          kubectl wait --for=condition=Ready pod --all -n default
+
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
 
@@ -102,10 +103,9 @@ jobs:
       - name: Test for defined instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
-          kubectl get pods -A
+          kubectl wait --for=condition=Ready pod --all -n default
+
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
@@ -116,9 +116,9 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
           kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
-          kubectl get pods -A
+          kubectl wait --for=condition=Ready pod --all -n default
+
           kubectl describe pods -n default
           go test -v ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
           kubectl describe pods -n default
 
