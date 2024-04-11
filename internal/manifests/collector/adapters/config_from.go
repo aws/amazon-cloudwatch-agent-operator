@@ -56,9 +56,9 @@ type Traces struct {
 }
 
 type MetricsCollected struct {
-	StatsD   *statsD   `json:"statsd,omitempty"`
-	CollectD *collectD `json:"collectd,omitempty"`
-	AppSignals *appSignals `json:"app_signals,omitempty"`
+	StatsD     *statsD     `json:"statsd,omitempty"`
+	CollectD   *collectD   `json:"collectd,omitempty"`
+	AppSignals *AppSignals `json:"app_signals,omitempty"`
 }
 
 type LogMetricsCollected struct {
@@ -78,8 +78,8 @@ type collectD struct {
 	ServiceAddress string `json:"service_address,omitempty"`
 }
 
-type appSignals struct {
-	TLS *tls `json:"tls,omitempty"`
+type AppSignals struct {
+	TLS *TLS `json:"tls,omitempty"`
 }
 
 type emf struct {
@@ -99,9 +99,9 @@ type otlp struct {
 	HTTPEndpoint string `json:"http_endpoint,omitempty"`
 }
 
-type tls struct {
+type TLS struct {
 	CertFile string `json:"cert_file,omitempty"`
-	KeyFile string `json:"key_file,omitempty"`
+	KeyFile  string `json:"key_file,omitempty"`
 }
 
 func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {

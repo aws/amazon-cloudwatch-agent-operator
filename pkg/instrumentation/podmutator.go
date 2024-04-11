@@ -408,7 +408,7 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 func GetAmazonCloudWatchAgentResource(c client.Client, name string) v1alpha1.AmazonCloudWatchAgent {
 	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
-	_ = c.Get(context.TODO(), client.ObjectKey{
+	_ = c.Get(context.Background(), client.ObjectKey{
 		Namespace: "amazon-cloudwatch",
 		Name:      name,
 	}, cr)
