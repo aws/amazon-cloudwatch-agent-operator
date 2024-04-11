@@ -48,6 +48,8 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 		t.Error("Error:", err)
 	}
 
+	opMutex.Lock()
+	defer opMutex.Unlock()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	// Get the fluent-bit DaemonSet

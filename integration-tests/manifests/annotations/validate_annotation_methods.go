@@ -113,6 +113,8 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 	return true
 }
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
+	opMutex.Lock()
+	defer opMutex.Unlock()
 	var err error
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 
@@ -165,6 +167,8 @@ func checkIfAnnotationExists(deploymentPods *v1.PodList, expectedAnnotations []s
 	return true
 }
 func updateAnnotationConfig(deployment *appsV1.Deployment, jsonStr string) {
+	opMutex.Lock()
+	defer opMutex.Unlock()
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	indexOfAutoAnnotationConfigString := findIndexOfPrefix("--auto-annotation-config=", args)
 	//if auto annotation not part of config, we will add it
