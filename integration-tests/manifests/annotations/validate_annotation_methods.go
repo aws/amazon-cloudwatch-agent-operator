@@ -159,7 +159,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		fmt.Println("Deployment updated successfully!")
 
 		// Wait for deployment to stabilize
-		time.Sleep(25 * time.Second)
+		time.Sleep(60 * time.Second)
 
 		// Check if all pods are updated
 		if areAllPodsUpdated(clientSet, deployment) {

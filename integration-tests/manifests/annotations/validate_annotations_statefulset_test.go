@@ -57,6 +57,23 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 
 	// List pods belonging to the StatefulSet
 	set := labels.Set(statefulSet.Spec.Selector.MatchLabels)
+
+	for {
+		statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(statefulSetPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
 	statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
@@ -113,14 +130,31 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 
 	// List pods belonging to the StatefulSet
 	set := labels.Set(statefulSet.Spec.Selector.MatchLabels)
-	statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: set.AsSelector().String(),
-	})
+
 	if err != nil {
 		t.Errorf("Error listing pods for my-statefulset StatefulSet: %s\n", err.Error())
 	}
 	//Python should have been removed
 
+	for {
+		statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(statefulSetPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
+	statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: set.AsSelector().String(),
+	})
 	if !checkIfAnnotationExists(clientSet, statefulSetPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
 		t.Error("Missing Java annotations")
 	}
@@ -170,9 +204,27 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 
 	// List pods belonging to the StatefulSet
 	set := labels.Set(statefulSet.Spec.Selector.MatchLabels)
+
+	for {
+		statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: set.AsSelector().String(),
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Check if any pod is in the updating stage
+		if !podsInUpdatingStage(statefulSetPods.Items) {
+			break // Exit loop if no pods are updating
+		}
+
+		// Sleep for a short duration before checking again
+		time.Sleep(10 * time.Second)
+	}
 	statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
+
 	if err != nil {
 		t.Errorf("Error listing pods for StatefulSet: %s\n", err.Error())
 	}
