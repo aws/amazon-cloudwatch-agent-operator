@@ -49,7 +49,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 		return err
 	}
 
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 	// Apply each YAML file
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(filepath.Join("..", file), name)
@@ -58,7 +58,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 			return err
 		}
 	}
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	return nil
 }
@@ -79,7 +79,7 @@ func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, r
 
 	// Delete Namespace
 	err := deleteNamespace(clientset, name)
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 	return err
 }
 func createNamespace(clientset *kubernetes.Clientset, name string) error {
@@ -115,6 +115,7 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
 	var err error
 	args := deployment.Spec.Template.Spec.Containers[0].Args
+
 	// Attempt to get the deployment by name
 	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
 	deployment.Spec.Template.Spec.Containers[0].Args = args
@@ -131,10 +132,27 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	fmt.Println("Deployment updated successfully!")
-	time.Sleep(80 * time.Second)
-	return true
 
+	// Check deployment status in a loop until it's fully updated
+	for {
+		updatedDeployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+		if err != nil {
+			t.Errorf("Failed to get updated deployment status: %v\n", err)
+			return false
+		}
+
+		if updatedDeployment.Status.UpdatedReplicas == *updatedDeployment.Spec.Replicas {
+			// Deployment is fully updated
+			break
+		}
+
+		// Deployment is not fully updated yet, wait for a short duration before checking again
+		time.Sleep(5 * time.Second) // Adjust sleep duration as needed
+	}
+
+	return true
 }
+
 func checkIfAnnotationExists(deploymentPods *v1.PodList, expectedAnnotations []string) bool {
 	for _, pod := range deploymentPods.Items {
 		for _, annotation := range expectedAnnotations {
