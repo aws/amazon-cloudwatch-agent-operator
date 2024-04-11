@@ -4,6 +4,7 @@
 package instrumentation
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -15,6 +16,9 @@ import (
 )
 
 func Test_getDefaultInstrumentation(t *testing.T) {
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
+
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
@@ -128,7 +132,7 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			args: args{
 				agentConfig: &adapters.CwaConfig{
 					Metrics: &adapters.Metrics{
-						&adapters.MetricsCollected{
+						MetricsCollected: &adapters.MetricsCollected{
 							AppSignals: &adapters.AppSignals{},
 						},
 					},
@@ -142,7 +146,7 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			args: args{
 				agentConfig: &adapters.CwaConfig{
 					Metrics: &adapters.Metrics{
-						&adapters.MetricsCollected{
+						MetricsCollected: &adapters.MetricsCollected{
 							AppSignals: &adapters.AppSignals{
 								TLS: &adapters.TLS{
 									CertFile: "some-cert",
