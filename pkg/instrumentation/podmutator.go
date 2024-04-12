@@ -21,6 +21,11 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
+const (
+	defaultNamespace = "amazon-cloudwatch"
+	amazonCloudWatchAgentName = "cloudwatch-agent"
+)
+
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
 	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
@@ -392,7 +397,7 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	switch s := len(otelInsts.Items); {
 	case s == 0:
 		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
-		cr := GetAmazonCloudWatchAgentResource(pm.Client, "cloudwatch-agent")
+		cr := GetAmazonCloudWatchAgentResource(pm.Client, amazonCloudWatchAgentName)
 		config, err := adapters.ConfigStructFromJSONString(cr.Spec.Config)
 		if err != nil {
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
@@ -409,7 +414,7 @@ func GetAmazonCloudWatchAgentResource(c client.Client, name string) v1alpha1.Ama
 	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
 	_ = c.Get(context.Background(), client.ObjectKey{
-		Namespace: "amazon-cloudwatch",
+		Namespace: defaultNamespace,
 		Name:      name,
 	}, cr)
 
