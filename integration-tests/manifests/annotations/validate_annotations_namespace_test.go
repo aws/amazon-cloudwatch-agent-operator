@@ -23,9 +23,11 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	}
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
+			unlockLock()
 			t.Fatalf("Failed to delete namespace: %v", err)
+		} else {
+			unlockLock()
 		}
 	}()
 
@@ -50,8 +52,8 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	time.Sleep(35 * time.Second)
 	//letting namespace stableize
+	time.Sleep(15 * time.Second)
 
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
@@ -87,9 +89,12 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
+			unlockLock()
+
 			t.Fatalf("Failed to delete namespace: %v", err)
+		} else {
+			unlockLock()
 		}
 	}()
 	annotationConfig := auto.AnnotationConfig{
@@ -112,7 +117,7 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	time.Sleep(35 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	//let namspace update
 	for {
@@ -150,10 +155,12 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
-		unlockLock()
-
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
+			unlockLock()
+
 			t.Fatalf("Failed to delete namespace: %v", err)
+		} else {
+			unlockLock()
 		}
 	}()
 
@@ -178,7 +185,7 @@ func TestPythonOnlyNamespace(t *testing.T) {
 
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	time.Sleep(35 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
