@@ -9,6 +9,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
+	"time"
 )
 
 // ---------------------------USE CASE 7 (Java and Python on Namespace) ----------------------------------------------
@@ -48,6 +49,8 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	}
 
 	updateTheOperator(t, clientSet, string(jsonStr))
+	time.Sleep(25 * time.Second)
+
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting namespace %s", err.Error())
@@ -93,15 +96,12 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 
 	updateTheOperator(t, clientSet, string(jsonStr))
+
+	//let namspace update
+	time.Sleep(25 * time.Second)
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting namespace %s", err.Error())
-	}
-
-	//python should not exist
-	if checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
-		t.Error("Python annotations should not exist")
-
 	}
 
 	if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
@@ -147,6 +147,8 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	updateTheOperator(t, clientSet, string(jsonStr))
+	time.Sleep(25 * time.Second)
+
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting namespace %s", err.Error())

@@ -149,7 +149,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	// Update the deployment and check its status up to 10 attempts
-	for attempt := 1; attempt <= 20; attempt++ {
+	for attempt := 1; attempt <= 3; attempt++ {
 		_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 		if err != nil {
 			t.Errorf("Failed to update deployment: %v\n", err)
