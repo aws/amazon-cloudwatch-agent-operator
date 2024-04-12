@@ -95,7 +95,8 @@ func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, r
 
 	// Delete Namespace
 	err := deleteNamespace(clientset, name)
-	time.Sleep(10 * time.Second)
+	time.Sleep(15 * time.Second)
+	unlockLock()
 	return err
 }
 func createNamespace(clientset *kubernetes.Clientset, name string) error {
@@ -126,12 +127,10 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 	time.Sleep(20 * time.Second)
 	for _, annotation := range expectedAnnotations {
 		if ns.ObjectMeta.Annotations[annotation] != "true" {
-			unlockLock()
 			return false
 		}
 	}
 	fmt.Println("Namespace annotations are correct!")
-	unlockLock()
 	return true
 }
 
@@ -211,7 +210,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 	for {
 		if time.Since(startTime) > retryDuration*3 {
 			fmt.Println("Timeout reached while waiting for annotations.")
-			unlockLock()
 			return false
 		}
 
@@ -231,7 +229,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 
 		if foundAllAnnotations {
 			fmt.Println("Annotations are correct!")
-			unlockLock()
 			return true
 		}
 

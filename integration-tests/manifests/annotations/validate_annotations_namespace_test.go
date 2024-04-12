@@ -23,6 +23,7 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
@@ -72,6 +73,7 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
@@ -122,6 +124,8 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
+
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
