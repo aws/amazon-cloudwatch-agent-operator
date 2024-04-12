@@ -67,7 +67,6 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 		}
 	}
 	time.Sleep(15 * time.Second)
-
 	return nil
 }
 
