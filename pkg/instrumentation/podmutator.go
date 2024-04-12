@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	defaultNamespace = "amazon-cloudwatch"
+	amazonCloudWatchNamespace = "amazon-cloudwatch"
 	amazonCloudWatchAgentName = "cloudwatch-agent"
 )
 
@@ -414,7 +414,7 @@ func GetAmazonCloudWatchAgentResource(c client.Client, name string) v1alpha1.Ama
 	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
 	_ = c.Get(context.Background(), client.ObjectKey{
-		Namespace: defaultNamespace,
+		Namespace: amazonCloudWatchNamespace,
 		Name:      name,
 	}, cr)
 
