@@ -56,14 +56,14 @@ type Traces struct {
 }
 
 type MetricsCollected struct {
-	StatsD             *statsD     `json:"statsd,omitempty"`
-	CollectD           *collectD   `json:"collectd,omitempty"`
-	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
-	AppSignals         *AppSignals `json:"app_signals,omitempty"`
+	StatsD   *statsD   `json:"statsd,omitempty"`
+	CollectD *collectD `json:"collectd,omitempty"`
 }
 
 type LogMetricsCollected struct {
-	EMF *emf `json:"emf,omitempty"`
+	EMF                *emf        `json:"emf,omitempty"`
+	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
+	AppSignals         *AppSignals `json:"app_signals,omitempty"`
 }
 
 type TracesCollected struct {
@@ -115,17 +115,17 @@ func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
 }
 
 func (c *CwaConfig) GetApplicationSignalsConfig() *AppSignals {
-	if c.Metrics == nil {
+	if c.Logs == nil {
 		return nil
 	}
-	if c.Metrics.MetricsCollected == nil {
+	if c.Logs.LogMetricsCollected == nil {
 		return nil
 	}
-	if c.Metrics.MetricsCollected.ApplicationSignals != nil {
-		return c.Metrics.MetricsCollected.ApplicationSignals
+	if c.Logs.LogMetricsCollected.ApplicationSignals != nil {
+		return c.Logs.LogMetricsCollected.ApplicationSignals
 	}
-	if c.Metrics.MetricsCollected.AppSignals != nil {
-		return c.Metrics.MetricsCollected.AppSignals
+	if c.Logs.LogMetricsCollected.AppSignals != nil {
+		return c.Logs.LogMetricsCollected.AppSignals
 	}
 	return nil
 }

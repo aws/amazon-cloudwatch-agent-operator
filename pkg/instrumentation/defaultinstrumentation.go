@@ -38,7 +38,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 	exporterPrefix := httpPrefix
 	if agentConfig != nil {
 		appSignalsConfig := agentConfig.GetApplicationSignalsConfig()
-		if appSignalsConfig.TLS != nil {
+		if appSignalsConfig != nil && appSignalsConfig.TLS != nil {
 			exporterPrefix = httpsPrefix
 		}
 	}

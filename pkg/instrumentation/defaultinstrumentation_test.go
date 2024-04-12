@@ -131,8 +131,8 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			name: "appsignals-http",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
-					Metrics: &adapters.Metrics{
-						MetricsCollected: &adapters.MetricsCollected{
+					Logs: &adapters.Logs{
+						LogMetricsCollected: &adapters.LogMetricsCollected{
 							AppSignals: &adapters.AppSignals{},
 						},
 					},
@@ -145,8 +145,8 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			name: "appsignals-https",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
-					Metrics: &adapters.Metrics{
-						MetricsCollected: &adapters.MetricsCollected{
+					Logs: &adapters.Logs{
+						LogMetricsCollected: &adapters.LogMetricsCollected{
 							AppSignals: &adapters.AppSignals{
 								TLS: &adapters.TLS{
 									CertFile: "some-cert",
@@ -164,8 +164,8 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			name: "application-signals-http",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
-					Metrics: &adapters.Metrics{
-						MetricsCollected: &adapters.MetricsCollected{
+					Logs: &adapters.Logs{
+						LogMetricsCollected: &adapters.LogMetricsCollected{
 							ApplicationSignals: &adapters.AppSignals{},
 						},
 					},
@@ -178,8 +178,8 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			name: "application-signals-https",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
-					Metrics: &adapters.Metrics{
-						MetricsCollected: &adapters.MetricsCollected{
+					Logs: &adapters.Logs{
+						LogMetricsCollected: &adapters.LogMetricsCollected{
 							ApplicationSignals: &adapters.AppSignals{
 								TLS: &adapters.TLS{
 									CertFile: "some-cert",
