@@ -50,7 +50,7 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-
+	time.Sleep(35 * time.Second)
 	//letting namespace stableize
 
 	for {
@@ -112,6 +112,7 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+	time.Sleep(35 * time.Second)
 
 	//let namspace update
 	for {
@@ -177,6 +178,7 @@ func TestPythonOnlyNamespace(t *testing.T) {
 
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+	time.Sleep(35 * time.Second)
 
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
