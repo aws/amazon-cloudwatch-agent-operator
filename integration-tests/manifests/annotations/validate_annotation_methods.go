@@ -37,6 +37,19 @@ const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
+// Function where you lock the mutex
+func functionWithLock() {
+	opMutex.Lock()
+	// Critical section of code where you need the mutex
+	// Perform operations while the mutex is locked
+}
+
+// Another function where you unlock the mutex
+func unlockLock() {
+	// Defer the unlock so it is executed when the function exits
+	defer opMutex.Unlock()
+	// Perform operations before unlocking the mutex
+}
 func applyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
 	return cmd.Run()
@@ -50,7 +63,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 		return err
 	}
 
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 	// Apply each YAML file
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(filepath.Join("..", file), name)
@@ -59,7 +72,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 			return err
 		}
 	}
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	return nil
 }
@@ -89,7 +102,7 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 	// Check if the namespace already exists
 	_, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if err == nil {
-		return nil // Use this line if you want to just use the existing namespace
+		return nil
 
 	} else if !errors.IsNotFound(err) {
 		// Other error while getting namespace
@@ -99,23 +112,29 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 	// Create the namespace if it doesn't exist
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), namespace, metav1.CreateOptions{})
+	time.Sleep(25 * time.Second)
 	return err
 }
 
 func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
-	return clientset.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
+	err := clientset.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
+	time.Sleep(25 * time.Second)
+	return err
 }
 
 func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) bool {
 	time.Sleep(20 * time.Second)
 	for _, annotation := range expectedAnnotations {
 		if ns.ObjectMeta.Annotations[annotation] != "true" {
+			unlockLock()
 			return false
 		}
 	}
 	fmt.Println("Namespace annotations are correct!")
+	unlockLock()
 	return true
 }
+
 func areAllPodsUpdated(clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
 	// Get the list of pods for the deployment in all namespaces
 	pods, err := clientSet.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
@@ -135,7 +154,6 @@ func areAllPodsUpdated(clientSet *kubernetes.Clientset, deployment *appsV1.Deplo
 }
 
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
-	fmt.Println("This is the deployment namespace", deployment.Namespace)
 	var err error
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	updated := false
@@ -149,7 +167,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	// Update the deployment and check its status up to 10 attempts
-	for attempt := 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= 10; attempt++ {
 		_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 		if err != nil {
 			t.Errorf("Failed to update deployment: %v\n", err)
@@ -159,7 +177,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		fmt.Println("Deployment updated successfully!")
 
 		// Wait for deployment to stabilize
-		time.Sleep(60 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		// Check if all pods are updated
 		if areAllPodsUpdated(clientSet, deployment) {
@@ -189,11 +207,11 @@ func podsInUpdatingStage(pods []v1.Pod) bool {
 	return false // No pod is in the updating stage
 }
 func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string, retryDuration time.Duration) bool {
-	fmt.Println("HIIIHI inside check annotation")
 	startTime := time.Now()
 	for {
 		if time.Since(startTime) > retryDuration*3 {
 			fmt.Println("Timeout reached while waiting for annotations.")
+			unlockLock()
 			return false
 		}
 
@@ -213,6 +231,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 
 		if foundAllAnnotations {
 			fmt.Println("Annotations are correct!")
+			unlockLock()
 			return true
 		}
 
@@ -263,9 +282,7 @@ func setupTest(t *testing.T) *kubernetes.Clientset {
 	return clientSet
 }
 func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr string) {
-	opMutex.Lock()
-	defer opMutex.Unlock()
-
+	functionWithLock()
 	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error getting deployment: %v\n\n", err)

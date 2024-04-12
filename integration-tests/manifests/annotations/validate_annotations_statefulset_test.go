@@ -1,6 +1,5 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
 package annotations
 
 import (
@@ -134,7 +133,6 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for my-statefulset StatefulSet: %s\n", err.Error())
 	}
-	//Python should have been removed
 
 	for {
 		statefulSetPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
@@ -228,8 +226,6 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for StatefulSet: %s\n", err.Error())
 	}
-
-	//java shouldn't be annotated in this case
 
 	if !checkIfAnnotationExists(clientSet, statefulSetPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
 		t.Error("Missing Python annotations")

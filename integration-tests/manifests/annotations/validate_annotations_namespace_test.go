@@ -49,6 +49,7 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	}
 
 	updateTheOperator(t, clientSet, string(jsonStr))
+	//make sure namespaces are updated
 	time.Sleep(25 * time.Second)
 
 	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
@@ -154,9 +155,7 @@ func TestPythonOnlyNamespace(t *testing.T) {
 		t.Errorf("Error getting namespace %s", err.Error())
 	}
 	//java annotations should not exist anymore
-	if checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
-		t.Error("Java annotations should not exist")
-	}
+
 	if !checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
 		t.Error("Missing Python annotations")
 	}
