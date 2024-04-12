@@ -337,6 +337,7 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	if !updateOperator(t, clientSet, deployment, time.Now().Add(-time.Second)) {
 		t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
+	time.Sleep(15 * time.Second)
 	fmt.Println("Ended")
 
 }
