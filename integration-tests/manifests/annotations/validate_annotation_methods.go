@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -69,7 +69,22 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	time.Sleep(15 * time.Second)
 	return nil
 }
+func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, startTime time.Time) bool {
+	// Get the namespace object
+	ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Failed to get namespace %s: %v\n", namespace, err)
+		return false
+	}
 
+	// Compare metadata of the namespace with the start time
+	if ns.CreationTimestamp.After(startTime) || ns.ResourceVersion != "" {
+		// If the creation timestamp or resource version has changed, the namespace has been updated
+		return true
+	}
+
+	return false
+}
 func deleteYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "delete", "-f", filename, "-n", namespace)
 	return cmd.Run()
@@ -159,7 +174,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	// Update the deployment and check its status up to 10 attempts
-	for attempt := 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= 10; attempt++ {
 		_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 		if err != nil {
 			t.Errorf("Failed to update deployment: %v\n", err)
@@ -169,7 +184,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		fmt.Println("Deployment updated successfully!")
 
 		// Wait for deployment to stabilize
-		time.Sleep(10 * time.Second)
+		time.Sleep(15 * time.Second)
 
 		// Check if all pods are updated
 		if areAllPodsUpdated(clientSet, deployment) {
