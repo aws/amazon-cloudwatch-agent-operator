@@ -63,8 +63,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
 					{Name: "OTEL_SMP_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
