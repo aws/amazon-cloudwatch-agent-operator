@@ -50,7 +50,6 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	assert.Nil(t, err)
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	operator, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
@@ -59,7 +58,6 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
-	fmt.Printf("\n\n\nThis is the operator for the deployemnet name: %v, whose unique namespace is %v, namespace %v, annotation config of operator is %v", operator.Name, uniqueNamespace, operator.Namespace, operator.Spec.Template.Spec.Containers[0].Args)
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Error listing pods for deployment: %s", err.Error())
@@ -143,12 +141,10 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for deployment: %s", err.Error())
 	}
-	operator, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	fmt.Printf("\n\n\nThis is the operator for the deployemnet name: %v, whose unique namespace is %v, namespace %v, annotation config of operator is %v", deployment.Name, uniqueNamespace, deployment.Namespace, operator.Spec.Template.Spec.Containers[0].Args)
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 
 	// List pods belonging to the deployment
@@ -171,15 +167,6 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 
 	fmt.Println("All pods have completed updating.")
-
-	fmt.Println("\n\n\n\nPods:")
-	for _, pod := range deploymentPods.Items {
-		fmt.Printf("%s\n", pod.GetName())
-	}
-	if err != nil {
-		t.Error("Failed to update Operator")
-
-	}
 
 	//wait for pods to update
 	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
@@ -225,7 +212,6 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	}
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	operator, err := clientSet.AppsV1().Deployments("amazon-cloudwatch").Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
@@ -235,7 +221,6 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
-	fmt.Printf("\n\n\nThis is the operator for the deployemnet name: %v, whose unique namespace is %v, namespace %v, annotation config of operator is %v", deployment.Name, uniqueNamespace, deployment.Namespace, operator.Spec.Template.Spec.Containers[0].Args)
 
 	// List pods belonging to the deployment
 	set := labels.Set(deployment.Spec.Selector.MatchLabels)

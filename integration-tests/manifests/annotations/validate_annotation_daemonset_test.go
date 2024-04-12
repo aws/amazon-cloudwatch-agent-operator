@@ -5,7 +5,6 @@ package annotations
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -68,9 +67,8 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 			panic(err.Error())
 		}
 
-		// Check if any pod is in the updating stage
 		if !podsInUpdatingStage(daemonPods.Items) {
-			break // Exit loop if no pods are updating
+			break
 		}
 
 		// Sleep for a short duration before checking again
@@ -82,7 +80,6 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
 	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
-		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
 		t.Error("Missing Java and Python annotations")
 	}
 
@@ -145,9 +142,8 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 			panic(err.Error())
 		}
 
-		// Check if any pod is in the updating stage
 		if !podsInUpdatingStage(daemonPods.Items) {
-			break // Exit loop if no pods are updating
+			break
 		}
 
 		// Sleep for a short duration before checking again
@@ -157,11 +153,8 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
-	//Python should not exist on pods
-	//Python should have been removed
 
 	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
-		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
 		t.Error("Missing Java annotations")
 	}
 
@@ -237,13 +230,8 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}
-	//java annotations should be removed
-
-	//java shouldn't be annotated in this case
 
 	if !checkIfAnnotationExists(clientSet, daemonPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
-		fmt.Printf("Missing annotation for daemonset name %v, unique namespace %v, actual namespace %v whose annotation config is : %v", daemonSet.Name, uniqueNamespace, daemonSet.Namespace, daemonSet.Spec.Template.Spec.Containers[0].Args)
-
 		t.Error("Missing Python annotations")
 	}
 

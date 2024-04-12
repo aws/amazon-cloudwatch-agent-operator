@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -147,7 +147,7 @@ func areAllPodsUpdated(clientSet *kubernetes.Clientset, deployment *appsV1.Deplo
 	// Check if all pods are updated
 	for _, pod := range pods.Items {
 		if pod.Status.Phase != v1.PodRunning {
-			return false // Pod is not running, not updated
+			return false
 		}
 	}
 	return true
@@ -167,7 +167,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	}
 
 	// Update the deployment and check its status up to 10 attempts
-	for attempt := 1; attempt <= 10; attempt++ {
+	for attempt := 1; attempt <= 3; attempt++ {
 		_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 		if err != nil {
 			t.Errorf("Failed to update deployment: %v\n", err)
@@ -177,7 +177,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		fmt.Println("Deployment updated successfully!")
 
 		// Wait for deployment to stabilize
-		time.Sleep(10 * time.Second)
+		time.Sleep(45 * time.Second)
 
 		// Check if all pods are updated
 		if areAllPodsUpdated(clientSet, deployment) {

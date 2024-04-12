@@ -67,7 +67,7 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 
 		// Check if any pod is in the updating stage
 		if !podsInUpdatingStage(statefulSetPods.Items) {
-			break // Exit loop if no pods are updating
+			break
 		}
 
 		// Sleep for a short duration before checking again
@@ -142,9 +142,8 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 			panic(err.Error())
 		}
 
-		// Check if any pod is in the updating stage
 		if !podsInUpdatingStage(statefulSetPods.Items) {
-			break // Exit loop if no pods are updating
+			break
 		}
 
 		// Sleep for a short duration before checking again
@@ -211,9 +210,8 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 			panic(err.Error())
 		}
 
-		// Check if any pod is in the updating stage
 		if !podsInUpdatingStage(statefulSetPods.Items) {
-			break // Exit loop if no pods are updating
+			break
 		}
 
 		// Sleep for a short duration before checking again
