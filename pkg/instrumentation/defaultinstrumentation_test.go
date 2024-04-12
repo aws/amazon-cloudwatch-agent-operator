@@ -128,7 +128,7 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "http",
+			name: "appsignals-http",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
 					Metrics: &adapters.Metrics{
@@ -142,12 +142,45 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "https",
+			name: "appsignals-https",
 			args: args{
 				agentConfig: &adapters.CwaConfig{
 					Metrics: &adapters.Metrics{
 						MetricsCollected: &adapters.MetricsCollected{
 							AppSignals: &adapters.AppSignals{
+								TLS: &adapters.TLS{
+									CertFile: "some-cert",
+									KeyFile:  "some-key",
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    httpsInst,
+			wantErr: false,
+		},
+		{
+			name: "application-signals-http",
+			args: args{
+				agentConfig: &adapters.CwaConfig{
+					Metrics: &adapters.Metrics{
+						MetricsCollected: &adapters.MetricsCollected{
+							ApplicationSignals: &adapters.AppSignals{},
+						},
+					},
+				},
+			},
+			want:    httpInst,
+			wantErr: false,
+		},
+		{
+			name: "application-signals-https",
+			args: args{
+				agentConfig: &adapters.CwaConfig{
+					Metrics: &adapters.Metrics{
+						MetricsCollected: &adapters.MetricsCollected{
+							ApplicationSignals: &adapters.AppSignals{
 								TLS: &adapters.TLS{
 									CertFile: "some-cert",
 									KeyFile:  "some-key",

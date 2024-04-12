@@ -36,8 +36,11 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 
 	// set protocol by checking cloudwatch agent config for tls setting
 	exporterPrefix := httpPrefix
-	if agentConfig != nil && agentConfig.Metrics.MetricsCollected.AppSignals.TLS != nil {
-		exporterPrefix = httpsPrefix
+	if agentConfig != nil {
+		appSignalsConfig := agentConfig.GetApplicationSignalsConfig()
+		if appSignalsConfig.TLS != nil {
+			exporterPrefix = httpsPrefix
+		}
 	}
 
 	return &v1alpha1.Instrumentation{
