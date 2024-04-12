@@ -33,22 +33,16 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
-// Function where you lock the mutex
 func functionWithLock() {
 	opMutex.Lock()
-	// Critical section of code where you need the mutex
-	// Perform operations while the mutex is locked
 }
 
-// Another function where you unlock the mutex
 func unlockLock() {
-	// Defer the unlock so it is executed when the function exits
 	defer opMutex.Unlock()
-	// Perform operations before unlocking the mutex
 }
 func applyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
