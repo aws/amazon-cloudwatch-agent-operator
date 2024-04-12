@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
+const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -279,6 +279,7 @@ func setupTest(t *testing.T) *kubernetes.Clientset {
 	}
 	return clientSet
 }
+
 func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr string) {
 	functionWithLock()
 	deployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
