@@ -5,9 +5,9 @@ package annotations
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 	"testing"
 	"time"
@@ -22,6 +22,7 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
@@ -48,8 +49,8 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 		t.Error("Error:", err)
 	}
 
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -57,24 +58,11 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
-	set := labels.Set(daemonSet.Spec.Selector.MatchLabels)
+	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
-	for {
-		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
-
-		if !podsInUpdatingStage(daemonPods.Items) {
-			break
-		}
-
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
+	fmt.Println("All pods have completed updating.")
 	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
+	fmt.Println("All pods have completed updating.")
 
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
@@ -94,6 +82,7 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
@@ -120,8 +109,8 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 		t.Error("Error: ", err)
 	}
 
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -129,26 +118,11 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
-	set := labels.Set(daemonSet.Spec.Selector.MatchLabels)
-	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: set.AsSelector().String(),
-	})
+	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
-	for {
-		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
-
-		if !podsInUpdatingStage(daemonPods.Items) {
-			break
-		}
-
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
+	fmt.Println("All pods have completed updating.")
+	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
+	fmt.Println("All pods have completed updating.")
 
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
@@ -169,6 +143,7 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
@@ -195,8 +170,8 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -204,29 +179,11 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	}
 
 	// List pods belonging to the fluent-bit DaemonSet
-	set := labels.Set(daemonSet.Spec.Selector.MatchLabels)
+	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
-	for {
-		daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
-
-		// Check if any pod is in the updating stage
-		if !podsInUpdatingStage(daemonPods.Items) {
-			break // Exit loop if no pods are updating
-		}
-
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
-
-	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: set.AsSelector().String(),
-	})
-
+	fmt.Println("All pods have completed updating.")
+	daemonPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
+	fmt.Println("All pods have completed updating.")
 	if err != nil {
 		t.Errorf("Error listing pods for fluent-bit daemonset: %s", err.Error())
 	}

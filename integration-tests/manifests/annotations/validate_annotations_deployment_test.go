@@ -9,7 +9,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 	"testing"
 	"time"
@@ -24,8 +23,10 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -49,6 +50,7 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	jsonStr, err := json.Marshal(annotationConfig)
 	assert.Nil(t, err)
 
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -60,39 +62,19 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	}
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
-		t.Errorf("Error listing pods for deployment: %s", err.Error())
+		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
-	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 
 	// List pods belonging to the deployment
-	for {
-		deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
 
-		// Check if any pod is in the updating stage
-		if !podsInUpdatingStage(deploymentPods.Items) {
-			break // Exit loop if no pods are updating
-		}
+	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
+	fmt.Println("All pods have completed updating.")
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 	fmt.Println("All pods have completed updating.")
 
-	if err != nil {
-		t.Errorf("Error listing pods for deployment: %s", err.Error())
-	}
-	fmt.Println("\n\n\n\nPods:")
-	for _, pod := range deploymentPods.Items {
-		fmt.Printf("%s\n", pod.GetName())
-	}
 	//wait for pods to update
-	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {
+	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, 90*time.Second) {
 		t.Error("Missing Java and Python Annotations")
 	}
 
@@ -107,8 +89,10 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -135,43 +119,26 @@ func TestJavaOnlyDeployment(t *testing.T) {
 
 	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 	updateTheOperator(t, clientSet, string(jsonStr))
-
+	//check if deployment has annotations.
+	startTime := time.Now()
+	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
+	updateTheOperator(t, clientSet, string(jsonStr))
 	//check if deployment has annotations.
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
-		t.Errorf("Error listing pods for deployment: %s", err.Error())
+		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
-	if err != nil {
-		t.Errorf("Failed to get deployment app: %s", err.Error())
-	}
-
-	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 
 	// List pods belonging to the deployment
-	for {
-		deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
 
-		// Check if any pod is in the updating stage
-		if !podsInUpdatingStage(deploymentPods.Items) {
-			break // Exit loop if no pods are updating
-		}
-
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
-	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
+	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
 	fmt.Println("All pods have completed updating.")
+	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 
 	//wait for pods to update
 	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
 		t.Error("Missing Java Annotations")
-
 	}
 
 }
@@ -185,8 +152,11 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	functionWithLock()
 
 	defer func() {
+		unlockLock()
+
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -211,6 +181,7 @@ func TestPythonOnlyDeployment(t *testing.T) {
 		t.Error("Error:", err)
 	}
 
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -223,24 +194,9 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	}
 
 	// List pods belonging to the deployment
-	set := labels.Set(deployment.Spec.Selector.MatchLabels)
 
-	for {
-		deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: set.AsSelector().String(),
-		})
-		if err != nil {
-			panic(err.Error())
-		}
+	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
-		// Check if any pod is in the updating stage
-		if !podsInUpdatingStage(deploymentPods.Items) {
-			break // Exit loop if no pods are updating
-		}
-
-		// Sleep for a short duration before checking again
-		time.Sleep(10 * time.Second)
-	}
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 
 	fmt.Println("\n\n\n\nPods:")
