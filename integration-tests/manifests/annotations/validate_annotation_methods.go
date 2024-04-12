@@ -70,34 +70,50 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	return nil
 }
 func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, startTime time.Time) bool {
-	// Get the namespace object
+	// Wait for the namespace to be ready
+	for {
+		ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+		if err != nil {
+			fmt.Printf("Failed to get namespace %s: %v\n", namespace, err)
+			return false
+		}
+
+		// Check if the namespace is ready
+		if ns.Status.Phase == v1.NamespaceActive {
+			break // Namespace is ready
+		}
+
+		// Wait for a short duration before retrying
+		time.Sleep(5 * time.Second)
+	}
+
+	// Check if the namespace was updated
 	ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Failed to get namespace %s: %v\n", namespace, err)
 		return false
 	}
 
-	// Compare metadata of the namespace with the start time
 	if ns.CreationTimestamp.After(startTime) || ns.ResourceVersion != "" {
-		// If the creation timestamp or resource version has changed, the namespace has been updated
-		return true
+		return true // Namespace was updated
 	}
 
 	return false
 }
+
 func deleteYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "delete", "-f", filename, "-n", namespace)
 	return cmd.Run()
 }
 
 func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, resourceFiles []string) error {
-	unlockLock()
 	// Delete each YAML file
 	for _, file := range resourceFiles {
 		err := deleteYAMLWithKubectl(filepath.Join("..", file), name)
 		time.Sleep(5 * time.Second)
 
 		if err != nil {
+			unlockLock()
 			return err
 		}
 	}
@@ -105,6 +121,7 @@ func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, r
 	// Delete Namespace
 	err := deleteNamespace(clientset, name)
 	time.Sleep(15 * time.Second)
+	unlockLock()
 	return err
 }
 func createNamespace(clientset *kubernetes.Clientset, name string) error {
@@ -127,7 +144,6 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 
 func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 	err := clientset.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
-	time.Sleep(25 * time.Second)
 	return err
 }
 

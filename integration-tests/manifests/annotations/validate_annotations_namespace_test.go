@@ -23,11 +23,9 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
-			unlockLock()
 			t.Fatalf("Failed to delete namespace: %v", err)
-		} else {
-			unlockLock()
 		}
 	}()
 
@@ -89,12 +87,9 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
-			unlockLock()
-
 			t.Fatalf("Failed to delete namespace: %v", err)
-		} else {
-			unlockLock()
 		}
 	}()
 	annotationConfig := auto.AnnotationConfig{
@@ -155,12 +150,9 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
-			unlockLock()
-
 			t.Fatalf("Failed to delete namespace: %v", err)
-		} else {
-			unlockLock()
 		}
 	}()
 
@@ -206,5 +198,4 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	if !checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
 		t.Error("Missing Python annotations")
 	}
-
 }
