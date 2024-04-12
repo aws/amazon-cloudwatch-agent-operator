@@ -17,7 +17,6 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	t.Parallel()
 	clientSet := setupTest(t)
 	sampleNamespace := "namespace-java-python"
-
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}

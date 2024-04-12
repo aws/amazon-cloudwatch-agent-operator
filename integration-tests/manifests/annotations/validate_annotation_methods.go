@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -83,6 +83,7 @@ func deleteYAMLWithKubectl(filename, namespace string) error {
 }
 
 func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, resourceFiles []string) error {
+	unlockLock()
 	// Delete each YAML file
 	for _, file := range resourceFiles {
 		err := deleteYAMLWithKubectl(filepath.Join("..", file), name)
@@ -96,7 +97,6 @@ func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, r
 	// Delete Namespace
 	err := deleteNamespace(clientset, name)
 	time.Sleep(15 * time.Second)
-	unlockLock()
 	return err
 }
 func createNamespace(clientset *kubernetes.Clientset, name string) error {
@@ -176,7 +176,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		fmt.Println("Deployment updated successfully!")
 
 		// Wait for deployment to stabilize
-		time.Sleep(45 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		// Check if all pods are updated
 		if areAllPodsUpdated(clientSet, deployment) {
@@ -206,6 +206,7 @@ func podsInUpdatingStage(pods []v1.Pod) bool {
 	return false // No pod is in the updating stage
 }
 func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string, retryDuration time.Duration) bool {
+
 	startTime := time.Now()
 	for {
 		if time.Since(startTime) > retryDuration*3 {
