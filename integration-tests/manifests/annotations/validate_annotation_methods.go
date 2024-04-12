@@ -70,6 +70,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	time.Sleep(15 * time.Second)
 	return nil
 }
+
 func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, startTime time.Time) bool {
 	// Wait for the namespace to be ready
 	for {
@@ -79,13 +80,13 @@ func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, start
 			return false
 		}
 
-		// Check if the namespace is ready
 		if ns.Status.Phase == v1.NamespaceActive {
-			break // Namespace is ready
+			break
 		}
 
 		// Wait for a short duration before retrying
-		time.Sleep(5 * time.Second)
+		err = clientset.CoreV1().Pods("amazon-cloudwatch").Delete(context.TODO(), amazonControllerManager, metav1.DeleteOptions{})
+		time.Sleep(15 * time.Second)
 	}
 
 	// Check if the namespace was updated
@@ -272,8 +273,9 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 		case *appsV1.DaemonSet:
 			namespace = r.Namespace
 			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-		case string: // Assuming it's a namespace name
-			namespace = r
+		case *appsV1.StatefulSet:
+			namespace = r.Namespace
+			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
 		default:
 			return fmt.Errorf("unsupported resource type")
 		}

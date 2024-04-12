@@ -25,6 +25,7 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 	functionWithLock()
 
 	defer func() {
+		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -75,7 +76,6 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 // ---------------------------USE CASE 5 (Java on DaemonSet and Python should be removed)------------------------------
 func TestJavaOnlyDaemonSet(t *testing.T) {
-
 	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-java-only"
@@ -85,6 +85,8 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	functionWithLock()
 
 	defer func() {
+		unlockLock()
+
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -146,6 +148,8 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	functionWithLock()
 
 	defer func() {
+		unlockLock()
+
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
