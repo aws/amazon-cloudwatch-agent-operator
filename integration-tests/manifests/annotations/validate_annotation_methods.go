@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/labels"
-	"reflect"
 	"sync"
 	"testing"
 
@@ -157,24 +156,6 @@ func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) b
 	return true
 }
 
-func areAllPodsUpdated(clientSet *kubernetes.Clientset, deployment *appsV1.Deployment) bool {
-	// Get the list of pods for the deployment in all namespaces
-	pods, err := clientSet.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set(deployment.Spec.Selector.MatchLabels).AsSelector().String(),
-	})
-	if err != nil {
-		return false
-	}
-
-	// Check if all pods are updated
-	for _, pod := range pods.Items {
-		if pod.Status.Phase != v1.PodRunning {
-			return false
-		}
-	}
-	return true
-}
-
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment, startTime time.Time) bool {
 	var err error
 	args := deployment.Spec.Template.Spec.Containers[0].Args
@@ -190,70 +171,12 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		return false
 	}
 
-	// Check the creation time of the new pods
-	//waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
-
 	fmt.Println("Deployment updated successfully!")
 	// All checks passed, deployment update successful
 	fmt.Println("Deployment fully updated.")
 	return true
 }
 
-func restartOperatorIfArgsAreSame(clientSet *kubernetes.Clientset, deployment *appsV1.Deployment, args []string) error {
-	// Get the current deployment
-	currentDeployment, err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get deployment: %v", err)
-	}
-
-	// Check if the current arguments are the same as the new arguments
-	if reflect.DeepEqual(currentDeployment.Spec.Template.Spec.Containers[0].Args, args) {
-		// If arguments are the same, delete the deployment
-		err := clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Delete(context.TODO(), amazonControllerManager, metav1.DeleteOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to delete deployment: %v", err)
-		}
-
-		// Create a new deployment with the updated arguments
-		deployment.Spec.Template.Spec.Containers[0].Args = args
-		_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to create deployment: %v", err)
-		}
-
-		fmt.Println("Operator restarted due to unchanged arguments.")
-	}
-
-	return nil
-}
-
-func waitForPodWithAgeAfterStartTime(clientSet *kubernetes.Clientset, namespace string, startTime time.Time, timeout time.Duration) error {
-	start := time.Now()
-
-	for {
-		// Check if timeout has elapsed
-		if time.Since(start) > timeout {
-			return fmt.Errorf("timed out waiting for deployment pod with age after start time")
-		}
-
-		// List pods in the namespace
-		pods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to list pods: %v", err)
-		}
-
-		// Check each pod for age after start time
-		for _, pod := range pods.Items {
-			if pod.CreationTimestamp.Time.After(startTime) {
-				fmt.Printf("Found deployment pod %s with age after start time\n", pod.Name)
-				return nil
-			}
-		}
-
-		// Wait before retrying
-		time.Sleep(5 * time.Second)
-	}
-}
 func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time, timeout time.Duration) error {
 	start := time.Now()
 
@@ -303,16 +226,6 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 	}
 }
 
-func podsInUpdatingStage(pods []v1.Pod) bool {
-	for _, pod := range pods {
-		for _, condition := range pod.Status.Conditions {
-			if condition.Type == v1.ContainersReady && condition.Status == v1.ConditionFalse {
-				return true // Pod is in the updating stage
-			}
-		}
-	}
-	return false // No pod is in the updating stage
-}
 func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string, retryDuration time.Duration) bool {
 	startTime := time.Now()
 
