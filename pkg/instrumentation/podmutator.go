@@ -397,7 +397,7 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	switch s := len(otelInsts.Items); {
 	case s == 0:
 		pm.Logger.Info("no OpenTelemetry Instrumentation instances available. Using default Instrumentation instance")
-		cr := GetAmazonCloudWatchAgentResource(pm.Client, amazonCloudWatchAgentName)
+		cr := GetAmazonCloudWatchAgentResource(ctx, pm.Client, amazonCloudWatchAgentName)
 		config, err := adapters.ConfigStructFromJSONString(cr.Spec.Config)
 		if err != nil {
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
@@ -410,10 +410,10 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	}
 }
 
-func GetAmazonCloudWatchAgentResource(c client.Client, name string) v1alpha1.AmazonCloudWatchAgent {
+func GetAmazonCloudWatchAgentResource(ctx context.Context, c client.Client, name string) v1alpha1.AmazonCloudWatchAgent {
 	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
-	_ = c.Get(context.Background(), client.ObjectKey{
+	_ = c.Get(ctx, client.ObjectKey{
 		Namespace: amazonCloudWatchNamespace,
 		Name:      name,
 	}, cr)
