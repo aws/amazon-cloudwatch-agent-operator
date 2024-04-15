@@ -19,9 +19,7 @@ func TestDefaultAnnotations(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
-		Spec: v1alpha1.DcgmExporterSpec{
-			AgentConfig: "test",
-		},
+		Spec: v1alpha1.DcgmExporterSpec{},
 	}
 	// test
 	annotations := Annotations(exporter)
@@ -42,9 +40,7 @@ func TestUserAnnotations(t *testing.T) {
 				"amazon-cloudwatch-agent-operator-config/sha256": "shouldBeOverwritten",
 			},
 		},
-		Spec: v1alpha1.DcgmExporterSpec{
-			AgentConfig: "test",
-		},
+		Spec: v1alpha1.DcgmExporterSpec{},
 	}
 
 	// test

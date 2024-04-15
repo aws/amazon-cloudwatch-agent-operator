@@ -4,8 +4,6 @@
 package dcgmexporter
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -77,10 +75,6 @@ func TestDesiredConfigMapWithTls(t *testing.T) {
 }
 
 func getParams() manifests.Params {
-	configJSON, err := os.ReadFile("testdata/test.json")
-	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
-	}
 	return manifests.Params{
 		Config: config.New(config.WithDcgmExporterImage("default-exporter")),
 		DcgmExp: v1alpha1.DcgmExporter{
@@ -95,7 +89,6 @@ func getParams() manifests.Params {
 			},
 			Spec: v1alpha1.DcgmExporterSpec{
 				Image:         "public.ecr.aws/cloudwatch-agent/dcgm-exporter:0.1.0",
-				AgentConfig:   string(configJSON),
 				MetricsConfig: "DCGM_FI_DEV_GPU_UTIL,      gauge, GPU utilization (in %).",
 			},
 		},

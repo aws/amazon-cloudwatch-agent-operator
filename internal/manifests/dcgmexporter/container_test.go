@@ -38,7 +38,6 @@ func TestDcgmContainer(t *testing.T) {
 							Protocol: "TCP",
 						},
 					},
-					AgentConfig: "test",
 				},
 			},
 			expected: corev1.Container{
@@ -82,8 +81,7 @@ func TestDcgmContainer(t *testing.T) {
 							Protocol: "TCP",
 						},
 					},
-					AgentConfig: "test",
-					TlsConfig:   `tls_server_config:  cert_file: /etc/amazon-cloudwatch-observability-dcgm-cert/server.crt`,
+					TlsConfig: `tls_server_config:  cert_file: /etc/amazon-cloudwatch-observability-dcgm-cert/server.crt`,
 				},
 			},
 			expected: corev1.Container{
@@ -129,9 +127,8 @@ func TestDcgmContainer(t *testing.T) {
 							Protocol: "TCP",
 						},
 					},
-					AgentConfig: "test",
-					TlsConfig:   `tls_server_config:  cert_file: /etc/amazon-cloudwatch-observability-dcgm-cert/server.crt`,
-					Args:        map[string]string{"another": "test"},
+					TlsConfig: `tls_server_config:  cert_file: /etc/amazon-cloudwatch-observability-dcgm-cert/server.crt`,
+					Args:      map[string]string{"another": "test"},
 				},
 			},
 			expected: corev1.Container{

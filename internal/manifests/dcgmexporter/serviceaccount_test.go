@@ -19,7 +19,7 @@ func TestServiceAccountNewDefault(t *testing.T) {
 		},
 	}
 	sa := ServiceAccountName(exporter)
-	assert.Equal(t, "my-instance", sa)
+	assert.Equal(t, "dcgm-exporter-service-acct", sa)
 }
 
 func TestServiceAccountOverride(t *testing.T) {

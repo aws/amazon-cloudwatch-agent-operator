@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +34,7 @@ func TestDesiredDcgmService(t *testing.T) {
 		trafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 		expected := v1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("%s-%s", naming.Service(params.DcgmExp.Name), "service"),
+				Name:        fmt.Sprintf("%s-service", ComponentDcgmExporter),
 				Namespace:   params.DcgmExp.Namespace,
 				Labels:      map[string]string{},
 				Annotations: map[string]string{},
@@ -81,7 +80,7 @@ func TestDesiredDcgmService(t *testing.T) {
 		trafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 		expected := v1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("%s-%s", naming.Service(params.DcgmExp.Name), "service"),
+				Name:        fmt.Sprintf("%s-service", ComponentDcgmExporter),
 				Namespace:   params.DcgmExp.Namespace,
 				Labels:      map[string]string{},
 				Annotations: map[string]string{},
