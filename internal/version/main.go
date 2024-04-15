@@ -20,6 +20,7 @@ var (
 	autoInstrumentationApacheHttpd string
 	autoInstrumentationNginx       string
 	autoInstrumentationGo          string
+	dcgmExporter                   string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -35,6 +36,7 @@ type Version struct {
 	AutoInstrumentationGo          string `json:"auto-instrumentation-go"`
 	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
 	AutoInstrumentationNginx       string `json:"auto-instrumentation-nginx"`
+	DcgmExporter                   string `json:"dcgm-exporter-version"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -51,12 +53,13 @@ func Get() Version {
 		AutoInstrumentationGo:          AutoInstrumentationGo(),
 		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
 		AutoInstrumentationNginx:       AutoInstrumentationNginx(),
+		DcgmExporter:                   DcgmExporter(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v')",
+		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.AmazonCloudWatchAgent,
@@ -68,6 +71,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationGo,
 		v.AutoInstrumentationApacheHttpd,
 		v.AutoInstrumentationNginx,
+		v.DcgmExporter,
 	)
 }
 
@@ -127,6 +131,14 @@ func AutoInstrumentationNginx() string {
 func AutoInstrumentationGo() string {
 	if len(autoInstrumentationGo) > 0 {
 		return autoInstrumentationGo
+	}
+	return "0.0.0"
+}
+
+func DcgmExporter() string {
+	if len(dcgmExporter) > 0 {
+		// this should always be set, as it's specified during the build
+		return dcgmExporter
 	}
 	return "0.0.0"
 }

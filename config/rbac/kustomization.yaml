@@ -5,3 +5,6 @@ resources:
 - agent_service_account.yaml
 - agent_role.yaml
 - agent_role_binding.yaml
+- dcgm_exporter_service_account.yaml
+- dcgm_exporter_role.yaml
+- dcgm_exporter_role_binding.yaml

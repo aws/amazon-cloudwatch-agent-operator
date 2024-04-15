@@ -27,6 +27,7 @@ type options struct {
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	dcgmExporterImage                   string
 	labelsFilter                        []string
 }
 
@@ -90,6 +91,12 @@ func WithAutoInstrumentationApacheHttpdImage(s string) Option {
 func WithAutoInstrumentationNginxImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationNginxImage = s
+	}
+}
+
+func WithDcgmExporterImage(s string) Option {
+	return func(o *options) {
+		o.dcgmExporterImage = s
 	}
 }
 

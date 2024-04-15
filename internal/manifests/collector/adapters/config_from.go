@@ -64,6 +64,7 @@ type LogMetricsCollected struct {
 	EMF                *emf        `json:"emf,omitempty"`
 	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
 	AppSignals         *AppSignals `json:"app_signals,omitempty"`
+	Kubernetes *kubernetes `json:"kubernetes,omitempty"`
 }
 
 type TracesCollected struct {
@@ -84,6 +85,10 @@ type AppSignals struct {
 }
 
 type emf struct {
+}
+type kubernetes struct {
+	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`
+	AcceleratedComputeMetrics bool `json:"accelerated_compute_metrics,omitempty"`
 }
 
 type xray struct {

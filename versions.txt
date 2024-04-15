@@ -7,3 +7,5 @@ operator=1.2.0
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.1
 aws-otel-python-instrumentation=v0.0.1
+
+dcgm-exporter=3.3.3-3.3.1-ubuntu22.04

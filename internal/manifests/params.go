@@ -20,6 +20,6 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	OtelCol  v1alpha1.AmazonCloudWatchAgent
-	//OpAMPBridge v1alpha1.OpAMPBridge
-	Config config.Config
+	DcgmExp  v1alpha1.DcgmExporter
+	Config   config.Config
 }
