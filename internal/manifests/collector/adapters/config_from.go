@@ -38,33 +38,35 @@ func ConfigFromJSONString(configStr string) (map[string]interface{}, error) {
 }
 
 type CwaConfig struct {
-	Metrics *metric `json:"metrics,omitempty"`
-	Logs    *log    `json:"logs,omitempty"`
-	Traces  *trace  `json:"traces,omitempty"`
+	Metrics *Metrics `json:"metrics,omitempty"`
+	Logs    *Logs    `json:"logs,omitempty"`
+	Traces  *Traces  `json:"traces,omitempty"`
 }
 
-type metric struct {
-	MetricsCollected *metricCollected `json:"metrics_collected,omitempty"`
+type Metrics struct {
+	MetricsCollected *MetricsCollected `json:"metrics_collected,omitempty"`
 }
 
-type log struct {
-	LogMetricsCollected *logMetricCollected `json:"metrics_collected,omitempty"`
+type Logs struct {
+	LogMetricsCollected *LogMetricsCollected `json:"metrics_collected,omitempty"`
 }
 
-type trace struct {
-	TracesCollected *traceCollected `json:"traces_collected,omitempty"`
+type Traces struct {
+	TracesCollected *TracesCollected `json:"traces_collected,omitempty"`
 }
 
-type metricCollected struct {
+type MetricsCollected struct {
 	StatsD   *statsD   `json:"statsd,omitempty"`
 	CollectD *collectD `json:"collectd,omitempty"`
 }
 
-type logMetricCollected struct {
-	EMF *emf `json:"emf,omitempty"`
+type LogMetricsCollected struct {
+	EMF                *emf        `json:"emf,omitempty"`
+	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
+	AppSignals         *AppSignals `json:"app_signals,omitempty"`
 }
 
-type traceCollected struct {
+type TracesCollected struct {
 	XRay *xray `json:"xray,omitempty"`
 	OTLP *otlp `json:"otlp,omitempty"`
 }
@@ -75,6 +77,10 @@ type statsD struct {
 
 type collectD struct {
 	ServiceAddress string `json:"service_address,omitempty"`
+}
+
+type AppSignals struct {
+	TLS *TLS `json:"tls,omitempty"`
 }
 
 type emf struct {
@@ -94,6 +100,11 @@ type otlp struct {
 	HTTPEndpoint string `json:"http_endpoint,omitempty"`
 }
 
+type TLS struct {
+	CertFile string `json:"cert_file,omitempty"`
+	KeyFile  string `json:"key_file,omitempty"`
+}
+
 func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
 	var config *CwaConfig
 	if err := json.Unmarshal([]byte(configStr), &config); err != nil {
@@ -101,4 +112,20 @@ func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (c *CwaConfig) GetApplicationSignalsConfig() *AppSignals {
+	if c.Logs == nil {
+		return nil
+	}
+	if c.Logs.LogMetricsCollected == nil {
+		return nil
+	}
+	if c.Logs.LogMetricsCollected.ApplicationSignals != nil {
+		return c.Logs.LogMetricsCollected.ApplicationSignals
+	}
+	if c.Logs.LogMetricsCollected.AppSignals != nil {
+		return c.Logs.LogMetricsCollected.AppSignals
+	}
+	return nil
 }
