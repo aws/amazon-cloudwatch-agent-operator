@@ -229,7 +229,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
@@ -286,7 +286,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
@@ -516,7 +516,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonStatefulSet ./integration-tests/manifests/annotations -timeout 30m
@@ -572,7 +572,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
@@ -628,7 +628,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
@@ -684,7 +684,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
@@ -741,7 +741,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
@@ -797,7 +797,7 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
