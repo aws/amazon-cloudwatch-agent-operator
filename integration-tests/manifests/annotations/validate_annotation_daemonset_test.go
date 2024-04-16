@@ -15,17 +15,13 @@ import (
 
 // ---------------------------USE CASE 4 (Python and Java on DaemonSet)------------------------------
 func TestJavaAndPythonDaemonSet(t *testing.T) {
-
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-java-python"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -76,17 +72,13 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 // ---------------------------USE CASE 5 (Java on DaemonSet and Python should be removed)------------------------------
 func TestJavaOnlyDaemonSet(t *testing.T) {
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-java-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
-
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -138,23 +130,18 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 
 // ---------------------------USE CASE 6 (Python on DaemonSet Java annotation should be removed)------------------------------
 func TestPythonOnlyDaemonSet(t *testing.T) {
-
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-python-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
-	//updating operator deployment
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -182,7 +169,6 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 		t.Errorf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
-	// List pods belonging to the fluent-bit DaemonSet
 	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
 	fmt.Println("All pods have completed updating.")

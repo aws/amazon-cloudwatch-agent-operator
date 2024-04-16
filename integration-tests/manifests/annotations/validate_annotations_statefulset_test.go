@@ -16,16 +16,13 @@ import (
 // ---------------------------USE CASE 10 (Python and Java on Stateful set)------------------------------
 func TestJavaAndPythonStatefulSet(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "statefulset-namespace-java-python"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -74,16 +71,13 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 // ---------------------------USE CASE 11 (Java on Stateful set and Python should be removed)------------------------------
 func TestJavaOnlyStatefulSet(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "statefulset-java-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
@@ -129,16 +123,13 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 // ---------------------------USE CASE 12 (Python on Stateful set and java should be removed)------------------------------
 func TestPythonOnlyStatefulSet(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	uniqueNamespace := "statefulset-namespace-python-only"
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
