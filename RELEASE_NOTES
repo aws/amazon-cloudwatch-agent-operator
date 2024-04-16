@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.2.1 (2024-04-16)
+========================================================================
+Bug Fixes:
+* [AppSignals] Fix to dynamically pick between https & https depending on AppSignals TLS setup
+
+Enhancements:
+* [AppSignals] Update auto annotation logic to add missing annotations and restart only when required
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.2.0 (2024-04-01)
 ========================================================================
 Enhancements:
