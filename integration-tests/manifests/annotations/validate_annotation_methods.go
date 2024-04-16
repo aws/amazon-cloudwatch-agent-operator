@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
+const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -280,8 +280,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
-		err = clientset.CoreV1().Pods("amazon-cloudwatch").Delete(context.TODO(), amazonControllerManager, metav1.DeleteOptions{})
-		time.Sleep(25 * time.Second) // Wait before retrying
+		time.Sleep(15 * time.Second) // Wait before retrying
 	}
 }
 func waitForDeploymentAvailable(clientset *kubernetes.Clientset, namespace, deploymentName string, timeout time.Duration) error {
