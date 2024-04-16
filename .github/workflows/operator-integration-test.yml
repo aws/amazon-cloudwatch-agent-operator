@@ -111,16 +111,7 @@ jobs:
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
-          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
-          go test -v -run TestJavaAndPythonDeployment ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
+
 
   TestAnnotationUseCase1:
     name: TestAnnotationUseCase1
