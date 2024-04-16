@@ -97,7 +97,7 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if !r.enabledByAgentConfig(ctx, log) {
-		log.Info("accelerated_compute_metrics is disabled")
+		log.Info("enhanced_container_insights or accelerated_compute_metrics is disabled")
 		return ctrl.Result{}, nil
 	}
 
@@ -148,6 +148,9 @@ func (r *DcgmExporterReconciler) enabledByAgentConfig(ctx context.Context, log l
 	if err == nil {
 		if conf.Logs.LogMetricsCollected.Kubernetes.EnhancedContainerInsights {
 			return !featureConfigExists || conf.Logs.LogMetricsCollected.Kubernetes.AcceleratedComputeMetrics
+		} else {
+			// disable when enhanced container insights is disabled
+			return false
 		}
 	} else {
 		log.Error(err, "Failed to unmarshall agent configuration")
