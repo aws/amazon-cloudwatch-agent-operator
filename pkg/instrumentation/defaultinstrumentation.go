@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
 const (
@@ -19,34 +20,11 @@ const (
 	defaultNamespace      = "default"
 	defaultKind           = "Instrumentation"
 
-	otelSampleEnabledKey                       = "OTEL_SMP_ENABLED" //TODO: remove in favor of new name once safe
-	otelSampleEnabledDefaultValue              = "true"             //TODO: remove in favor of new name once safe
-	otelAppSignalsEnabledKey                   = "OTEL_AWS_APP_SIGNALS_ENABLED"
-	otelAppSignalsEnabledDefaultValue          = "true"
-	otelTracesSamplerArgKey                    = "OTEL_TRACES_SAMPLER_ARG"
-	otelTracesSamplerArgDefaultValue           = "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
-	otelTracesSamplerKey                       = "OTEL_TRACES_SAMPLER"
-	otelTracesSamplerDefaultValue              = "xray"
-	otelExporterOtlpProtocolKey                = "OTEL_EXPORTER_OTLP_PROTOCOL"
-	otelExporterOtlpProtocolValue              = "http/protobuf"
-	otelExporterTracesEndpointKey              = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-	otelExporterTracesEndpointDefaultValue     = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"
-	otelExporterSmpEndpointKey                 = "OTEL_AWS_SMP_EXPORTER_ENDPOINT"                            //TODO: remove in favor of new name once safe
-	otelExporterSmpEndpointDefaultValue        = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics" //TODO: remove in favor of new name once safe
-	otelExporterAppSignalsEndpointKey          = "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT"
-	otelExporterAppSignalsEndpointDefaultValue = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"
-	otelExporterMetricKey                      = "OTEL_METRICS_EXPORTER"
-	otelExporterMetricDefaultValue             = "none"
-	otelExporterLogsKey                        = "OTEL_LOGS_EXPORTER"
-	otelExporterLogsDefaultValue               = "none"
-
-	otelPythonDistro                   = "OTEL_PYTHON_DISTRO"
-	otelPythonDistroDefaultValue       = "aws_distro"
-	otelPythonConfigurator             = "OTEL_PYTHON_CONFIGURATOR"
-	otelPythonConfiguratorDefaultValue = "aws_configurator"
+	httpPrefix  = "http://"
+	httpsPrefix = "https://"
 )
 
-func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -54,6 +32,15 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 	pythonInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON")
 	if !ok {
 		return nil, errors.New("unable to determine python instrumentation image")
+	}
+
+	// set protocol by checking cloudwatch agent config for tls setting
+	exporterPrefix := httpPrefix
+	if agentConfig != nil {
+		appSignalsConfig := agentConfig.GetApplicationSignalsConfig()
+		if appSignalsConfig != nil && appSignalsConfig.TLS != nil {
+			exporterPrefix = httpsPrefix
+		}
 	}
 
 	return &v1alpha1.Instrumentation{
@@ -76,31 +63,31 @@ func getDefaultInstrumentation() (*v1alpha1.Instrumentation, error) {
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelSampleEnabledKey, Value: otelSampleEnabledDefaultValue}, //TODO: remove in favor of new name once safe
-					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
-					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
-					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
-					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
-					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterSmpEndpointKey, Value: otelExporterSmpEndpointDefaultValue}, //TODO: remove in favor of new name once safe
-					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
-					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
-					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
+					{Name: "OTEL_SMP_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_SMP_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: otelAppSignalsEnabledKey, Value: otelAppSignalsEnabledDefaultValue},
-					{Name: otelTracesSamplerArgKey, Value: otelTracesSamplerArgDefaultValue},
-					{Name: otelTracesSamplerKey, Value: otelTracesSamplerDefaultValue},
-					{Name: otelExporterOtlpProtocolKey, Value: otelExporterOtlpProtocolValue},
-					{Name: otelExporterTracesEndpointKey, Value: otelExporterTracesEndpointDefaultValue},
-					{Name: otelExporterAppSignalsEndpointKey, Value: otelExporterAppSignalsEndpointDefaultValue},
-					{Name: otelExporterMetricKey, Value: otelExporterMetricDefaultValue},
-					{Name: otelPythonDistro, Value: otelPythonDistroDefaultValue},
-					{Name: otelPythonConfigurator, Value: otelPythonConfiguratorDefaultValue},
-					{Name: otelExporterLogsKey, Value: otelExporterLogsDefaultValue},
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
 		},
