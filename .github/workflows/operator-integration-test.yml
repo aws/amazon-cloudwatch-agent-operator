@@ -23,6 +23,9 @@ jobs:
   AmazonCloudWatchAgentOperatorIntegrationTest:
     name: AmazonCloudWatchAgentOperatorIntegrationTest
     runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      profile: [ "minikube-1", "minikube-2", "minikube-3", "minikube-4", "minikube-5", "minikube-6", "minikube-7", "minikube-8", "minikube-9", "minikube-10", "minikube-11", "minikube-12" ]
     permissions:
       id-token: write
       contents: read
@@ -34,6 +37,9 @@ jobs:
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
+        with:
+          profile: ${{ matrix.profile }}
+
 
       - name: Deploy cert-manager to minikube
         run:
@@ -116,6 +122,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
           kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
+          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v ./integration-tests/manifests/annotations -timeout 30m

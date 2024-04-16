@@ -15,16 +15,13 @@ import (
 // ---------------------------USE CASE 7 (Java and Python on Namespace) ----------------------------------------------
 func TestJavaAndPythonNamespace(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	sampleNamespace := "namespace-java-python"
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
@@ -51,18 +48,14 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	//letting namespace stableize
-	time.Sleep(15 * time.Second)
 
-	//hi
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", sampleNamespace)
 			break
 		}
+		time.Sleep(10 * time.Second)
 
-		// Wait for a short duration before retrying
-		time.Sleep(25 * time.Second)
 	}
 
 	fmt.Println("Done checking for namespace update.")
@@ -81,16 +74,13 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 // ---------------------------USE CASE 8 (Java on Namespace Python should be removed) ----------------------------------------------
 func TestJavaOnlyNamespace(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	sampleNamespace := "namespace-java-only"
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}
@@ -145,16 +135,13 @@ func TestJavaOnlyNamespace(t *testing.T) {
 
 func TestPythonOnlyNamespace(t *testing.T) {
 
-	t.Parallel()
 	clientSet := setupTest(t)
 	sampleNamespace := "namespace-python-only"
 	if err := createNamespace(clientSet, sampleNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-	functionWithLock()
 
 	defer func() {
-		unlockLock()
 		if err := deleteNamespace(clientSet, sampleNamespace); err != nil {
 			t.Fatalf("Failed to delete namespace: %v", err)
 		}

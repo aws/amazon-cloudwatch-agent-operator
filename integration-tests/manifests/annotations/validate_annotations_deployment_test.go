@@ -119,17 +119,12 @@ func TestJavaOnlyDeployment(t *testing.T) {
 
 	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 	updateTheOperator(t, clientSet, string(jsonStr))
-	//check if deployment has annotations.
 	startTime := time.Now()
-	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 	updateTheOperator(t, clientSet, string(jsonStr))
-	//check if deployment has annotations.
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
-
-	// List pods belonging to the deployment
 
 	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
@@ -193,8 +188,6 @@ func TestPythonOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
 
-	// List pods belonging to the deployment
-
 	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
@@ -207,8 +200,6 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error listing pods for deployment: %s", err.Error())
 	}
-
-	//java shouldn't be annotated in this case
 
 	//wait for pods to update
 	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, 60*time.Second) {

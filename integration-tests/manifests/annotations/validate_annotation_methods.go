@@ -33,10 +33,11 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
+// ko
 func functionWithLock() {
 	opMutex.Lock()
 }
@@ -51,14 +52,12 @@ func applyYAMLWithKubectl(filename, namespace string) error {
 
 // Usage in your createNamespace function
 func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Clientset, name string, resourceFiles []string) error {
-	// Create Namespace
 	err := createNamespace(clientset, name)
 	if err != nil {
 		return err
 	}
 
 	time.Sleep(15 * time.Second)
-	// Apply each YAML file
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(filepath.Join("..", file), name)
 		if err != nil {
@@ -71,7 +70,6 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 }
 
 func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, startTime time.Time) bool {
-	// Wait for the namespace to be ready
 	for {
 		ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 		if err != nil {
@@ -83,20 +81,15 @@ func isNamespaceUpdated(clientset *kubernetes.Clientset, namespace string, start
 			break
 		}
 
-		// Wait for a short duration before retrying
-		err = clientset.CoreV1().Pods("amazon-cloudwatch").Delete(context.TODO(), amazonControllerManager, metav1.DeleteOptions{})
-		time.Sleep(15 * time.Second)
 	}
-
-	// Check if the namespace was updated
+	//check if the namespace was updated
 	ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Failed to get namespace %s: %v\n", namespace, err)
 		return false
 	}
-
 	if ns.CreationTimestamp.After(startTime) || ns.ResourceVersion != "" {
-		return true // Namespace was updated
+		return true
 	}
 
 	return false
@@ -107,7 +100,6 @@ func deleteYAMLWithKubectl(filename, namespace string) error {
 	return cmd.Run()
 }
 func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, resourceFiles []string) error {
-	// Delete each YAML file
 	for _, file := range resourceFiles {
 		err := deleteYAMLWithKubectl(filepath.Join("..", file), name)
 		time.Sleep(5 * time.Second)
@@ -117,23 +109,21 @@ func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, r
 		}
 	}
 
-	// Delete Namespace
+	//delete Namespace
 	err := deleteNamespace(clientset, name)
 	time.Sleep(15 * time.Second)
 	return err
 }
 func createNamespace(clientset *kubernetes.Clientset, name string) error {
-	// Check if the namespace already exists
 	_, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if err == nil {
 		return nil
 
 	} else if !errors.IsNotFound(err) {
-		// Other error while getting namespace
 		return err
 	}
 
-	// Create the namespace if it doesn't exist
+	//create the namespace if it doesn't exist
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), namespace, metav1.CreateOptions{})
 	time.Sleep(25 * time.Second)
@@ -146,14 +136,24 @@ func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 }
 
 func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) bool {
-	time.Sleep(20 * time.Second)
-	for _, annotation := range expectedAnnotations {
-		if ns.ObjectMeta.Annotations[annotation] != "true" {
-			return false
+
+	correct := true
+	for i := 0; i < 10; i++ {
+
+		for _, annotation := range expectedAnnotations {
+			fmt.Printf("This is the annotation: %v and its status %v, namespace name: %v, ", annotation, ns.Status, ns.Name)
+			if ns.ObjectMeta.Annotations[annotation] != "true" {
+				time.Sleep(10 * time.Second)
+				correct = false
+				break
+			}
+		}
+		if correct == true {
+			fmt.Println("Namespace annotations are correct!")
+			return true
 		}
 	}
-	fmt.Println("Namespace annotations are correct!")
-	return true
+	return false
 }
 
 func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *appsV1.Deployment, startTime time.Time) bool {
@@ -170,7 +170,11 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		t.Errorf("Failed to update deployment: %v\n", err)
 		return false
 	}
-
+	err = waitForDeploymentAvailable(clientSet, amazonCloudwatchNamespace, amazonControllerManager, 60*time.Second)
+	if err != nil {
+		fmt.Println("There was an error trying to wait for deployment available", err)
+		return false
+	}
 	fmt.Println("Deployment updated successfully!")
 	// All checks passed, deployment update successful
 	fmt.Println("Deployment fully updated.")
@@ -181,12 +185,10 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 	start := time.Now()
 
 	for {
-		// Check if timeout has elapsed
 		if time.Since(start) > timeout {
 			return fmt.Errorf("timed out waiting for new pod creation")
 		}
 
-		// Extract namespace and label selector based on the type of resource
 		namespace := ""
 		labelSelector := ""
 		switch r := resource.(type) {
@@ -203,7 +205,6 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			return fmt.Errorf("unsupported resource type")
 		}
 
-		// List pods to check for new pod creation
 		newPods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
@@ -211,7 +212,7 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			return fmt.Errorf("failed to list pods: %v", err)
 		}
 
-		// Check each pod for creation time and phase
+		//Check each pod for creation time and phase
 		for _, pod := range newPods.Items {
 			if pod.CreationTimestamp.Time.After(startTime) && pod.Status.Phase == v1.PodRunning {
 				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
@@ -221,7 +222,6 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			}
 		}
 
-		// Wait before retrying
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -284,6 +284,37 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		time.Sleep(25 * time.Second) // Wait before retrying
 	}
 }
+func waitForDeploymentAvailable(clientset *kubernetes.Clientset, namespace, deploymentName string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	watcher, err := clientset.AppsV1().Deployments(namespace).Watch(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", deploymentName),
+	})
+	if err != nil {
+		return err
+	}
+	defer watcher.Stop()
+
+	for {
+		select {
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				return fmt.Errorf("watch channel closed")
+			}
+			deployment, ok := event.Object.(*appsV1.Deployment)
+			if !ok {
+				return fmt.Errorf("unexpected object type: %T", event.Object)
+			}
+			if deployment.Status.AvailableReplicas == deployment.Status.Replicas {
+				return nil
+			}
+		case <-ctx.Done():
+			return fmt.Errorf("timed out waiting for deployment to be available")
+		}
+	}
+}
+
 func updateAnnotationConfig(deployment *appsV1.Deployment, jsonStr string) *appsV1.Deployment {
 
 	args := deployment.Spec.Template.Spec.Containers[0].Args
@@ -337,7 +368,6 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	if !updateOperator(t, clientSet, deployment, time.Now().Add(-time.Second)) {
 		t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
-	time.Sleep(15 * time.Second)
 	fmt.Println("Ended")
 
 }
