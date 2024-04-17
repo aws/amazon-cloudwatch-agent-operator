@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// ---------------------------USE CASE 7 (Java and Python on Namespace) ----------------------------------------------
 func TestJavaAndPythonNamespace(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -70,7 +69,6 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 
 }
 
-// ---------------------------USE CASE 8 (Java on Namespace Python should be removed) ----------------------------------------------
 func TestJavaOnlyNamespace(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -127,11 +125,8 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	if !checkNameSpaceAnnotations(clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, sampleNamespace) {
 		t.Error("Missing Java annotations")
 	}
-	//------------------------------------USE CASE 8 End ----------------------------------------------
 
 }
-
-// ---------------------------USE CASE 9 (Python on Namespace and Java annotation should not exist) ----------------------------------------------
 
 func TestPythonOnlyNamespace(t *testing.T) {
 

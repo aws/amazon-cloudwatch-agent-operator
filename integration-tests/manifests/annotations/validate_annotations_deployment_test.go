@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-// ---------------------------USE CASE 1 (Java and Python on Deployment) ----------------------------------------------
 func TestJavaAndPythonDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -62,8 +61,6 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment: %s", err.Error())
 	}
 
-	// List pods belonging to the deployment
-
 	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
 
 	fmt.Println("All pods have completed updating.")
@@ -77,7 +74,6 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 
 }
 
-// ---------------------------USE CASE 2 (Java on Deployment and Python Should be Removed)------------------------------
 func TestJavaOnlyDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -111,7 +107,6 @@ func TestJavaOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to marshal: %v\n", err)
 	}
 
-	//finding where index of --auto-annotation-config= is (if it doesn't exist it will be appended)
 	updateTheOperator(t, clientSet, string(jsonStr))
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
@@ -125,14 +120,12 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	fmt.Println("All pods have completed updating.")
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 
-	//wait for pods to update
 	if !checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, 60*time.Second) {
 		t.Error("Missing Java Annotations")
 	}
 
 }
 
-// ---------------------------USE CASE 3 (Python on Deployment and java annotations should be removed) ----------------------------------------------
 func TestPythonOnlyDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)

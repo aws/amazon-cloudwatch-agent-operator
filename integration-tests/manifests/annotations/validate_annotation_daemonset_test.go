@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-// ---------------------------USE CASE 4 (Python and Java on DaemonSet)------------------------------
 func TestJavaAndPythonDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-java-python"
@@ -54,7 +53,6 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 		t.Errorf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
-	// List pods belonging to the fluent-bit DaemonSet
 	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
 	fmt.Println("All pods have completed updating.")
@@ -70,7 +68,6 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 }
 
-// ---------------------------USE CASE 5 (Java on DaemonSet and Python should be removed)------------------------------
 func TestJavaOnlyDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-java-only"
@@ -111,7 +108,6 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 		t.Errorf("Failed to get fluent-bit daemonset: %s", err.Error())
 	}
 
-	// List pods belonging to the fluent-bit DaemonSet
 	err = waitForNewPodCreation(clientSet, daemonSet, startTime, 60*time.Second)
 
 	fmt.Println("All pods have completed updating.")
@@ -128,7 +124,6 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 
 }
 
-// ---------------------------USE CASE 6 (Python on DaemonSet Java annotation should be removed)------------------------------
 func TestPythonOnlyDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
 	uniqueNamespace := "daemonset-namespace-python-only"
@@ -163,7 +158,6 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get fluent-bit daemonset: %s", err.Error())

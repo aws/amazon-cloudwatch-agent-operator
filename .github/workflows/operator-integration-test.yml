@@ -113,8 +113,8 @@ jobs:
 
 
 
-  TestAnnotationUseCase1:
-    name: TestAnnotationUseCase1
+  DeploymentAnnotationsTest:
+    name: DeploymentAnnotationsTest
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -174,8 +174,8 @@ jobs:
 
  
 
-  TestAnnotationUseCase4:
-    name: TestAnnotationUseCase4
+  DaemonsetAnnotationsTest:
+    name: DaemonsetAnnotationsTest
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -235,8 +235,8 @@ jobs:
           
           
 
-  TestAnnotationUseCase7:
-    name: TestAnnotationUseCase7
+  StatefulsetAnnotationsTest:
+    name: StatefulsetAnnotationsTest
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -295,8 +295,8 @@ jobs:
           kubectl describe pods -n default
 
 
-  TestAnnotationUseCase10:
-    name: TestAnnotationUseCase10
+  NamespaceAnnotationsTest:
+    name: NamespaceAnnotationsTest
     runs-on: ubuntu-latest
     permissions:
       id-token: write

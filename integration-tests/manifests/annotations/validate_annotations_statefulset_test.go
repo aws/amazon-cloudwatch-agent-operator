@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-// ---------------------------USE CASE 10 (Python and Java on Stateful set)------------------------------
 func TestJavaAndPythonStatefulSet(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -68,7 +67,6 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 
 }
 
-// ---------------------------USE CASE 11 (Java on Stateful set and Python should be removed)------------------------------
 func TestJavaOnlyStatefulSet(t *testing.T) {
 
 	clientSet := setupTest(t)
@@ -120,7 +118,6 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 	}
 }
 
-// ---------------------------USE CASE 12 (Python on Stateful set and java should be removed)------------------------------
 func TestPythonOnlyStatefulSet(t *testing.T) {
 
 	clientSet := setupTest(t)

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/labels"
-	"sync"
 	"testing"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -34,8 +33,6 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 const daemonSetName = "sample-daemonset"
 
 const amazonControllerManager = "cloudwatch-controller-manager"
-
-var opMutex sync.Mutex
 
 func applyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
@@ -114,14 +111,12 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 		return err
 	}
 
-	// Create the namespace if it doesn't exist
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), namespace, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
-	// Wait for the namespace to be created
 	timeout := 5 * time.Minute
 	startTime := time.Now()
 	for {
@@ -131,7 +126,7 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 
 		_, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 		if err == nil {
-			return nil // Namespace is created
+			return nil
 		} else if !errors.IsNotFound(err) {
 			return err // Error other than "not found"
 		}
@@ -272,13 +267,11 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 			continue
 		}
 
-		// Check annotations for each pod
 		foundAllAnnotations := true
 		for _, pod := range currentPods.Items {
 			for _, annotation := range expectedAnnotations {
 				fmt.Printf("Checking pod %s for annotation %s in namespace %s\n", pod.Name, annotation, pod.Namespace)
 
-				// Check if the pod's annotations map contains the expected annotation
 				if value, exists := pod.Annotations[annotation]; !exists || value != "true" {
 					fmt.Printf("Pod %s does not have annotation %s with value 'true' in namespace %s\n", pod.Name, annotation, pod.Namespace)
 					foundAllAnnotations = false
@@ -334,7 +327,6 @@ func updateAnnotationConfig(deployment *appsV1.Deployment, jsonStr string) *apps
 
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	indexOfAutoAnnotationConfigString := findIndexOfPrefix("--auto-annotation-config=", args)
-	//if auto annotation not part of config, we will add it
 	if indexOfAutoAnnotationConfigString < 0 {
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--auto-annotation-config="+jsonStr)
 		indexOfAutoAnnotationConfigString = len(deployment.Spec.Template.Spec.Containers[0].Args) - 1
