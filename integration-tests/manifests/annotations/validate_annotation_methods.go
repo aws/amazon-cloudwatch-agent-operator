@@ -33,11 +33,10 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
-// ko
 func functionWithLock() {
 	opMutex.Lock()
 }
@@ -155,8 +154,8 @@ func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 
 func checkNameSpaceAnnotations(clientSet *kubernetes.Clientset, expectedAnnotations []string, sampleNamespace string) bool {
 
-	correct := true
 	for i := 0; i < 10; i++ {
+		correct := true
 		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 
 		if err != nil {
@@ -171,6 +170,7 @@ func checkNameSpaceAnnotations(clientSet *kubernetes.Clientset, expectedAnnotati
 				break
 			}
 		}
+
 		if correct == true {
 			fmt.Println("Namespace annotations are correct!")
 			return true
