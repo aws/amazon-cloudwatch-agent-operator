@@ -626,7 +626,7 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
   TestAnnotationUseCase10:
-    name: TestAnnotationUseCase1
+    name: TestAnnotationUseCase10
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -675,7 +675,6 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
@@ -732,7 +731,6 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
@@ -788,7 +786,6 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-namespace.yaml
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
