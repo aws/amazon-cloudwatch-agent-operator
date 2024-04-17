@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 var opMutex sync.Mutex
 
@@ -118,16 +118,34 @@ func createNamespace(clientset *kubernetes.Clientset, name string) error {
 	_, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if err == nil {
 		return nil
-
 	} else if !errors.IsNotFound(err) {
 		return err
 	}
 
-	//create the namespace if it doesn't exist
+	// Create the namespace if it doesn't exist
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), namespace, metav1.CreateOptions{})
-	time.Sleep(25 * time.Second)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Wait for the namespace to be created
+	timeout := 5 * time.Minute
+	startTime := time.Now()
+	for {
+		if time.Since(startTime) > timeout {
+			return fmt.Errorf("timeout reached while waiting for namespace %s to be created", name)
+		}
+
+		_, err := clientset.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+		if err == nil {
+			return nil // Namespace is created
+		} else if !errors.IsNotFound(err) {
+			return err // Error other than "not found"
+		}
+
+		time.Sleep(5 * time.Second) // Wait before retrying
+	}
 }
 
 func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
@@ -135,13 +153,18 @@ func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 	return err
 }
 
-func checkNameSpaceAnnotations(ns *v1.Namespace, expectedAnnotations []string) bool {
+func checkNameSpaceAnnotations(clientSet *kubernetes.Clientset, expectedAnnotations []string, sampleNamespace string) bool {
 
 	correct := true
 	for i := 0; i < 10; i++ {
+		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
 
+		if err != nil {
+			fmt.Println("There was an error getting namespace, ", err)
+			return false
+		}
 		for _, annotation := range expectedAnnotations {
-			fmt.Printf("This is the annotation: %v and its status %v, namespace name: %v, ", annotation, ns.Status, ns.Name)
+			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", annotation, ns.Status, ns.Name)
 			if ns.ObjectMeta.Annotations[annotation] != "true" {
 				time.Sleep(10 * time.Second)
 				correct = false

@@ -3,11 +3,9 @@
 package annotations
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 	"time"
 )
@@ -46,6 +44,7 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 		t.Error("Error:", err)
 	}
 	startTime := time.Now()
+	timeOut := 5 * time.Minute
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 
@@ -54,18 +53,18 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 			fmt.Printf("Namespace %s has been updated.\n", sampleNamespace)
 			break
 		}
+		elapsed := time.Since(startTime)
+		if elapsed >= timeOut {
+			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", sampleNamespace)
+			break
+		}
 		time.Sleep(10 * time.Second)
 
 	}
 
 	fmt.Println("Done checking for namespace update.")
 
-	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
-
-	if err != nil {
-		t.Errorf("Error getting namespace %s", err.Error())
-	}
-	if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+	if !checkNameSpaceAnnotations(clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, sampleNamespace) {
 		t.Error("Missing java and python annotations")
 	}
 
@@ -104,27 +103,27 @@ func TestJavaOnlyNamespace(t *testing.T) {
 		t.Error("Error:", err)
 	}
 	startTime := time.Now()
-	updateTheOperator(t, clientSet, string(jsonStr))
-	time.Sleep(15 * time.Second)
+	timeOut := 5 * time.Minute
 
-	//let namspace update
+	updateTheOperator(t, clientSet, string(jsonStr))
+
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", sampleNamespace)
 			break
 		}
-
-		// Wait for a short duration before retrying
+		elapsed := time.Since(startTime)
+		if elapsed >= timeOut {
+			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", sampleNamespace)
+			break
+		}
 		time.Sleep(10 * time.Second)
+
 	}
 
 	fmt.Println("Done checking for namespace update.")
-	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting namespace %s", err.Error())
-	}
 
-	if !checkNameSpaceAnnotations(ns, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}) {
+	if !checkNameSpaceAnnotations(clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, sampleNamespace) {
 		t.Error("Missing Java annotations")
 	}
 	//------------------------------------USE CASE 8 End ----------------------------------------------
@@ -167,26 +166,26 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	startTime := time.Now()
+	timeOut := 5 * time.Minute
+
 	updateTheOperator(t, clientSet, string(jsonStr))
-	time.Sleep(15 * time.Second)
 
 	for {
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", sampleNamespace)
 			break
 		}
-
-		// Wait for a short duration before retrying
+		elapsed := time.Since(startTime)
+		if elapsed >= timeOut {
+			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", sampleNamespace)
+			break
+		}
 		time.Sleep(10 * time.Second)
-	}
 
+	}
 	fmt.Println("Done checking for namespace update.")
 
-	ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("Error getting namespace %s", err.Error())
-	}
-	if !checkNameSpaceAnnotations(ns, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}) {
+	if !checkNameSpaceAnnotations(clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, sampleNamespace) {
 		t.Error("Missing Python annotations")
 	}
 }
