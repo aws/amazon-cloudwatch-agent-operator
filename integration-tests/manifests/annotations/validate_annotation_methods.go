@@ -37,13 +37,6 @@ const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
-func functionWithLock() {
-	opMutex.Lock()
-}
-
-func unlockLock() {
-	defer opMutex.Unlock()
-}
 func applyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
 	return cmd.Run()
