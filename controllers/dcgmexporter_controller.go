@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -89,17 +90,23 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if !enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log) {
-		log.Info("enhanced_container_insights or accelerated_compute_metrics is disabled")
-		return ctrl.Result{}, nil
-	}
-
 	params := r.getParams(instance)
-
 	desiredObjects, buildErr := BuildDcgmExporter(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
+
+	if !enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log) {
+		log.Info("enhanced_container_insights or accelerated_compute_metrics is disabled")
+		for _, obj := range desiredObjects {
+			if err := r.Delete(ctx, obj, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
+				log.Error(err, "unable to delete resources", "resource", obj)
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	err := reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
