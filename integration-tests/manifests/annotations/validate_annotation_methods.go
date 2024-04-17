@@ -150,7 +150,7 @@ func checkNameSpaceAnnotations(clientSet *kubernetes.Clientset, expectedAnnotati
 	for i := 0; i < 10; i++ {
 		correct := true
 		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), sampleNamespace, metav1.GetOptions{})
-
+		fmt.Printf("This is the loop iteration: %v\n, these are teh annotation of ns %v", i, ns)
 		if err != nil {
 			fmt.Println("There was an error getting namespace, ", err)
 			return false
