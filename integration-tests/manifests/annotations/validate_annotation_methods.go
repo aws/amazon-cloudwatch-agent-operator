@@ -33,7 +33,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
+const amazonControllerManager = "cloudwatch-controller-manager"
 
 var opMutex sync.Mutex
 
