@@ -223,7 +223,6 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			return fmt.Errorf("failed to list pods: %v", err)
 		}
 
-		//Check each pod for creation time and phase
 		for _, pod := range newPods.Items {
 			if pod.CreationTimestamp.Time.After(startTime) && pod.Status.Phase == v1.PodRunning {
 				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
@@ -246,7 +245,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 			return false
 		}
 
-		// Update the list of pods on each iteration to ensure we have the latest information
 		currentPods, err := clientset.CoreV1().Pods(pods.Items[0].Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			fmt.Printf("Failed to list pods: %v\n", err)
