@@ -7,7 +7,7 @@ package controllers
 import (
 	"context"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/dcgmexporter"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/neuronmonitor"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,8 +23,8 @@ import (
 	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
 )
 
-// DcgmExporterReconciler reconciles a DcgmExporter object.
-type DcgmExporterReconciler struct {
+// NeuronMonitorReconciler reconciles a NeuronMonitor object.
+type NeuronMonitorReconciler struct {
 	client.Client
 	recorder record.EventRecorder
 	scheme   *runtime.Scheme
@@ -32,20 +32,20 @@ type DcgmExporterReconciler struct {
 	config   config.Config
 }
 
-func (r *DcgmExporterReconciler) getParams(instance v1alpha1.DcgmExporter) manifests.Params {
+func (r *NeuronMonitorReconciler) getParams(instance v1alpha1.NeuronMonitor) manifests.Params {
 	return manifests.Params{
-		Config:   r.config,
-		Client:   r.Client,
-		DcgmExp:  instance,
-		Log:      r.log,
-		Scheme:   r.scheme,
-		Recorder: r.recorder,
+		Config:    r.config,
+		Client:    r.Client,
+		NeuronExp: instance,
+		Log:       r.log,
+		Scheme:    r.scheme,
+		Recorder:  r.recorder,
 	}
 }
 
-// NewReconciler creates a new reconciler for DcgmExporter objects.
-func NewDcgmExporterReconciler(p Params) *DcgmExporterReconciler {
-	r := &DcgmExporterReconciler{
+// NewReconciler creates a new reconciler for NeuronMonitor objects.
+func NewNeuronMonitorReconciler(p Params) *NeuronMonitorReconciler {
+	r := &NeuronMonitorReconciler{
 		Client:   p.Client,
 		log:      p.Log,
 		scheme:   p.Scheme,
@@ -64,18 +64,18 @@ func NewDcgmExporterReconciler(p Params) *DcgmExporterReconciler {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=dcgmexporters,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=dcgmexporters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=dcgmexporters/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=neuronmonitors,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=neuronmonitors/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=neuronmonitors/finalizers,verbs=get;update;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
-func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.log.WithValues("DcgmExporter", req.NamespacedName)
+func (r *NeuronMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.log.WithValues("NeuronMonitor", req.NamespacedName)
 
-	var instance v1alpha1.DcgmExporter
+	var instance v1alpha1.NeuronMonitor
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "unable to fetch DcgmExporter")
+			log.Error(err, "unable to fetch NeuronMonitor")
 		}
 
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -95,18 +95,18 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	params := r.getParams(instance)
 
-	desiredObjects, buildErr := BuildDcgmExporter(params)
+	desiredObjects, buildErr := BuildNeuronMonitor(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.NeuronExp, params.Scheme, desiredObjects...)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
-// BuildDcgmExporter returns the generation and collected errors of all manifests for a given instance.
-func BuildDcgmExporter(params manifests.Params) ([]client.Object, error) {
+// BuildNeuronMonitor returns the generation and collected errors of all manifests for a given instance.
+func BuildNeuronMonitor(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder{
-		dcgmexporter.Build,
+		neuronmonitor.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {
@@ -120,9 +120,9 @@ func BuildDcgmExporter(params manifests.Params) ([]client.Object, error) {
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
-func (r *DcgmExporterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NeuronMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.DcgmExporter{}).
+		For(&v1alpha1.NeuronMonitor{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

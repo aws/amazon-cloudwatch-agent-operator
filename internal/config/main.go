@@ -28,6 +28,7 @@ type Config struct {
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
 	dcgmExporterImage                   string
+	neuronMonitorImage                  string
 	labelsFilter                        []string
 }
 
@@ -55,6 +56,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		dcgmExporterImage:                   o.dcgmExporterImage,
+		neuronMonitorImage:                  o.neuronMonitorImage,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -107,6 +109,11 @@ func (c *Config) AutoInstrumentationNginxImage() string {
 // DcgmExporterImage returns Nvidia DCGM Exporter container image.
 func (c *Config) DcgmExporterImage() string {
 	return c.dcgmExporterImage
+}
+
+// NeuronMonitorImage returns Neuron Monitor Exporter container image.
+func (c *Config) NeuronMonitorImage() string {
+	return c.neuronMonitorImage
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

@@ -21,6 +21,7 @@ var (
 	autoInstrumentationNginx       string
 	autoInstrumentationGo          string
 	dcgmExporter                   string
+	neuronMonitor                  string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -37,6 +38,7 @@ type Version struct {
 	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
 	AutoInstrumentationNginx       string `json:"auto-instrumentation-nginx"`
 	DcgmExporter                   string `json:"dcgm-exporter-version"`
+	NeuronMonitor                  string `json:"neuron-monitor-version"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -54,6 +56,7 @@ func Get() Version {
 		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
 		AutoInstrumentationNginx:       AutoInstrumentationNginx(),
 		DcgmExporter:                   DcgmExporter(),
+		NeuronMonitor:                  NeuronMonitor(),
 	}
 }
 
@@ -72,6 +75,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationApacheHttpd,
 		v.AutoInstrumentationNginx,
 		v.DcgmExporter,
+		v.NeuronMonitor,
 	)
 }
 
@@ -139,6 +143,14 @@ func DcgmExporter() string {
 	if len(dcgmExporter) > 0 {
 		// this should always be set, as it's specified during the build
 		return dcgmExporter
+	}
+	return "0.0.0"
+}
+
+func NeuronMonitor() string {
+	if len(neuronMonitor) > 0 {
+		// this should always be set, as it's specified during the build
+		return neuronMonitor
 	}
 	return "0.0.0"
 }

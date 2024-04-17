@@ -15,11 +15,12 @@ import (
 
 // Params holds the reconciliation-specific parameters.
 type Params struct {
-	Client   client.Client
-	Recorder record.EventRecorder
-	Scheme   *runtime.Scheme
-	Log      logr.Logger
-	OtelCol  v1alpha1.AmazonCloudWatchAgent
-	DcgmExp  v1alpha1.DcgmExporter
-	Config   config.Config
+	Client    client.Client
+	Recorder  record.EventRecorder
+	Scheme    *runtime.Scheme
+	Log       logr.Logger
+	OtelCol   v1alpha1.AmazonCloudWatchAgent
+	DcgmExp   v1alpha1.DcgmExporter
+	NeuronExp v1alpha1.NeuronMonitor
+	Config    config.Config
 }

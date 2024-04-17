@@ -28,6 +28,7 @@ type options struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	dcgmExporterImage                   string
+	neuronMonitorImage                  string
 	labelsFilter                        []string
 }
 
@@ -97,6 +98,12 @@ func WithAutoInstrumentationNginxImage(s string) Option {
 func WithDcgmExporterImage(s string) Option {
 	return func(o *options) {
 		o.dcgmExporterImage = s
+	}
+}
+
+func WithNeuronMonitorImage(s string) Option {
+	return func(o *options) {
+		o.neuronMonitorImage = s
 	}
 }
 

@@ -8,3 +8,6 @@ resources:
 - dcgm_exporter_service_account.yaml
 - dcgm_exporter_role.yaml
 - dcgm_exporter_role_binding.yaml
+- neuron_monitor_service_account.yaml
+- neuron_monitor_role.yaml
+- neuron_monitor_role_binding.yaml

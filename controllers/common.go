@@ -7,7 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +22,12 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
+)
+
+const (
+	acceleratedComputeMetrics = "accelerated_compute_metrics"
+	amazonCloudWatchNamespace = "amazon-cloudwatch"
+	amazonCloudWatchAgentName = "cloudwatch-agent"
 )
 
 func isNamespaceScoped(obj client.Object) bool {
@@ -91,4 +100,34 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
 	}
 	return nil
+}
+
+func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger) bool {
+	agentResource := getAmazonCloudWatchAgentResource(ctx, c)
+	// missing feature flag means it's on by default
+	featureConfigExists := strings.Contains(agentResource.Spec.Config, acceleratedComputeMetrics)
+	conf, err := adapters.ConfigStructFromJSONString(agentResource.Spec.Config)
+	if err == nil {
+		if conf.Logs.LogMetricsCollected.Kubernetes.EnhancedContainerInsights {
+			return !featureConfigExists || conf.Logs.LogMetricsCollected.Kubernetes.AcceleratedComputeMetrics
+		} else {
+			// disable when enhanced container insights is disabled
+			return false
+		}
+	} else {
+		log.Error(err, "Failed to unmarshall agent configuration")
+	}
+
+	return true
+}
+
+func getAmazonCloudWatchAgentResource(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
+	cr := &v1alpha1.AmazonCloudWatchAgent{}
+
+	_ = c.Get(ctx, client.ObjectKey{
+		Namespace: amazonCloudWatchNamespace,
+		Name:      amazonCloudWatchAgentName,
+	}, cr)
+
+	return *cr
 }

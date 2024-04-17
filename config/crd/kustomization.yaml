@@ -5,3 +5,4 @@ resources:
 - bases/cloudwatch.aws.amazon.com_amazoncloudwatchagents.yaml
 - bases/cloudwatch.aws.amazon.com_instrumentations.yaml
 - bases/cloudwatch.aws.amazon.com_dcgmexporters.yaml
+- bases/cloudwatch.aws.amazon.com_neuronmonitors.yaml

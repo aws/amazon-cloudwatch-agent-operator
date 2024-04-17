@@ -205,6 +205,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = controllers.NewNeuronMonitorReconciler(controllers.Params{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("NeuronMonitor"),
+		Scheme:   mgr.GetScheme(),
+		Config:   cfg,
+		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NeuronMonitor")
+		os.Exit(1)
+	}
+
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
