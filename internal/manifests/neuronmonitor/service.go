@@ -6,12 +6,13 @@ package neuronmonitor
 import (
 	"fmt"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func Service(params manifests.Params) (*corev1.Service, error) {

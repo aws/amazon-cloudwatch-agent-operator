@@ -62,7 +62,7 @@ func Get() Version {
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v')",
+		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v', , NeuronMonitor='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.AmazonCloudWatchAgent,

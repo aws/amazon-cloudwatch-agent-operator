@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 func TestDcgmContainer(t *testing.T) {

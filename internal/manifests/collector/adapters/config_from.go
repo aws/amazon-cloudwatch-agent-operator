@@ -64,7 +64,7 @@ type LogMetricsCollected struct {
 	EMF                *emf        `json:"emf,omitempty"`
 	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
 	AppSignals         *AppSignals `json:"app_signals,omitempty"`
-	Kubernetes *kubernetes `json:"kubernetes,omitempty"`
+	Kubernetes         *kubernetes `json:"kubernetes,omitempty"`
 }
 
 type TracesCollected struct {

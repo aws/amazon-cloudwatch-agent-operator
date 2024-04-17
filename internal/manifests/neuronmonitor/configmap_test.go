@@ -6,14 +6,15 @@ package neuronmonitor
 import (
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
