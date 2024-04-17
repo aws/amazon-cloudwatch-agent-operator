@@ -167,123 +167,12 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonDeployment ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
-  TestAnnotationUseCase2:
-    name: TestAnnotationUseCase2
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
-  TestAnnotationUseCase3:
-    name: TestAnnotationUseCase3
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
-          
+
+ 
 
   TestAnnotationUseCase4:
     name: TestAnnotationUseCase4
@@ -339,124 +228,13 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonDaemonSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-          
-          
-
-  TestAnnotationUseCase5:
-    name: TestAnnotationUseCase5
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestJavaOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
-  TestAnnotationUseCase6:
-    name: TestAnnotationUseCase6
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestPythonOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
+          
+          
+
   TestAnnotationUseCase7:
     name: TestAnnotationUseCase7
     runs-on: ubuntu-latest
@@ -511,120 +289,12 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-  TestAnnotationUseCase8:
-    name: TestAnnotationUseCase8
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-  TestAnnotationUseCase9:
-    name: TestAnnotationUseCase9
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
+
+
   TestAnnotationUseCase10:
     name: TestAnnotationUseCase10
     runs-on: ubuntu-latest
@@ -678,116 +348,9 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
-  TestAnnotationUseCase11:
-    name: TestAnnotationUseCase11
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-  TestAnnotationUseCase12:
-    name: TestAnnotationUseCase12
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test case for AmazonCloudWatchAgent pod creation
-        run: |
-          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
-          sleep 60
-          kubectl describe pods -n amazon-cloudwatch
-          pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
-          if [ -z "$pod_name" ]; then
-            echo "Pod $pod_name is not created. Exiting with ERROR."
-            echo "Pod is not created test case: FAIL"
-          else
-            echo "Pod $pod_name is created."
-            echo "Pod is created test case: PASS"
-          fi
-
-      - name: Test Annotations
-        run: |
-          kubectl get pods -A
-          kubectl describe pods -n default
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
+
+
