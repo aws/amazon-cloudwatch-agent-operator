@@ -171,6 +171,8 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	for {
+		time.Sleep(5 * time.Second)
+
 		if isNamespaceUpdated(clientSet, sampleNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", sampleNamespace)
 			break
@@ -180,8 +182,6 @@ func TestPythonOnlyNamespace(t *testing.T) {
 			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", sampleNamespace)
 			break
 		}
-		time.Sleep(10 * time.Second)
-
 	}
 	fmt.Println("Done checking for namespace update.")
 
