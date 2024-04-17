@@ -49,6 +49,7 @@ const (
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
+	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
 
 var (
@@ -101,6 +102,7 @@ func main() {
 		webhookPort               int
 		tlsOpt                    tlsConfig
 		dcgmExporterImage         string
+		neuronMonitorImage        string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -111,6 +113,7 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
 	// set java instrumentation java image in environment variable to be used for default instrumentation
@@ -126,6 +129,7 @@ func main() {
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-python", autoInstrumentationPython,
 		"dcgm-exporter", dcgmExporterImage,
+		"neuron-monitor", neuronMonitorImage,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -139,6 +143,7 @@ func main() {
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithDcgmExporterImage(dcgmExporterImage),
+		config.WithNeuronMonitorImage(neuronMonitorImage),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
