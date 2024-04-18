@@ -108,18 +108,20 @@ func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client
 	// missing feature flag means it's on by default
 	featureConfigExists := strings.Contains(agentResource.Spec.Config, acceleratedComputeMetrics)
 	conf, err := adapters.ConfigStructFromJSONString(agentResource.Spec.Config)
-	if err == nil {
+	if err != nil {
+		log.Error(err, "Failed to unmarshall agent configuration")
+		return false
+	}
+
+	if conf.Logs != nil && conf.Logs.LogMetricsCollected != nil && conf.Logs.LogMetricsCollected.Kubernetes != nil {
 		if conf.Logs.LogMetricsCollected.Kubernetes.EnhancedContainerInsights {
 			return !featureConfigExists || conf.Logs.LogMetricsCollected.Kubernetes.AcceleratedComputeMetrics
 		} else {
-			// disable when enhanced container insights is disabled
+			// enhanced container insights is disabled
 			return false
 		}
-	} else {
-		log.Error(err, "Failed to unmarshall agent configuration")
 	}
-
-	return true
+	return false
 }
 
 func getAmazonCloudWatchAgentResource(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
