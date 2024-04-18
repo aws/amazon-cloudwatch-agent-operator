@@ -119,7 +119,6 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}()
 
 	for {
-		//time.Sleep(5 * time.Second)
 		if isNamespaceUpdated(clientSet, uniqueNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
 			break
@@ -184,7 +183,6 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	for {
-		time.Sleep(15 * time.Second)
 		if isNamespaceUpdated(clientSet, uniqueNamespace, startTime) {
 			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
 			break
