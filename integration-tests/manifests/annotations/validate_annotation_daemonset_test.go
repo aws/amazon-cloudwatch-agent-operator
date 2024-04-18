@@ -4,10 +4,12 @@ package annotations
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/big"
 	"path/filepath"
 	"testing"
 	"time"
@@ -15,16 +17,12 @@ import (
 
 func TestJavaAndPythonDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
-	uniqueNamespace := "daemonset-namespace-java-python"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("daemonset-namespace-java-python-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -47,6 +45,16 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
+
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -70,17 +78,12 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 
 func TestJavaOnlyDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
-	uniqueNamespace := "daemonset-namespace-java-only"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
-
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("daemonset-namespace-java-only-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -102,6 +105,16 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
+
 	// Get the fluent-bit DaemonSet
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
@@ -126,18 +139,12 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 
 func TestPythonOnlyDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
-	uniqueNamespace := "daemonset-namespace-python-only"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
-
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("daemonset-namespace-python-only-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -158,6 +165,17 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-daemonset.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
+
 	daemonSet, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), daemonSetName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get fluent-bit daemonset: %s", err.Error())

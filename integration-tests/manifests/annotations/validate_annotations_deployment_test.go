@@ -4,11 +4,13 @@ package annotations
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/big"
 	"path/filepath"
 	"testing"
 	"time"
@@ -17,18 +19,12 @@ import (
 func TestJavaAndPythonDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)
-	uniqueNamespace := "deployment-namespace-java-python"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
-	//updating operator deployment
-
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-java-python-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -48,9 +44,17 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err != nil {
-		t.Errorf("Failed to get deployment app: %s", err.Error())
+
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
+	//updating operator deployment
 
 	//check if deployment has annotations.
 	if err != nil {
@@ -77,16 +81,12 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 func TestJavaOnlyDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)
-	uniqueNamespace := "deployment-namespace-java-only"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-java-only-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -106,10 +106,19 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to marshal: %v\n", err)
 	}
-
-	updateTheOperator(t, clientSet, string(jsonStr))
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
+
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
+
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("Failed to get deployment: %s", err.Error())
@@ -129,16 +138,12 @@ func TestJavaOnlyDeployment(t *testing.T) {
 func TestPythonOnlyDeployment(t *testing.T) {
 
 	clientSet := setupTest(t)
-	uniqueNamespace := "deployment-namespace-python-only"
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
 	}
-
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-python-only-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -164,6 +169,16 @@ func TestPythonOnlyDeployment(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
+
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-deployment.yaml"}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
 
 	//check if deployment has annotations.
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
