@@ -124,7 +124,7 @@ func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client
 	return false
 }
 
-func getAmazonCloudWatchAgentResource(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
+var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
 	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
 	_ = c.Get(ctx, client.ObjectKey{
