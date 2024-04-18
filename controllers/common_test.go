@@ -49,6 +49,11 @@ func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
 			config:   `{"logs":{"metrics_collected":{}}}`,
 			expected: false,
 		},
+		{
+			name:     "malformed",
+			config:   `"logs":{"metrics_collected":{"kubernetes":{"enhanced_container_insights":false, "accelerated_compute_metrics":true}}}}`,
+			expected: false,
+		},
 	}
 
 	for _, tc := range testCases {
