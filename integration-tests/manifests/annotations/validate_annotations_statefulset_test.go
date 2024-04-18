@@ -47,7 +47,6 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
-
 	defer func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{"sample-statefulset.yaml"}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
