@@ -12,7 +12,7 @@ const (
 	serviceCountWindows = 3
 
 	// DaemonSet count for CW agent on Linux and Windows
-	daemonsetCountLinux   = 6
+	daemonsetCountLinux   = 4
 	daemonsetCountWindows = 2
 
 	// Pods count for CW agent on Linux and Windows
