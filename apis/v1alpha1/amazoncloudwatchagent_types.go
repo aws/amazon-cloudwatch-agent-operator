@@ -153,7 +153,10 @@ type AmazonCloudWatchAgentSpec struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
-	// WorkingDir represents Container's working directory.
+	// WorkingDir represents Container's working directory. If not specified,
+	// the container runtime's default will be used, which might
+	// be configured in the container image. Cannot be updated.
+	// +optional
 	WorkingDir string `json:"workingDir,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
