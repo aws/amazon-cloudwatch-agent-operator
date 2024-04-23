@@ -127,6 +127,6 @@ resource "null_resource" "validator" {
     helm_release.this
   ]
   provisioner "local-exec" {
-    command = "go test ${var.test_dir} -v"
+    command = "go test ${var.test_dir} -v --tags=linuxonly"
   }
 }

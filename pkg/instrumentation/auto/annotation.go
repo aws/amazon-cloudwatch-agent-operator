@@ -37,29 +37,36 @@ type AnnotationMutators struct {
 	daemonSetMutators   map[string]instrumentation.AnnotationMutator
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
+	injectAnnotations   map[string]struct{}
 }
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
-func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace) {
-	restartAndPatchFunc := m.patchFunc(ctx, setRestartAnnotation)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), restartAndPatchFunc)
+func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name),
+		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	mutateAndPatchFunc := m.patchFunc(ctx, m.MutateObject)
+	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
+	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
+	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
 	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(mutateAndPatchFunc, m.restartNamespaceFunc(ctx)),
+		chainCallbacks(m.patchFunc(ctx, m.mutateObject), m.restartNamespaceFunc(ctx)),
 	)
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, mutateAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, mutateAndPatchFunc)
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) MutateObject(obj client.Object) bool {
+func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
+	return m.mutateObject(obj, nil)
+}
+
+// mutateObject modifies annotations for a single object using the configured mutators.
+func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) {
 	switch o := obj.(type) {
 	case *corev1.Namespace:
 		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta())
@@ -70,7 +77,7 @@ func (m *AnnotationMutators) MutateObject(obj client.Object) bool {
 	case *appsv1.StatefulSet:
 		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta())
 	default:
-		return false
+		return nil, false
 	}
 }
 
@@ -84,29 +91,30 @@ func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.Ob
 	switch l := list.(type) {
 	case *corev1.NamespaceList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.DeploymentList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.DaemonSetList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	case *appsv1.StatefulSetList:
 		for _, item := range l.Items {
-			fn(&item)
+			fn(&item, nil)
 		}
 	}
 }
 
-func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) bool {
+func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
 	mutator, ok := mutators[name]
 	if !ok {
 		mutator = m.defaultMutator
 	}
-	return mutator.Mutate(obj)
+	mutatedAnnotations := mutator.Mutate(obj)
+	return mutatedAnnotations, len(mutatedAnnotations) != 0
 }
 
 func namespacedName(obj metav1.Object) string {
@@ -133,6 +141,7 @@ func NewAnnotationMutators(
 		daemonSetMutators:   builder.buildMutators(getResources(cfg, typeSet, getDaemonSets)),
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
+		injectAnnotations:   buildInjectAnnotations(typeSet),
 	}
 }
 
@@ -194,7 +203,8 @@ func newMutatorBuilder(typeSet instrumentation.TypeSet) *mutatorBuilder {
 }
 
 // buildMutations builds insert and remove annotation mutations for the instrumentation.Type.
-// Both are configured to only modify the annotations if all annotation keys are missing or present respectively.
+// The insert mutation is configured to modify for any missing annotation key.
+// The remove mutation is configured to only modify if all annotation keys are present.
 func buildMutations(instType instrumentation.Type) (instrumentation.AnnotationMutation, instrumentation.AnnotationMutation) {
 	annotations := buildAnnotations(instType)
 	return instrumentation.NewInsertAnnotationMutation(annotations),
@@ -207,6 +217,15 @@ func buildAnnotations(instType instrumentation.Type) map[string]string {
 		instrumentation.InjectAnnotationKey(instType): defaultAnnotationValue,
 		AnnotateKey(instType):                         defaultAnnotationValue,
 	}
+}
+
+// buildInjectAnnotations returns the set of inject annotations corresponding to the instrumentation types
+func buildInjectAnnotations(instTypeSet instrumentation.TypeSet) map[string]struct{} {
+	ret := map[string]struct{}{}
+	for instType := range instTypeSet {
+		ret[instrumentation.InjectAnnotationKey(instType)] = struct{}{}
+	}
+	return ret
 }
 
 // AnnotateKey joins the auto-annotate annotation prefix with the provided instrumentation.Type.

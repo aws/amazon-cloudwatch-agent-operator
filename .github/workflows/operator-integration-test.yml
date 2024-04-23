@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: operator Integration Test
+name: Operator Integration Test
 on:
   push:
     branches:
@@ -39,10 +39,17 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
+<<<<<<< HEAD
       #      - name: Verify minikube and cert-manager
       #        run: |
       #          sleep 10
       #          kubectl get pods -A
+=======
+      - name: Verify minikube and cert-manager
+        run: |
+          sleep 10
+          kubectl get pods -A
+>>>>>>> cf7a1e70c257d767c74529867ceddfe033064f94
 
       - name: Build image
         run: |
@@ -56,7 +63,7 @@ jobs:
 
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
-          helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
+          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
           sleep 60
           kubectl describe pods -n amazon-cloudwatch
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"

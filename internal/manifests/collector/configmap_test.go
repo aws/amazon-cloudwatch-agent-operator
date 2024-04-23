@@ -19,7 +19,7 @@ func TestDesiredConfigMap(t *testing.T) {
 
 	t.Run("should return expected cwagent config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
-		expectedLables["app.kubernetes.io/name"] = "test-agent"
+		expectedLables["app.kubernetes.io/name"] = "test"
 		expectedLables["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
@@ -30,7 +30,7 @@ func TestDesiredConfigMap(t *testing.T) {
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-agent", actual.Name)
+		assert.Equal(t, "test", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 

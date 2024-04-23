@@ -1,0 +1,12 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: neuron-monitor-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: neuron-monitor-service-acct
+    namespace: amazon-cloudwatch
+roleRef:
+  kind: Role
+  name: neuron-monitor-role
+  apiGroup: rbac.authorization.k8s.io

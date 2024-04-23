@@ -18,6 +18,11 @@ on:
         type: string
         default: "v1.1.0-eksbuild.1"
         description: "EKS addon version"
+      run_in_beta:
+        required: true
+        type: boolean
+        default: true
+        description: "Run in EKS Addon Beta environment"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -105,10 +110,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="beta=true" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="beta=true" -auto-approve
+            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve
             else
-              terraform destroy -var="beta=true" -auto-approve && exit 1
+              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -121,4 +126,4 @@ jobs:
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="beta=true" --auto-approve
+            terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" --auto-approve
