@@ -6,7 +6,7 @@ package annotations
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
+	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 	"testing"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -22,21 +22,27 @@ import (
 	"time"
 )
 
-const injectJavaAnnotation = "instrumentation.opentelemetry.io/inject-java"
-const autoAnnotateJavaAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-java"
-const injectPythonAnnotation = "instrumentation.opentelemetry.io/inject-python"
-const autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
-const deploymentName = "sample-deployment"
-const statefulSetName = "sample-statefulset"
-const amazonCloudwatchNamespace = "amazon-cloudwatch"
+const (
+	injectJavaAnnotation         = "instrumentation.opentelemetry.io/inject-java"
+	autoAnnotateJavaAnnotation   = "cloudwatch.aws.amazon.com/auto-annotate-java"
+	injectPythonAnnotation       = "instrumentation.opentelemetry.io/inject-python"
+	autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
+	deploymentName               = "sample-deployment"
+	statefulSetName              = "sample-statefulset"
+	amazonCloudwatchNamespace    = "amazon-cloudwatch"
 
-const daemonSetName = "sample-daemonset"
+	daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "cloudwatch-controller-manager"
 
-const sampleDaemonsetYamlName = "sample-daemonset.yaml"
-const sampleDeploymentYamlName = "sample-deployment.yaml"
-const sampleStatefulsetYamlName = "sample-statefulset.yaml"
+	sampleDaemonsetYamlName   = "sample-daemonset.yaml"
+	sampleDeploymentYamlName  = "sample-deployment.yaml"
+	sampleStatefulsetYamlName = "sample-statefulset.yaml"
+	TimoutDuration            = 2 * time.Minute
+
+	TimeBetweenRetries = 5 * time.Second
+	numberOfRetries    = 10
+)
 
 func applyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
@@ -104,10 +110,9 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 		return err
 	}
 
-	timeout := 5 * time.Minute
 	startTime := time.Now()
 	for {
-		if time.Since(startTime) > timeout {
+		if time.Since(startTime) > TimoutDuration {
 			return fmt.Errorf("timeout reached while waiting for namespace %s to be created", name)
 		}
 
@@ -118,7 +123,7 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 			return err
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(TimeBetweenRetries)
 	}
 }
 
@@ -130,7 +135,6 @@ func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 // This function creates a namespace and checks it annotations and then deletes the namespace after check complete
 func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, expectedAnnotations []string, uniqueNamespace string, startTime time.Time) bool {
 
-	timeOut := 5 * time.Minute
 	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -147,13 +151,13 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 			break
 		}
 		elapsed := time.Since(startTime)
-		if elapsed >= timeOut {
+		if elapsed >= TimoutDuration {
 			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
 			break
 		}
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < numberOfRetries; i++ {
 		correct := true
 		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), uniqueNamespace, metav1.GetOptions{})
 		fmt.Printf("This is the loop iteration: %v\n, these are the annotation of ns %v", i, ns)
@@ -164,7 +168,7 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 		for _, annotation := range expectedAnnotations {
 			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", annotation, ns.Status, ns.Name)
 			if ns.ObjectMeta.Annotations[annotation] != "true" {
-				time.Sleep(10 * time.Second)
+				time.Sleep(TimeBetweenRetries)
 				correct = false
 				break
 			}
@@ -192,7 +196,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 		t.Errorf("Failed to update deployment: %v\n", err)
 		return false
 	}
-	err = waitForNewPodCreation(clientSet, deployment, startTime, 60*time.Second)
+	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
 		fmt.Println("There was an error trying to wait for deployment available", err)
 		return false
@@ -201,52 +205,11 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	return true
 }
 
-// Takes in a resource either Deployment, Daemonset, or Stateful set and
-func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time, timeout time.Duration) error {
-	start := time.Now()
-	for {
-		if time.Since(start) > timeout {
-			return fmt.Errorf("timed out waiting for new pod creation")
-		}
-		namespace := ""
-		labelSelector := ""
-		switch r := resource.(type) {
-		case *appsV1.Deployment:
-			namespace = r.Namespace
-			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-		case *appsV1.DaemonSet:
-			namespace = r.Namespace
-			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-		case *appsV1.StatefulSet:
-			namespace = r.Namespace
-			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-		default:
-			return fmt.Errorf("unsupported resource type")
-		}
-
-		newPods, _ := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: labelSelector,
-		})
-
-		for _, pod := range newPods.Items {
-			if pod.CreationTimestamp.Time.After(startTime) && pod.Status.Phase == v1.PodRunning {
-				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
-				return nil
-			} else if pod.CreationTimestamp.Time.After(startTime) {
-
-				fmt.Printf("Operator pod %s created after start time but is not in running stage\n", pod.Name)
-			}
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-}
-
 // check if the given pods have the expected annotations
-func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string, retryDuration time.Duration) bool {
+func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string) bool {
 	startTime := time.Now()
 	for {
-		if time.Since(startTime) > retryDuration {
+		if time.Since(startTime) > TimoutDuration {
 			fmt.Println("Timeout reached while waiting for annotations.")
 			return false
 		}
@@ -260,16 +223,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		//check if all pods are in the Running phase
-		allRunning := true
-		for _, pod := range currentPods.Items {
-			if pod.Status.Phase != v1.PodRunning {
-				allRunning = false
-				break
-			}
-		}
-		if !allRunning {
-			fmt.Println("Not all pods are in the Running phase. Retrying...")
-			time.Sleep(5 * time.Second)
+		if !util.CheckIfPodsAreRunning(currentPods) {
 			continue
 		}
 
@@ -295,7 +249,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
-		time.Sleep(5 * time.Second)
+		time.Sleep(TimeBetweenRetries)
 	}
 }
 
@@ -310,7 +264,6 @@ func updateAnnotationConfig(deployment *appsV1.Deployment, jsonStr string) *apps
 	} else {
 		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + jsonStr
 	}
-	time.Sleep(5 * time.Second)
 	return deployment
 }
 func findIndexOfPrefix(str string, strs []string) int {
@@ -396,7 +349,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	}
 
 	// Wait for new pod creation
-	err := waitForNewPodCreation(clientSet, resource, startTime, 60*time.Second)
+	err := util.WaitForNewPodCreation(clientSet, resource, startTime)
 	if err != nil {
 		return fmt.Errorf("error waiting for pod creation: %s", err.Error())
 	}
@@ -409,7 +362,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	}
 
 	// Wait for pods to update
-	if !checkIfAnnotationExists(clientSet, resourcePods, annotations, 60*time.Second) {
+	if !checkIfAnnotationExists(clientSet, resourcePods, annotations) {
 		return fmt.Errorf("missing annotations: %v", annotations)
 	}
 
