@@ -32,7 +32,7 @@ const amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 const daemonSetName = "sample-daemonset"
 
-const amazonControllerManager = "cloudwatch-controller-manager"
+const amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 const sampleDaemonsetYamlName = "sample-daemonset.yaml"
 const sampleDeploymentYamlName = "sample-deployment.yaml"
@@ -238,7 +238,7 @@ func waitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			}
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
 
