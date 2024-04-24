@@ -53,6 +53,7 @@ jobs:
 
       - name: Deploy operator to minikube
         run: |
+          sleep 10
           kubectl get pods -A
           kubectl describe pods -A
           kubectl create namespace amazon-cloudwatch
