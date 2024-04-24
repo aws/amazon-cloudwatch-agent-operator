@@ -6,8 +6,9 @@ package annotations
 import (
 	"context"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 	"testing"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
