@@ -27,6 +27,8 @@ type Config struct {
 	autoInstrumentationNginxImage       string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
+	dcgmExporterImage                   string
+	neuronMonitorImage                  string
 	labelsFilter                        []string
 }
 
@@ -53,6 +55,8 @@ func New(opts ...Option) Config {
 		autoInstrumentationGoImage:          o.autoInstrumentationGoImage,
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
+		dcgmExporterImage:                   o.dcgmExporterImage,
+		neuronMonitorImage:                  o.neuronMonitorImage,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -100,6 +104,16 @@ func (c *Config) AutoInstrumentationApacheHttpdImage() string {
 // AutoInstrumentationNginxImage returns OpenTelemetry Nginx auto-instrumentation container image.
 func (c *Config) AutoInstrumentationNginxImage() string {
 	return c.autoInstrumentationNginxImage
+}
+
+// DcgmExporterImage returns Nvidia DCGM Exporter container image.
+func (c *Config) DcgmExporterImage() string {
+	return c.dcgmExporterImage
+}
+
+// NeuronMonitorImage returns Neuron Monitor Exporter container image.
+func (c *Config) NeuronMonitorImage() string {
+	return c.neuronMonitorImage
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

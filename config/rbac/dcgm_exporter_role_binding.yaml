@@ -1,0 +1,12 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dcgm-exporter-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: dcgm-exporter-service-acct
+    namespace: amazon-cloudwatch
+roleRef:
+  kind: Role
+  name: dcgm-exporter-role
+  apiGroup: rbac.authorization.k8s.io

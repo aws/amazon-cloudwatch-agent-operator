@@ -97,6 +97,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		Name:            naming.Container(),
 		Image:           image,
 		ImagePullPolicy: agent.Spec.ImagePullPolicy,
+		WorkingDir:      agent.Spec.WorkingDir,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
