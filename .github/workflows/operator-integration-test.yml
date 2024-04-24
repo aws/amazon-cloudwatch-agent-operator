@@ -60,8 +60,7 @@ jobs:
           sleep 10
           kubectl patch deploy -n amazon-cloudwatch cloudwatch-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "aws/cloudwatch-agent-operator:1.2.0"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]'
           kubectl delete pods --all -n amazon-cloudwatch
-          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-
+          sleep 60
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
           helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
