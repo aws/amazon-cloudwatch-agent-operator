@@ -53,9 +53,11 @@ jobs:
 
       - name: Deploy operator to minikube
         run: |
+          kubectl get pods -A
+          kubectl describe pods -A
           kubectl create namespace amazon-cloudwatch
           sleep 10
-          kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "aws/cloudwatch-agent-operator:1.2.0"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]'
+          kubectl patch deploy -n amazon-cloudwatch cloudwatch-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "aws/cloudwatch-agent-operator:1.2.0"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]'
           kubectl delete pods --all -n amazon-cloudwatch
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
