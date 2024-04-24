@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/manifests/annotations"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,11 +11,14 @@ import (
 	"time"
 )
 
+const TimoutDuration = 2 * time.Minute
+const TimeBetweenRetries = 2 * time.Second
+
 // WaitForNewPodCreation takes in a resource either Deployment, DaemonSet, or StatefulSet wait until it is in running stage
 func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time) error {
 	start := time.Now()
 	for {
-		if time.Since(start) > annotations.TimoutDuration {
+		if time.Since(start) > TimoutDuration {
 			return fmt.Errorf("timed out waiting for new pod creation")
 		}
 		namespace := ""
@@ -49,7 +51,7 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 			}
 		}
 
-		time.Sleep(annotations.TimeBetweenRetries)
+		time.Sleep(TimeBetweenRetries)
 	}
 }
 

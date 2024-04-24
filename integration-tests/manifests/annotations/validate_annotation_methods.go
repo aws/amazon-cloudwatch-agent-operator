@@ -38,10 +38,9 @@ const (
 	sampleDaemonsetYamlName   = "sample-daemonset.yaml"
 	sampleDeploymentYamlName  = "sample-deployment.yaml"
 	sampleStatefulsetYamlName = "sample-statefulset.yaml"
-	TimoutDuration            = 2 * time.Minute
-
-	TimeBetweenRetries = 5 * time.Second
-	numberOfRetries    = 10
+	timoutDuration            = 2 * time.Minute
+	numberOfRetries           = 10
+	timeBetweenRetries        = 5 * time.Second
 )
 
 func applyYAMLWithKubectl(filename, namespace string) error {
@@ -112,7 +111,7 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 
 	startTime := time.Now()
 	for {
-		if time.Since(startTime) > TimoutDuration {
+		if time.Since(startTime) > timoutDuration {
 			return fmt.Errorf("timeout reached while waiting for namespace %s to be created", name)
 		}
 
@@ -123,7 +122,7 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 			return err
 		}
 
-		time.Sleep(TimeBetweenRetries)
+		time.Sleep(timeBetweenRetries)
 	}
 }
 
@@ -151,7 +150,7 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 			break
 		}
 		elapsed := time.Since(startTime)
-		if elapsed >= TimoutDuration {
+		if elapsed >= timoutDuration {
 			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
 			break
 		}
@@ -168,7 +167,7 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 		for _, annotation := range expectedAnnotations {
 			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", annotation, ns.Status, ns.Name)
 			if ns.ObjectMeta.Annotations[annotation] != "true" {
-				time.Sleep(TimeBetweenRetries)
+				time.Sleep(timeBetweenRetries)
 				correct = false
 				break
 			}
@@ -209,7 +208,7 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, expectedAnnotations []string) bool {
 	startTime := time.Now()
 	for {
-		if time.Since(startTime) > TimoutDuration {
+		if time.Since(startTime) > timoutDuration {
 			fmt.Println("Timeout reached while waiting for annotations.")
 			return false
 		}
@@ -249,7 +248,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
-		time.Sleep(TimeBetweenRetries)
+		time.Sleep(timeBetweenRetries)
 	}
 }
 
