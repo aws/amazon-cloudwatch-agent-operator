@@ -356,7 +356,6 @@ jobs:
         run: |
           kubectl get pods -A
           kubectl describe pods -n default
-          sleep 10
           go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 10
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m

@@ -41,44 +41,14 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 		t.Error("Error:", err)
 	}
 	startTime := time.Now()
-	timeOut := 5 * time.Minute
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-
-	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-
-	defer func() {
-		if err := deleteNamespace(clientSet, uniqueNamespace); err != nil {
-			t.Fatalf("Failed to delete namespace: %v", err)
-		}
-	}()
-
-	for {
-		//time.Sleep(5 * time.Second)
-		if isNamespaceUpdated(clientSet, uniqueNamespace, startTime) {
-			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
-			break
-		}
-		elapsed := time.Since(startTime)
-		if elapsed >= timeOut {
-			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
-			break
-		}
-
-	}
-
-	fmt.Println("Done checking for namespace update.")
-
-	if !checkNameSpaceAnnotations(clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing java and python annotations")
 	}
-
 }
 
 func TestJavaOnlyNamespace(t *testing.T) {
-
 	clientSet := setupTest(t)
 	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
 	if err != nil {
@@ -105,38 +75,10 @@ func TestJavaOnlyNamespace(t *testing.T) {
 		t.Error("Error:", err)
 	}
 	startTime := time.Now()
-	timeOut := 5 * time.Minute
-
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-
-	defer func() {
-		if err := deleteNamespace(clientSet, uniqueNamespace); err != nil {
-			t.Fatalf("Failed to delete namespace: %v", err)
-		}
-	}()
-
-	for {
-		if isNamespaceUpdated(clientSet, uniqueNamespace, startTime) {
-			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
-			break
-		}
-		elapsed := time.Since(startTime)
-		if elapsed >= timeOut {
-			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
-			break
-		}
-
-	}
-
-	fmt.Println("Done checking for namespace update.")
-
-	if !checkNameSpaceAnnotations(clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, uniqueNamespace) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Java annotations")
 	}
-
 }
 
 func TestPythonOnlyNamespace(t *testing.T) {
@@ -178,24 +120,10 @@ func TestPythonOnlyNamespace(t *testing.T) {
 	}
 
 	startTime := time.Now()
-	timeOut := 5 * time.Minute
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	for {
-		if isNamespaceUpdated(clientSet, uniqueNamespace, startTime) {
-			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
-			break
-		}
-		elapsed := time.Since(startTime)
-		if elapsed >= timeOut {
-			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
-			break
-		}
-	}
-	fmt.Println("Done checking for namespace update.")
-
-	if !checkNameSpaceAnnotations(clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Python annotations")
 	}
 }
