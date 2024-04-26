@@ -35,7 +35,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
@@ -61,6 +61,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(file, name)
 		if err != nil {
+			fmt.Println(name, file)
 			t.Error("Could not apply resources")
 			return err
 		}
@@ -104,6 +105,7 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 	if err == nil {
 		return nil
 	} else if !errors.IsNotFound(err) {
+		fmt.Println("Some other error")
 		return err
 	}
 
@@ -316,17 +318,19 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	}
 }
 
-func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlPath string, startTime time.Time, annotations []string) error {
+func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlPath string, startTime time.Time, annotations []string, skipDelete bool) error {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 		return err
 	}
+	if !skipDelete {
+		defer func() {
+			if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
+				t.Fatalf("Failed to delete namespaces/resources: %v", err)
+			}
+		}()
+	}
 
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
 	var resource interface{}
 
 	switch resourceType {

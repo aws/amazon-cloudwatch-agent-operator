@@ -169,13 +169,13 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
