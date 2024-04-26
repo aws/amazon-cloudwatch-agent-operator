@@ -128,7 +128,6 @@ jobs:
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
-          kubectl get deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch -o yaml
       #          kubectl describe pods -n default
       #          kubectl describe pods -n amazon-cloudwatch
 
