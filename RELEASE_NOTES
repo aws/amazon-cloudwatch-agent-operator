@@ -1,0 +1,43 @@
+========================================================================
+Amazon CloudWatch Agent Operator v1.3.1 (2024-04-24)
+========================================================================
+Enhancements:
+* [Windows-ContainerInsights] Add WorkingDir field to agent container if defined CWAgent spec to fix issue with Containerd 1.7 on Windows (#158)
+
+========================================================================
+Amazon CloudWatch Agent Operator v1.3.0 (2024-04-18)
+========================================================================
+Enhancements:
+* [ContainerInsights] Move DCGM & Neuron resource management into the operator
+
+========================================================================
+Amazon CloudWatch Agent Operator v1.2.1 (2024-04-16)
+========================================================================
+Bug Fixes:
+* [AppSignals] Fix to dynamically pick between https & https depending on AppSignals TLS setup
+
+Enhancements:
+* [AppSignals] Update auto annotation logic to add missing annotations and restart only when required
+
+========================================================================
+Amazon CloudWatch Agent Operator v1.2.0 (2024-04-01)
+========================================================================
+Enhancements:
+* [Container-Insights] Add support for Container Insights on Windows (#110)
+
+========================================================================
+Amazon CloudWatch Agent Operator v1.1.1 (2024-03-21)
+========================================================================
+Enhancements:
+* [Fluent-bit] Update aws-for-fluent-bit: 2.31.12.20230911 -> 2.32.0.20240304 (#117)
+
+========================================================================
+Amazon CloudWatch Agent Operator v1.1.0 (2024-03-06)
+========================================================================
+Bug fixes:
+* [Fluent-bit Helm Chart] Fix the issue with cluster name containing only numeric values (#47)
+
+Enhancements:
+* [Collector Config] Use CWAgent Config Instead Of OTEL Collector (#62)
+* [Auto Instrumentation] Create feature flag to allow multi-instrumentation (#99)
+* [Agent Receivers] Get Agent Receiver Ports From Agent Config (#58)

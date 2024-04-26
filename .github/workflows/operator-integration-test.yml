@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: operator Integration Test
+name: Operator Integration Test
 on:
   push:
     branches:
@@ -39,10 +39,10 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-#      - name: Verify minikube and cert-manager
-#        run: |
-#          sleep 10
-#          kubectl get pods -A
+      - name: Verify minikube and cert-manager
+        run: |
+          sleep 10
+          kubectl get pods -A
 
       - name: Build image
         run: |
@@ -51,12 +51,12 @@ jobs:
           docker images
 
       - name: Deploy operator to minikube
-        run: | 
+        run: |
           make deploy
 
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
-          helm template --namespace amazon-cloudwatch -s templates/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
+          helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
           sleep 60
           kubectl describe pods -n amazon-cloudwatch
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
@@ -110,3 +110,205 @@ jobs:
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
+
+
+
+  DeploymentAnnotationsTest:
+    name: DeploymentAnnotationsTest
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Deploy cert-manager to minikube
+        run:
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+      - name: Verify minikube and cert-manager
+        run: |
+          sleep 10
+          kubectl get pods -A
+
+      - name: Build image
+        run: |
+          eval $(minikube docker-env)
+          make container
+          docker images
+
+      - name: Deploy operator to minikube
+        run: |
+          make deploy
+
+      - name: Test Annotations
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
+          kubectl get pods -A
+          kubectl describe pods -n default
+          sleep 5
+          go test -v -run TestJavaAndPythonDeployment ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
+
+
+ 
+
+  DaemonsetAnnotationsTest:
+    name: DaemonsetAnnotationsTest
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Deploy cert-manager to minikube
+        run:
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+      - name: Verify minikube and cert-manager
+        run: |
+          sleep 10
+          kubectl get pods -A
+
+      - name: Build image
+        run: |
+          eval $(minikube docker-env)
+          make container
+          docker images
+
+      - name: Deploy operator to minikube
+        run: |
+          make deploy
+
+      - name: Test Annotations
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          sleep 5
+          kubectl get pods -A
+          kubectl describe pods -n default
+          go test -v -run TestJavaAndPythonDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestJavaOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestPythonOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
+
+          
+
+  StatefulsetAnnotationsTest:
+    name: StatefulsetAnnotationsTest
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Deploy cert-manager to minikube
+        run:
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+      - name: Verify minikube and cert-manager
+        run: |
+          sleep 10
+          kubectl get pods -A
+
+      - name: Build image
+        run: |
+          eval $(minikube docker-env)
+          make container
+          docker images
+
+      - name: Deploy operator to minikube
+        run: |
+          make deploy
+
+      - name: Test Annotations
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
+          sleep 5
+          kubectl get pods -A
+          kubectl describe pods -n default
+          go test -v -run TestJavaAndPythonStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestOnlyNonAnnotatedAppsShouldBeRestarted ./integration-tests/manifests/annotations -timeout 30m
+
+
+
+  NamespaceAnnotationsTest:
+    name: NamespaceAnnotationsTest
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Deploy cert-manager to minikube
+        run:
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+      - name: Verify minikube and cert-manager
+        run: |
+          kubectl get pods -A
+
+      - name: Build image
+        run: |
+          eval $(minikube docker-env)
+          make container
+          docker images
+
+      - name: Deploy operator to minikube
+        run: |
+          make deploy
+
+      - name: Test Annotations
+        run: |
+          kubectl get pods -A
+          kubectl describe pods -n default
+          go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
+          kubectl get pods -A
+          kubectl describe pods -n default
+
+
