@@ -314,5 +314,3 @@ jobs:
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
-
-
