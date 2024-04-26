@@ -191,13 +191,20 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
 	uniqueNamespace := fmt.Sprintf("manual-annotation-removal-%d", randomNumber)
-
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+	defer func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+	}()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
-			DaemonSets:   []string{filepath.Join(uniqueNamespace, daemonSetName)},
+			DaemonSets:   []string{""},
 			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-			StatefulSets: []string{filepath.Join(uniqueNamespace, statefulSetName)},
+			StatefulSets: []string{""},
 		},
 		Python: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -217,14 +224,6 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		fmt.Printf("Error retrieving deployment: %v\n", err)
@@ -233,16 +232,19 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 
 	//Removing all annotations
 	deployment.ObjectMeta.Annotations = nil
+	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	_, err = clientSet.AppsV1().Deployments(uniqueNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		fmt.Printf("Error updating deployment: %v\n", err)
 		os.Exit(1)
 	}
+
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
 		fmt.Printf("Error waiting for pod creation: %v\n", err)
 		os.Exit(1)
 	}
+
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error listing pods: %v\n", err)
