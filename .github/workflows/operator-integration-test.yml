@@ -118,7 +118,32 @@ jobs:
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
+      - name: Test for default instrumentation resources for python and java
+        run: |
+          kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          sleep 60
+          kubectl rollout restart deployment nginx
+          sleep 60
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          kubectl describe pods -n amazon-cloudwatch
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
+          kubectl get deployment amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch -o yaml
+      #          kubectl describe pods -n default
+      #          kubectl describe pods -n amazon-cloudwatch
 
+
+      - name: Test for defined instrumentation resources for python and java
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          sleep 5
+          kubectl get pods -A
+          kubectl describe pods -n default
+          cd integration-tests/manifests/cmd
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
