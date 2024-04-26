@@ -1,4 +1,10 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.3.1 (2024-04-24)
+========================================================================
+Enhancements:
+* [Windows-ContainerInsights] Add WorkingDir field to agent container if defined CWAgent spec to fix issue with Containerd 1.7 on Windows (#158)
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.3.0 (2024-04-18)
 ========================================================================
 Enhancements:
