@@ -43,7 +43,7 @@ func TestJavaAndPythonDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -80,7 +80,7 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -120,7 +120,7 @@ func TestPythonOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlName, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 

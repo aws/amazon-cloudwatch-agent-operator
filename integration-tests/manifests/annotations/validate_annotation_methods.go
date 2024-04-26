@@ -29,19 +29,22 @@ const (
 	injectPythonAnnotation       = "instrumentation.opentelemetry.io/inject-python"
 	autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
 	deploymentName               = "sample-deployment"
+	nginxDeploymentName          = "nginx"
 	statefulSetName              = "sample-statefulset"
 	amazonCloudwatchNamespace    = "amazon-cloudwatch"
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
-	sampleDaemonsetYamlName   = "sample-daemonset.yaml"
-	sampleDeploymentYamlName  = "sample-deployment.yaml"
-	sampleStatefulsetYamlName = "sample-statefulset.yaml"
-	timoutDuration            = 2 * time.Minute
-	numberOfRetries           = 10
-	timeBetweenRetries        = 5 * time.Second
+	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
+	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
+	sampleNginxAppYamlNameRelPath   = "../../java/sample-deployment-java.yaml"
+
+	sampleStatefulsetYamlNameRelPath = "../sample-statefulset.yaml"
+	timoutDuration                   = 2 * time.Minute
+	numberOfRetries                  = 10
+	timeBetweenRetries               = 5 * time.Second
 )
 
 func applyYAMLWithKubectl(filename, namespace string) error {
@@ -56,7 +59,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	}
 
 	for _, file := range resourceFiles {
-		err = applyYAMLWithKubectl(filepath.Join("..", file), name)
+		err = applyYAMLWithKubectl(file, name)
 		if err != nil {
 			t.Error("Could not apply resources")
 			return err
@@ -84,7 +87,7 @@ func deleteYAMLWithKubectl(filename, namespace string) error {
 }
 func deleteNamespaceAndResources(clientset *kubernetes.Clientset, name string, resourceFiles []string) error {
 	for _, file := range resourceFiles {
-		err := deleteYAMLWithKubectl(filepath.Join("..", file), name)
+		err := deleteYAMLWithKubectl(file, name)
 		if err != nil {
 			return err
 		}
@@ -216,6 +219,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 
 		//This exist to check if any pods took too long to delete and we need to list pods again
 		currentPods, err := clientset.CoreV1().Pods(pods.Items[0].Namespace).List(context.TODO(), metav1.ListOptions{})
+
 		fmt.Println("Current pods len: ", len(currentPods.Items))
 		if err != nil {
 			fmt.Printf("Failed to list pods: %v\n", err)
@@ -224,6 +228,7 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 
 		//check if all pods are in the Running phase
 		if !util.CheckIfPodsAreRunning(currentPods) {
+
 			continue
 		}
 
@@ -249,6 +254,8 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
+		fmt.Println("We are in 4")
+
 		time.Sleep(timeBetweenRetries)
 	}
 }
@@ -309,14 +316,14 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	}
 }
 
-func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlName string, startTime time.Time, annotations []string) error {
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleAppYamlName}); err != nil {
+func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlPath string, startTime time.Time, annotations []string) error {
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 		return err
 	}
 
 	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleAppYamlName}); err != nil {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
 	}()
@@ -367,4 +374,30 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	}
 
 	return nil
+}
+func annotationExists(annotations map[string]string, key string) bool {
+	_, exists := annotations[key]
+	return exists
+}
+
+func numberOfRevisions(deploymentName string, namespace string) (int, error) {
+	// Execute the kubectl rollout history command
+	cmd := exec.Command("kubectl", "rollout", "history", "deployment", deploymentName, "-n", namespace)
+
+	// Run the command and capture its output
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("error running kubectl command: %v", err)
+	}
+
+	// Check if the revision history contains revisions after the first revision
+	lines := strings.Split(string(output), "\n")
+	fmt.Println("Below is the lines and its count")
+	fmt.Println(lines)
+	fmt.Println(len(lines))
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+	//4 lines are the text above the revisions
+	return len(lines) - 4, nil
 }

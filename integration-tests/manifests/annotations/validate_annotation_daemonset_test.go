@@ -44,7 +44,7 @@ func TestJavaAndPythonDaemonSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -80,7 +80,7 @@ func TestJavaOnlyDaemonSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -115,7 +115,7 @@ func TestPythonOnlyDaemonSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlName, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
