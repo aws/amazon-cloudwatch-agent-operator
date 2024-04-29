@@ -259,7 +259,7 @@ jobs:
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          sleep 15
+          sleep 5
           go test -v -run TestOnlyNonAnnotatedAppsShouldBeRestarted ./integration-tests/manifests/annotations -timeout 30m
 
 

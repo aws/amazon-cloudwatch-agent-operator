@@ -313,7 +313,7 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	}
 	deployment = updateAnnotationConfig(deployment, jsonStr)
 
-	if !updateOperator(t, clientSet, deployment, time.Now().Add(-3*time.Second)) {
+	if !updateOperator(t, clientSet, deployment, time.Now().Add(-time.Second)) {
 		t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
 }
