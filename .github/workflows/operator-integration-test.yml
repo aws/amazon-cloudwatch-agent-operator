@@ -54,13 +54,11 @@ jobs:
       - name: Deploy operator to minikube
         run: |
           make deploy
-          sleep 10
-          kubectl get pods -A
-          kubectl describe pods -A
-          sleep 10
+          sleep 5
           kubectl patch deploy -n amazon-cloudwatch cloudwatch-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "aws/cloudwatch-agent-operator:1.2.0"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]'
+          sleep 5
           kubectl delete pods --all -n amazon-cloudwatch
-          sleep 60
+
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
           helm template --namespace amazon-cloudwatch -s templates/linux/cloudwatch-agent-daemonset.yaml ./helm --set region=us-west-2 | kubectl apply --namespace amazon-cloudwatch -f -
@@ -110,8 +108,6 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5
-          kubectl rollout restart deployment nginx
-          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
@@ -121,22 +117,17 @@ jobs:
       - name: Test for default instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
-          sleep 60
-          kubectl rollout restart deployment nginx
-          sleep 60
+          sleep 5
           kubectl get pods -A 
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
-      #          kubectl describe pods -n default
-      #          kubectl describe pods -n amazon-cloudwatch
+
 
 
       - name: Test for defined instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          sleep 5
-          kubectl rollout restart deployment nginx
           sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
