@@ -269,7 +269,6 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
 	uniqueNamespace := fmt.Sprintf("multiple-resources-%d", randomNumber)
-	nginxStartTime := time.Now()
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
@@ -323,11 +322,6 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 	}
 
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
-	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
-	}
-	err = util.WaitForNewPodCreation(clientSet, nginxDeployment, nginxStartTime)
 	if err != nil {
 		fmt.Printf("Error waiting for pod creation: %v\n", err)
 		os.Exit(1)

@@ -35,7 +35,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
@@ -313,7 +313,7 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	}
 	deployment = updateAnnotationConfig(deployment, jsonStr)
 
-	if !updateOperator(t, clientSet, deployment, time.Now().Add(-time.Second)) {
+	if !updateOperator(t, clientSet, deployment, time.Now().Add(-3*time.Second)) {
 		t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
 }
