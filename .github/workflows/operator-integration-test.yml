@@ -126,6 +126,8 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5
+          kubectl rollout restart deployment nginx
+          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
