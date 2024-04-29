@@ -54,10 +54,6 @@ jobs:
       - name: Deploy operator to minikube
         run: |
           make deploy
-          sleep 5
-          kubectl patch deploy -n amazon-cloudwatch cloudwatch-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "aws/cloudwatch-agent-operator:1.2.0"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]'
-          sleep 5
-          kubectl delete pods --all -n amazon-cloudwatch
 
       - name: Test case for AmazonCloudWatchAgent pod creation
         run: |
@@ -102,7 +98,7 @@ jobs:
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
-
+          
 
       - name: Test for defined instrumentation resources for python
         run: |
