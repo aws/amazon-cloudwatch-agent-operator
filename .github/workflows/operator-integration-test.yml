@@ -72,6 +72,7 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A 
           kubectl describe pods -n default
@@ -81,6 +82,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A
           kubectl describe pods -n default
@@ -92,6 +94,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           kubectl rollout restart deployment nginx
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A 
           kubectl describe pods -n default
@@ -101,6 +104,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A
           kubectl describe pods -n default
@@ -111,6 +115,7 @@ jobs:
       - name: Test for default instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A 
           kubectl describe pods -n default
@@ -123,8 +128,8 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
+          sleep 3
           kubectl wait --for=condition=Ready pod --all -n default
-          sleep 5
           kubectl rollout restart deployment nginx
           sleep 5
           kubectl get pods -A
