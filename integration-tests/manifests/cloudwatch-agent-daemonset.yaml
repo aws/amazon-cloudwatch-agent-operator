@@ -6,7 +6,7 @@ metadata:
 spec:
   mode: daemonset
   serviceAccount: cloudwatch-agent
-  image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300031.1b317
+  image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest
   config: |
     {
       "agent": {
