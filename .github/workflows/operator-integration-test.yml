@@ -98,8 +98,6 @@ jobs:
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
-          kubectl delete deployment nginx
-          sleep 5
 
       - name: Test for defined instrumentation resources for python
         run: |
