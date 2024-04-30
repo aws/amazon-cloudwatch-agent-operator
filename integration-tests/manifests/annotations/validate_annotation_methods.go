@@ -37,7 +37,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
@@ -383,12 +383,20 @@ func annotationExists(annotations map[string]string, key string) bool {
 }
 
 func setupFunction(t *testing.T, namespace string, apps []string) (*kubernetes.Clientset, string) {
+	t.Helper()
 	clientSet := setupTest(t)
 	newUUID := uuid.New()
 	uniqueNamespace := fmt.Sprintf(namespace+"-%s", newUUID.String())
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, apps); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
+	fmt.Println("setupfunction", namespace, apps)
+	t.Cleanup(func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, apps); err != nil {
+			t.Fatalf("Failed to delete namespaces/resources: %v", err)
+		}
+		fmt.Println("HIIII")
+	})
 
 	return clientSet, uniqueNamespace
 }

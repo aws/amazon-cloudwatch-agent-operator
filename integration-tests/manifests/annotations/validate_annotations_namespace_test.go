@@ -176,12 +176,6 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 
 	clientSet, uniqueNamespace := setupFunction(t, "manual-annotation-removal", []string{sampleDeploymentYamlNameRelPath})
-	t.Cleanup(func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	})
-
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Deployments: []string{filepath.Join(uniqueNamespace, deploymentName)},
@@ -238,11 +232,6 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 
 	clientSet, uniqueNamespace := setupFunction(t, "non-annotated", []string{sampleDeploymentYamlNameRelPath, sampleNginxAppYamlNameRelPath})
-	t.Cleanup(func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath, sampleNginxAppYamlNameRelPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	})
 	startTime := time.Now()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -294,11 +283,7 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 func TestAlreadyAutoAnnotatedResourceShouldNotRestart(t *testing.T) {
 
 	clientSet, uniqueNamespace := setupFunction(t, "already-annotated", []string{sampleDeploymentYamlNameRelPath})
-	t.Cleanup(func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	})
+
 	startTime := time.Now()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
