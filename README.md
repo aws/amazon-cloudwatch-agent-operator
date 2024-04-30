@@ -136,11 +136,11 @@ spec:
         value: "none"
       - name: OTEL_LOGS_EXPORTER
         value: "none"
-      - name: OTEL_AWS_APP_SIGNALS_ENABLED
+      - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
         value: "true"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "http/protobuf"
-      - name: OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT
+      - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
         value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"
 EOF
 ```
