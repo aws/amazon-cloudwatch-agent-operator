@@ -283,7 +283,6 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 func TestAlreadyAutoAnnotatedResourceShouldNotRestart(t *testing.T) {
 
 	clientSet, uniqueNamespace := setupFunction(t, "already-annotated", []string{sampleDeploymentYamlNameRelPath})
-
 	startTime := time.Now()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
