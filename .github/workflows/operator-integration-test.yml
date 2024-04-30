@@ -72,7 +72,8 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          kubectl wait --for=condition=Available deployment/nginx -n default
+#         sleep is to make sure the app is fully active before restart wait doesn't work as accurately
+          sleep 5 
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
@@ -80,6 +81,7 @@ jobs:
       - name: Test for defined instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
           kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
@@ -92,6 +94,7 @@ jobs:
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
+          sleep 5
           kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
@@ -101,6 +104,7 @@ jobs:
       - name: Test for defined instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
           kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl describe pods -n default
@@ -111,7 +115,10 @@ jobs:
       - name: Test for default instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
           kubectl get pods -A 
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
@@ -122,6 +129,7 @@ jobs:
       - name: Test for defined instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
           kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A

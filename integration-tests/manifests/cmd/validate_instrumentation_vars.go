@@ -52,7 +52,10 @@ func main() {
 }
 
 func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
-	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=nginx"})
+	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "app=nginx",
+		FieldSelector: "status.phase!=Terminating",
+	})
 	if err != nil {
 		fmt.Println("Error retrieving pods:", err)
 		return false
