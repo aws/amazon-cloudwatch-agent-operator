@@ -131,11 +131,9 @@ jobs:
       - name: Test for defined instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          kubectl delete pods --all -n default
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
           kubectl rollout restart deployment nginx
-          sleep 5
+          sleep 2
+          kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
