@@ -72,8 +72,7 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
@@ -82,8 +81,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
@@ -95,8 +93,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           kubectl rollout restart deployment nginx
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
@@ -105,9 +102,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
-          kubectl get pods -A
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
@@ -116,8 +111,7 @@ jobs:
       - name: Test for default instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
-          sleep 3
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
@@ -129,8 +123,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
-          sleep 2
-          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
