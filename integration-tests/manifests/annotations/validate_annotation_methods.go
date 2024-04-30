@@ -385,7 +385,7 @@ func annotationExists(annotations map[string]string, key string) bool {
 func setupFunction(t *testing.T, namespace string, apps []string) (*kubernetes.Clientset, string) {
 	clientSet := setupTest(t)
 	newUUID := uuid.New()
-	uniqueNamespace := fmt.Sprintf(namespace+"-%v", fmt.Sprint(newUUID))
+	uniqueNamespace := fmt.Sprintf(namespace+"-%s", newUUID.String())
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, apps); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}

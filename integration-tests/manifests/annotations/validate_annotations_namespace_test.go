@@ -139,7 +139,7 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 
 	clientSet := setupTest(t)
 	newUUID := uuid.New()
-	uniqueNamespace := fmt.Sprintf("multiple-resources-%s", uuid.NewString())
+	uniqueNamespace := fmt.Sprintf("multiple-resources-%s", newUUID.String())
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
