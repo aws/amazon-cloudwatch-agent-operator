@@ -63,8 +63,7 @@ func createNamespaceAndApplyResources(t *testing.T, clientset *kubernetes.Client
 	for _, file := range resourceFiles {
 		err = applyYAMLWithKubectl(file, name)
 		if err != nil {
-			fmt.Println(name, file)
-			t.Error("Could not apply resources")
+			t.Errorf("Could not apply resources %s/%s", name, file)
 			return err
 		}
 	}
