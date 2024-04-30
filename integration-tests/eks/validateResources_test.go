@@ -27,7 +27,7 @@ import (
 
 const (
 	nameSpace            = "amazon-cloudwatch"
-	addOnName            = "cloudwatch"
+	addOnName            = "amazon-cloudwatch-observability"
 	agentName            = "cloudwatch-agent"
 	agentNameWindows     = "cloudwatch-agent-windows"
 	operatorName         = addOnName + "-controller-manager"

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
+	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
 	"os"
@@ -137,26 +138,16 @@ func TestPythonOnlyNamespace(t *testing.T) {
 func TestAnnotationsOnMultipleResources(t *testing.T) {
 
 	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("multiple-resources-%d", randomNumber)
+	newUUID := uuid.New()
+	uniqueNamespace := fmt.Sprintf("multiple-resources-%v", fmt.Sprint(newUUID))
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{""},
 			DaemonSets:   []string{filepath.Join(uniqueNamespace, daemonSetName)},
 			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
 			StatefulSets: []string{filepath.Join(uniqueNamespace, statefulSetName)},
 		},
-		Python: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
+		Python: auto.AnnotationResources{},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
@@ -184,34 +175,18 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 // This tests a resource that is auto annotated is manually patched to remove the annotations, our mutator adds back the annotations
 func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("manual-annotation-removal-%d", randomNumber)
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-	defer func() {
+	clientSet, uniqueNamespace := setupFunction(t, "manual-annotation-removal", []string{sampleDeploymentYamlNameRelPath})
+	t.Cleanup(func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
-	}()
+	})
+
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-			StatefulSets: []string{""},
+			Deployments: []string{filepath.Join(uniqueNamespace, deploymentName)},
 		},
-		Python: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
+		Python: auto.AnnotationResources{},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
@@ -262,50 +237,24 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 // the resource should not be modified and should not be restarted (auto-annotation annotation does not exist)
 func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("multiple-resources-%d", randomNumber)
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
+	clientSet, uniqueNamespace := setupFunction(t, "non-annotated", []string{sampleDeploymentYamlNameRelPath, sampleNginxAppYamlNameRelPath})
+	t.Cleanup(func() {
+		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath, sampleNginxAppYamlNameRelPath}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
-	}()
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleNginxAppYamlNameRelPath}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-	defer func() {
-		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleNginxAppYamlNameRelPath}); err != nil {
-			t.Fatalf("Failed to delete namespaces/resources: %v", err)
-		}
-	}()
-
+	})
+	startTime := time.Now()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{uniqueNamespace},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
+			Namespaces: []string{uniqueNamespace},
 		},
-		Python: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
+		Python: auto.AnnotationResources{},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
 		t.Error("Error:", err)
 	}
 
-	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -320,23 +269,21 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 		fmt.Printf("Error retrieving deployment: %v\n", err)
 		os.Exit(1)
 	}
-
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
+		t.Fatal("Error waiting for pod creation: ", err)
 	}
 
 	if annotationExists(nginxDeployment.Annotations, autoAnnotateJavaAnnotation) {
 		t.Fatal("Auto-annotation annotation should not exist")
 	}
 
-	numOfRevisions, err := numberOfRevisions(nginxDeploymentName, uniqueNamespace)
-	if numOfRevisions > 1 || err != nil {
+	numOfRevisions := numberOfRevisions(nginxDeploymentName, uniqueNamespace)
+	if numOfRevisions > 1 {
 		t.Fatal("Nginx was restarted") //should not be restarted since it already had annotations
 	}
-	numOfRevisions, err = numberOfRevisions(deploymentName, uniqueNamespace)
-	if numOfRevisions != 2 || err != nil {
+	numOfRevisions = numberOfRevisions(deploymentName, uniqueNamespace)
+	if numOfRevisions != 2 {
 		t.Fatal("Sample-deployment should have been restarted") //should not be restarted since it already had annotations
 	}
 
@@ -346,43 +293,24 @@ func TestOnlyNonAnnotatedAppsShouldBeRestarted(t *testing.T) {
 // the resource should not be restarted
 func TestAlreadyAutoAnnotatedResourceShouldNotRestart(t *testing.T) {
 
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("multiple-resources-%d", randomNumber)
-	startTime := time.Now()
-	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-	defer func() {
+	clientSet, uniqueNamespace := setupFunction(t, "already-annotated", []string{sampleDeploymentYamlNameRelPath})
+	t.Cleanup(func() {
 		if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleDeploymentYamlNameRelPath}); err != nil {
 			t.Fatalf("Failed to delete namespaces/resources: %v", err)
 		}
-	}()
-
+	})
+	startTime := time.Now()
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-			StatefulSets: []string{""},
+			Deployments: []string{filepath.Join(uniqueNamespace, deploymentName)},
 		},
-		Python: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
+		Python: auto.AnnotationResources{},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
 		t.Error("Error:", err)
 	}
 
-	startTime = time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -395,36 +323,30 @@ func TestAlreadyAutoAnnotatedResourceShouldNotRestart(t *testing.T) {
 
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error waiting for pod creation: %v\n", err)
 	}
-
+	fmt.Println("Done checking deployment")
 	//adding deployment's namespace to get auto annotated
 	annotationConfig = auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{uniqueNamespace},
-			DaemonSets:   []string{""},
-			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-			StatefulSets: []string{""},
+			Namespaces:  []string{uniqueNamespace},
+			Deployments: []string{filepath.Join(uniqueNamespace, deploymentName)},
 		},
-		Python: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
+		Python: auto.AnnotationResources{},
 	}
 	jsonStr, err = json.Marshal(annotationConfig)
 	if err != nil {
 		t.Error("Error:", err)
 	}
 
+	fmt.Println("Right before update operator", startTime)
 	updateTheOperator(t, clientSet, string(jsonStr))
+	fmt.Println("Right after update operator", startTime)
 
 	//number of revisions should not be greater than 2
 	//first one is for creation second one is for the first operator change and third one should not exist (even with the second operator change)
-	numOfRevisions, err := numberOfRevisions(deploymentName, uniqueNamespace)
-	if numOfRevisions > 2 || err != nil {
+	numOfRevisions := numberOfRevisions(deploymentName, uniqueNamespace)
+	if numOfRevisions > 2 {
 		t.Fatal("Sample-deployment should not have been restarted after second operator update") //should not be restarted since it already had annotations
 	}
 

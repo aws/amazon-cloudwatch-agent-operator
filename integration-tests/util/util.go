@@ -49,7 +49,6 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
 				return nil
 			} else if pod.CreationTimestamp.Time.After(startTime) {
-
 				fmt.Printf("Operator pod %s created after start time but is not in running stage\n", pod.Name)
 			}
 		}

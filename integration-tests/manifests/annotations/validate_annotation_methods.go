@@ -6,6 +6,8 @@ package annotations
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"strconv"
 	"testing"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
@@ -35,7 +37,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
@@ -105,7 +107,6 @@ func createNamespace(clientSet *kubernetes.Clientset, name string) error {
 	if err == nil {
 		return nil
 	} else if !errors.IsNotFound(err) {
-		fmt.Println("Some other error")
 		return err
 	}
 
@@ -256,8 +257,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
-		fmt.Println("We are in 4")
-
 		time.Sleep(timeBetweenRetries)
 	}
 }
@@ -324,11 +323,11 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		return err
 	}
 	if !skipDelete {
-		defer func() {
+		t.Cleanup(func() {
 			if err := deleteNamespaceAndResources(clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 				t.Fatalf("Failed to delete namespaces/resources: %v", err)
 			}
-		}()
+		})
 	}
 
 	var resource interface{}
@@ -384,24 +383,30 @@ func annotationExists(annotations map[string]string, key string) bool {
 	return exists
 }
 
-func numberOfRevisions(deploymentName string, namespace string) (int, error) {
-	// Execute the kubectl rollout history command
-	cmd := exec.Command("kubectl", "rollout", "history", "deployment", deploymentName, "-n", namespace)
-
-	// Run the command and capture its output
-	output, err := cmd.Output()
-	if err != nil {
-		return 0, fmt.Errorf("error running kubectl command: %v", err)
+func setupFunction(t *testing.T, namespace string, apps []string) (*kubernetes.Clientset, string) {
+	clientSet := setupTest(t)
+	newUUID := uuid.New()
+	uniqueNamespace := fmt.Sprintf(namespace+"-%v", fmt.Sprint(newUUID))
+	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, apps); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}
 
-	// Check if the revision history contains revisions after the first revision
-	lines := strings.Split(string(output), "\n")
-	fmt.Println("Below is the lines and its count")
-	fmt.Println(lines)
-	fmt.Println(len(lines))
-	for _, line := range lines {
-		fmt.Println(line)
+	return clientSet, uniqueNamespace
+}
+
+func numberOfRevisions(deploymentName string, namespace string) int {
+
+	numOfRevisions := 0
+	i := 0
+	for {
+		// Execute the kubectl rollout history command
+		cmd := exec.Command("kubectl", "rollout", "history", "deployment", deploymentName, "-n", namespace, "--revision", strconv.Itoa(i))
+		err := cmd.Run()
+		if err != nil {
+			break
+		}
+		numOfRevisions++
+		i++
 	}
-	//4 lines are the text above the revisions
-	return len(lines) - 4, nil
+	return numOfRevisions - 1 //don't want to count the first
 }
