@@ -42,7 +42,10 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	true := true
 	zero := int64(0)
 	pod.Spec.ShareProcessNamespace = &true
-
+	volumeMount := corev1.VolumeMount{
+		MountPath: "/sys/kernel/debug",
+		Name:      kernelDebugVolumeName,
+	}
 	goAgent := corev1.Container{
 		Name:      sideCarName,
 		Image:     goSpec.Image,
@@ -51,12 +54,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			RunAsUser:  &zero,
 			Privileged: &true,
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				MountPath: "/sys/kernel/debug",
-				Name:      kernelDebugVolumeName,
-			},
-		},
+		VolumeMounts: []corev1.VolumeMount{volumeMount},
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
@@ -86,5 +84,10 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			},
 		},
 	})
+	err := injectSecret(&pod, kernelDebugVolumePath, goAgent.Resources)
+	if err != nil {
+		return pod, err
+	}
+
 	return pod, nil
 }

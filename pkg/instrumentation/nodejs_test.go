@@ -42,6 +42,14 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -53,6 +61,17 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								MountPath: "/otel-auto-instrumentation-nodejs",
 							}},
 						},
+						{
+							Name:  initCertContainerName,
+							Image: shellContainerName,
+							Command: []string{"/bin/sh", "-c",
+								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
+							WorkingDir: certVolumePath,
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -60,6 +79,10 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								{
 									Name:      "opentelemetry-auto-instrumentation-nodejs",
 									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -102,6 +125,14 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -114,6 +145,18 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							}},
 							Resources: testResourceRequirements,
 						},
+						{
+							Name:  initCertContainerName,
+							Image: shellContainerName,
+							Command: []string{"/bin/sh", "-c",
+								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
+							WorkingDir: certVolumePath,
+							Resources:  testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -121,6 +164,10 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								{
 									Name:      "opentelemetry-auto-instrumentation-nodejs",
 									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 							Env: []corev1.EnvVar{

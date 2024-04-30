@@ -6,6 +6,8 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -29,9 +31,15 @@ import (
 )
 
 const (
-	volumeName        = "opentelemetry-auto-instrumentation"
-	initContainerName = "opentelemetry-auto-instrumentation"
-	sideCarName       = "opentelemetry-auto-instrumentation"
+	volumeName            = "opentelemetry-auto-instrumentation"
+	initContainerName     = "opentelemetry-auto-instrumentation"
+	sideCarName           = "opentelemetry-auto-instrumentation"
+	shellContainerName    = "bash"
+	initCertContainerName = "cert-init-container"
+	certVolumeName        = "cert-volume"
+	certVolumePath        = "/cert-volume"
+	certSecretPath        = "/etc/amazon-cloudwatch-app-signals-cert"
+	caBundleSecretPath    = certSecretPath + "/tls-ca.crt"
 )
 
 // inject a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
@@ -42,6 +50,7 @@ type sdkInjector struct {
 }
 
 func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+	i.logger.V(0).Info("injection is called and starting")
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
@@ -87,6 +96,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		}
 	}
 	if insts.Python.Instrumentation != nil {
+		i.logger.V(0).Info("going to inject python")
 		otelinst := *insts.Python.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
@@ -95,6 +105,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range strings.Split(pythonContainers, ",") {
 			index := getContainerIndex(container, pod)
+			i.logger.V(0).Info("injection starting")
 			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
 			if err != nil {
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
@@ -103,6 +114,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, pythonInitContainerName)
 			}
+			i.logger.V(0).Info("injected the pod with init cont: ", "init-containers", pod.Spec.InitContainers)
+			i.logger.V(0).Info("injected the pod", "pod-spec", pod.Spec)
 		}
 	}
 	if insts.DotNet.Instrumentation != nil {
@@ -159,7 +172,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		for _, container := range strings.Split(apacheHttpdContainers, ",") {
 			index := getContainerIndex(container, pod)
 			// Apache agent is configured via config files rather than env vars.
-			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
+			// Therefore, service name,p otlp endpoint and other attributes are passed to the agent injection method
 			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
@@ -222,7 +235,41 @@ func getContainerIndex(containerName string, pod corev1.Pod) int {
 
 	return index
 }
-
+func injectSecret(pod *corev1.Pod, path string, resources corev1.ResourceRequirements) error {
+	secretData, err := os.ReadFile(caBundleSecretPath)
+	var defaultVolumeLimitSize = resource.MustParse("200Mi")
+	var secret string
+	if err != nil {
+		secret = fmt.Sprintf("%v", err)
+		//return nil
+	} else {
+		secret = string(secretData)
+	}
+	volumeMount := corev1.VolumeMount{
+		Name:      certVolumeName,
+		MountPath: certVolumePath,
+	}
+	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+		Name: certVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				SizeLimit: &defaultVolumeLimitSize,
+			}},
+	})
+	for index, container := range pod.Spec.Containers {
+		pod.Spec.Containers[index].VolumeMounts = append(container.VolumeMounts, volumeMount)
+	}
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+		Name:  initCertContainerName,
+		Image: shellContainerName,
+		Command: []string{"/bin/sh", "-c", fmt.Sprintf("mkdir -p amazon-cloudwatch-agent &&  echo '%v'  > ./amazon-cloudwatch-agent/ca.crt",
+			secret)},
+		WorkingDir:   certVolumePath,
+		Resources:    resources,
+		VolumeMounts: []corev1.VolumeMount{volumeMount},
+	})
+	return nil
+}
 func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod, index int) corev1.Pod {
 	container := &pod.Spec.Containers[index]
 	for _, env := range otelinst.Spec.Env {

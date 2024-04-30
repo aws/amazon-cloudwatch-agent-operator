@@ -58,7 +58,6 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 					SizeLimit: volumeSize(nodeJSSpec.VolumeSizeLimit),
 				},
 			}})
-
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      nodejsInitContainerName,
 			Image:     nodeJSSpec.Image,
@@ -69,6 +68,10 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 				MountPath: nodejsInstrMountPath,
 			}},
 		})
+		err = injectSecret(&pod, nodejsInstrMountPath, nodeJSSpec.Resources)
+		if err != nil {
+			return pod, err
+		}
 	}
 	return pod, nil
 }

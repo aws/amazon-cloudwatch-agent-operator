@@ -112,17 +112,21 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 					SizeLimit: volumeSize(dotNetSpec.VolumeSizeLimit),
 				},
 			}})
-
+		volumeMount := corev1.VolumeMount{
+			Name:      dotnetVolumeName,
+			MountPath: dotnetInstrMountPath,
+		}
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      dotnetInitContainerName,
-			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
-			Resources: dotNetSpec.Resources,
-			VolumeMounts: []corev1.VolumeMount{{
-				Name:      dotnetVolumeName,
-				MountPath: dotnetInstrMountPath,
-			}},
+			Name:         dotnetInitContainerName,
+			Image:        dotNetSpec.Image,
+			Command:      []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+			Resources:    dotNetSpec.Resources,
+			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
+		err = injectSecret(&pod, dotnetInstrMountPath, dotNetSpec.Resources)
+		if err != nil {
+			return pod, err
+		}
 	}
 	return pod, nil
 }

@@ -101,17 +101,21 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 					SizeLimit: volumeSize(pythonSpec.VolumeSizeLimit),
 				},
 			}})
-
+		volumeMount := corev1.VolumeMount{
+			Name:      pythonVolumeName,
+			MountPath: pythonInstrMountPath,
+		}
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      pythonInitContainerName,
-			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
-			Resources: pythonSpec.Resources,
-			VolumeMounts: []corev1.VolumeMount{{
-				Name:      pythonVolumeName,
-				MountPath: pythonInstrMountPath,
-			}},
+			Name:         pythonInitContainerName,
+			Image:        pythonSpec.Image,
+			Command:      []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+			Resources:    pythonSpec.Resources,
+			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
+		err = injectSecret(&pod, pythonInstrMountPath, pythonSpec.Resources)
+		if err != nil {
+			return pod, err
+		}
 	}
 	return pod, nil
 }

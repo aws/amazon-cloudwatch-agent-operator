@@ -58,17 +58,21 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 					SizeLimit: volumeSize(javaSpec.VolumeSizeLimit),
 				},
 			}})
-
+		volumeMount := corev1.VolumeMount{
+			Name:      javaVolumeName,
+			MountPath: javaInstrMountPath,
+		}
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      javaInitContainerName,
-			Image:     javaSpec.Image,
-			Command:   []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-			Resources: javaSpec.Resources,
-			VolumeMounts: []corev1.VolumeMount{{
-				Name:      javaVolumeName,
-				MountPath: javaInstrMountPath,
-			}},
+			Name:         javaInitContainerName,
+			Image:        javaSpec.Image,
+			Command:      []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+			Resources:    javaSpec.Resources,
+			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
+		err = injectSecret(&pod, javaInstrMountPath, javaSpec.Resources)
+		if err != nil {
+			return pod, err
+		}
 	}
 	return pod, err
 }

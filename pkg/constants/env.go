@@ -4,13 +4,13 @@
 package constants
 
 const (
-	EnvOTELServiceName          = "OTEL_SERVICE_NAME"
-	EnvOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
-	EnvOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
-	EnvOTELPropagators          = "OTEL_PROPAGATORS"
-	EnvOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
-	EnvOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
-
+	EnvOTELServiceName                              = "OTEL_SERVICE_NAME"
+	EnvOTELExporterOTLPEndpoint                     = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	EnvOTELResourceAttrs                            = "OTEL_RESOURCE_ATTRIBUTES"
+	EnvOTELPropagators                              = "OTEL_PROPAGATORS"
+	EnvOTELTracesSampler                            = "OTEL_TRACES_SAMPLER"
+	EnvOTELTracesSamplerArg                         = "OTEL_TRACES_SAMPLER_ARG"
+	EnvOTELExporterOTLPCert                         = "OTEL_EXPORTER_OTLP_CERTIFICATE"
 	InstrumentationPrefix                           = "instrumentation.opentelemetry.io/"
 	AnnotationDefaultAutoInstrumentationJava        = InstrumentationPrefix + "default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS      = InstrumentationPrefix + "default-auto-instrumentation-nodejs-image"
