@@ -73,7 +73,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
           sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
@@ -83,7 +83,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
           sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
@@ -96,7 +96,7 @@ jobs:
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           kubectl rollout restart deployment nginx
           sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
@@ -106,7 +106,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
           sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
@@ -117,7 +117,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
           sleep 3
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
@@ -130,7 +130,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl rollout restart deployment nginx
           sleep 2
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all --field-selector=status.phase!=Terminating -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
