@@ -89,7 +89,8 @@ jobs:
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json     
           kubectl delete instrumentation sample-instrumentation
-          kubectl wait --for=delete pod --all -n default
+          sleep 2
+          kubectl wait --for=condition=Ready pod --all -n default
 
 
       - name: Test for default instrumentation resources for python
@@ -113,7 +114,7 @@ jobs:
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
-          kubectl wait --for=delete pod --all -n default
+          kubectl wait --for=condition=Ready pod --all -n default
 
       - name: Test for default instrumentation resources for python and java
         run: |
@@ -140,7 +141,7 @@ jobs:
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
-          kubectl wait --for=delete pod --all -n default
+          kubectl wait --for=condition=Ready pod --all -n default
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
