@@ -10,6 +10,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
 	"os"
@@ -192,22 +193,34 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
-	if err != nil {
-		fmt.Printf("Error retrieving deployment: %v\n", err)
-		os.Exit(1)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 
-	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
-	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
+	// Loop until deployment is fully ready
+	for {
+		// Get the deployment
+		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
+		if err != nil {
+			if errors.IsNotFound(err) {
+				t.Fatalf("Deployment %s not found in namespace %s\n", deploymentName, uniqueNamespace)
+			}
+			t.Fatal("Error getting deployment")
+		}
+
+		// Check if all pods are ready
+		if deployment.Status.AvailableReplicas == *deployment.Spec.Replicas && deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas {
+			// Check if no pods are terminating
+			if deployment.Status.Replicas == deployment.Status.AvailableReplicas {
+				fmt.Println("All pods are fully ready and no pods are terminating.")
+				break
+			}
+		}
+
+		// Sleep for a short interval before checking again
+		time.Sleep(5 * time.Second)
 	}
-	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
-	if err != nil {
-		fmt.Printf("Error retrieving deployment: %v\n", err)
-		os.Exit(1)
-	}
+	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
+
 	//Removing all annotations
 	deployment.ObjectMeta.Annotations = nil
 	_, err = clientSet.AppsV1().Deployments(uniqueNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
