@@ -152,16 +152,17 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl get pods -A
           kubectl describe pods -n default
-          sleep 10
+          sleep 5
           go test -v -run TestJavaAndPythonDeployment ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
- 
+          sleep 5
+          go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
+  
+  
+  
 
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
@@ -200,18 +201,18 @@ jobs:
       - name: Test Annotations
         run: |
           kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
+          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
-          sleep 10
           go test -v -run TestJavaAndPythonDaemonSet ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestJavaOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestPythonOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-          
-          
+          sleep 5
+          go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
+  
+  
 
   StatefulsetAnnotationsTest:
     name: StatefulsetAnnotationsTest
@@ -250,16 +251,17 @@ jobs:
       - name: Test Annotations
         run: |
           kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
+          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
-          sleep 10
           go test -v -run TestJavaAndPythonStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
+          sleep 5
+          go test -v -run TestOnlyNonAnnotatedAppsShouldBeRestarted ./integration-tests/manifests/annotations -timeout 30m
+
 
 
   NamespaceAnnotationsTest:
@@ -283,7 +285,6 @@ jobs:
 
       - name: Verify minikube and cert-manager
         run: |
-          sleep 10
           kubectl get pods -A
 
       - name: Build image
@@ -301,11 +302,14 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
-          sleep 10
+          sleep 5
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
           kubectl get pods -A
           kubectl describe pods -n default
+
 
 

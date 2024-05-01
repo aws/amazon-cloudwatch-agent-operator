@@ -42,7 +42,7 @@ func TestJavaAndPythonStatefulSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -77,7 +77,7 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlName, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -113,7 +113,7 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlName, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
