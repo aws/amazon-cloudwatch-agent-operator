@@ -174,7 +174,7 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 
 // This tests a resource that is auto annotated is manually patched to remove the annotations, our mutator adds back the annotations
 func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
-
+	startTime := time.Now()
 	clientSet, uniqueNamespace := setupFunction(t, "manual-annotation-removal", []string{sampleDeploymentYamlNameRelPath})
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -186,8 +186,7 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-
-	startTime := time.Now()
+	startTime = time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -199,9 +198,18 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 		os.Exit(1)
 	}
 
+	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
+	if err != nil {
+		fmt.Printf("Error waiting for pod creation: %v\n", err)
+		os.Exit(1)
+	}
+	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Error retrieving deployment: %v\n", err)
+		os.Exit(1)
+	}
 	//Removing all annotations
 	deployment.ObjectMeta.Annotations = nil
-	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	_, err = clientSet.AppsV1().Deployments(uniqueNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		fmt.Printf("Error updating deployment: %v\n", err)

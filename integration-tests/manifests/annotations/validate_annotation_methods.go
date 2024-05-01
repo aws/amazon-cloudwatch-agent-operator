@@ -37,7 +37,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
