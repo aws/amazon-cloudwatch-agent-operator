@@ -10,6 +10,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
 	"os"
@@ -172,9 +173,8 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 
 }
 
-// This tests a resource that is auto annotated is manually patched to remove the annotations, our mutator adds back the annotations
 func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
-
+	startTime := time.Now()
 	clientSet, uniqueNamespace := setupFunction(t, "manual-annotation-removal", []string{sampleDeploymentYamlNameRelPath})
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -186,22 +186,38 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-
-	startTime := time.Now()
+	startTime = time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
-	if err != nil {
-		fmt.Printf("Error retrieving deployment: %v\n", err)
-		os.Exit(1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	for {
+		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
+		if err != nil {
+			if errors.IsNotFound(err) {
+				t.Fatalf("Deployment %s not found in namespace %s\n", deploymentName, uniqueNamespace)
+			}
+			t.Fatal("Error getting deployment")
+		}
+
+		if deployment.Status.AvailableReplicas == *deployment.Spec.Replicas && deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas {
+			if deployment.Status.Replicas == deployment.Status.AvailableReplicas {
+				fmt.Println("All pods are fully ready and no pods are terminating.")
+				break
+			}
+		}
+
+		// Sleep for a short interval before checking again
+		time.Sleep(5 * time.Second)
 	}
+	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
 
 	//Removing all annotations
 	deployment.ObjectMeta.Annotations = nil
-	deployment, err = clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	_, err = clientSet.AppsV1().Deployments(uniqueNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		fmt.Printf("Error updating deployment: %v\n", err)
@@ -210,14 +226,12 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error waiting for pod creation: %v\n", err)
 	}
 
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		fmt.Printf("Error listing pods: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error listing pods: %v\n", err)
 	}
 	//Check if operator has added back the annotations
 	checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation})
