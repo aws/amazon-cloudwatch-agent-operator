@@ -196,9 +196,7 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// Loop until deployment is fully ready
 	for {
-		// Get the deployment
 		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -207,9 +205,7 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 			t.Fatal("Error getting deployment")
 		}
 
-		// Check if all pods are ready
 		if deployment.Status.AvailableReplicas == *deployment.Spec.Replicas && deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas {
-			// Check if no pods are terminating
 			if deployment.Status.Replicas == deployment.Status.AvailableReplicas {
 				fmt.Println("All pods are fully ready and no pods are terminating.")
 				break
@@ -231,14 +227,12 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 
 	err = util.WaitForNewPodCreation(clientSet, deployment, startTime)
 	if err != nil {
-		fmt.Printf("Error waiting for pod creation: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error waiting for pod creation: %v\n", err)
 	}
 
 	deploymentPods, err := clientSet.CoreV1().Pods(uniqueNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		fmt.Printf("Error listing pods: %v\n", err)
-		os.Exit(1)
+		t.Fatalf("Error listing pods: %v\n", err)
 	}
 	//Check if operator has added back the annotations
 	checkIfAnnotationExists(clientSet, deploymentPods, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation})
