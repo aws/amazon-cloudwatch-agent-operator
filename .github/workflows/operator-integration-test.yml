@@ -39,7 +39,6 @@ jobs:
         run:
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-
       - name: Verify minikube and cert-manager
         run: |
           sleep 10
@@ -90,7 +89,6 @@ jobs:
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json     
           kubectl delete instrumentation sample-instrumentation
 
-
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
@@ -123,8 +121,6 @@ jobs:
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
-
-
 
       - name: Test for defined instrumentation resources for python and java
         run: |
