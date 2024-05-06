@@ -25,11 +25,13 @@ import (
 const (
 	defaultJavaInstrumentationImage   = "test.registry/adot-autoinstrumentation-java:test-tag"
 	defaultPythonInstrumentationImage = "test.registry/adot-autoinstrumentation-python:test-tag"
+	defaultDotNetInstrumentationImage = "test.registry/adot-autoinstrumentation-dotnet:test-tag"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
 
 	defaultInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -75,6 +77,22 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
+			// temporary environment variables. Need to be updated with the latest values
+			DotNet: v1alpha1.DotNet{
+				Image: defaultDotNetInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},

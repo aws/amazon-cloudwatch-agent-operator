@@ -33,6 +33,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 	if !ok {
 		return nil, errors.New("unable to determine python instrumentation image")
 	}
+	dotNetInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_DOTNET")
+	if !ok {
+		return nil, errors.New("unable to determine dotnet instrumentation image")
+	}
 
 	// set protocol by checking cloudwatch agent config for tls setting
 	exporterPrefix := httpPrefix
@@ -87,6 +91,22 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
+			// temporary environment variables. Need to be updated with the latest values
+			DotNet: v1alpha1.DotNet{
+				Image: dotNetInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
