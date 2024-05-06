@@ -17,3 +17,4 @@ spec:
     - tracecontext
     - baggage
     - b3
+    - xray

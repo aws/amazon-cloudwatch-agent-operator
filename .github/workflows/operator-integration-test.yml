@@ -71,7 +71,8 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          sleep 5
+#         sleep is to make sure the app is fully active before restart wait doesn't work as accurately
+          sleep 5 
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
@@ -81,7 +82,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
@@ -93,25 +94,45 @@ jobs:
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
-
 
       - name: Test for defined instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5
           kubectl rollout restart deployment nginx
-          sleep 5
-          kubectl get pods -A
+          kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl describe pods -n default
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
+      - name: Test for default instrumentation resources for python and java
+        run: |
+          kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          kubectl describe pods -n amazon-cloudwatch
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
 
+      - name: Test for defined instrumentation resources for python and java
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl get pods -A
+          kubectl describe pods -n default
+          cd integration-tests/manifests/cmd
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
@@ -308,8 +329,5 @@ jobs:
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
-          kubectl get pods -A
-          kubectl describe pods -n default
-
 
 
