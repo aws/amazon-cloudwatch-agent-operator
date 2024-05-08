@@ -76,7 +76,17 @@ func main() {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, cfg.ListenAddr)
+
+	httpOptions := []server.Option{}
+	if cfg.HTTPS.Enabled {
+		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+		if confErr != nil {
+			setupLog.Error(confErr, "Unable to initialize TLS configuration")
+			os.Exit(1)
+		}
+		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
+	}
+	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
@@ -181,6 +191,20 @@ func main() {
 				setupLog.Error(shutdownErr, "Error on server shutdown")
 			}
 		})
+	if cfg.HTTPS.Enabled {
+		runGroup.Add(
+			func() error {
+				err := srv.StartHTTPS()
+				setupLog.Info("HTTPS Server failed to start")
+				return err
+			},
+			func(_ error) {
+				setupLog.Info("Closing HTTPS server")
+				if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
+					setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
+				}
+			})
+	}
 	runGroup.Add(
 		func() error {
 			for {
