@@ -70,12 +70,12 @@ jobs:
 
       - name: Test for default instrumentation resources for Java
         run: |
-          kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-#         sleep is to make sure the app is fully active before restart wait doesn't work as accurately
-          sleep 5 
-          kubectl get pods -A 
-          kubectl describe pods -n default
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
+               kubectl apply -f integration-tests/java/sample-deployment-java.yaml
+          #         sleep is to make sure the app is fully active before restart wait doesn't work as accurately
+               sleep 5
+               kubectl get pods -A
+               kubectl describe pods -n default
+               go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
 
       - name: Test for defined instrumentation resources for Java
         run: |
@@ -329,5 +329,4 @@ jobs:
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
-
 
