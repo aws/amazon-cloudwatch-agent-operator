@@ -23,6 +23,9 @@ on:
         type: boolean
         default: true
         description: "Run in EKS Addon Beta environment"
+  pull_request:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
