@@ -23,7 +23,25 @@ on:
         type: boolean
         default: true
         description: "Run in EKS Addon Beta environment"
-
+  pull_request:
+    branches:
+      - main
+    inputs:
+      addon_name:
+        required: true
+        type: string
+        default: "amazon-cloudwatch-observability"
+        description: "GPU E2E Test"
+      addon_version:
+        required: true
+        type: string
+        default: "v1.1.0-eksbuild.1"
+        description: "EKS addon version"
+      run_in_beta:
+        required: true
+        type: boolean
+        default: true
+        description: "Run in EKS Addon Beta environment"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
