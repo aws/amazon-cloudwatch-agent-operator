@@ -4,7 +4,6 @@
 name: Run GPU E2E Test
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-
 on:
   workflow_dispatch:
     inputs:
@@ -35,7 +34,7 @@ on:
       addon_version:
         required: true
         type: string
-        default: "v1.1.0-eksbuild.1"
+        default: "v1.6.0-eksbuild.1"
         description: "EKS addon version"
       run_in_beta:
         required: true

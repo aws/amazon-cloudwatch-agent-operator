@@ -4,7 +4,6 @@
 name: Run EKS addon Integration Tests
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
-
 on:
   workflow_dispatch:
     inputs:
