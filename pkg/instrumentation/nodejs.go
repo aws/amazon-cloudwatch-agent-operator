@@ -68,7 +68,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 				MountPath: nodejsInstrMountPath,
 			}},
 		})
-		err = injectSecret(&pod, nodejsInstrMountPath, nodeJSSpec.Resources)
+		err = injectSecret(&pod, nodeJSSpec.Resources)
 		if err != nil {
 			return pod, err
 		}

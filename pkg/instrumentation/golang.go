@@ -84,7 +84,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			},
 		},
 	})
-	err := injectSecret(&pod, kernelDebugVolumePath, goAgent.Resources)
+	err := injectSecret(&pod, goAgent.Resources)
 	if err != nil {
 		return pod, err
 	}

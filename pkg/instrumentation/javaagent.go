@@ -69,7 +69,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 			Resources:    javaSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, javaInstrMountPath, javaSpec.Resources)
+		err = injectSecret(&pod, javaSpec.Resources)
 		if err != nil {
 			return pod, err
 		}

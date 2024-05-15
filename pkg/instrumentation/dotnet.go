@@ -123,7 +123,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 			Resources:    dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, dotnetInstrMountPath, dotNetSpec.Resources)
+		err = injectSecret(&pod, dotNetSpec.Resources)
 		if err != nil {
 			return pod, err
 		}

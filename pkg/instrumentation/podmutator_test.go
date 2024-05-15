@@ -207,6 +207,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -224,10 +232,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      javaVolumeName,
-								MountPath: javaInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: javaInstrMountPath,
+							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
 					},
@@ -304,6 +312,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -407,6 +419,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -424,10 +444,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      javaVolumeName,
-								MountPath: javaInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: javaInstrMountPath,
+							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
 					},
@@ -501,6 +521,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
@@ -576,6 +600,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
@@ -765,6 +793,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -782,10 +818,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-nodejs",
-								MountPath: "/otel-auto-instrumentation-nodejs",
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: nodejsInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -853,6 +889,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -948,6 +988,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -965,10 +1013,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-nodejs",
-								MountPath: "/otel-auto-instrumentation-nodejs",
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: nodejsInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -1033,6 +1081,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
@@ -1103,6 +1155,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -1286,6 +1342,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -1303,10 +1367,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: pythonInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -1386,6 +1450,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -1485,6 +1553,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -1502,10 +1578,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: pythonInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -1586,6 +1662,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -1661,6 +1741,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
@@ -1845,6 +1929,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -1862,10 +1954,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: dotnetInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -1954,6 +2046,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 					},
@@ -2035,6 +2131,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -2052,10 +2156,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: dotnetInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -2143,6 +2247,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -2234,6 +2342,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -2251,10 +2367,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: dotnetInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -2339,6 +2455,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
@@ -2429,6 +2549,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -2602,10 +2726,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      kernelDebugVolumeName,
-								MountPath: kernelDebugVolumePath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: kernelDebugVolumePath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -2620,6 +2744,10 @@ func TestMutatePod(t *testing.T) {
 								Privileged: &true,
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: certVolumePath,
+									Name:      certVolumeName,
+								},
 								{
 									MountPath: "/sys/kernel/debug",
 									Name:      kernelDebugVolumeName,
@@ -2687,6 +2815,14 @@ func TestMutatePod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kernelDebugVolumePath,
+								},
+							},
+						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
 								},
 							},
 						},
@@ -2779,6 +2915,16 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
 					InitContainers: []corev1.Container{
 						{
 							Name:  initCertContainerName,
@@ -2786,15 +2932,19 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      kernelDebugVolumeName,
-								MountPath: kernelDebugVolumePath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: kernelDebugVolumePath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
 						{
 							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
 						},
 					},
 				},
@@ -3522,6 +3672,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -3566,10 +3724,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: dotnetInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -3642,6 +3800,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -3713,6 +3875,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -3759,6 +3925,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -3807,6 +3977,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -3854,6 +4028,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -3900,6 +4078,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -3964,6 +4146,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4026,6 +4212,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -4116,10 +4306,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: pythonInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -4204,6 +4394,14 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -4248,10 +4446,10 @@ func TestMutatePod(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: pythonInstrMountPath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -4324,6 +4522,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4395,6 +4597,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4441,6 +4647,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -4489,6 +4699,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4536,6 +4750,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4582,6 +4800,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      nodejsVolumeName,
 									MountPath: nodejsInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},
@@ -4646,6 +4868,10 @@ func TestMutatePod(t *testing.T) {
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
 								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 							},
 						},
 						{
@@ -4708,6 +4934,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      pythonVolumeName,
 									MountPath: pythonInstrMountPath,
+								},
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
 								},
 							},
 						},

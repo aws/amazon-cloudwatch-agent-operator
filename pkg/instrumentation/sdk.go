@@ -235,7 +235,7 @@ func getContainerIndex(containerName string, pod corev1.Pod) int {
 
 	return index
 }
-func injectSecret(pod *corev1.Pod, path string, resources corev1.ResourceRequirements) error {
+func injectSecret(pod *corev1.Pod, resources corev1.ResourceRequirements) error {
 	secretData, err := os.ReadFile(caBundleSecretPath)
 	var defaultVolumeLimitSize = resource.MustParse("200Mi")
 	var secret string
@@ -256,8 +256,8 @@ func injectSecret(pod *corev1.Pod, path string, resources corev1.ResourceRequire
 				SizeLimit: &defaultVolumeLimitSize,
 			}},
 	})
-	for index, container := range pod.Spec.Containers {
-		pod.Spec.Containers[index].VolumeMounts = append(container.VolumeMounts, volumeMount)
+	for index, _ := range pod.Spec.Containers {
+		pod.Spec.Containers[index].VolumeMounts = append(pod.Spec.Containers[index].VolumeMounts, volumeMount)
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 		Name:  initCertContainerName,

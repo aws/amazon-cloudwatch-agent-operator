@@ -112,7 +112,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 			Resources:    pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, pythonInstrMountPath, pythonSpec.Resources)
+		err = injectSecret(&pod, pythonSpec.Resources)
 		if err != nil {
 			return pod, err
 		}

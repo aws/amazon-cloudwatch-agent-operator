@@ -5,16 +5,18 @@ package instrumentation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 var defaultVolumeLimitSize = resource.MustParse("200Mi")
@@ -30,449 +32,449 @@ var testResourceRequirements = corev1.ResourceRequirements{
 	},
 }
 
-//func TestSDKInjection(t *testing.T) {
-//	ns := corev1.Namespace{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name: "project1",
-//		},
-//	}
-//	err := k8sClient.Create(context.Background(), &ns)
-//	require.NoError(t, err)
-//	dep := appsv1.Deployment{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Namespace: "project1",
-//			Name:      "my-deployment",
-//			UID:       "depuid",
-//		},
-//		Spec: appsv1.DeploymentSpec{
-//			Selector: &metav1.LabelSelector{
-//				MatchLabels: map[string]string{"app": "my"},
-//			},
-//			Template: corev1.PodTemplateSpec{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Labels: map[string]string{"app": "my"},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
-//				},
-//			},
-//		},
-//	}
-//	err = k8sClient.Create(context.Background(), &dep)
-//	require.NoError(t, err)
-//	rs := appsv1.ReplicaSet{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "my-replicaset",
-//			Namespace: "project1",
-//			UID:       "rsuid",
-//			OwnerReferences: []metav1.OwnerReference{
-//				{
-//					Kind:       "Deployment",
-//					APIVersion: "apps/v1",
-//					Name:       "my-deployment",
-//					UID:        "depuid",
-//				},
-//			},
-//		},
-//		Spec: appsv1.ReplicaSetSpec{
-//			Selector: &metav1.LabelSelector{
-//				MatchLabels: map[string]string{"app": "my"},
-//			},
-//			Template: corev1.PodTemplateSpec{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Labels: map[string]string{"app": "my"},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
-//				},
-//			},
-//		},
-//	}
-//	err = k8sClient.Create(context.Background(), &rs)
-//	require.NoError(t, err)
-//
-//	tests := []struct {
-//		name     string
-//		inst     v1alpha1.Instrumentation
-//		pod      corev1.Pod
-//		expected corev1.Pod
-//	}{
-//		{
-//			name: "SDK env vars not defined",
-//			inst: v1alpha1.Instrumentation{
-//				Spec: v1alpha1.InstrumentationSpec{
-//					Exporter: v1alpha1.Exporter{
-//						Endpoint: "https://collector:4317",
-//					},
-//					Resource: v1alpha1.Resource{
-//						AddK8sUIDAttributes: true,
-//					},
-//					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-//					Sampler: v1alpha1.Sampler{
-//						Type:     "parentbased_traceidratio",
-//						Argument: "0.25",
-//					},
-//				},
-//			},
-//			pod: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//					UID:       "pod-uid",
-//					OwnerReferences: []metav1.OwnerReference{
-//						{
-//							Kind:       "ReplicaSet",
-//							Name:       "my-replicaset",
-//							UID:        "rsuid",
-//							APIVersion: "apps/v1",
-//						},
-//					},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Name:  "application-name",
-//							Image: "app:latest",
-//						},
-//					},
-//				},
-//			},
-//			expected: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//					UID:       "pod-uid",
-//					OwnerReferences: []metav1.OwnerReference{
-//						{
-//							Kind:       "ReplicaSet",
-//							Name:       "my-replicaset",
-//							UID:        "rsuid",
-//							APIVersion: "apps/v1",
-//						},
-//					},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Name:  "application-name",
-//							Image: "app:latest",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "my-deployment",
-//								},
-//								{
-//									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-//									Value: "https://collector:4317",
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "spec.nodeName",
-//										},
-//									},
-//								},
-//								{
-//									Name:  "OTEL_PROPAGATORS",
-//									Value: "b3,jaeger",
-//								},
-//								{
-//									Name:  "OTEL_TRACES_SAMPLER",
-//									Value: "parentbased_traceidratio",
-//								},
-//								{
-//									Name:  "OTEL_TRACES_SAMPLER_ARG",
-//									Value: "0.25",
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.app.application-name,service.version=latest",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "SDK env vars defined",
-//			inst: v1alpha1.Instrumentation{
-//				Spec: v1alpha1.InstrumentationSpec{
-//					Exporter: v1alpha1.Exporter{
-//						Endpoint: "https://collector:4317",
-//					},
-//					Resource: v1alpha1.Resource{
-//						Attributes: map[string]string{
-//							"fromcr": "val",
-//						},
-//					},
-//					Propagators: []v1alpha1.Propagator{"jaeger"},
-//					Sampler: v1alpha1.Sampler{
-//						Type:     "parentbased_traceidratio",
-//						Argument: "0.25",
-//					},
-//				},
-//			},
-//			pod: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "app:latest",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "explicitly_set",
-//								},
-//								{
-//									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-//									Value: "explicitly_set",
-//								},
-//								{
-//									Name:  "OTEL_PROPAGATORS",
-//									Value: "b3",
-//								},
-//								{
-//									Name:  "OTEL_TRACES_SAMPLER",
-//									Value: "always_on",
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//			expected: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "app:latest",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "explicitly_set",
-//								},
-//								{
-//									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-//									Value: "explicitly_set",
-//								},
-//								{
-//									Name:  "OTEL_PROPAGATORS",
-//									Value: "b3",
-//								},
-//								{
-//									Name:  "OTEL_TRACES_SAMPLER",
-//									Value: "always_on",
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "spec.nodeName",
-//										},
-//									},
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "Empty instrumentation spec",
-//			inst: v1alpha1.Instrumentation{
-//				Spec: v1alpha1.InstrumentationSpec{},
-//			},
-//			pod: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//					UID:       "pod-uid",
-//					OwnerReferences: []metav1.OwnerReference{
-//						{
-//							Kind:       "ReplicaSet",
-//							Name:       "my-replicaset",
-//							UID:        "rsuid",
-//							APIVersion: "apps/v1",
-//						},
-//					},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Name:  "application-name",
-//							Image: "app:latest",
-//						},
-//					},
-//				},
-//			},
-//			expected: corev1.Pod{
-//				ObjectMeta: metav1.ObjectMeta{
-//					Namespace: "project1",
-//					Name:      "app",
-//					UID:       "pod-uid",
-//					OwnerReferences: []metav1.OwnerReference{
-//						{
-//							Kind:       "ReplicaSet",
-//							Name:       "my-replicaset",
-//							UID:        "rsuid",
-//							APIVersion: "apps/v1",
-//						},
-//					},
-//				},
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Name:  "application-name",
-//							Image: "app:latest",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "my-deployment",
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "spec.nodeName",
-//										},
-//									},
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.app.application-name,service.version=latest",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "SDK image with port number, no version",
-//			inst: v1alpha1.Instrumentation{},
-//			pod: corev1.Pod{
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "fictional.registry.example:10443/imagename",
-//						},
-//					},
-//				},
-//			},
-//			expected: corev1.Pod{
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "fictional.registry.example:10443/imagename",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "",
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "metadata.name",
-//										},
-//									},
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "spec.nodeName",
-//										},
-//									},
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "SDK image with port number, with version",
-//			inst: v1alpha1.Instrumentation{},
-//			pod: corev1.Pod{
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "fictional.registry.example:10443/imagename:latest",
-//						},
-//					},
-//				},
-//			},
-//			expected: corev1.Pod{
-//				Spec: corev1.PodSpec{
-//					Containers: []corev1.Container{
-//						{
-//							Image: "fictional.registry.example:10443/imagename:latest",
-//							Env: []corev1.EnvVar{
-//								{
-//									Name:  "OTEL_SERVICE_NAME",
-//									Value: "",
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "metadata.name",
-//										},
-//									},
-//								},
-//								{
-//									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-//									ValueFrom: &corev1.EnvVarSource{
-//										FieldRef: &corev1.ObjectFieldSelector{
-//											FieldPath: "spec.nodeName",
-//										},
-//									},
-//								},
-//								{
-//									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-//									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			inj := sdkInjector{
-//				client: k8sClient,
-//			}
-//			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
-//			_, err = json.MarshalIndent(pod, "", "  ")
-//			assert.NoError(t, err)
-//			assert.Equal(t, test.expected, pod)
-//		})
-//	}
-//}
+func TestSDKInjection(t *testing.T) {
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "project1",
+		},
+	}
+	err := k8sClient.Create(context.Background(), &ns)
+	require.NoError(t, err)
+	dep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "project1",
+			Name:      "my-deployment",
+			UID:       "depuid",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "my"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "my"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+		},
+	}
+	err = k8sClient.Create(context.Background(), &dep)
+	require.NoError(t, err)
+	rs := appsv1.ReplicaSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-replicaset",
+			Namespace: "project1",
+			UID:       "rsuid",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind:       "Deployment",
+					APIVersion: "apps/v1",
+					Name:       "my-deployment",
+					UID:        "depuid",
+				},
+			},
+		},
+		Spec: appsv1.ReplicaSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "my"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "my"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+		},
+	}
+	err = k8sClient.Create(context.Background(), &rs)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name     string
+		inst     v1alpha1.Instrumentation
+		pod      corev1.Pod
+		expected corev1.Pod
+	}{
+		{
+			name: "SDK env vars not defined",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "https://collector:4317",
+					},
+					Resource: v1alpha1.Resource{
+						AddK8sUIDAttributes: true,
+					},
+					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
+					Sampler: v1alpha1.Sampler{
+						Type:     "parentbased_traceidratio",
+						Argument: "0.25",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "my-deployment",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "https://collector:4317",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3,jaeger",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.25",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.app.application-name,service.version=latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK env vars defined",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "https://collector:4317",
+					},
+					Resource: v1alpha1.Resource{
+						Attributes: map[string]string{
+							"fromcr": "val",
+						},
+					},
+					Propagators: []v1alpha1.Propagator{"jaeger"},
+					Sampler: v1alpha1.Sampler{
+						Type:     "parentbased_traceidratio",
+						Argument: "0.25",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "app:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "always_on",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "app:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "always_on",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Empty instrumentation spec",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "my-deployment",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.app.application-name,service.version=latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK image with port number, no version",
+			inst: v1alpha1.Instrumentation{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK image with port number, with version",
+			inst: v1alpha1.Instrumentation{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inj := sdkInjector{
+				client: k8sClient,
+			}
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
+			_, err = json.MarshalIndent(pod, "", "  ")
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, pod)
+		})
+	}
+}
 
 func TestInjectJava(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
@@ -515,6 +517,14 @@ func TestInjectJava(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: certVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
 			},
 			InitContainers: []corev1.Container{
 				{
@@ -533,10 +543,10 @@ func TestInjectJava(t *testing.T) {
 					Command: []string{"/bin/sh", "-c",
 						"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      javaVolumeName,
-						MountPath: javaInstrMountPath,
+						Name:      certVolumeName,
+						MountPath: certVolumePath,
 					}},
-					WorkingDir: javaInstrMountPath,
+					WorkingDir: certVolumePath,
 					Resources:  testResourceRequirements,
 				},
 			},
@@ -548,6 +558,10 @@ func TestInjectJava(t *testing.T) {
 						{
 							Name:      javaVolumeName,
 							MountPath: javaInstrMountPath,
+						},
+						{
+							Name:      certVolumeName,
+							MountPath: certVolumePath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -631,6 +645,14 @@ func TestInjectNodeJS(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: certVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
 			},
 			InitContainers: []corev1.Container{
 				{
@@ -649,10 +671,10 @@ func TestInjectNodeJS(t *testing.T) {
 					Command: []string{"/bin/sh", "-c",
 						"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      "opentelemetry-auto-instrumentation-nodejs",
-						MountPath: "/otel-auto-instrumentation-nodejs",
+						Name:      certVolumeName,
+						MountPath: certVolumePath,
 					}},
-					WorkingDir: nodejsInstrMountPath,
+					WorkingDir: certVolumePath,
 					Resources:  testResourceRequirements,
 				},
 			},
@@ -664,6 +686,10 @@ func TestInjectNodeJS(t *testing.T) {
 						{
 							Name:      nodejsVolumeName,
 							MountPath: nodejsInstrMountPath,
+						},
+						{
+							Name:      certVolumeName,
+							MountPath: certVolumePath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -747,6 +773,14 @@ func TestInjectPython(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: certVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
 			},
 			InitContainers: []corev1.Container{
 				{
@@ -764,10 +798,10 @@ func TestInjectPython(t *testing.T) {
 					Command: []string{"/bin/sh", "-c",
 						"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      pythonVolumeName,
-						MountPath: pythonInstrMountPath,
+						Name:      certVolumeName,
+						MountPath: certVolumePath,
 					}},
-					WorkingDir: pythonInstrMountPath,
+					WorkingDir: certVolumePath,
 				},
 			},
 			Containers: []corev1.Container{
@@ -778,6 +812,10 @@ func TestInjectPython(t *testing.T) {
 						{
 							Name:      pythonVolumeName,
 							MountPath: pythonInstrMountPath,
+						},
+						{
+							Name:      certVolumeName,
+							MountPath: certVolumePath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -876,6 +914,14 @@ func TestInjectDotNet(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: certVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
 			},
 			InitContainers: []corev1.Container{
 				{
@@ -893,10 +939,10 @@ func TestInjectDotNet(t *testing.T) {
 					Command: []string{"/bin/sh", "-c",
 						"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      dotnetVolumeName,
-						MountPath: dotnetInstrMountPath,
+						Name:      certVolumeName,
+						MountPath: certVolumePath,
 					}},
-					WorkingDir: dotnetInstrMountPath,
+					WorkingDir: certVolumePath,
 				},
 			},
 			Containers: []corev1.Container{
@@ -907,6 +953,10 @@ func TestInjectDotNet(t *testing.T) {
 						{
 							Name:      dotnetVolumeName,
 							MountPath: dotnetInstrMountPath,
+						},
+						{
+							Name:      certVolumeName,
+							MountPath: certVolumePath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -1083,6 +1133,10 @@ func TestInjectGo(t *testing.T) {
 						{
 							Name:  "app",
 							Image: "app:latest",
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
 						},
 						{
 							Name:  sideCarName,
@@ -1095,6 +1149,10 @@ func TestInjectGo(t *testing.T) {
 								{
 									MountPath: "/sys/kernel/debug",
 									Name:      kernelDebugVolumeName,
+								},
+								{
+									MountPath: certVolumePath,
+									Name:      certVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1139,6 +1197,14 @@ func TestInjectGo(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
 					},
 					InitContainers: []corev1.Container{
 						{
@@ -1147,10 +1213,10 @@ func TestInjectGo(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      kernelDebugVolumeName,
-								MountPath: kernelDebugVolumePath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: kernelDebugVolumePath,
+							WorkingDir: certVolumePath,
 						},
 					},
 				},
@@ -1197,6 +1263,10 @@ func TestInjectGo(t *testing.T) {
 						{
 							Name:  "app",
 							Image: "app:latest",
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
 						},
 						{
 							Name:  sideCarName,
@@ -1209,6 +1279,10 @@ func TestInjectGo(t *testing.T) {
 								{
 									MountPath: "/sys/kernel/debug",
 									Name:      kernelDebugVolumeName,
+								},
+								{
+									MountPath: certVolumePath,
+									Name:      certVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1251,10 +1325,10 @@ func TestInjectGo(t *testing.T) {
 							Command: []string{"/bin/sh", "-c",
 								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      kernelDebugVolumeName,
-								MountPath: kernelDebugVolumePath,
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
 							}},
-							WorkingDir: kernelDebugVolumePath,
+							WorkingDir: certVolumePath,
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -1263,6 +1337,14 @@ func TestInjectGo(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kernelDebugVolumePath,
+								},
+							},
+						},
+						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
 								},
 							},
 						},
