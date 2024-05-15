@@ -30,12 +30,14 @@ env:
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_FRONTEND_SVC_IMG }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_SAMPLE_APP_REMOTE_SVC_IMG }}
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP: /aws/appsignals/eks
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP: /aws/application-signals/data
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  APPLICATION_SIGNALS_ADOT_IMAGE: 611364707713.dkr.ecr.us-west-2.amazonaws.com/adot-autoinstrumentation-java-operator-staging:1.33.0-SNAPSHOT-91cbba8
+  APPLICATION_SIGNALS_CW_AGENT_IMAGE: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-integration-test:00ef994d0feaa8ebe03da61cd9fcfcc1f20ca650
 
 jobs:
-  appsignals-e2e-test:
+  appsignals-java-e2e-test:
     runs-on: ubuntu-latest
     steps:
       # This step avoids code duplication for terraform templates and the validator
@@ -44,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: main
+          ref: ga-release
 
       - name: Download enablement script
         uses: actions/checkout@v4
@@ -134,6 +136,22 @@ jobs:
         run: |
           kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
           kubectl delete pods --all -n amazon-cloudwatch
+          sleep 10
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+      - name: Patch the CloudWatch Agent image and restart CloudWatch pods
+        run: |
+          kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "${{ env.APPLICATION_SIGNALS_CW_AGENT_IMAGE }}"}]'
+          kubectl delete pods --all -n amazon-cloudwatch
+          sleep 10
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+      - name: Patch the ADOT image and restart CloudWatch pods
+        run: |
+          kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+          -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ env.APPLICATION_SIGNALS_ADOT_IMAGE }}"}]'
+          kubectl delete pods --all -n amazon-cloudwatch
+          sleep 10
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       # Application pods need to be restarted for the
@@ -205,10 +223,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call/; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call/; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call/; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"
 
       - name: Build Gradle
         run: ./gradlew
@@ -228,7 +246,7 @@ jobs:
           --platform-info ${{ inputs.test-java-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -246,7 +264,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated traces
@@ -263,7 +281,7 @@ jobs:
           --platform-info ${{ inputs.test-java-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       # Clean up Procedures
