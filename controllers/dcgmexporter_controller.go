@@ -17,12 +17,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/dcgmexporter"
-
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/dcgmexporter"
+	dcgmexporterStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/dcgmexporter"
 )
 
 // DcgmExporterReconciler reconciles a DcgmExporter object.
@@ -108,7 +107,7 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	err := reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
-	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
+	return dcgmexporterStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // BuildDcgmExporter returns the generation and collected errors of all manifests for a given instance.
