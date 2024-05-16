@@ -54,7 +54,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			RunAsUser:  &zero,
 			Privileged: &true,
 		},
-		VolumeMounts: []corev1.VolumeMount{volumeMount},
+		VolumeMounts: []corev1.VolumeMount{},
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
@@ -74,8 +74,17 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			goAgent.Env = append(goAgent.Env, env)
 		}
 	}
-
 	pod.Spec.Containers = append(pod.Spec.Containers, goAgent)
+	goAgentPtr := &pod.Spec.Containers[len(pod.Spec.Containers)-1]
+	for index, _ := range pod.Spec.Containers {
+		err := injectSecret(&pod, index, goAgent.Resources)
+		if err != nil {
+			return pod, err
+		}
+	}
+	//we want to add it after injection to make it consistent with other languages
+	goAgentPtr.VolumeMounts = append(goAgentPtr.VolumeMounts, volumeMount)
+
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: kernelDebugVolumeName,
 		VolumeSource: corev1.VolumeSource{
@@ -84,10 +93,6 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 			},
 		},
 	})
-	err := injectSecret(&pod, goAgent.Resources)
-	if err != nil {
-		return pod, err
-	}
 
 	return pod, nil
 }

@@ -200,7 +200,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: javaVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -208,7 +208,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -217,15 +217,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    javaInitContainerName,
-							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      javaVolumeName,
-								MountPath: javaInstrMountPath,
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -237,6 +228,15 @@ func TestMutatePod(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
+						},
+						{
+							Name:    javaInitContainerName,
+							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      javaVolumeName,
+								MountPath: javaInstrMountPath,
+							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -310,12 +310,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -412,7 +412,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: javaVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -420,7 +420,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -429,15 +429,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    javaInitContainerName,
-							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      javaVolumeName,
-								MountPath: javaInstrMountPath,
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -449,6 +440,15 @@ func TestMutatePod(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
+						},
+						{
+							Name:    javaInitContainerName,
+							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      javaVolumeName,
+								MountPath: javaInstrMountPath,
+							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -786,7 +786,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: nodejsVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -794,7 +794,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: nodejsVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -803,15 +803,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    nodejsInitContainerName,
-							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      nodejsVolumeName,
-								MountPath: nodejsInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -822,6 +813,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    nodejsInitContainerName,
+							Image:   "otel/nodejs:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      nodejsVolumeName,
+								MountPath: nodejsInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -887,12 +887,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -981,7 +981,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: nodejsVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -989,7 +989,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: nodejsVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -998,15 +998,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    nodejsInitContainerName,
-							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      nodejsVolumeName,
-								MountPath: nodejsInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -1017,6 +1008,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    nodejsInitContainerName,
+							Image:   "otel/nodejs:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      nodejsVolumeName,
+								MountPath: nodejsInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -1153,12 +1153,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -1335,7 +1335,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: pythonVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1343,7 +1343,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1352,15 +1352,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    pythonInitContainerName,
-							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -1371,6 +1362,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    pythonInitContainerName,
+							Image:   "otel/python:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      pythonVolumeName,
+								MountPath: pythonInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -1448,12 +1448,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -1546,7 +1546,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: pythonVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1554,7 +1554,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1563,15 +1563,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    pythonInitContainerName,
-							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -1582,6 +1573,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    pythonInitContainerName,
+							Image:   "otel/python:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      pythonVolumeName,
+								MountPath: pythonInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -1659,12 +1659,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -1922,7 +1922,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: dotnetVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1930,7 +1930,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -1939,15 +1939,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -1958,6 +1949,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "otel/dotnet:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: dotnetInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -2043,12 +2043,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -2124,7 +2124,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: dotnetVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -2132,7 +2132,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -2141,15 +2141,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -2160,6 +2151,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "otel/dotnet:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: dotnetInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -2245,12 +2245,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -2335,7 +2335,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: dotnetVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -2343,7 +2343,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -2352,15 +2352,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -2371,6 +2362,15 @@ func TestMutatePod(t *testing.T) {
 								MountPath: certVolumePath,
 							}},
 							WorkingDir: certVolumePath,
+						},
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "otel/dotnet:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: dotnetInstrMountPath,
+							}},
 						},
 					},
 					Containers: []corev1.Container{
@@ -2547,12 +2547,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -2735,6 +2735,12 @@ func TestMutatePod(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
+							},
 						},
 						{
 							Name:  sideCarName,
@@ -2811,18 +2817,18 @@ func TestMutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},
@@ -2915,36 +2921,9 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: certVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-					},
-					InitContainers: []corev1.Container{
-						{
-							Name:  initCertContainerName,
-							Image: shellContainerName,
-							Command: []string{"/bin/sh", "-c",
-								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      certVolumeName,
-								MountPath: certVolumePath,
-							}},
-							WorkingDir: certVolumePath,
-						},
-					},
 					Containers: []corev1.Container{
 						{
 							Name: "app",
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      certVolumeName,
-								MountPath: certVolumePath,
-							}},
 						},
 					},
 				},
@@ -3641,6 +3620,14 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
 							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
@@ -3672,16 +3659,19 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
-						{
-							Name: certVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
 					},
 					InitContainers: []corev1.Container{
+						{
+							Name:  initCertContainerName,
+							Image: shellContainerName,
+							Command: []string{"/bin/sh", "-c",
+								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
+							WorkingDir: certVolumePath,
+						},
 						{
 							Name:    javaInitContainerName,
 							Image:   "otel/java:1",
@@ -3717,17 +3707,6 @@ func TestMutatePod(t *testing.T) {
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
 							}},
-						},
-						{
-							Name:  initCertContainerName,
-							Image: shellContainerName,
-							Command: []string{"/bin/sh", "-c",
-								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      certVolumeName,
-								MountPath: certVolumePath,
-							}},
-							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -3797,12 +3776,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -3872,12 +3851,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -3923,12 +3902,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -3974,12 +3953,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -4025,12 +4004,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -4076,12 +4055,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -4143,12 +4122,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -4210,12 +4189,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -4363,6 +4342,14 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
 							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
@@ -4394,16 +4381,19 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 						},
-						{
-							Name: certVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
 					},
 					InitContainers: []corev1.Container{
+						{
+							Name:  initCertContainerName,
+							Image: shellContainerName,
+							Command: []string{"/bin/sh", "-c",
+								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
+							WorkingDir: certVolumePath,
+						},
 						{
 							Name:    javaInitContainerName,
 							Image:   "otel/java:1",
@@ -4439,17 +4429,6 @@ func TestMutatePod(t *testing.T) {
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
 							}},
-						},
-						{
-							Name:  initCertContainerName,
-							Image: shellContainerName,
-							Command: []string{"/bin/sh", "-c",
-								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      certVolumeName,
-								MountPath: certVolumePath,
-							}},
-							WorkingDir: certVolumePath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -4519,12 +4498,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -4594,12 +4573,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},
@@ -4645,12 +4624,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -4696,12 +4675,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -4747,12 +4726,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -4798,12 +4777,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -4865,12 +4844,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -4932,12 +4911,12 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -5076,19 +5055,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					InitContainers: []corev1.Container{
-						{
-							Name:  initCertContainerName,
-							Image: shellContainerName,
-							Command: []string{"/bin/sh", "-c",
-								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
-							}},
-							WorkingDir: pythonInstrMountPath,
-						},
-					},
 					Containers: []corev1.Container{
 						{
 							Name: "dotnet1",
@@ -5361,6 +5327,14 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
+							Name: certVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
 							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
@@ -5371,6 +5345,17 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
+							Name:  initCertContainerName,
+							Image: shellContainerName,
+							Command: []string{"/bin/sh", "-c",
+								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      certVolumeName,
+								MountPath: certVolumePath,
+							}},
+							WorkingDir: certVolumePath,
+						},
+						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
 							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
@@ -5378,17 +5363,6 @@ func TestMutatePod(t *testing.T) {
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
 							}},
-						},
-						{
-							Name:  initCertContainerName,
-							Image: shellContainerName,
-							Command: []string{"/bin/sh", "-c",
-								"mkdir -p amazon-cloudwatch-agent &&  echo 'open /etc/amazon-cloudwatch-app-signals-cert/tls-ca.crt: no such file or directory'  > ./amazon-cloudwatch-agent/ca.crt"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
-							}},
-							WorkingDir: dotnetInstrMountPath,
 						},
 					},
 					Containers: []corev1.Container{
@@ -5457,6 +5431,10 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      certVolumeName,
+									MountPath: certVolumePath,
+								},
 								{
 									Name:      dotnetVolumeName,
 									MountPath: dotnetInstrMountPath,

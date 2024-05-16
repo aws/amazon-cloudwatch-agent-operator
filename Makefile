@@ -88,7 +88,7 @@ ci: test
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
 test: generate fmt vet envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS}
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test -v ${GOTEST_OPTS}
 
 # Build manager binary
 .PHONY: manager

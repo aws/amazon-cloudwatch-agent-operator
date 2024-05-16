@@ -43,6 +43,10 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 	} else if idx > -1 {
 		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
 	}
+	err = injectSecret(&pod, index, nodeJSSpec.Resources)
+	if err != nil {
+		return pod, err
+	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      nodejsVolumeName,
@@ -68,10 +72,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 				MountPath: nodejsInstrMountPath,
 			}},
 		})
-		err = injectSecret(&pod, nodeJSSpec.Resources)
-		if err != nil {
-			return pod, err
-		}
+
 	}
 	return pod, nil
 }

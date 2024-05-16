@@ -35,7 +35,7 @@ func TestInjectPythonSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: pythonVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -43,7 +43,7 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -52,15 +52,6 @@ func TestInjectPythonSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-python",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-python",
-								MountPath: "/otel-auto-instrumentation-python",
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -72,17 +63,26 @@ func TestInjectPythonSDK(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-python",
-									MountPath: "/otel-auto-instrumentation-python",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -134,7 +134,7 @@ func TestInjectPythonSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-python",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -142,7 +142,7 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-python",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -151,16 +151,6 @@ func TestInjectPythonSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-python",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-python",
-								MountPath: "/otel-auto-instrumentation-python",
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -173,17 +163,27 @@ func TestInjectPythonSDK(t *testing.T) {
 							Resources:  testResourceRequirements,
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+							Resources: testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-python",
-									MountPath: "/otel-auto-instrumentation-python",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -235,7 +235,7 @@ func TestInjectPythonSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: pythonVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -243,7 +243,7 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -252,15 +252,6 @@ func TestInjectPythonSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-python",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-python",
-								MountPath: "/otel-auto-instrumentation-python",
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -272,17 +263,26 @@ func TestInjectPythonSDK(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-python",
-									MountPath: "/otel-auto-instrumentation-python",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -334,7 +334,7 @@ func TestInjectPythonSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-python",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -342,7 +342,7 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-python",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -351,15 +351,6 @@ func TestInjectPythonSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-python",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-python",
-								MountPath: "/otel-auto-instrumentation-python",
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -371,17 +362,26 @@ func TestInjectPythonSDK(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-python",
-									MountPath: "/otel-auto-instrumentation-python",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
 								},
 							},
 							Env: []corev1.EnvVar{

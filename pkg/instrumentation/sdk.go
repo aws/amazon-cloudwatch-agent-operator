@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
@@ -235,7 +236,23 @@ func getContainerIndex(containerName string, pod corev1.Pod) int {
 
 	return index
 }
-func injectSecret(pod *corev1.Pod, resources corev1.ResourceRequirements) error {
+func isVolumeMounted(pod *corev1.Pod, volumeName string) bool {
+	for _, volumes := range pod.Spec.Volumes {
+		if volumes.Name == volumeName {
+			return true
+		}
+	}
+	return false
+}
+func isCertContainerMounted(pod *corev1.Pod, initContainerName string) bool {
+	for _, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name == initContainerName {
+			return true
+		}
+	}
+	return false
+}
+func injectSecret(pod *corev1.Pod, index int, resources corev1.ResourceRequirements) error {
 	secretData, err := os.ReadFile(caBundleSecretPath)
 	var defaultVolumeLimitSize = resource.MustParse("200Mi")
 	var secret string
@@ -249,25 +266,31 @@ func injectSecret(pod *corev1.Pod, resources corev1.ResourceRequirements) error 
 		Name:      certVolumeName,
 		MountPath: certVolumePath,
 	}
-	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: certVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{
-				SizeLimit: &defaultVolumeLimitSize,
-			}},
-	})
-	for index, _ := range pod.Spec.Containers {
-		pod.Spec.Containers[index].VolumeMounts = append(pod.Spec.Containers[index].VolumeMounts, volumeMount)
+	if !isVolumeMounted(pod, certVolumeName) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: certVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: &defaultVolumeLimitSize,
+				}},
+		})
 	}
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-		Name:  initCertContainerName,
-		Image: shellContainerName,
-		Command: []string{"/bin/sh", "-c", fmt.Sprintf("mkdir -p amazon-cloudwatch-agent &&  echo '%v'  > ./amazon-cloudwatch-agent/ca.crt",
-			secret)},
-		WorkingDir:   certVolumePath,
-		Resources:    resources,
-		VolumeMounts: []corev1.VolumeMount{volumeMount},
-	})
+	container := &pod.Spec.Containers[index]
+	if container == nil {
+		return errors.New("Invalid Container")
+	}
+	pod.Spec.Containers[index].VolumeMounts = append(container.VolumeMounts, volumeMount)
+	if !isCertContainerMounted(pod, initCertContainerName) {
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+			Name:  initCertContainerName,
+			Image: shellContainerName,
+			Command: []string{"/bin/sh", "-c", fmt.Sprintf("mkdir -p amazon-cloudwatch-agent &&  echo '%v'  > ./amazon-cloudwatch-agent/ca.crt",
+				secret)},
+			WorkingDir:   certVolumePath,
+			Resources:    resources,
+			VolumeMounts: []corev1.VolumeMount{volumeMount},
+		})
+	}
 	return nil
 }
 func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod, index int) corev1.Pod {

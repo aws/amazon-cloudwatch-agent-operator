@@ -7,16 +7,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 var defaultVolumeLimitSize = resource.MustParse("200Mi")
@@ -510,7 +511,7 @@ func TestInjectJava(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: javaVolumeName,
+					Name: certVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -518,7 +519,7 @@ func TestInjectJava(t *testing.T) {
 					},
 				},
 				{
-					Name: certVolumeName,
+					Name: javaVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -527,16 +528,6 @@ func TestInjectJava(t *testing.T) {
 				},
 			},
 			InitContainers: []corev1.Container{
-				{
-					Name:    javaInitContainerName,
-					Image:   "img:1",
-					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      javaVolumeName,
-						MountPath: javaInstrMountPath,
-					}},
-					Resources: testResourceRequirements,
-				},
 				{
 					Name:  initCertContainerName,
 					Image: shellContainerName,
@@ -549,6 +540,16 @@ func TestInjectJava(t *testing.T) {
 					WorkingDir: certVolumePath,
 					Resources:  testResourceRequirements,
 				},
+				{
+					Name:    javaInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
+					}},
+					Resources: testResourceRequirements,
+				},
 			},
 			Containers: []corev1.Container{
 				{
@@ -556,12 +557,12 @@ func TestInjectJava(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      javaVolumeName,
-							MountPath: javaInstrMountPath,
-						},
-						{
 							Name:      certVolumeName,
 							MountPath: certVolumePath,
+						},
+						{
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -638,7 +639,7 @@ func TestInjectNodeJS(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: nodejsVolumeName,
+					Name: certVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -646,7 +647,7 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 				},
 				{
-					Name: certVolumeName,
+					Name: nodejsVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -655,16 +656,6 @@ func TestInjectNodeJS(t *testing.T) {
 				},
 			},
 			InitContainers: []corev1.Container{
-				{
-					Name:    nodejsInitContainerName,
-					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      nodejsVolumeName,
-						MountPath: nodejsInstrMountPath,
-					}},
-					Resources: testResourceRequirements,
-				},
 				{
 					Name:  initCertContainerName,
 					Image: shellContainerName,
@@ -677,6 +668,16 @@ func TestInjectNodeJS(t *testing.T) {
 					WorkingDir: certVolumePath,
 					Resources:  testResourceRequirements,
 				},
+				{
+					Name:    nodejsInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      nodejsVolumeName,
+						MountPath: nodejsInstrMountPath,
+					}},
+					Resources: testResourceRequirements,
+				},
 			},
 			Containers: []corev1.Container{
 				{
@@ -684,12 +685,12 @@ func TestInjectNodeJS(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      nodejsVolumeName,
-							MountPath: nodejsInstrMountPath,
-						},
-						{
 							Name:      certVolumeName,
 							MountPath: certVolumePath,
+						},
+						{
+							Name:      nodejsVolumeName,
+							MountPath: nodejsInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -766,7 +767,7 @@ func TestInjectPython(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: pythonVolumeName,
+					Name: certVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -774,7 +775,7 @@ func TestInjectPython(t *testing.T) {
 					},
 				},
 				{
-					Name: certVolumeName,
+					Name: pythonVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -783,15 +784,6 @@ func TestInjectPython(t *testing.T) {
 				},
 			},
 			InitContainers: []corev1.Container{
-				{
-					Name:    pythonInitContainerName,
-					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      pythonVolumeName,
-						MountPath: pythonInstrMountPath,
-					}},
-				},
 				{
 					Name:  initCertContainerName,
 					Image: shellContainerName,
@@ -803,6 +795,15 @@ func TestInjectPython(t *testing.T) {
 					}},
 					WorkingDir: certVolumePath,
 				},
+				{
+					Name:    pythonInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
+					}},
+				},
 			},
 			Containers: []corev1.Container{
 				{
@@ -810,12 +811,12 @@ func TestInjectPython(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      pythonVolumeName,
-							MountPath: pythonInstrMountPath,
-						},
-						{
 							Name:      certVolumeName,
 							MountPath: certVolumePath,
+						},
+						{
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -907,7 +908,7 @@ func TestInjectDotNet(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: dotnetVolumeName,
+					Name: certVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -915,7 +916,7 @@ func TestInjectDotNet(t *testing.T) {
 					},
 				},
 				{
-					Name: certVolumeName,
+					Name: dotnetVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -924,15 +925,6 @@ func TestInjectDotNet(t *testing.T) {
 				},
 			},
 			InitContainers: []corev1.Container{
-				{
-					Name:    dotnetInitContainerName,
-					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      dotnetVolumeName,
-						MountPath: dotnetInstrMountPath,
-					}},
-				},
 				{
 					Name:  initCertContainerName,
 					Image: shellContainerName,
@@ -944,6 +936,15 @@ func TestInjectDotNet(t *testing.T) {
 					}},
 					WorkingDir: certVolumePath,
 				},
+				{
+					Name:    dotnetInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      dotnetVolumeName,
+						MountPath: dotnetInstrMountPath,
+					}},
+				},
 			},
 			Containers: []corev1.Container{
 				{
@@ -951,12 +952,12 @@ func TestInjectDotNet(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      dotnetVolumeName,
-							MountPath: dotnetInstrMountPath,
-						},
-						{
 							Name:      certVolumeName,
 							MountPath: certVolumePath,
+						},
+						{
+							Name:      dotnetVolumeName,
+							MountPath: dotnetInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -1147,12 +1148,12 @@ func TestInjectGo(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									MountPath: "/sys/kernel/debug",
-									Name:      kernelDebugVolumeName,
-								},
-								{
 									MountPath: certVolumePath,
 									Name:      certVolumeName,
+								},
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1190,18 +1191,18 @@ func TestInjectGo(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},
@@ -1277,12 +1278,12 @@ func TestInjectGo(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									MountPath: "/sys/kernel/debug",
-									Name:      kernelDebugVolumeName,
-								},
-								{
 									MountPath: certVolumePath,
 									Name:      certVolumeName,
+								},
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1333,18 +1334,18 @@ func TestInjectGo(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},

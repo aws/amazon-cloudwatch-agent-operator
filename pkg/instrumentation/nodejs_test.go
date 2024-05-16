@@ -35,7 +35,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-nodejs",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -43,7 +43,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-nodejs",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -52,15 +52,6 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-nodejs",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-nodejs",
-								MountPath: "/otel-auto-instrumentation-nodejs",
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -72,17 +63,26 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-nodejs",
-									MountPath: "/otel-auto-instrumentation-nodejs",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -118,7 +118,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-nodejs",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -126,7 +126,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-nodejs",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -135,16 +135,6 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-nodejs",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-nodejs",
-								MountPath: "/otel-auto-instrumentation-nodejs",
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -157,17 +147,27 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+							Resources: testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-nodejs",
-									MountPath: "/otel-auto-instrumentation-nodejs",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
 								},
 							},
 							Env: []corev1.EnvVar{

@@ -97,7 +97,10 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
 
 	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
-
+	err = injectSecret(&pod, index, dotNetSpec.Resources)
+	if err != nil {
+		return pod, err
+	}
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      dotnetVolumeName,
 		MountPath: dotnetInstrMountPath,
@@ -123,10 +126,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 			Resources:    dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, dotNetSpec.Resources)
-		if err != nil {
-			return pod, err
-		}
+
 	}
 	return pod, nil
 }

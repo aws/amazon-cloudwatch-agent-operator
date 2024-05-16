@@ -86,12 +86,14 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 			Value: "http/protobuf",
 		})
 	}
-
+	err = injectSecret(&pod, index, pythonSpec.Resources)
+	if err != nil {
+		return pod, err
+	}
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      pythonVolumeName,
 		MountPath: pythonInstrMountPath,
 	})
-
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, pythonInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
@@ -112,10 +114,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 			Resources:    pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, pythonSpec.Resources)
-		if err != nil {
-			return pod, err
-		}
+
 	}
 	return pod, nil
 }

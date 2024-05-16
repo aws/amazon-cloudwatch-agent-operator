@@ -37,7 +37,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-dotnet",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -45,7 +45,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -54,16 +54,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-dotnet",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-dotnet",
-								MountPath: "/otel-auto-instrumentation-dotnet",
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -76,17 +66,27 @@ func TestInjectDotNetSDK(t *testing.T) {
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+							Resources: testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-dotnet",
-									MountPath: "/otel-auto-instrumentation-dotnet",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -166,7 +166,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation-dotnet",
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -174,7 +174,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -183,15 +183,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    "opentelemetry-auto-instrumentation-dotnet",
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "opentelemetry-auto-instrumentation-dotnet",
-								MountPath: "/otel-auto-instrumentation-dotnet",
-							}},
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -203,17 +194,26 @@ func TestInjectDotNetSDK(t *testing.T) {
 							}},
 							WorkingDir: certVolumePath,
 						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation-dotnet",
-									MountPath: "/otel-auto-instrumentation-dotnet",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -418,7 +418,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: dotnetVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -426,7 +426,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -435,16 +435,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: "/otel-auto-instrumentation-dotnet",
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -457,17 +447,27 @@ func TestInjectDotNetSDK(t *testing.T) {
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+							Resources: testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: "/otel-auto-instrumentation-dotnet",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -521,7 +521,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: dotnetVolumeName,
+							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -529,7 +529,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 						},
 						{
-							Name: certVolumeName,
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
@@ -538,16 +538,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 					InitContainers: []corev1.Container{
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: "/otel-auto-instrumentation-dotnet",
-							}},
-							Resources: testResourceRequirements,
-						},
 						{
 							Name:  initCertContainerName,
 							Image: shellContainerName,
@@ -560,17 +550,27 @@ func TestInjectDotNetSDK(t *testing.T) {
 							WorkingDir: certVolumePath,
 							Resources:  testResourceRequirements,
 						},
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+							Resources: testResourceRequirements,
+						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dotnetVolumeName,
-									MountPath: "/otel-auto-instrumentation-dotnet",
-								},
-								{
 									Name:      certVolumeName,
 									MountPath: certVolumePath,
+								},
+								{
+									Name:      dotnetVolumeName,
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{

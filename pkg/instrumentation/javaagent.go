@@ -43,7 +43,10 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 	} else {
 		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
 	}
-
+	err = injectSecret(&pod, index, javaSpec.Resources)
+	if err != nil {
+		return pod, err
+	}
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      javaVolumeName,
 		MountPath: javaInstrMountPath,
@@ -69,10 +72,6 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 			Resources:    javaSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{volumeMount},
 		})
-		err = injectSecret(&pod, javaSpec.Resources)
-		if err != nil {
-			return pod, err
-		}
 	}
 	return pod, err
 }

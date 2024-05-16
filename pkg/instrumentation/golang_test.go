@@ -128,12 +128,12 @@ func TestInjectGoSDK(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									MountPath: "/sys/kernel/debug",
-									Name:      kernelDebugVolumeName,
-								},
-								{
 									MountPath: certVolumePath,
 									Name:      certVolumeName,
+								},
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -146,18 +146,18 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},
@@ -215,12 +215,12 @@ func TestInjectGoSDK(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									MountPath: "/sys/kernel/debug",
-									Name:      kernelDebugVolumeName,
-								},
-								{
 									MountPath: certVolumePath,
 									Name:      certVolumeName,
+								},
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -233,18 +233,18 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},
@@ -294,12 +294,12 @@ func TestInjectGoSDK(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									MountPath: "/sys/kernel/debug",
-									Name:      kernelDebugVolumeName,
-								},
-								{
 									MountPath: certVolumePath,
 									Name:      certVolumeName,
+								},
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -316,18 +316,18 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kernelDebugVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kernelDebugVolumePath,
-								},
-							},
-						},
-						{
 							Name: certVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
 								},
 							},
 						},
