@@ -40,6 +40,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					ServiceAccountName: ServiceAccountName(params.DcgmExp),
 					Containers:         []corev1.Container{Container(params.Config, params.Log, params.DcgmExp)},
 					Volumes:            Volumes(params.DcgmExp),
+					Tolerations:        params.DcgmExp.Spec.Tolerations,
 					NodeSelector:       params.DcgmExp.Spec.NodeSelector,
 					Affinity:           params.DcgmExp.Spec.Affinity,
 				},
