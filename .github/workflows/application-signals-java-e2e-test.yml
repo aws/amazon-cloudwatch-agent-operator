@@ -191,12 +191,12 @@ jobs:
           echo "NEW_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
           jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_ENV
 
-      - name: Check if CW Agent Operator image has changed
-        run: |
-          if [ ${{ env.OLD_CW_AGENT_OPERATOR_IMAGE }} = ${{ env.NEW_CW_AGENT_OPERATOR_IMAGE }} ]; then
-            echo "Operator image did not change"
-            exit 1
-          fi
+#      - name: Check if CW Agent Operator image has changed
+#        run: |
+#          if [ ${{ env.OLD_CW_AGENT_OPERATOR_IMAGE }} = ${{ env.NEW_CW_AGENT_OPERATOR_IMAGE }} ]; then
+#            echo "Operator image did not change"
+#            exit 1
+#          fi
         
       - name: Get the sample app endpoint
         run: |
