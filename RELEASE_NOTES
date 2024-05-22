@@ -1,4 +1,12 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.4.0 (2024-05-22)
+========================================================================
+Enhancements:
+* [ContainerInsights] Add status handlers for Neuron and DCGM resources to reduce logging (#169)
+* [ApplicationSignals] Support application_signals instead of app_signals (#172)
+* [ContainerInsights] Support tolerations for Neuron and DCGM custom resources (#175)
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.3.1 (2024-04-24)
 ========================================================================
 Enhancements:
