@@ -1,5 +1,5 @@
 # Represents the latest stable release of the CloudWatch Agent
-cloudwatch-agent=1.300040.0b650
+cloudwatch-agent=1.300040.0
 
 # Represents the current release of the CloudWatch Agent Operator.
 operator=1.4.0
