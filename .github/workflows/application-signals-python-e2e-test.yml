@@ -33,7 +33,7 @@ env:
   LOG_GROUP: /aws/application-signals/data
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
   APPLICATION_SIGNALS_ADOT_IMAGE: 637423224110.dkr.ecr.us-east-1.amazonaws.com/aws-observability/adot-autoinstrumentation-python-staging:0.2.0-408d938
-  APPLICATION_SIGNALS_CW_AGENT_IMAGE: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-integration-test:00ef994d0feaa8ebe03da61cd9fcfcc1f20ca650
+  APPLICATION_SIGNALS_CW_AGENT_IMAGE: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-integration-test:eca8174758d95308006632ec4d5533d765db9ca8
 
 jobs:
   appsignals-python-e2e-test:
