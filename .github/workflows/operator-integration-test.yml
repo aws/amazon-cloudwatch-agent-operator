@@ -71,7 +71,6 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-#         sleep is to make sure the app is fully active before restart wait doesn't work as accurately
           sleep 5 
           kubectl get pods -A 
           kubectl describe pods -n default
