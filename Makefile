@@ -50,7 +50,7 @@ CHLOGGEN ?= $(LOCALBIN)/chloggen
 ADDLICENSE ?= $(LOCALBIN)/addlicense
 
 KUSTOMIZE_VERSION ?= v5.0.3
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
+CONTROLLER_TOOLS_VERSION ?= v0.14.0
 ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 CW_AGENT_OPERATOR_IMPORT_PATH = "github.com/aws/amazon-cloudwatch-agent-operator"
 
