@@ -6,11 +6,12 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"math/big"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
 func TestJavaAndPythonDaemonSet(t *testing.T) {
