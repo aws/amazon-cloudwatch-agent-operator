@@ -6,11 +6,18 @@ package annotations
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
+
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -18,11 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
