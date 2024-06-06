@@ -31,6 +31,8 @@ const (
 	AppSignalsHttp  = "appsignals-http"
 	AppSignalsProxy = "appsignals-xray"
 	EMF             = "emf"
+	EMFTcp          = "emf-tcp"
+	EMFUdp          = "emf-udp"
 	CWA             = "cwa-"
 )
 
@@ -43,25 +45,27 @@ var receiverDefaultPortsMap = map[string]int32{
 	EMF:        25888,
 }
 
-var AppSignalsPortToServicePortMap = map[int32]corev1.ServicePort{
-	4315: {
+var AppSignalsPortToServicePortMap = map[int32][]corev1.ServicePort{
+	4315: {{
 		Name: AppSignalsGrpc,
 		Port: 4315,
-	},
-	4316: {
+	}},
+	4316: {{
 		Name: AppSignalsHttp,
 		Port: 4316,
-	},
-	2000: {
+	}},
+	2000: {{
 		Name: AppSignalsProxy,
 		Port: 2000,
-	},
+	}},
 }
 
-func PortMapToServicePortList(portMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
 	ports := make([]corev1.ServicePort, 0, len(portMap))
-	for _, p := range portMap {
-		ports = append(ports, p)
+	for _, plist := range portMap {
+		for _, p := range plist {
+			ports = append(ports, p)
+		}
 	}
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
@@ -118,7 +122,7 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 	return PortMapToServicePortList(servicePortsMap)
 }
 
-func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
+func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
 	if config.Metrics == nil || config.Metrics.MetricsCollected == nil {
 		return
 	}
@@ -132,7 +136,7 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 	}
 }
 
-func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32]corev1.ServicePort) {
+func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32][]corev1.ServicePort) {
 	if serviceAddress != "" {
 		port, err := portFromEndpoint(serviceAddress)
 		if err != nil {
@@ -146,7 +150,7 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 					Port:     port,
 					Protocol: protocol,
 				}
-				servicePortsMap[port] = sp
+				servicePortsMap[port] = []corev1.ServicePort{sp}
 			}
 		}
 	} else {
@@ -158,27 +162,33 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 				Port:     receiverDefaultPortsMap[receiverName],
 				Protocol: protocol,
 			}
-			servicePortsMap[receiverDefaultPortsMap[receiverName]] = sp
+			servicePortsMap[receiverDefaultPortsMap[receiverName]] = []corev1.ServicePort{sp}
 		}
 	}
 }
 
-func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) {
+func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
 	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
 	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.EMF != nil {
 		if _, ok := servicePortsMap[receiverDefaultPortsMap[EMF]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
 		} else {
-			sp := corev1.ServicePort{
-				Name: EMF,
-				Port: receiverDefaultPortsMap[EMF],
+			tcp := corev1.ServicePort{
+				Name:     EMFTcp,
+				Port:     receiverDefaultPortsMap[EMF],
+				Protocol: corev1.ProtocolTCP,
 			}
-			servicePortsMap[receiverDefaultPortsMap[EMF]] = sp
+			udp := corev1.ServicePort{
+				Name:     EMFUdp,
+				Port:     receiverDefaultPortsMap[EMF],
+				Protocol: corev1.ProtocolUDP,
+			}
+			servicePortsMap[receiverDefaultPortsMap[EMF]] = []corev1.ServicePort{tcp, udp}
 		}
 	}
 }
 
-func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32]corev1.ServicePort) []corev1.ServicePort {
+func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
 	var tracesPorts []corev1.ServicePort
 
 	if config.Traces == nil || config.Traces.TracesCollected == nil {
@@ -203,8 +213,8 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 	return tracesPorts
 }
 
-func getAppSignalsServicePortsMap() map[int32]corev1.ServicePort {
-	servicePortMap := make(map[int32]corev1.ServicePort)
+func getAppSignalsServicePortsMap() map[int32][]corev1.ServicePort {
+	servicePortMap := make(map[int32][]corev1.ServicePort)
 	for k, v := range AppSignalsPortToServicePortMap {
 		servicePortMap[k] = v
 	}
