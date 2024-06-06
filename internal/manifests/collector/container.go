@@ -34,14 +34,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		image = cfg.CollectorImage()
 	}
 
-	ports := getContainerPorts(logger, agent.Spec.Config)
-	for _, p := range agent.Spec.Ports {
-		ports[p.Name] = corev1.ContainerPort{
-			Name:          p.Name,
-			ContainerPort: p.Port,
-			Protocol:      p.Protocol,
-		}
-	}
+	ports := getContainerPorts(logger, agent.Spec.Config, agent.Spec.Ports)
 
 	var volumeMounts []corev1.VolumeMount
 	argsMap := agent.Spec.Args
@@ -125,7 +118,7 @@ func getVolumeMounts(os string) corev1.VolumeMount {
 	return volumeMount
 }
 
-func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
+func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
 	var servicePorts []corev1.ServicePort
 	config, err := adapters.ConfigStructFromJSONString(cfg)
@@ -151,6 +144,14 @@ func getContainerPorts(logger logr.Logger, cfg string) map[string]corev1.Contain
 		}
 		ports[truncName] = corev1.ContainerPort{
 			Name:          truncName,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
+		}
+	}
+
+	for _, p := range specPorts {
+		ports[p.Name] = corev1.ContainerPort{
+			Name:          p.Name,
 			ContainerPort: p.Port,
 			Protocol:      p.Protocol,
 		}
