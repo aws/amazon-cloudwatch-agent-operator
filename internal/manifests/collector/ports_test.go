@@ -1,10 +1,14 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package collector
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"strings"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/assert"
 )

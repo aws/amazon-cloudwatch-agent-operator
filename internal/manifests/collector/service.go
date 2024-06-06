@@ -82,26 +82,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
-	ports := PortMapToServicePortList(AppSignalsPortToServicePortMap)
-
-	if len(params.OtelCol.Spec.Ports) > 0 {
-		// we should add all the ports from the CR
-		// there are two cases where problems might occur:
-		// 1) when the port number is already being used by a receiver
-		// 2) same, but for the port name
-		//
-		// in the first case, we remove the port we inferred from the list
-		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Ports)
-		var resultingInferredPorts []corev1.ServicePort
-		for _, inferred := range ports {
-			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
-				resultingInferredPorts = append(resultingInferredPorts, *filtered)
-			}
-		}
-
-		ports = append(params.OtelCol.Spec.Ports, resultingInferredPorts...)
-	}
+	ports := getContainerPorts(params.Log, params.OtelCol.Spec.Config, params.OtelCol.Spec.Ports)
 
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
@@ -126,9 +107,21 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			InternalTrafficPolicy: &trafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			ClusterIP:             "",
-			Ports:                 ports,
+			Ports:                 containerPortsToServicePortList(ports),
 		},
 	}, nil
+}
+
+func containerPortsToServicePortList(portMap map[string]corev1.ContainerPort) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for _, p := range portMap {
+		ports = append(ports, corev1.ServicePort{
+			Name:     p.Name,
+			Port:     p.ContainerPort,
+			Protocol: p.Protocol,
+		})
+	}
+	return ports
 }
 
 func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
