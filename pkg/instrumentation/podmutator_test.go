@@ -59,8 +59,8 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -95,7 +95,7 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 		Client: fake.NewClientBuilder().Build(),
 		Logger: logr.Logger{},
 	}
-	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace)
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, make(map[Type]map[string]string))
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
@@ -5353,6 +5353,159 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			test.instrumentations.setInstrumentationLanguageContainers(test.containers)
 			assert.Equal(t, test.expectedInstrumentations, test.instrumentations)
+		})
+	}
+}
+
+func Test_getJavaEnvVar(t *testing.T) {
+	type args struct {
+		ns  corev1.Namespace
+		pod corev1.Pod
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		{
+			name: "turn on jmx jvm",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							annotationJMXJVM: "true",
+						},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: map[string]string{
+				"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT":            "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+				"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED": "false",
+				"OTEL_JMX_ENABLED":                               "true",
+				"OTEL_JMX_TARGET_SYSTEM":                         JMXAnnotationInjectionMap[annotationJMXJVM],
+			},
+		},
+		{
+			name: "turn on jmx tomcat",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							annotationJMXTomcat: "true",
+						},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: map[string]string{
+				"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT":            "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+				"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED": "false",
+				"OTEL_JMX_ENABLED":                               "true",
+				"OTEL_JMX_TARGET_SYSTEM":                         JMXAnnotationInjectionMap[annotationJMXTomcat],
+			},
+		},
+		{
+			name: "turn on jmx jvm tomcat",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							annotationJMXJVM:    "true",
+							annotationJMXTomcat: "true",
+						},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: map[string]string{
+				"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT":            "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+				"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED": "false",
+				"OTEL_JMX_ENABLED":                               "true",
+				"OTEL_JMX_TARGET_SYSTEM":                         JMXAnnotationInjectionMap[annotationJMXJVM] + "," + JMXAnnotationInjectionMap[annotationJMXTomcat],
+			},
+		},
+		{
+			name: "turn on jmx jvm tomcat kafka kafka-consumer kafka-producer",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							annotationJMXJVM:           "true",
+							annotationJMXTomcat:        "true",
+							annotationJMXKafka:         "true",
+							annotationJMXKafkaConsumer: "true",
+							annotationJMXKafkaProducer: "true",
+						},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: map[string]string{
+				"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT":            "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+				"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED": "false",
+				"OTEL_JMX_ENABLED":                               "true",
+				"OTEL_JMX_TARGET_SYSTEM":                         JMXAnnotationInjectionMap[annotationJMXJVM] + "," + JMXAnnotationInjectionMap[annotationJMXTomcat] + "," + JMXAnnotationInjectionMap[annotationJMXKafka] + "," + JMXAnnotationInjectionMap[annotationJMXKafkaConsumer] + "," + JMXAnnotationInjectionMap[annotationJMXKafkaProducer],
+			},
+		},
+		{
+			name: "turn on none",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							annotationJMXJVM:           "false",
+							annotationJMXTomcat:        "false",
+							annotationJMXKafka:         "false",
+							annotationJMXKafkaProducer: "false",
+							annotationJMXKafkaConsumer: "false",
+						},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "default",
+			args: args{
+				ns: corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+				pod: corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, getJavaEnvVar(tt.args.ns, tt.args.pod), "getJavaEnvVar(%v, %v)", tt.args.ns, tt.args.pod)
 		})
 	}
 }

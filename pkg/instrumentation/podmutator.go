@@ -220,7 +220,11 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	// We bail out if any annotation fails to process.
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
+	javaEnvVar := getJavaEnvVar(ns, pod)
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava, map[Type]map[string]string{
+		TypeJava: javaEnvVar,
+	}); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -232,7 +236,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -244,7 +248,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -256,7 +260,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -269,7 +273,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -281,7 +285,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApacheHttpd); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApacheHttpd, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -293,7 +297,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -305,7 +309,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
 	}
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk, nil); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
@@ -361,7 +365,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	return modifiedPod, nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string, extraEnvVar map[Type]map[string]string) (*v1alpha1.Instrumentation, error) {
 	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
@@ -369,7 +373,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, extraEnvVar)
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -388,7 +392,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, extraEnvVar map[Type]map[string]string) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
@@ -402,12 +406,39 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 		if err != nil {
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
 		}
-		return getDefaultInstrumentation(config)
+		return getDefaultInstrumentation(config, extraEnvVar)
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
 		return &otelInsts.Items[0], nil
 	}
+}
+
+func getJavaEnvVar(ns corev1.Namespace, pod corev1.Pod) map[string]string {
+	targetSystemsArray := getTargetSystems(ns, pod, annotationJMXJVM, make([]string, 0))
+	targetSystemsArray = getTargetSystems(ns, pod, annotationJMXTomcat, targetSystemsArray)
+	targetSystemsArray = getTargetSystems(ns, pod, annotationJMXKafka, targetSystemsArray)
+	targetSystemsArray = getTargetSystems(ns, pod, annotationJMXKafkaConsumer, targetSystemsArray)
+	targetSystemsArray = getTargetSystems(ns, pod, annotationJMXKafkaProducer, targetSystemsArray)
+	targetSystems := strings.Join(targetSystemsArray, ",")
+	if targetSystems != "" {
+		return map[string]string{
+			"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT":            "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+			"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED": "false",
+			"OTEL_JMX_ENABLED":                               "true",
+			"OTEL_JMX_TARGET_SYSTEM":                         targetSystems,
+		}
+	}
+	return nil
+}
+
+func getTargetSystems(ns corev1.Namespace, pod corev1.Pod, annotation string, targets []string) []string {
+	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotation)
+
+	if strings.EqualFold(instValue, "true") {
+		return append(targets, JMXAnnotationInjectionMap[annotation])
+	}
+	return targets
 }
 
 func GetAmazonCloudWatchAgentResource(ctx context.Context, c client.Client, name string) v1alpha1.AmazonCloudWatchAgent {

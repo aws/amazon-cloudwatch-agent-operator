@@ -47,8 +47,9 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "test", Value: "test"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -98,8 +99,9 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "test", Value: "test"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -200,7 +202,11 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, map[Type]map[string]string{
+				TypeJava: {
+					"test": "test",
+				},
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return

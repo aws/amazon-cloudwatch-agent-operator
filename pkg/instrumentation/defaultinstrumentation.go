@@ -24,7 +24,7 @@ const (
 	httpsPrefix = "https://"
 )
 
-func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, extraEnvVar map[Type]map[string]string) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -41,6 +41,32 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 		if appSignalsConfig != nil && appSignalsConfig.TLS != nil {
 			exporterPrefix = httpsPrefix
 		}
+	}
+
+	javaEnvVar := []corev1.EnvVar{
+		{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+		{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+		{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+		{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+		{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+		{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+		{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
+		{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+		{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+	}
+
+	jmxEnabled := false
+	for key, value := range extraEnvVar[TypeJava] {
+		if key == "OTEL_JMX_ENABLED" && value == "true" {
+			jmxEnabled = true
+		}
+		javaEnvVar = append(javaEnvVar, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+	if !jmxEnabled {
+		javaEnvVar = append(javaEnvVar, corev1.EnvVar{Name: "OTEL_METRICS_EXPORTER", Value: "none"})
 	}
 
 	return &v1alpha1.Instrumentation{
@@ -62,18 +88,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 			},
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-				},
+				Env:   javaEnvVar,
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,

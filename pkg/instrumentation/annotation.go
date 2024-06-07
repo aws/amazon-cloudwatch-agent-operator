@@ -33,6 +33,24 @@ const (
 	annotationInjectNginxContainersName       = "instrumentation.opentelemetry.io/inject-nginx-container-names"
 )
 
+const (
+	annotationJMXJVM           = "cloudwatch.aws.amazon.com/inject-jmx-jvm"
+	annotationJMXTomcat        = "cloudwatch.aws.amazon.com/inject-jmx-tomcat"
+	annotationJMXKafka         = "cloudwatch.aws.amazon.com/inject-jmx-kafka"
+	annotationJMXKafkaConsumer = "cloudwatch.aws.amazon.com/inject-jmx-kafka-consumer"
+	annotationJMXKafkaProducer = "cloudwatch.aws.amazon.com/inject-jmx-kafka-producer"
+)
+
+var (
+	JMXAnnotationInjectionMap = map[string]string{
+		annotationJMXJVM:           "jvm",
+		annotationJMXTomcat:        "tomcat",
+		annotationJMXKafka:         "kafka",
+		annotationJMXKafkaConsumer: "kafka-consumer",
+		annotationJMXKafkaProducer: "kafka-producer",
+	}
+)
+
 // annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.
 func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta, annotation string) string {
 	// is the pod annotated with instructions to inject sidecars? is the namespace annotated?
