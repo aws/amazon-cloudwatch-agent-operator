@@ -19,7 +19,7 @@ const (
 
 var (
 	commandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
-	commandWindows = []string{"copy", "javaagent.jar", javaInstrMountPath}
+	commandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPath}
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
