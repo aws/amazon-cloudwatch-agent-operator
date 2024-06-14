@@ -17,6 +17,11 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
+var (
+	commandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
+	commandWindows = []string{"copy", "javaagent.jar", javaInstrMountPath}
+)
+
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
@@ -59,10 +64,15 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 				},
 			}})
 
+		command := commandLinux
+		if pod.Spec.NodeSelector["kubernetes.io/os"] == "windows" {
+			command = commandWindows
+		}
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      javaInitContainerName,
 			Image:     javaSpec.Image,
-			Command:   []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+			Command:   command,
 			Resources: javaSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      javaVolumeName,
