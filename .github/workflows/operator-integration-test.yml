@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  AmazonCloudWatchAgentOperatorIntegrationTest:
-    name: AmazonCloudWatchAgentOperatorIntegrationTest
+  InstrumentationTest:
+    name: InstrumentationTest
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -53,8 +53,9 @@ jobs:
       - name: Deploy operator to minikube
         run: |
           make deploy
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
-      - name: Test case for AmazonCloudWatchAgent pod creation
+      - name: Test case for cloudwatch agent pod creation
         run: |
           kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset.yaml -n amazon-cloudwatch
           sleep 5
@@ -80,7 +81,7 @@ jobs:
       - name: Test for defined instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
@@ -91,7 +92,7 @@ jobs:
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
@@ -100,7 +101,7 @@ jobs:
       - name: Test for defined instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
@@ -111,7 +112,7 @@ jobs:
       - name: Test for default instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
@@ -120,7 +121,7 @@ jobs:
       - name: Test for defined instrumentation resources for python and java
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
