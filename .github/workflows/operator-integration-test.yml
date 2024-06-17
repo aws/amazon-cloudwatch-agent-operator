@@ -53,6 +53,7 @@ jobs:
       - name: Deploy operator to minikube
         run: |
           make deploy
+          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       - name: Test case for cloudwatch agent pod creation
         run: |
