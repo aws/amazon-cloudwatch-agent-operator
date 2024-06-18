@@ -10,16 +10,17 @@ import (
 )
 
 const (
-	envJavaToolsOptions   = "JAVA_TOOL_OPTIONS"
-	javaJVMArgument       = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
-	javaInitContainerName = initContainerName + "-java"
-	javaVolumeName        = volumeName + "-java"
-	javaInstrMountPath    = "/otel-auto-instrumentation-java"
+	envJavaToolsOptions       = "JAVA_TOOL_OPTIONS"
+	javaJVMArgument           = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+	javaInitContainerName     = initContainerName + "-java"
+	javaVolumeName            = volumeName + "-java"
+	javaInstrMountPath        = "/otel-auto-instrumentation-java"
+	javaInstrMountPathWindows = "\\otel-auto-instrumentation-java"
 )
 
 var (
 	commandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
-	commandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPath}
+	commandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPathWindows}
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
