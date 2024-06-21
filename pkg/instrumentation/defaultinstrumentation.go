@@ -24,7 +24,7 @@ const (
 	httpsPrefix = "https://"
 )
 
-func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -47,7 +47,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 		}
 	}
 
-	return &v1alpha1.Instrumentation{
+	instrumentation := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: defaultAPIVersion,
@@ -100,12 +100,12 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
@@ -113,5 +113,13 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 				},
 			},
 		},
-	}, nil
+	}
+
+	if isWindowsPod {
+		//instrumentation.Spec.Java.Image = instrumentation.Spec.Java.Image + "-windows"
+		//instrumentation.Spec.Python.Image = instrumentation.Spec.Python.Image + "-windows"
+		instrumentation.Spec.NodeJS.Image = instrumentation.Spec.NodeJS.Image + "-windows"
+	}
+
+	return instrumentation, nil
 }

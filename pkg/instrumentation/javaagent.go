@@ -66,7 +66,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 			}})
 
 		command := commandLinux
-		if pod.Spec.NodeSelector["kubernetes.io/os"] == "windows" {
+		if isWindowsPod(pod) {
 			command = commandWindows
 		}
 
