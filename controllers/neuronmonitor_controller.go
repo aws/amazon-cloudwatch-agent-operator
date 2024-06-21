@@ -17,12 +17,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/neuronmonitor"
-
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/neuronmonitor"
+	neuronmonitorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/neuronmonitor"
 )
 
 // NeuronMonitorReconciler reconciles a NeuronMonitor object.
@@ -107,7 +106,7 @@ func (r *NeuronMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 	err := reconcileDesiredObjects(ctx, r.Client, log, &params.NeuronExp, params.Scheme, desiredObjects...)
-	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
+	return neuronmonitorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // BuildNeuronMonitor returns the generation and collected errors of all manifests for a given instance.

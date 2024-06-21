@@ -7,11 +7,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {

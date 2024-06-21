@@ -83,7 +83,7 @@ jobs:
 
   e2e-test:
     needs: MakeBinary
-    uses: ./.github/workflows/appsignals-e2e-test.yml
+    uses: ./.github/workflows/application-signals-e2e-test.yml
     secrets: inherit
     with:
       test-java-cluster-name: 'e2e-cw-agent-operator-test'

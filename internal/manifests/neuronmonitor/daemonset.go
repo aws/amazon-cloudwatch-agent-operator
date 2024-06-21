@@ -40,6 +40,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					ServiceAccountName: ServiceAccountName(params.NeuronExp),
 					Containers:         []corev1.Container{Container(params.Config, params.Log, params.NeuronExp)},
 					Volumes:            Volumes(params.NeuronExp),
+					Tolerations:        params.NeuronExp.Spec.Tolerations,
 					NodeSelector:       params.NeuronExp.Spec.NodeSelector,
 					Affinity:           params.NeuronExp.Spec.Affinity,
 				},
