@@ -41,8 +41,8 @@ const (
 )
 
 var (
-	commandLinux   = []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath}
-	commandWindows = []string{"CMD", "/c", "xcopy", "/e", "autoinstrumentation\\*", dotnetInstrMountPathWindows}
+	dotNetCommandLinux   = []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath}
+	dotNetCommandWindows = []string{"CMD", "/c", "xcopy", "/e", "autoinstrumentation\\*", dotnetInstrMountPathWindows}
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
@@ -119,9 +119,9 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				},
 			}})
 
-		command := commandLinux
+		command := dotNetCommandLinux
 		if isWindowsPod(pod) {
-			command = commandWindows
+			command = dotNetCommandWindows
 		}
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
