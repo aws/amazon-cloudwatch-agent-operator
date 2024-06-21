@@ -31,12 +31,18 @@ const (
 	dotnetVolumeName                    = volumeName + "-dotnet"
 	dotnetInitContainerName             = initContainerName + "-dotnet"
 	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
+	dotnetInstrMountPathWindows         = "\\otel-auto-instrumentation-dotnet"
 )
 
 // Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
 const (
 	dotNetRuntimeLinuxGlibc = "linux-x64"
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
+)
+
+var (
+	commandLinux   = []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath}
+	commandWindows = []string{"CMD", "/c", "xcopy", "/e", "autoinstrumentation\\*", dotnetInstrMountPathWindows}
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
@@ -113,10 +119,15 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				},
 			}})
 
+		command := commandLinux
+		if isWindowsPod(pod) {
+			command = commandWindows
+		}
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+			Command:   command,
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      dotnetVolumeName,
