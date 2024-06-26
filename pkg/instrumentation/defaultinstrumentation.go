@@ -44,7 +44,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 		//javaInstrumentationImage = javaInstrumentationImage + "-windows"
 		//pythonInstrumentationImage = pythonInstrumentationImage + "-windows"
 		dotNetInstrumentationImage = dotNetInstrumentationImage + "-windows"
-		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows.amazon-cloudwatch.svc.cluster.local"
+		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
 	}
 
 	// set protocol by checking cloudwatch agent config for tls setting
