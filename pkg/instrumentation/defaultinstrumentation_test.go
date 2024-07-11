@@ -18,6 +18,7 @@ import (
 func Test_getDefaultInstrumentation(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -26,7 +27,7 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -65,6 +66,24 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
+			//TODO: temporary environment variables. Update with the latest values from the ADOT SDK for NodeJS
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_NODEJS_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_NODEJS_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
@@ -77,7 +96,7 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -116,6 +135,24 @@ func Test_getDefaultInstrumentation(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
+			//TODO: temporary environment variables. Update with the latest values from the ADOT SDK for NodeJS
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_NODEJS_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_NODEJS_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},

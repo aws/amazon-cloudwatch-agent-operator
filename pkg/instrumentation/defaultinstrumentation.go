@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	defaultAPIVersion     = "cloudwatch.aws.amazon.com/v1alpha1"
-	defaultInstrumenation = "java-instrumentation"
-	defaultNamespace      = "default"
-	defaultKind           = "Instrumentation"
+	defaultAPIVersion      = "cloudwatch.aws.amazon.com/v1alpha1"
+	defaultInstrumentation = "java-instrumentation"
+	defaultNamespace       = "default"
+	defaultKind            = "Instrumentation"
 
 	httpPrefix  = "http://"
 	httpsPrefix = "https://"
@@ -32,6 +32,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 	pythonInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON")
 	if !ok {
 		return nil, errors.New("unable to determine python instrumentation image")
+	}
+	nodeJSInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_NODEJS")
+	if !ok {
+		return nil, errors.New("unable to determine nodejs instrumentation image")
 	}
 
 	// set protocol by checking cloudwatch agent config for tls setting
@@ -50,7 +54,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -89,6 +93,24 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig) (*v1alpha1.Instr
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
+			//TODO: temporary environment variables. Update with the latest values from the ADOT SDK for NodeJS
+			NodeJS: v1alpha1.NodeJS{
+				Image: nodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_NODEJS_DISTRO", Value: "aws_distro"},
+					{Name: "OTEL_NODEJS_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
