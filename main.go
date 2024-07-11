@@ -48,7 +48,7 @@ const (
 	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
-	autoInstrumentationDotNetImageRepository = "162283822697.dkr.ecr.us-west-1.amazonaws.com/adot-autoinstrumentation-dotnet"
+	autoInstrumentationDotNetImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-dotnet"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )

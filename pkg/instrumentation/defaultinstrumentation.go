@@ -38,12 +38,9 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
 	}
-	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
 
+	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
 	if isWindowsPod {
-		//javaInstrumentationImage = javaInstrumentationImage + "-windows"
-		//pythonInstrumentationImage = pythonInstrumentationImage + "-windows"
-		dotNetInstrumentationImage = dotNetInstrumentationImage + "-windows"
 		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
 	}
 
@@ -78,7 +75,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=http://%s:2000", cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
@@ -93,7 +90,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=http://%s:2000", cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
@@ -105,12 +102,11 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
-			// temporary environment variables. Need to be updated with the latest values
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=http://%s:2000", cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
