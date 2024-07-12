@@ -20,7 +20,6 @@ const (
 	envDotNetSharedStore                = "DOTNET_SHARED_STORE"
 	envDotNetStartupHook                = "DOTNET_STARTUP_HOOKS"
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
-	envDotNetAutoPlugins                = "OTEL_DOTNET_AUTO_PLUGINS"
 	dotNetCoreClrEnableProfilingEnabled = "1"
 	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	dotNetCoreClrProfilerGlibcPath      = "/otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
@@ -100,7 +99,6 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 		concatEnvValues      = true
 	)
 
-	setDotNetEnvVar(container, envDotNetAutoPlugins, dotNetAutoPlugins, doNotConcatEnvValues)
 	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
 	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
 	if isWindowsPod(pod) {
