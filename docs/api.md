@@ -375,6 +375,13 @@ AmazonCloudWatchAgentSpec defines the desired state of AmazonCloudWatchAgent.
           Volumes represents which volumes to use in the underlying collector deployment(s).<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>workingDir</b></td>
+        <td>string</td>
+        <td>
+          WorkingDir represents Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

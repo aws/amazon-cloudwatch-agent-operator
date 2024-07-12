@@ -43,6 +43,10 @@ type DcgmExporterSpec struct {
 	// consumed in the config file for the Collector.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
+	// Toleration to schedule DCGM Exporter pods.
+	// This is only relevant to daemonset, statefulset, and deployment mode
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying collector deployment(s).
 	// +optional
 	// +listType=atomic

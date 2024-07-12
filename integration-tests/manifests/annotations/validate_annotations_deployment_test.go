@@ -6,12 +6,14 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	"github.com/stretchr/testify/assert"
 	"math/big"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
 func TestJavaAndPythonDeployment(t *testing.T) {

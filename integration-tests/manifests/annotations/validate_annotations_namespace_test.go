@@ -7,16 +7,18 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	"github.com/google/uuid"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
 func TestJavaAndPythonNamespace(t *testing.T) {

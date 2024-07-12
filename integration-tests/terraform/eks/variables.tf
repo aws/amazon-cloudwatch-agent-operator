@@ -8,7 +8,7 @@ variable "region" {
 
 variable "k8s_version" {
   type    = string
-  default = "1.24"
+  default = "1.30"
 }
 
 variable "test_dir" {

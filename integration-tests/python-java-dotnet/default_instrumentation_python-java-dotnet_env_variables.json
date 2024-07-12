@@ -2,6 +2,7 @@
 {
   "PYTHONPATH": "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python",
   "OTEL_AWS_APP_SIGNALS_ENABLED": "true",
+  "OTEL_AWS_APPLICATION_SIGNALS_ENABLED": "true",
   "OTEL_TRACES_SAMPLER_ARG": "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000",
   "OTEL_TRACES_SAMPLER": "xray",
   "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
@@ -14,6 +15,7 @@
   "OTEL_AWS_SMP_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
   "OTEL_DOTNET_DISTRO": "aws_distro",
   "OTEL_LOGS_EXPORTER": "none",
+  "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
   "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 
 }
