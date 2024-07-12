@@ -28,7 +28,7 @@ const (
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation-dotnet"
 	dotNetSharedStorePath               = "/otel-auto-instrumentation-dotnet/store"
 	dotNetStartupHookPath               = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
-	dotNetAutoPlugins                   = "AWS.OpenTelemetry.AutoInstrumentation.Plugin, AWS.OpenTelemetry.AutoInstrumentation"
+	dotNetAutoPlugins                   = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
 	dotnetVolumeName                    = volumeName + "-dotnet"
 	dotnetInitContainerName             = initContainerName + "-dotnet"
 	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
