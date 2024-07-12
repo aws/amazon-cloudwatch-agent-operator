@@ -110,9 +110,30 @@ jobs:
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
-      - name: Test for default instrumentation resources for python and java
+      - name: Test for default instrumentation resources for dotnet
         run: |
-          kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/dotnet/default_instrumentation_dotnet_env_variables.json
+
+      - name: Test for defined instrumentation resources for dotnet
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          sleep 5
+          kubectl rollout restart deployment nginx
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl describe pods -n default
+          cd integration-tests/manifests/cmd
+          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
+
+      - name: Test for default instrumentation resources for python java dotnet
+        run: |
+          kubectl apply -f integration-tests/python-java-dotnet/sample-deployment-python-java-dotnet.yaml
           sleep 5
           kubectl rollout restart deployment nginx
           kubectl wait --for=condition=Available deployment/nginx -n default
@@ -120,9 +141,9 @@ jobs:
           kubectl get pods -A 
           kubectl describe pods -n default
           kubectl describe pods -n amazon-cloudwatch
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java-dotnet/default_instrumentation_python-java-dotnet_env_variables.json
 
-      - name: Test for defined instrumentation resources for python and java
+      - name: Test for defined instrumentation resources for python java dotnet
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           sleep 5

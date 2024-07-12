@@ -12,6 +12,8 @@
   "OTEL_PYTHON_CONFIGURATOR": "aws_configurator",
   "OTEL_SMP_ENABLED": "true",
   "OTEL_AWS_SMP_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
+  "OTEL_DOTNET_DISTRO": "aws_distro",
+  "OTEL_LOGS_EXPORTER": "none",
   "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 
 }
