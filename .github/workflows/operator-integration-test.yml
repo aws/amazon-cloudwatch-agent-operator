@@ -113,7 +113,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
           sleep 5
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
@@ -122,19 +122,20 @@ jobs:
       - name: Test for defined instrumentation resources for dotnet
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          kubectl delete pods --all -n default
           sleep 5
-          kubectl rollout restart deployment nginx
-          kubectl wait --for=condition=Available deployment/nginx -n default
-          kubectl describe pods -n default
+          kubectl wait --for=condition=Ready pod --all -n default
+          
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
+
 
       - name: Test for default instrumentation resources for python java dotnet
         run: |
           kubectl apply -f integration-tests/python-java-dotnet/sample-deployment-python-java-dotnet.yaml
           sleep 5
-          kubectl rollout restart deployment nginx
+          kubectl delete pods --all -n default
           kubectl wait --for=condition=Available deployment/nginx -n default
           sleep 5
           kubectl get pods -A 
@@ -153,6 +154,7 @@ jobs:
           cd integration-tests/manifests/cmd
           go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
+
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
