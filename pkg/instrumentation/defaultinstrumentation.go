@@ -41,6 +41,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 
 	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
 	if isWindowsPod {
+		// Windows pods use the headless service endpoint due to limitations with the agent on host network mode
+		// https://kubernetes.io/docs/concepts/services-networking/windows-networking/#limitations
 		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
 	}
 
