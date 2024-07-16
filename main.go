@@ -244,6 +244,7 @@ func main() {
 				instrumentation.NewTypeSet(
 					instrumentation.TypeJava,
 					instrumentation.TypePython,
+					instrumentation.TypeDotNet,
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
