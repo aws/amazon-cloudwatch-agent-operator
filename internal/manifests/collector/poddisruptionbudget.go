@@ -12,11 +12,11 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {
+func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
 	// defaulting webhook should always set this, but if unset then return nil.
 	if params.OtelCol.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
-		return nil
+		return nil, nil
 	}
 
 	name := naming.Collector(params.OtelCol.Name)
@@ -39,5 +39,5 @@ func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget 
 				MatchLabels: objectMeta.Labels,
 			},
 		},
-	}
+	}, nil
 }

@@ -74,6 +74,16 @@ func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
 }
 
+// ClusterRole builds the cluster role name based on the instance.
+func ClusterRole(otelcol string, namespace string) string {
+	return DNSName(Truncate("%s-%s-cluster-role", 63, otelcol, namespace))
+}
+
+// ClusterRoleBinding builds the cluster role binding name based on the instance.
+func ClusterRoleBinding(otelcol, namespace string) string {
+	return DNSName(Truncate("%s-%s-collector", 63, otelcol, namespace))
+}
+
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))

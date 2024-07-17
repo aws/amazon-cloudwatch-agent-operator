@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -21,8 +21,8 @@ const (
 	confEnvVar    = "OTEL_CONFIG"
 )
 
-// add a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
-func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
+// add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
+func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.AmazonCloudWatchAgent, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
 	otelColCfg, err := collector.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err
@@ -48,9 +48,9 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatc
 }
 
 // remove the sidecar container from the given pod.
-func remove(pod corev1.Pod) (corev1.Pod, error) {
+func remove(pod corev1.Pod) corev1.Pod {
 	if !existsIn(pod) {
-		return pod, nil
+		return pod
 	}
 
 	var containers []corev1.Container
@@ -60,7 +60,7 @@ func remove(pod corev1.Pod) (corev1.Pod, error) {
 		}
 	}
 	pod.Spec.Containers = containers
-	return pod, nil
+	return pod
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.

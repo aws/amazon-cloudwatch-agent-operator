@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 )
@@ -15,7 +15,7 @@ import (
 const neuronSrviceAcctName = "neuron-monitor-service-acct"
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.NeuronMonitor) string {
+func ServiceAccountName(instance v1beta1.NeuronMonitor) string {
 	if len(instance.Spec.ServiceAccount) == 0 {
 		return neuronSrviceAcctName
 	}

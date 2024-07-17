@@ -17,7 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/neuronmonitor"
@@ -33,7 +33,7 @@ type NeuronMonitorReconciler struct {
 	config   config.Config
 }
 
-func (r *NeuronMonitorReconciler) getParams(instance v1alpha1.NeuronMonitor) manifests.Params {
+func (r *NeuronMonitorReconciler) getParams(instance v1beta1.NeuronMonitor) manifests.Params {
 	return manifests.Params{
 		Config:    r.config,
 		Client:    r.Client,
@@ -73,7 +73,7 @@ func NewNeuronMonitorReconciler(p Params) *NeuronMonitorReconciler {
 func (r *NeuronMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("NeuronMonitor", req.NamespacedName)
 
-	var instance v1alpha1.NeuronMonitor
+	var instance v1beta1.NeuronMonitor
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch NeuronMonitor")
@@ -128,7 +128,7 @@ func BuildNeuronMonitor(params manifests.Params) ([]client.Object, error) {
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *NeuronMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.NeuronMonitor{}).
+		For(&v1beta1.NeuronMonitor{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

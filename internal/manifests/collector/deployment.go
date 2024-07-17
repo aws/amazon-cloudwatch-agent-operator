@@ -14,7 +14,7 @@ import (
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) *appsv1.Deployment {
+func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
 
@@ -33,6 +33,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			},
+			Strategy: params.OtelCol.Spec.DeploymentUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
@@ -43,8 +44,9 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					InitContainers:                params.OtelCol.Spec.InitContainers,
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
-					DNSPolicy:                     getDNSPolicy(params.OtelCol),
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork),
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
 					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
@@ -55,5 +57,5 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 				},
 			},
 		},
-	}
+	}, nil
 }

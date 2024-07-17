@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
@@ -20,7 +20,7 @@ const (
 )
 
 // Container builds a container for the given dcgm exporter.
-func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExporter) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, exporter v1beta1.DcgmExporter) corev1.Container {
 	image := exporter.Spec.Image
 	if len(image) == 0 {
 		image = cfg.DcgmExporterImage()

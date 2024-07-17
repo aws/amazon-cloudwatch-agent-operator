@@ -9,8 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/flowcontrol/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -29,15 +31,18 @@ func TestDaemonSetNewDefault(t *testing.T) {
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-				Tolerations: testTolerationValues,
+			Spec: v1beta1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+					Tolerations: testTolerationValues,
+				},
 			},
 		},
 		Log: logger,
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "my-instance", d.Name)
@@ -85,35 +90,39 @@ func TestDaemonSetNewDefault(t *testing.T) {
 func TestDaemonsetHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.AmazonCloudWatchAgent{
+		OtelCol: v1beta1.AmazonCloudWatchAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
+			Spec: v1beta1.AmazonCloudWatchAgentSpec{},
 		},
 		Log: logger,
 	}
 	// test
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.AmazonCloudWatchAgent{
+		OtelCol: v1beta1.AmazonCloudWatchAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-				HostNetwork: true,
+			Spec: v1beta1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+					HostNetwork: true,
+				},
 			},
 		},
 		Log: logger,
 	}
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -125,8 +134,10 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			PodAnnotations: testPodAnnotationValues,
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -138,7 +149,8 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ds := DaemonSet(params)
+	ds, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["amazon-cloudwatch-agent-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -162,15 +174,17 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -183,7 +197,8 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -196,12 +211,12 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -212,7 +227,8 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -220,9 +236,41 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 	}
 }
 
+func TestDaemonsetFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1beta1.AmazonCloudWatchAgent{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+	}
+
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+
+	assert.Len(t, d.ObjectMeta.Annotations, 4)
+	for k := range excludedAnnotations {
+		assert.NotContains(t, d.ObjectMeta.Annotations, k)
+	}
+}
+
 func TestDaemonSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol1 := v1beta1.AmazonCloudWatchAgent{
+
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -236,19 +284,22 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol2 := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -261,12 +312,13 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestDaemonSetPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol1 := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -280,17 +332,20 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol2 := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			PriorityClassName: priorityClassName,
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -302,12 +357,13 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestDaemonSetAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol1 := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -321,15 +377,18 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
+	otelcol2 := v1beta1.Ama{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Affinity: testAffinityValue,
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -341,22 +400,25 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
 
 func TestDaemonSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -370,9 +432,11 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
-	assert.Equal(t, "my-instance", d.Name)
-	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
+
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -381,15 +445,17 @@ func TestDaemonSetInitContainer(t *testing.T) {
 
 func TestDaemonSetAdditionalContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			AdditionalContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				AdditionalContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -403,9 +469,11 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
-	assert.Equal(t, "my-instance", d.Name)
-	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
+
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
@@ -415,13 +483,13 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 
 func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -439,9 +507,11 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
-	assert.Equal(t, "my-instance", d.Name)
-	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
@@ -449,13 +519,13 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 
 func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "OnDelete",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -473,10 +543,47 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
-	assert.Equal(t, "my-instance", d.Name)
-	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+}
+
+func TestDaemonsetShareProcessNamespace(t *testing.T) {
+	params1 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.AmazonCloudWatchAgent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+			Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+		},
+		Log: logger,
+	}
+	// test
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// verify custom
+	params2 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance-with-shareprocessnamespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					ShareProcessNamespace: true,
+				},
+			},
+		},
+		Log: logger,
+	}
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }

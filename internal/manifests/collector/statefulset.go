@@ -14,7 +14,7 @@ import (
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
+func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
 
@@ -43,8 +43,9 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 					InitContainers:            params.OtelCol.Spec.InitContainers,
 					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                   Volumes(params.Config, params.OtelCol),
-					DNSPolicy:                 getDNSPolicy(params.OtelCol),
+					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork),
 					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:     &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:               params.OtelCol.Spec.Tolerations,
 					NodeSelector:              params.OtelCol.Spec.NodeSelector,
 					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
@@ -57,5 +58,5 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 			PodManagementPolicy:  "Parallel",
 			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
 		},
-	}
+	}, nil
 }

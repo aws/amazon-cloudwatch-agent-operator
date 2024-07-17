@@ -10,7 +10,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
@@ -26,7 +26,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	}
 	var pm monitoringv1.PodMonitor
 
-	if params.OtelCol.Spec.Mode != v1alpha1.ModeSidecar {
+	if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 }
 
 // Not used in amazon-cloudwatch-agent-operator
-func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) []monitoringv1.PodMetricsEndpoint {
+func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.AmazonCloudWatchAgent) []monitoringv1.PodMetricsEndpoint {
 	metricsEndpoints := []monitoringv1.PodMetricsEndpoint{}
 	return metricsEndpoints
 }

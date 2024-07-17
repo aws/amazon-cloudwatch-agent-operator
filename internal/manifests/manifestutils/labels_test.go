@@ -15,6 +15,8 @@ import (
 const (
 	collectorName      = "my-instance"
 	collectorNamespace = "my-ns"
+	taname             = "my-instance"
+	tanamespace        = "my-ns"
 )
 
 func TestLabelsCommonSet(t *testing.T) {

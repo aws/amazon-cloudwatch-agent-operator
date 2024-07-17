@@ -21,6 +21,14 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	enableMultiInstrumentation          bool
+	enableApacheHttpdInstrumentation    bool
+	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
+	enableNginxInstrumentation          bool
+	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -30,16 +38,20 @@ type Config struct {
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
 	labelsFilter                        []string
+	annotationsFilter                   []string
 }
 
 // New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
-		logger:                  logf.Log.WithName("config"),
-		version:                 version.Get(),
+		collectorConfigMapEntry:   defaultCollectorConfigMapEntry,
+		logger:                    logf.Log.WithName("config"),
+		version:                   version.Get(),
+		enableJavaInstrumentation: true,
+		annotationsFilter:         []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
+
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -47,6 +59,14 @@ func New(opts ...Option) Config {
 	return Config{
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		enableMultiInstrumentation:          o.enableMultiInstrumentation,
+		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
+		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enableGoInstrumentation:             o.enableGoInstrumentation,
+		enableNginxInstrumentation:          o.enableNginxInstrumentation,
+		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
+		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		logger:                              o.logger,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
@@ -58,12 +78,53 @@ func New(opts ...Option) Config {
 		dcgmExporterImage:                   o.dcgmExporterImage,
 		neuronMonitorImage:                  o.neuronMonitorImage,
 		labelsFilter:                        o.labelsFilter,
+		annotationsFilter:                   o.annotationsFilter,
 	}
 }
 
 // CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 func (c *Config) CollectorImage() string {
 	return c.collectorImage
+}
+
+// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
+func (c *Config) EnableMultiInstrumentation() bool {
+	return c.enableMultiInstrumentation
+}
+
+// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
+func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
+	return c.enableApacheHttpdInstrumentation
+}
+
+// EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableDotNetAutoInstrumentation() bool {
+	return c.enableDotNetInstrumentation
+}
+
+// EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
+func (c *Config) EnableGoAutoInstrumentation() bool {
+	return c.enableGoInstrumentation
+}
+
+// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableNginxAutoInstrumentation() bool {
+	return c.enableNginxInstrumentation
+}
+
+// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableJavaAutoInstrumentation() bool {
+	return c.enableJavaInstrumentation
+}
+
+// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnablePythonAutoInstrumentation() bool {
+	return c.enablePythonInstrumentation
+}
+
+// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableNodeJSAutoInstrumentation() bool {
+	return c.enableNodeJSInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
@@ -119,4 +180,9 @@ func (c *Config) NeuronMonitorImage() string {
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+func (c *Config) AnnotationsFilter() []string {
+	return c.annotationsFilter
 }

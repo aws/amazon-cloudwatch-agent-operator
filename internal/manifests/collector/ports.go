@@ -12,12 +12,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -73,7 +73,7 @@ func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.S
 	return ports
 }
 
-func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
+func getContainerPorts(logger logr.Logger, cfg string, specPorts []v1beta1.PortsSpec) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
 	var servicePorts []corev1.ServicePort
 	config, err := adapters.ConfigStructFromJSONString(cfg)

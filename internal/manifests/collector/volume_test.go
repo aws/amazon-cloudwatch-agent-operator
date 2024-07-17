@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -17,7 +17,7 @@ import (
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{}
+	otelcol := v1beta1.AmazonCloudWatchAgent{}
 	cfg := config.New()
 
 	// test
@@ -32,11 +32,13 @@ func TestVolumeNewDefault(t *testing.T) {
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Volumes: []corev1.Volume{{
-				Name: "my-volume",
-			}},
+	otelcol := v1beta1.AmazonCloudWatchAgent{
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				Volumes: []corev1.Volume{{
+					Name: "my-volume",
+				}},
+			},
 		},
 	}
 	cfg := config.New()
@@ -53,9 +55,9 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 
 func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+	otelcol := v1beta1.AmazonCloudWatchAgent{
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			ConfigMaps: []v1beta1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/",
 			}, {

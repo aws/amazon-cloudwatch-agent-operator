@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
@@ -20,17 +20,17 @@ func TestNeuronContainer(t *testing.T) {
 	logger := logf.Log.WithName("unit-tests")
 	testCases := []struct {
 		name     string
-		exporter v1alpha1.NeuronMonitor
+		exporter v1beta1.NeuronMonitor
 		expected corev1.Container
 	}{
 		{
 			name: "default",
-			exporter: v1alpha1.NeuronMonitor{
+			exporter: v1beta1.NeuronMonitor{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-ns",
 				},
-				Spec: v1alpha1.NeuronMonitorSpec{
+				Spec: v1beta1.NeuronMonitorSpec{
 					Image: "test-image",
 					Command: []string{
 						"testCommand",

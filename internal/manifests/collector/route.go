@@ -10,30 +10,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute {
 		return nil, nil
 	}
 
-	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
 		return nil, nil
 	}
 
 	var tlsCfg *routev1.TLSConfig
 	switch params.OtelCol.Spec.Ingress.Route.Termination {
-	case v1alpha1.TLSRouteTerminationTypeInsecure:
+	case v1beta1.TLSRouteTerminationTypeInsecure:
 		// NOTE: insecure, no tls cfg.
-	case v1alpha1.TLSRouteTerminationTypeEdge:
+	case v1beta1.TLSRouteTerminationTypeEdge:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationEdge}
-	case v1alpha1.TLSRouteTerminationTypePassthrough:
+	case v1beta1.TLSRouteTerminationTypePassthrough:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationPassthrough}
-	case v1alpha1.TLSRouteTerminationTypeReencrypt:
+	case v1beta1.TLSRouteTerminationTypeReencrypt:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
 		return nil, nil

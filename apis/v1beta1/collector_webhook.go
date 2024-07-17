@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package v1beta1
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -21,6 +22,34 @@ import (
 var (
 	_ admission.CustomValidator = &CollectorWebhook{}
 	_ admission.CustomDefaulter = &CollectorWebhook{}
+	// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
+
+	targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"monitoring.coreos.com"},
+			Resources: []string{"servicemonitors", "podmonitors"},
+			Verbs:     []string{"*"},
+		}, {
+			APIGroups: []string{""},
+			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"get"},
+		}, {
+			APIGroups: []string{"discovery.k8s.io"},
+			Resources: []string{"endpointslices"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"networking.k8s.io"},
+			Resources: []string{"ingresses"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			NonResourceURLs: []string{"/metrics"},
+			Verbs:           []string{"get"},
+		},
+	}
 )
 
 // +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=true,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=create;update,versions=v1alpha1,name=mamazoncloudwatchagent.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -39,74 +68,35 @@ func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error
 	if !ok {
 		return fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
-	return c.defaulter(otelcol)
-}
-
-func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*AmazonCloudWatchAgent)
-	if !ok {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
+	if len(otelcol.Spec.Mode) == 0 {
+		otelcol.Spec.Mode = ModeDeployment
 	}
-	return c.validate(otelcol)
-}
-
-func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*AmazonCloudWatchAgent)
-	if !ok {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", newObj)
-	}
-	return c.validate(otelcol)
-}
-
-func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*AmazonCloudWatchAgent)
-	if !ok || otelcol == nil {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
-	}
-	return c.validate(otelcol)
-}
-
-func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
-	if len(r.Spec.Mode) == 0 {
-		r.Spec.Mode = ModeDeployment
-	}
-	if len(r.Spec.UpgradeStrategy) == 0 {
-		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
+	if len(otelcol.Spec.UpgradeStrategy) == 0 {
+		otelcol.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
 	}
 
-	if r.Labels == nil {
-		r.Labels = map[string]string{}
+	if otelcol.Labels == nil {
+		otelcol.Labels = map[string]string{}
 	}
-	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
+	if otelcol.Labels["app.kubernetes.io/managed-by"] == "" {
+		otelcol.Labels["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
 	}
 
 	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
 	// default to 1 as well.
 	one := int32(1)
-	if r.Spec.Replicas == nil {
-		r.Spec.Replicas = &one
+	if otelcol.Spec.Replicas == nil {
+		otelcol.Spec.Replicas = &one
 	}
 
-	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
-		if r.Spec.Autoscaler == nil {
-			r.Spec.Autoscaler = &AutoscalerSpec{}
+	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.MaxReplicas != nil {
+		if otelcol.Spec.Autoscaler.MinReplicas == nil {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.Replicas
 		}
 
-		if r.Spec.Autoscaler.MaxReplicas == nil {
-			r.Spec.Autoscaler.MaxReplicas = r.Spec.MaxReplicas
-		}
-		if r.Spec.Autoscaler.MinReplicas == nil {
-			if r.Spec.MinReplicas != nil {
-				r.Spec.Autoscaler.MinReplicas = r.Spec.MinReplicas
-			} else {
-				r.Spec.Autoscaler.MinReplicas = r.Spec.Replicas
-			}
-		}
-
-		if r.Spec.Autoscaler.TargetMemoryUtilization == nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
+		if otelcol.Spec.Autoscaler.TargetMemoryUtilization == nil && otelcol.Spec.Autoscaler.TargetCPUUtilization == nil {
 			defaultCPUTarget := int32(90)
-			r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+			otelcol.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
 		}
 	}
 
@@ -114,8 +104,8 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	// which will work even if there is just one replica,
 	// not blocking node drains but preventing out-of-the-box
 	// from disruption generated by them with replicas > 1
-	if r.Spec.PodDisruptionBudget == nil {
-		r.Spec.PodDisruptionBudget = &PodDisruptionBudgetSpec{
+	if otelcol.Spec.PodDisruptionBudget == nil {
+		otelcol.Spec.PodDisruptionBudget = &PodDisruptionBudgetSpec{
 			MaxUnavailable: &intstr.IntOrString{
 				Type:   intstr.Int,
 				IntVal: 1,
@@ -123,44 +113,86 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 		}
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeRoute && r.Spec.Ingress.Route.Termination == "" {
-		r.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
+	if otelcol.Spec.Ingress.Type == IngressTypeRoute && otelcol.Spec.Ingress.Route.Termination == "" {
+		otelcol.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
-	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Ingress.RuleType == "" {
-		r.Spec.Ingress.RuleType = IngressRuleTypePath
+	if otelcol.Spec.Ingress.Type == IngressTypeIngress && otelcol.Spec.Ingress.RuleType == "" {
+		otelcol.Spec.Ingress.RuleType = IngressRuleTypePath
 	}
 	// If someone upgrades to a later version without upgrading their CRD they will not have a management state set.
 	// This results in a default state of unmanaged preventing reconciliation from continuing.
-	if len(r.Spec.ManagementState) == 0 {
-		r.Spec.ManagementState = ManagementStateManaged
+	if len(otelcol.Spec.ManagementState) == 0 {
+		otelcol.Spec.ManagementState = ManagementStateManaged
 	}
 	return nil
 }
 
-func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings, error) {
+func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	otelcol, ok := obj.(*AmazonCloudWatchAgent)
+	if !ok {
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
+	}
+
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	return warnings, nil
+}
+
+func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	otelcol, ok := newObj.(*AmazonCloudWatchAgent)
+	if !ok {
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", newObj)
+	}
+
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	return warnings, nil
+}
+
+func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	otelcol, ok := obj.(*AmazonCloudWatchAgent)
+	if !ok || otelcol == nil {
+		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
+	}
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	return warnings, nil
+}
+
+func (c CollectorWebhook) validate(ctx context.Context, r *AmazonCloudWatchAgent) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
+
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}
 
 	// validator port config
@@ -177,32 +209,13 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
 		maxReplicas = r.Spec.Autoscaler.MaxReplicas
 	}
-
-	// check deprecated .Spec.MaxReplicas if maxReplicas is not set
-	if maxReplicas == nil && r.Spec.MaxReplicas != nil {
-		warnings = append(warnings, "MaxReplicas is deprecated")
-		maxReplicas = r.Spec.MaxReplicas
-	}
-
 	var minReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
 		minReplicas = r.Spec.Autoscaler.MinReplicas
 	}
-
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
 	if minReplicas == nil {
-		if r.Spec.MinReplicas != nil {
-			warnings = append(warnings, "MinReplicas is deprecated")
-			minReplicas = r.Spec.MinReplicas
-		} else {
-			minReplicas = r.Spec.Replicas
-		}
-	}
-
-	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
-			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
-		)
+		minReplicas = r.Spec.Replicas
 	}
 
 	// validate autoscale with horizontal pod autoscaler
@@ -228,7 +241,13 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		}
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
+		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
+		)
+	}
+
+	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
 		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
@@ -237,33 +256,51 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}
 
-	if r.Spec.LivenessProbe != nil {
-		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
-		}
-		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
-		}
+	// validate probes Liveness/Readiness
+	err := validateProbe("LivenessProbe", r.Spec.LivenessProbe)
+	if err != nil {
+		return warnings, err
+	}
+	err = validateProbe("ReadinessProbe", r.Spec.ReadinessProbe)
+	if err != nil {
+		return warnings, err
 	}
 
 	// validate updateStrategy for DaemonSet
-	if r.Spec.Mode != ModeDaemonSet && len(r.Spec.UpdateStrategy.Type) > 0 {
+	if r.Spec.Mode != ModeDaemonSet && len(r.Spec.DaemonSetUpdateStrategy.Type) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'updateStrategy'", r.Spec.Mode)
 	}
 
+	// validate updateStrategy for Deployment
+	if r.Spec.Mode != ModeDeployment && len(r.Spec.DeploymentUpdateStrategy.Type) > 0 {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
+	}
+
 	return warnings, nil
+}
+
+func validateProbe(probeName string, probe *Probe) error {
+	if probe != nil {
+		if probe.InitialDelaySeconds != nil && *probe.InitialDelaySeconds < 0 {
+			return fmt.Errorf("the OpenTelemetry Spec %s InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0", probeName)
+		}
+		if probe.PeriodSeconds != nil && *probe.PeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1", probeName)
+		}
+		if probe.TimeoutSeconds != nil && *probe.TimeoutSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1", probeName)
+		}
+		if probe.SuccessThreshold != nil && *probe.SuccessThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1", probeName)
+		}
+		if probe.FailureThreshold != nil && *probe.FailureThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1", probeName)
+		}
+		if probe.TerminationGracePeriodSeconds != nil && *probe.TerminationGracePeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1", probeName)
+		}
+	}
+	return nil
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
@@ -309,7 +346,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
 	cvw := &CollectorWebhook{
-		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
+		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
 		scheme: mgr.GetScheme(),
 		cfg:    cfg,
 	}

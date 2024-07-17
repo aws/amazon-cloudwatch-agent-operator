@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 )
 
 func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
@@ -61,10 +61,10 @@ func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
-			return v1alpha1.AmazonCloudWatchAgent{
+		getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1beta1.AmazonCloudWatchAgent {
+			return v1beta1.AmazonCloudWatchAgent{
 				ObjectMeta: metav1.ObjectMeta{},
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
 					Config: tc.config,
 				},
 			}

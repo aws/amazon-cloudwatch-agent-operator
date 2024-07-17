@@ -7,14 +7,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
+func ServiceAccountName(instance v1beta1.AmazonCloudWatchAgent) string {
 	if len(instance.Spec.ServiceAccount) == 0 {
 		return naming.ServiceAccount(instance.Name)
 	}
@@ -23,10 +23,11 @@ func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
+func ServiceAccount(params manifests.Params) (*corev1.ServiceAccount, error) {
 	if params.OtelCol.Spec.ServiceAccount != "" {
-		return nil
+		return nil, nil
 	}
+
 	name := naming.ServiceAccount(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
@@ -37,5 +38,5 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 			Labels:      labels,
 			Annotations: params.OtelCol.Annotations,
 		},
-	}
+	}, nil
 }

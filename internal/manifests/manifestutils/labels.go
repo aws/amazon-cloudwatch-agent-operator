@@ -12,10 +12,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-func isFilteredLabel(label string, filterLabels []string) bool {
-	for _, pattern := range filterLabels {
-		match, _ := regexp.MatchString(pattern, label)
-		return match
+func IsFilteredSet(sourceSet string, filterSet []string) bool {
+	for _, basePattern := range filterSet {
+		pattern, _ := regexp.Compile(basePattern)
+		if match := pattern.MatchString(sourceSet); match {
+			return match
+		}
 	}
 	return false
 }
@@ -27,7 +29,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 	base := map[string]string{}
 	if nil != instance.Labels {
 		for k, v := range instance.Labels {
-			if !isFilteredLabel(k, filterLabels) {
+			if !IsFilteredSet(k, filterLabels) {
 				base[k] = v
 			}
 		}

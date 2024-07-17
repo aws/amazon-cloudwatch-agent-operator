@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -27,10 +27,10 @@ func TestDesiredRoutes(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressType("unknown"),
+			OtelCol: v1beta1.AmazonCloudWatchAgent{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("unknown"),
 					},
 				},
 			},
@@ -41,39 +41,17 @@ func TestDesiredRoutes(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 
-	t.Run("should return nil unable to parse config", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Config: "!!!",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRoute,
-						Route: v1alpha1.OpenShiftRoute{
-							Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
-						},
-					},
-				},
-			},
-		}
-
-		actual, err := Routes(params)
-		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the amazon-cloudwatch-agent configuration")
-	})
-
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Config: "---",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRoute,
-						Route: v1alpha1.OpenShiftRoute{
-							Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			OtelCol: v1beta1.AmazonCloudWatchAgent{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+					Config: v1beta1.Config{},
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeRoute,
+						Route: v1beta1.OpenShiftRoute{
+							Termination: v1beta1.TLSRouteTerminationTypeInsecure,
 						},
 					},
 				},
@@ -82,7 +60,7 @@ func TestDesiredRoutes(t *testing.T) {
 
 		actual, err := Routes(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return nil unable to do something else", func(t *testing.T) {
@@ -97,12 +75,12 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:        v1alpha1.IngressTypeRoute,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:        v1beta1.IngressTypeRoute,
 			Hostname:    hostname,
 			Annotations: map[string]string{"some.key": "some.value"},
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			Route: v1beta1.OpenShiftRoute{
+				Termination: v1beta1.TLSRouteTerminationTypeInsecure,
 			},
 		}
 
@@ -147,11 +125,11 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = "test"
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
 			Hostname: "example.com",
-			Type:     v1alpha1.IngressTypeRoute,
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			Type:     v1beta1.IngressTypeRoute,
+			Route: v1beta1.OpenShiftRoute{
+				Termination: v1beta1.TLSRouteTerminationTypeInsecure,
 			},
 		}
 
@@ -169,10 +147,10 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = "test"
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type: v1alpha1.IngressTypeRoute,
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type: v1beta1.IngressTypeRoute,
+			Route: v1beta1.OpenShiftRoute{
+				Termination: v1beta1.TLSRouteTerminationTypeInsecure,
 			},
 		}
 

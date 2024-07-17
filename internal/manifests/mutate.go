@@ -78,7 +78,7 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 		case *corev1.Service:
 			svc := existing.(*corev1.Service)
 			wantSvc := desired.(*corev1.Service)
-			return mutateService(svc, wantSvc)
+			mutateService(svc, wantSvc)
 
 		case *corev1.ServiceAccount:
 			sa := existing.(*corev1.ServiceAccount)
@@ -167,6 +167,10 @@ func mergeWithOverride(dst, src interface{}) error {
 	return mergo.Merge(dst, src, mergo.WithOverride)
 }
 
+func mergeWithOverwriteWithEmptyValue(dst, src interface{}) error {
+	return mergo.Merge(dst, src, mergo.WithOverwriteWithEmptyValue)
+}
+
 func mutateSecret(existing, desired *corev1.Secret) {
 	existing.Labels = desired.Labels
 	existing.Annotations = desired.Annotations
@@ -245,12 +249,9 @@ func mutatePodMonitor(existing, desired *monitoringv1.PodMonitor) {
 	existing.Spec = desired.Spec
 }
 
-func mutateService(existing, desired *corev1.Service) error {
+func mutateService(existing, desired *corev1.Service) {
 	existing.Spec.Ports = desired.Spec.Ports
-	if err := mergeWithOverride(&existing.Spec.Selector, desired.Spec.Selector); err != nil {
-		return err
-	}
-	return nil
+	existing.Spec.Selector = desired.Spec.Selector
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
@@ -262,8 +263,10 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	if existing.CreationTimestamp.IsZero() {
 		existing.Spec.Selector = desired.Spec.Selector
 	}
-
 	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
+		return err
+	}
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
 		return err
 	}
 	return nil
@@ -280,6 +283,9 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	}
 	existing.Spec.Replicas = desired.Spec.Replicas
 	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
+		return err
+	}
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
 		return err
 	}
 	if err := mergeWithOverride(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
@@ -306,6 +312,9 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
 	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
+		return err
+	}
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
 		return err
 	}
 	return nil

@@ -7,11 +7,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 )
 
 // Annotations return the annotations for DcgmExporter pod.
-func Annotations(instance v1alpha1.DcgmExporter) map[string]string {
+func Annotations(instance v1beta1.DcgmExporter) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 

@@ -15,15 +15,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 )
 
 var (
-	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Collector instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry Collector instances available")
-	errInstanceNotSidecar        = errors.New("the OpenTelemetry Collector's mode is not set to sidecar")
+	errMultipleInstancesPossible = errors.New("multiple AmazonCloudWatchAgent instances available, cannot determine which one to select")
+	errNoInstancesAvailable      = errors.New("no AmazonCloudWatchAgent instances available")
+	errInstanceNotSidecar        = errors.New("the AmazonCloudWatchAgent's mode is not set to sidecar")
 )
 
 type sidecarPodMutator struct {
@@ -55,7 +55,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// is the annotation value 'false'? if so, we need a pod without the sidecar (ie, remove if exists)
 	if strings.EqualFold(annValue, "false") {
 		logger.V(1).Info("pod explicitly refuses sidecar injection, attempting to remove sidecar if it exists")
-		return remove(pod)
+		return remove(pod), nil
 	}
 
 	// from this point and on, a sidecar is wanted
@@ -89,12 +89,12 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	return add(p.config, p.logger, otelcol, pod, attributes)
 }
 
-func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.AmazonCloudWatchAgent, error) {
+func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1beta1.AmazonCloudWatchAgent, error) {
 	if strings.EqualFold(ann, "true") {
 		return p.selectCollectorInstance(ctx, ns)
 	}
 
-	otelcol := v1alpha1.AmazonCloudWatchAgent{}
+	otelcol := v1beta1.AmazonCloudWatchAgent{}
 	var nsnOtelcol types.NamespacedName
 	instNamespace, instName, namespaced := strings.Cut(ann, "/")
 	if namespaced {
@@ -107,35 +107,35 @@ func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.
 		return otelcol, err
 	}
 
-	if otelcol.Spec.Mode != v1alpha1.ModeSidecar {
-		return v1alpha1.AmazonCloudWatchAgent{}, errInstanceNotSidecar
+	if otelcol.Spec.Mode != v1beta1.ModeSidecar {
+		return v1beta1.AmazonCloudWatchAgent{}, errInstanceNotSidecar
 	}
 
 	return otelcol, nil
 }
 
-func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.AmazonCloudWatchAgent, error) {
+func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1beta1.AmazonCloudWatchAgent, error) {
 	var (
-		otelcols = v1alpha1.AmazonCloudWatchAgentList{}
-		sidecars []v1alpha1.AmazonCloudWatchAgent
+		otelcols = v1beta1.AmazonCloudWatchAgentList{}
+		sidecars []v1beta1.AmazonCloudWatchAgent
 	)
 
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.AmazonCloudWatchAgent{}, err
+		return v1beta1.AmazonCloudWatchAgent{}, err
 	}
 
 	for i := range otelcols.Items {
 		coll := otelcols.Items[i]
-		if coll.Spec.Mode == v1alpha1.ModeSidecar {
+		if coll.Spec.Mode == v1beta1.ModeSidecar {
 			sidecars = append(sidecars, coll)
 		}
 	}
 
 	switch {
 	case len(sidecars) == 0:
-		return v1alpha1.AmazonCloudWatchAgent{}, errNoInstancesAvailable
+		return v1beta1.AmazonCloudWatchAgent{}, errNoInstancesAvailable
 	case len(sidecars) > 1:
-		return v1alpha1.AmazonCloudWatchAgent{}, errMultipleInstancesPossible
+		return v1beta1.AmazonCloudWatchAgent{}, errMultipleInstancesPossible
 	default:
 		return sidecars[0], nil
 	}

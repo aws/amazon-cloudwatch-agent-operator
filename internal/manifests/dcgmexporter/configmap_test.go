@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
@@ -78,7 +78,7 @@ func TestDesiredConfigMapWithTls(t *testing.T) {
 func getParams() manifests.Params {
 	return manifests.Params{
 		Config: config.New(config.WithDcgmExporterImage("default-exporter")),
-		DcgmExp: v1alpha1.DcgmExporter{
+		DcgmExp: v1beta1.DcgmExporter{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "cloudwatch.aws.amazon.com",
 				APIVersion: "v1",
@@ -88,7 +88,7 @@ func getParams() manifests.Params {
 				Namespace: "default",
 				UID:       uuid.NewUUID(),
 			},
-			Spec: v1alpha1.DcgmExporterSpec{
+			Spec: v1beta1.DcgmExporterSpec{
 				Image:         "public.ecr.aws/cloudwatch-agent/dcgm-exporter:0.1.0",
 				MetricsConfig: "DCGM_FI_DEV_GPU_UTIL,      gauge, GPU utilization (in %).",
 			},

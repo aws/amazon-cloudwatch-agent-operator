@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
@@ -20,17 +20,17 @@ func TestDcgmContainer(t *testing.T) {
 	logger := logf.Log.WithName("unit-tests")
 	testCases := []struct {
 		name     string
-		exporter v1alpha1.DcgmExporter
+		exporter v1beta1.DcgmExporter
 		expected corev1.Container
 	}{
 		{
 			name: "default",
-			exporter: v1alpha1.DcgmExporter{
+			exporter: v1beta1.DcgmExporter{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-ns",
 				},
-				Spec: v1alpha1.DcgmExporterSpec{
+				Spec: v1beta1.DcgmExporterSpec{
 					Image: "test-image",
 					Ports: []corev1.ServicePort{
 						{
@@ -68,12 +68,12 @@ func TestDcgmContainer(t *testing.T) {
 		},
 		{
 			name: "tls",
-			exporter: v1alpha1.DcgmExporter{
+			exporter: v1beta1.DcgmExporter{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-ns",
 				},
-				Spec: v1alpha1.DcgmExporterSpec{
+				Spec: v1beta1.DcgmExporterSpec{
 					Image: "test-image",
 					Ports: []corev1.ServicePort{
 						{
@@ -114,12 +114,12 @@ func TestDcgmContainer(t *testing.T) {
 		},
 		{
 			name: "tlsWithExtraEnvs",
-			exporter: v1alpha1.DcgmExporter{
+			exporter: v1beta1.DcgmExporter{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-ns",
 				},
-				Spec: v1alpha1.DcgmExporterSpec{
+				Spec: v1beta1.DcgmExporterSpec{
 					Image: "test-image",
 					Ports: []corev1.ServicePort{
 						{

@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
@@ -53,7 +54,7 @@ func TestPDB(t *testing.T) {
 		},
 	}
 
-	otelcols := []v1alpha1.AmazonCloudWatchAgent{
+	otelcols := []v1beta1.AmazonCloudWatchAgent{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
@@ -64,16 +65,17 @@ func TestPDB(t *testing.T) {
 	for _, otelcol := range otelcols {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				otelcol.Spec.PodDisruptionBudget = &v1alpha1.PodDisruptionBudgetSpec{
+				otelcol.Spec.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
 					MinAvailable:   test.MinAvailable,
 					MaxUnavailable: test.MaxUnavailable,
 				}
 				configuration := config.New()
-				pdb := PodDisruptionBudget(manifests.Params{
+				pdb, err := PodDisruptionBudget(manifests.Params{
 					Log:     logger,
 					Config:  configuration,
 					OtelCol: otelcol,
 				})
+				require.NoError(t, err)
 
 				// verify
 				assert.Equal(t, "my-instance", pdb.Name)

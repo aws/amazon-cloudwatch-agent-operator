@@ -9,19 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
-	exporter := v1alpha1.DcgmExporter{}
+	exporter := v1beta1.DcgmExporter{}
 	volumes := Volumes(exporter)
 	assert.Len(t, volumes, 1)
 	assert.Equal(t, DcgmConfigMapVolumeName, volumes[0].Name)
 }
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
-	exporter := v1alpha1.DcgmExporter{
-		Spec: v1alpha1.DcgmExporterSpec{
+	exporter := v1beta1.DcgmExporter{
+		Spec: v1beta1.DcgmExporterSpec{
 			Volumes: []corev1.Volume{{
 				Name: "my-volume",
 			}},

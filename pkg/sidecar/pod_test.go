@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
@@ -37,31 +37,35 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+
+		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+				Ports: []v1beta1.PortsSpec{
+					{
+						ServicePort: corev1.ServicePort{
+							Name:     "metrics",
+							Port:     8888,
+							Protocol: corev1.ProtocolTCP,
+						},
+					},
+				},
+				InitContainers: []corev1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
-			InitContainers: []corev1.Container{
-				{
-					Name: "test",
-				},
-			},
-			Config: `
-receivers:
-exporters:
-processors:
-`,
 		},
 	}
+
+	otelcolYaml, err := otelcol.Spec.Config.Yaml()
+	require.NoError(t, err)
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -89,7 +93,7 @@ processors:
 			},
 			{
 				Name:  "OTEL_CONFIG",
-				Value: otelcol.Spec.Config,
+				Value: string(otelcolYaml),
 			},
 		},
 		Ports: []corev1.ContainerPort{
@@ -114,7 +118,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.AmazonCloudWatchAgent{}
+	otelcol := v1beta1.AmazonCloudWatchAgent{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -138,10 +142,9 @@ func TestRemoveSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := remove(pod)
+	changed := remove(pod)
 
 	// verify
-	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 1)
 }
 
@@ -156,10 +159,9 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := remove(pod)
+	changed := remove(pod)
 
 	// verify
-	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 1)
 }
 
@@ -203,7 +205,8 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
+
+	otelcol := v1beta1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",

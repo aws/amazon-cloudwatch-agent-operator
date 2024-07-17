@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
@@ -48,7 +48,7 @@ func TestDesiredConfigMap(t *testing.T) {
 func getParams() manifests.Params {
 	return manifests.Params{
 		Config: config.New(config.WithNeuronMonitorImage("default-exporter")),
-		NeuronExp: v1alpha1.NeuronMonitor{
+		NeuronExp: v1beta1.NeuronMonitor{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "cloudwatch.aws.amazon.com",
 				APIVersion: "v1",
@@ -58,7 +58,7 @@ func getParams() manifests.Params {
 				Namespace: "default",
 				UID:       uuid.NewUUID(),
 			},
-			Spec: v1alpha1.NeuronMonitorSpec{
+			Spec: v1beta1.NeuronMonitorSpec{
 				Image:         "public.ecr.aws/cloudwatch-agent/neuron-monitor:0.1.0",
 				MonitorConfig: `{"period":"5s","neuron_runtimes":[{"tag_filter":".*","metrics":[{"type":"neuroncore_counters"},{"type":"memory_used"},{"type":"neuron_runtime_vcpu_usage"},{"type":"execution_stats"}]}],"system_metrics":[{"type":"memory_info"},{"period":"5s","type":"neuron_hw_counters"}]}`,
 			},

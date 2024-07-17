@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 )
 
 func TestDefaultAnnotations(t *testing.T) {
 	// prepare
-	exporter := v1alpha1.NeuronMonitor{
+	exporter := v1beta1.NeuronMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
-		Spec: v1alpha1.NeuronMonitorSpec{},
+		Spec: v1beta1.NeuronMonitorSpec{},
 	}
 	// test
 	annotations := Annotations(exporter)
@@ -31,7 +31,7 @@ func TestDefaultAnnotations(t *testing.T) {
 
 func TestUserAnnotations(t *testing.T) {
 	// prepare
-	exporter := v1alpha1.NeuronMonitor{
+	exporter := v1beta1.NeuronMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
@@ -40,7 +40,7 @@ func TestUserAnnotations(t *testing.T) {
 				"amazon-cloudwatch-agent-operator-config/sha256": "shouldBeOverwritten",
 			},
 		},
-		Spec: v1alpha1.NeuronMonitorSpec{},
+		Spec: v1beta1.NeuronMonitorSpec{},
 	}
 
 	// test

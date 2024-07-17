@@ -45,7 +45,7 @@ var (
 		featuregate.WithRegisterFromVersion("v0.77.0"),
 	)
 	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.apache-httpd",
+		"operator.autoinstrumentation.apachehttpd",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.80.0"),
@@ -58,7 +58,7 @@ var (
 	)
 
 	EnableMultiInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.multi-instrumentation",
+		"operator.autoinstrumentation.multiinstrumentation",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterFromVersion("0.86.0"),
 		featuregate.WithRegisterDescription("controls whether the operator supports multi instrumentation"))
@@ -85,7 +85,7 @@ var (
 	// instrumentations for pods without specified container name annotations. Does not prevent specification
 	// annotations from being used.
 	SkipMultiInstrumentationContainerValidation = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.multi-instrumentation.skip-container-validation",
+		"operator.autoinstrumentation.multiinstrumentation.skipcontainervalidation",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator validates the container annotations when multi-instrumentation is enabled"))
 )
@@ -93,7 +93,6 @@ var (
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)
-	flagSet.Var(featuregate.NewFlag(reg), FeatureGatesFlag,
-		"Comma-delimited list of feature gate identifiers. Prefix with '-' to disable the feature. '+' or no prefix will enable the feature.")
+	reg.RegisterFlags(flagSet)
 	return flagSet
 }

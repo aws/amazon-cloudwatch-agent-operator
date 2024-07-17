@@ -12,17 +12,19 @@ import (
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
 const (
@@ -56,6 +58,25 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	return resources, nil
 }
 
+// getList queries the Kubernetes API to list the requested resource, setting the list l of type T.
+func getList[T client.Object](ctx context.Context, cl client.Client, l T, options ...client.ListOption) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	list := &unstructured.UnstructuredList{}
+	gvk, err := apiutil.GVKForObject(l, cl.Scheme())
+	if err != nil {
+		return nil, err
+	}
+	list.SetGroupVersionKind(gvk)
+	err = cl.List(ctx, list, options...)
+	if err != nil {
+		return ownedObjects, fmt.Errorf("error listing %T: %w", l, err)
+	}
+	for i := range list.Items {
+		ownedObjects[list.Items[i].GetUID()] = &list.Items[i]
+	}
+	return ownedObjects, nil
+}
+
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
 func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects ...client.Object) error {
 	var errs []error
@@ -71,7 +92,6 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 				continue
 			}
 		}
-
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
@@ -124,8 +144,8 @@ func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client
 	return false
 }
 
-var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
-	cr := &v1alpha1.AmazonCloudWatchAgent{}
+var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1beta1.AmazonCloudWatchAgent {
+	cr := &v1beta1.AmazonCloudWatchAgent{}
 
 	_ = c.Get(ctx, client.ObjectKey{
 		Namespace: amazonCloudWatchNamespace,
@@ -133,4 +153,23 @@ var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client
 	}, cr)
 
 	return *cr
+}
+
+func deleteObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, objects map[types.UID]client.Object) error {
+	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
+	pruneErrs := []error{}
+	for _, obj := range objects {
+		l := logger.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind().GroupVersionKind(),
+		)
+
+		l.Info("pruning unmanaged resource")
+		err := kubeClient.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	return errors.Join(pruneErrs...)
 }

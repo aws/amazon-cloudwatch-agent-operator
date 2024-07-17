@@ -7,17 +7,16 @@ package collector
 
 import (
 	"fmt"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"testing"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 func sidecarParams() manifests.Params {
-	return paramsWithMode(v1alpha1.ModeSidecar)
+	return paramsWithMode(v1beta1.ModeSidecar)
 }
 
 func TestDesiredPodMonitors(t *testing.T) {
@@ -34,12 +33,14 @@ func TestDesiredPodMonitors(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s-collector", params.OtelCol.Name), actual.Name)
 	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
 	assert.Equal(t, "monitoring", actual.Spec.PodMetricsEndpoints[0].Port)
+}
 
-	params, err = newParams("", "testdata/prometheus-exporter.yaml")
+func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
+	params, err := newParams("", "testdata/prometheus-exporter.yaml")
 	assert.NoError(t, err)
-	params.OtelCol.Spec.Mode = v1alpha1.ModeSidecar
+	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
-	actual, err = PodMonitor(params)
+	actual, err := PodMonitor(params)
 	assert.NoError(t, err)
 	assert.NotNil(t, actual)
 	assert.Equal(t, fmt.Sprintf("%s-collector", params.OtelCol.Name), actual.Name)

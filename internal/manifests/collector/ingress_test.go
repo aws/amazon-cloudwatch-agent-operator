@@ -14,11 +14,10 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 const testFileIngress = "testdata/ingress_testdata.yaml"
@@ -28,10 +27,10 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressType("unknown"),
+			OtelCol: v1beta1.AmazonCloudWatchAgent{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("unknown"),
 					},
 				},
 			},
@@ -42,44 +41,40 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should return nil unable to parse config", func(t *testing.T) {
+	t.Run("should return nil, no ingress set", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Config: "!!!",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
-					},
+			OtelCol: v1beta1.AmazonCloudWatchAgent{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+					Mode: "Deployment",
 				},
 			},
 		}
 
 		actual, err := Ingress(params)
-		fmt.Printf("error1: %+v", err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the amazon-cloudwatch-agent configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.AmazonCloudWatchAgent{
-				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Config: "---",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
+
+			OtelCol: v1beta1.AmazonCloudWatchAgent{
+				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+					Config: v1beta1.Config{},
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeIngress,
 					},
 				},
 			},
 		}
 
 		actual, err := Ingress(params)
-		fmt.Printf("error2: %+v", err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("path per port", func(t *testing.T) {
@@ -95,8 +90,8 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:             v1alpha1.IngressTypeNginx,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeIngress,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -183,9 +178,9 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:             v1alpha1.IngressTypeNginx,
-			RuleType:         v1alpha1.IngressRuleTypeSubdomain,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeIngress,
+			RuleType:         v1beta1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,

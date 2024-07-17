@@ -13,11 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -27,8 +26,8 @@ func TestDesiredNeuronService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			NeuronExp: v1alpha1.NeuronMonitor{
-				Spec: v1alpha1.NeuronMonitorSpec{},
+			NeuronExp: v1beta1.NeuronMonitor{
+				Spec: v1beta1.NeuronMonitorSpec{},
 			},
 		}
 		trafficPolicy := v1.ServiceInternalTrafficPolicyLocal
@@ -66,8 +65,8 @@ func TestDesiredNeuronService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			NeuronExp: v1alpha1.NeuronMonitor{
-				Spec: v1alpha1.NeuronMonitorSpec{
+			NeuronExp: v1beta1.NeuronMonitor{
+				Spec: v1beta1.NeuronMonitorSpec{
 					Ports: []v1.ServicePort{
 						{
 							Name: "test",
