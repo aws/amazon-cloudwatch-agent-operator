@@ -69,18 +69,6 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
-<<<<<<< HEAD
-			// temporary environment variables. Need to be updated with the latest values
-			DotNet: v1alpha1.DotNet{
-				Image: defaultDotNetInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-=======
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
@@ -91,15 +79,11 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
->>>>>>> 5a9b93a4d2ead452d268ac760b95a52f0dec9546
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-<<<<<<< HEAD
-=======
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
->>>>>>> 5a9b93a4d2ead452d268ac760b95a52f0dec9546
 				},
 			},
 		},
@@ -153,18 +137,6 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
-<<<<<<< HEAD
-			// temporary environment variables. Need to be updated with the latest values
-			DotNet: v1alpha1.DotNet{
-				Image: defaultDotNetInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-=======
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
@@ -175,15 +147,11 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
->>>>>>> 5a9b93a4d2ead452d268ac760b95a52f0dec9546
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-<<<<<<< HEAD
-=======
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
->>>>>>> 5a9b93a4d2ead452d268ac760b95a52f0dec9546
 				},
 			},
 		},
