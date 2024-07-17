@@ -93,23 +93,25 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr               string
-		probeAddr                 string
-		pprofAddr                 string
-		agentImage                string
-		autoInstrumentationJava   string
-		autoInstrumentationPython string
-		autoInstrumentationDotNet string
-		autoAnnotationConfigStr   string
-		webhookPort               int
-		tlsOpt                    tlsConfig
-		dcgmExporterImage         string
-		neuronMonitorImage        string
+		metricsAddr                  string
+		probeAddr                    string
+		pprofAddr                    string
+		autoInstrumentationConfigStr string
+		agentImage                   string
+		autoInstrumentationJava      string
+		autoInstrumentationPython    string
+		autoInstrumentationDotNet    string
+		autoAnnotationConfigStr      string
+		webhookPort                  int
+		tlsOpt                       tlsConfig
+		dcgmExporterImage            string
+		neuronMonitorImage           string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.StringVar(&pprofAddr, "pprof-addr", "", "The address to expose the pprof server. Default is empty string which disables the pprof server.")
+	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
@@ -118,6 +120,9 @@ func main() {
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
+
+	// set instrumentation config in environment variable to be used for default instrumentation
+	os.Setenv("AUTO_INSTRUMENTATION_CONFIG", autoInstrumentationConfigStr)
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)

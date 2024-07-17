@@ -4,8 +4,10 @@
 package instrumentation
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +39,14 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	dotNetInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_DOTNET")
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
+	}
+	autoInstrumentationConfigStr, ok := os.LookupEnv("AUTO_INSTRUMENTATION_CONFIG")
+	autoInstrumentationConfig := map[string]string{
+		"cpu":    "100m",
+		"memory": "64Mi",
+	}
+	if ok {
+		json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	}
 
 	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
@@ -86,6 +96,12 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
+						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
+					},
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,
@@ -103,6 +119,12 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
+						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
+					},
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
@@ -119,6 +141,12 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
+						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
+					},
 				},
 			},
 		},
