@@ -48,7 +48,7 @@ const (
 	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
-	autoInstrumentationDotNetImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet"
+	autoInstrumentationDotNetImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-dotnet"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
@@ -244,6 +244,7 @@ func main() {
 				instrumentation.NewTypeSet(
 					instrumentation.TypeJava,
 					instrumentation.TypePython,
+					instrumentation.TypeDotNet,
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{

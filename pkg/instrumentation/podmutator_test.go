@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
@@ -29,6 +30,7 @@ const (
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
+<<<<<<< HEAD
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
@@ -100,6 +102,10 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 			},
 		},
 	}
+=======
+	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
+
+>>>>>>> 5a9b93a4d2ead452d268ac760b95a52f0dec9546
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",
@@ -113,7 +119,7 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 		Client: fake.NewClientBuilder().Build(),
 		Logger: logr.Logger{},
 	}
-	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace)
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
