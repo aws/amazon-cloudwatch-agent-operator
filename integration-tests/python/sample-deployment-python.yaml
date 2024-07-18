@@ -11,7 +11,7 @@ spec:
       labels:
         app: nginx
       annotations:
-        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
     spec:
       containers:
         - name: nginx
