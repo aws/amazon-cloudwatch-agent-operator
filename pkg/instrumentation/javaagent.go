@@ -23,7 +23,7 @@ const (
 var (
 	javaCommandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
 	javaCommandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPathWindows}
-  javaAgent      = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+	javaAgent          = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {

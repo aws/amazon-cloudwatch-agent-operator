@@ -20,7 +20,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 const (
@@ -1863,7 +1862,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -2059,7 +2058,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -2264,7 +2263,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -3580,7 +3579,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -4365,7 +4364,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -5363,7 +5362,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
