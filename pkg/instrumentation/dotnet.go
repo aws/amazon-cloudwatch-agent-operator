@@ -28,15 +28,30 @@ const (
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation-dotnet"
 	dotNetSharedStorePath               = "/otel-auto-instrumentation-dotnet/store"
 	dotNetStartupHookPath               = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotNetAutoPlugins                   = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
 	dotnetVolumeName                    = volumeName + "-dotnet"
 	dotnetInitContainerName             = initContainerName + "-dotnet"
 	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
+)
+
+const (
+	dotNetCoreClrProfilerPathWindows = "C:\\otel-auto-instrumentation-dotnet\\win-x64\\OpenTelemetry.AutoInstrumentation.Native.dll"
+	dotNetAdditionalDepsPathWindows  = "C:\\otel-auto-instrumentation-dotnet\\AdditionalDeps"
+	dotNetOTelAutoHomePathWindows    = "C:\\otel-auto-instrumentation-dotnet"
+	dotNetSharedStorePathWindows     = "C:\\otel-auto-instrumentation-dotnet\\store"
+	dotNetStartupHookPathWindows     = "C:\\otel-auto-instrumentation-dotnet\\net\\OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotnetInstrMountPathWindows      = "\\otel-auto-instrumentation-dotnet"
 )
 
 // Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
 const (
 	dotNetRuntimeLinuxGlibc = "linux-x64"
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
+)
+
+var (
+	dotNetCommandLinux   = []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath}
+	dotNetCommandWindows = []string{"CMD", "/c", "xcopy", "/e", "autoinstrumentation\\*", dotnetInstrMountPathWindows}
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
@@ -85,18 +100,20 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	)
 
 	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
-
 	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
+	if isWindowsPod(pod) {
+		setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPathWindows, doNotConcatEnvValues)
+		setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPathWindows, concatEnvValues)
+		setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPathWindows, concatEnvValues)
+		setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePathWindows, doNotConcatEnvValues)
+		setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePathWindows, concatEnvValues)
+	} else {
+		setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
+		setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
+		setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
+		setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
+		setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
+	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      dotnetVolumeName,
@@ -113,10 +130,15 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				},
 			}})
 
+		command := dotNetCommandLinux
+		if isWindowsPod(pod) {
+			command = dotNetCommandWindows
+		}
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
+			Command:   command,
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      dotnetVolumeName,

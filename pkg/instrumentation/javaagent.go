@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	commandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
-	commandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPathWindows}
-	javaAgent      = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+	javaCommandLinux   = []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"}
+	javaCommandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPathWindows}
+  javaAgent      = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -73,9 +73,9 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 				},
 			}})
 
-		command := commandLinux
-		if pod.Spec.NodeSelector["kubernetes.io/os"] == "windows" {
-			command = commandWindows
+		command := javaCommandLinux
+		if isWindowsPod(pod) {
+			command = javaCommandWindows
 		}
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{

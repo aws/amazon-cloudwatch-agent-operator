@@ -48,6 +48,7 @@ const (
 	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
+	autoInstrumentationDotNetImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-dotnet"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
@@ -98,6 +99,7 @@ func main() {
 		agentImage                string
 		autoInstrumentationJava   string
 		autoInstrumentationPython string
+		autoInstrumentationDotNet string
 		autoAnnotationConfigStr   string
 		webhookPort               int
 		tlsOpt                    tlsConfig
@@ -111,14 +113,16 @@ func main() {
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
-	// set java instrumentation java image in environment variable to be used for default instrumentation
+	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -128,6 +132,7 @@ func main() {
 		"cloudwatch-agent", agentImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-python", autoInstrumentationPython,
+		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
 		"build-date", v.BuildDate,
@@ -142,6 +147,7 @@ func main() {
 		config.WithCollectorImage(agentImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithDcgmExporterImage(dcgmExporterImage),
 		config.WithNeuronMonitorImage(neuronMonitorImage),
 		config.WithEnableMultiInstrumentation(true),
@@ -241,6 +247,7 @@ func main() {
 				instrumentation.NewTypeSet(
 					instrumentation.TypeJava,
 					instrumentation.TypePython,
+					instrumentation.TypeDotNet,
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{

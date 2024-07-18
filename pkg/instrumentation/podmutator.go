@@ -377,7 +377,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, isWindowsPod(pod))
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -396,7 +396,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
@@ -410,7 +410,8 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 		if err != nil {
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
 		}
-		return getDefaultInstrumentation(config)
+
+		return getDefaultInstrumentation(config, isWindowsPod)
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
@@ -427,4 +428,8 @@ func GetAmazonCloudWatchAgentResource(ctx context.Context, c client.Client, name
 	}, cr)
 
 	return *cr
+}
+
+func isWindowsPod(pod corev1.Pod) bool {
+	return pod.Spec.NodeSelector["kubernetes.io/os"] == "windows"
 }
