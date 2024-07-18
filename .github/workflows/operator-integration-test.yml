@@ -111,6 +111,7 @@ jobs:
 
       - name: Test for default instrumentation resources for dotnet
         run: |
+          cat integration-tests/dotnet/sample-deployment-dotnet.yaml
           kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
           sleep 5
           kubectl delete pods --all -n default

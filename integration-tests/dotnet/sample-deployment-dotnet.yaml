@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: nginx
+      annotations:
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
     spec:
       containers:
         - name: nginx
