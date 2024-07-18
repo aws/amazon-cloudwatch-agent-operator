@@ -4,7 +4,6 @@
 package instrumentation
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -40,13 +39,17 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
 	}
-	autoInstrumentationConfigStr, ok := os.LookupEnv("AUTO_INSTRUMENTATION_CONFIG")
-	autoInstrumentationConfig := map[string]string{
-		"cpu":    "100m",
-		"memory": "64Mi",
-	}
-	if ok {
-		json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
+	autoInstrumentationConfigCpu, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_CPU")
+	autoInstrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_MEMORY")
+
+	var autoInstrumentationConfigLimits corev1.ResourceList
+	if autoInstrumentationConfigCpu == "" || autoInstrumentationConfigMemory == "" {
+		autoInstrumentationConfigLimits = nil
+	} else {
+		autoInstrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfigCpu),
+			corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfigMemory),
+		}
 	}
 
 	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
@@ -97,10 +100,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
-						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
-					},
+					Limits: autoInstrumentationConfigLimits,
 				},
 			},
 			Python: v1alpha1.Python{
@@ -120,10 +120,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
-						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
-					},
+					Limits: autoInstrumentationConfigLimits,
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -143,10 +140,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfig["cpu"]),
-						corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfig["memory"]),
-					},
+					Limits: autoInstrumentationConfigLimits,
 				},
 			},
 		},

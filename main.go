@@ -121,8 +121,14 @@ func main() {
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
-	// set instrumentation config in environment variable to be used for default instrumentation
-	os.Setenv("AUTO_INSTRUMENTATION_CONFIG", autoInstrumentationConfigStr)
+	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation
+	autoInstrumentationConfig := map[string]string{"cpu": "", "memory": ""}
+	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
+	if err != nil {
+		setupLog.Error(err, "Unable to unmarshal auto-instrumentation config, assuming default values")
+	}
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", autoInstrumentationConfig["cpu"])
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", autoInstrumentationConfig["memory"])
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
@@ -278,7 +284,7 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
-		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
+		mgr.GetWebhookServer().Register("/mut ate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),

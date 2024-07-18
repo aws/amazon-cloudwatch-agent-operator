@@ -4,6 +4,7 @@
 package instrumentation
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"reflect"
 	"testing"
@@ -19,6 +20,8 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", "64Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -51,6 +54,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
@@ -68,6 +77,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
@@ -84,6 +99,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 		},
@@ -119,6 +140,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
@@ -136,6 +163,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
@@ -152,6 +185,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 		},
@@ -218,6 +257,8 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", "64Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -250,6 +291,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
@@ -267,6 +314,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
@@ -283,6 +336,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 		},
@@ -318,6 +377,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
@@ -335,6 +400,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: defaultDotNetInstrumentationImage,
@@ -351,6 +422,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 		},
