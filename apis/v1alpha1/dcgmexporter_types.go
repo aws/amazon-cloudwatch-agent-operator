@@ -86,8 +86,8 @@ type DcgmExporterStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// +kubebuilder:deprecatedversion:warning="DCGM Exporter v1alpha1 is deprecated. Migrate to v1beta1."
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=dcgmexp;dcgmexps
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector

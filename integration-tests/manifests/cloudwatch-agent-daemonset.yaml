@@ -1,4 +1,4 @@
-apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+apiVersion: cloudwatch.aws.amazon.com/v1beta1
 kind: AmazonCloudWatchAgent
 metadata:
   name: cloudwatch-agent

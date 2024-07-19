@@ -11,7 +11,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -20,7 +20,7 @@ import (
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	name := naming.Ingress(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, params.Config.LabelsFilter())
-	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeIngress {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
 		return nil, nil
 	}
 
@@ -38,9 +38,9 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 
 	var rules []networkingv1.IngressRule
 	switch params.OtelCol.Spec.Ingress.RuleType {
-	case v1beta1.IngressRuleTypePath, "":
+	case v1alpha1.IngressRuleTypePath, "":
 		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)}
-	case v1beta1.IngressRuleTypeSubdomain:
+	case v1alpha1.IngressRuleTypeSubdomain:
 		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
 	}
 
@@ -123,7 +123,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 	return rules
 }
 
-func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.AmazonCloudWatchAgent) ([]corev1.ServicePort, error) {
+func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	if len(otelcol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
@@ -145,7 +145,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.AmazonCloudWatchAge
 	return ports, nil
 }
 
-func toServicePorts(spec []v1beta1.PortsSpec) []corev1.ServicePort {
+func toServicePorts(spec []v1alpha1.PortsSpec) []corev1.ServicePort {
 	var ports []corev1.ServicePort
 	for _, p := range spec {
 		ports = append(ports, p.ServicePort)

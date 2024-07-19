@@ -8,11 +8,11 @@ import (
 
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
-func ReplaceConfig(instance v1beta1.AmazonCloudWatchAgent) (string, error) {
+func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	config, err := adapters.ConfigFromJSONString(instance.Spec.Config)
 	if err != nil {
 		return "", err

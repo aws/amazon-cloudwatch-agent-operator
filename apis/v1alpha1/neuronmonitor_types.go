@@ -105,8 +105,8 @@ type NeuronMonitorStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// +kubebuilder:deprecatedversion:warning="NeuronMonitor v1alpha1 is deprecated. Migrate to v1beta1."
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=neuronexp;neuronexps
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector

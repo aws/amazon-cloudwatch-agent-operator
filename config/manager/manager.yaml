@@ -27,18 +27,13 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-      - image: controller
-        args:
-          - "--feature-gates=operator.autoinstrumentation.multi-instrumentation,operator.autoinstrumentation.multi-instrumentation.skip-container-validation"
-        name: manager
-        resources:
-          requests:
-            cpu: 100m
-            memory: 64Mi
-        env:
-          - name: SERVICE_ACCOUNT_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.serviceAccountName
+        - image: controller
+          args:
+            - "--feature-gates=operator.autoinstrumentation.multiinstrumentation,operator.autoinstrumentation.multiinstrumentation.skipcontainervalidation"
+          name: manager
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

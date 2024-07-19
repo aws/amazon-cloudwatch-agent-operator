@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -21,7 +21,7 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, agent v1beta1.AmazonCloudWatchAgent, addConfig bool) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloudWatchAgent, addConfig bool) corev1.Container {
 	image := agent.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
@@ -36,18 +36,18 @@ func Container(cfg config.Config, logger logr.Logger, agent v1beta1.AmazonCloudW
 	}
 	// defines the output (sorted) array for final output
 	var args []string
-	// When adding a config via v1beta1.AmazonCloudWatchAgentSpec.Config, we ensure that it is always the
+	// When adding a config via v1alpha1.AmazonCloudWatchAgentSpec.Config, we ensure that it is always the
 	// first item in the args. At the time of writing, although multiple configs are allowed in the
 	// cloudwatch agent, the operator has yet to implement such functionality.  When multiple configs
 	// are present they should be merged in a deterministic manner using the order given, and because
-	// v1beta1.AmazonCloudWatchAgentSpec.Config is a required field we assume that it will always be the
+	// v1alpha1.AmazonCloudWatchAgentSpec.Config is a required field we assume that it will always be the
 	// "primary" config and in the future additional configs can be appended to the container args in a simple manner.
 
 	if addConfig {
 		volumeMounts = append(volumeMounts, getVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
 	}
 
-	// ensure that the v1beta1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
+	// ensure that the v1alpha1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
 	// where iterating over a map does not guarantee, so that reconcile will not be fooled by different
 	// ordering in args.
 	var sortedArgs []string

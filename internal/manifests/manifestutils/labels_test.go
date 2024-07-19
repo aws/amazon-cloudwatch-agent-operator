@@ -27,7 +27,9 @@ func TestLabelsCommonSet(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
+			},
 		},
 	}
 
@@ -47,7 +49,9 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			},
 		},
 	}
 
@@ -66,7 +70,9 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			},
 		},
 	}
 
@@ -86,7 +92,9 @@ func TestLabelsTagUnset(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			},
 		},
 	}
 
@@ -109,7 +117,9 @@ func TestLabelsPropagateDown(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			},
 		},
 	}
 
@@ -128,7 +138,9 @@ func TestLabelsFilter(t *testing.T) {
 			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator",
+			},
 		},
 	}
 

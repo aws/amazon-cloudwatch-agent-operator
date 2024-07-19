@@ -11,12 +11,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 func sidecarParams() manifests.Params {
-	return paramsWithMode(v1beta1.ModeSidecar)
+	return paramsWithMode(v1alpha1.ModeSidecar)
 }
 
 func TestDesiredPodMonitors(t *testing.T) {
@@ -38,7 +38,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 	params, err := newParams("", "testdata/prometheus-exporter.yaml")
 	assert.NoError(t, err)
-	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
+	params.OtelCol.Spec.Mode = v1alpha1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err := PodMonitor(params)
 	assert.NoError(t, err)

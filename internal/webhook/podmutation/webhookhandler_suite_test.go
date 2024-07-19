@@ -25,7 +25,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	// +kubebuilder:scaffold:imports
 )
@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = v1beta1.AddToScheme(testScheme); err != nil {
+	if err = v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
@@ -87,7 +87,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New()); err != nil {
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
@@ -29,10 +29,10 @@ const (
 )
 
 func deploymentParams() manifests.Params {
-	return paramsWithMode(v1beta1.ModeDeployment)
+	return paramsWithMode(v1alpha1.ModeDeployment)
 }
 
-func paramsWithMode(mode v1beta1.Mode) manifests.Params {
+func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	replicas := int32(2)
 	configJSON, err := os.ReadFile("testdata/test.json")
 	if err != nil {
@@ -40,7 +40,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	}
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage)),
-		OtelCol: v1beta1.AmazonCloudWatchAgent{
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "cloudwatch.aws.amazon.com",
 				APIVersion: "v1",
@@ -50,10 +50,10 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 					Image: "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Ports: []v1beta1.PortsSpec{
+					Ports: []v1alpha1.PortsSpec{
 						{
 							ServicePort: v1.ServicePort{
 								Name: "web",
@@ -97,7 +97,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	return manifests.Params{
 		Config: cfg,
-		OtelCol: v1beta1.AmazonCloudWatchAgent{
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -107,9 +107,9 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
-					Ports: []v1beta1.PortsSpec{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+					Ports: []v1alpha1.PortsSpec{
 						{
 							ServicePort: v1.ServicePort{
 								Name: "web",
@@ -125,7 +125,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 					Replicas: &replicas,
 				},
-				Mode:   v1beta1.ModeStatefulSet,
+				Mode:   v1alpha1.ModeStatefulSet,
 				Config: string(configJSON),
 			},
 		},

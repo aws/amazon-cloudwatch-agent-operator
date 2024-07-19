@@ -14,7 +14,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -27,10 +27,10 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1beta1.AmazonCloudWatchAgent{
-				Spec: v1beta1.AmazonCloudWatchAgentSpec{
-					Ingress: v1beta1.Ingress{
-						Type: v1beta1.IngressType("unknown"),
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+					Ingress: v1alpha1.Ingress{
+						Type: v1alpha1.IngressType("unknown"),
 					},
 				},
 			},
@@ -45,8 +45,8 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1beta1.AmazonCloudWatchAgent{
-				Spec: v1beta1.AmazonCloudWatchAgentSpec{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Mode: "Deployment",
 				},
 			},
@@ -62,11 +62,11 @@ func TestDesiredIngresses(t *testing.T) {
 			Config: config.Config{},
 			Log:    logger,
 
-			OtelCol: v1beta1.AmazonCloudWatchAgent{
-				Spec: v1beta1.AmazonCloudWatchAgentSpec{
-					Config: v1beta1.Config{},
-					Ingress: v1beta1.Ingress{
-						Type: v1beta1.IngressTypeIngress,
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+					Config: v1alpha1.Config{},
+					Ingress: v1alpha1.Ingress{
+						Type: v1alpha1.IngressTypeIngress,
 					},
 				},
 			},
@@ -90,8 +90,8 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeIngress,
+		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
+			Type:             v1alpha1.IngressTypeIngress,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -178,9 +178,9 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeIngress,
-			RuleType:         v1beta1.IngressRuleTypeSubdomain,
+		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
+			Type:             v1alpha1.IngressTypeIngress,
+			RuleType:         v1alpha1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,

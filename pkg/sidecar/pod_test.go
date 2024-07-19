@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
@@ -38,15 +38,15 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 		},
 	}
 
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
 
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
-				Ports: []v1beta1.PortsSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
+				Ports: []v1alpha1.PortsSpec{
 					{
 						ServicePort: corev1.ServicePort{
 							Name:     "metrics",
@@ -118,7 +118,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1beta1.AmazonCloudWatchAgent{}
+	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -206,7 +206,7 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 		},
 	}
 
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",

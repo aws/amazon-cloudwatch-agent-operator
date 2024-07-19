@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
@@ -134,7 +134,7 @@ func (r *AmazonCloudWatchAgentReconciler) getConfigMapsToRemove(configVersionsTo
 	return ownedConfigMaps
 }
 
-func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1beta1.AmazonCloudWatchAgent) (manifests.Params, error) {
+func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -176,7 +176,7 @@ func NewReconciler(p Params) *AmazonCloudWatchAgentReconciler {
 func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("amazoncloudwatchagent", req.NamespacedName)
 
-	var instance v1beta1.AmazonCloudWatchAgent
+	var instance v1alpha1.AmazonCloudWatchAgent
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch AmazonCloudWatchAgent")
@@ -216,7 +216,7 @@ func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
+	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
@@ -243,7 +243,7 @@ func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctr
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *AmazonCloudWatchAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1beta1.AmazonCloudWatchAgent{}).
+		For(&v1alpha1.AmazonCloudWatchAgent{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

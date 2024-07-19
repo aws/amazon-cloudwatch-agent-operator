@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 )
 
@@ -19,8 +19,8 @@ type Params struct {
 	Recorder  record.EventRecorder
 	Scheme    *runtime.Scheme
 	Log       logr.Logger
-	OtelCol   v1beta1.AmazonCloudWatchAgent
-	DcgmExp   v1beta1.DcgmExporter
-	NeuronExp v1beta1.NeuronMonitor
+	OtelCol   v1alpha1.AmazonCloudWatchAgent
+	DcgmExp   v1alpha1.DcgmExporter
+	NeuronExp v1alpha1.NeuronMonitor
 	Config    config.Config
 }

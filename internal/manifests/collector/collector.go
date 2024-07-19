@@ -6,9 +6,8 @@ package collector
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 const (
@@ -20,15 +19,15 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory
 	switch params.OtelCol.Spec.Mode {
-	case v1beta1.ModeDeployment:
+	case v1alpha1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
 		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
-	case v1beta1.ModeStatefulSet:
+	case v1alpha1.ModeStatefulSet:
 		manifestFactories = append(manifestFactories, manifests.Factory(StatefulSet))
 		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
-	case v1beta1.ModeDaemonSet:
+	case v1alpha1.ModeDaemonSet:
 		manifestFactories = append(manifestFactories, manifests.Factory(DaemonSet))
-	case v1beta1.ModeSidecar:
+	case v1alpha1.ModeSidecar:
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
@@ -40,14 +39,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(MonitoringService),
 		manifests.Factory(Ingress),
 	}...)
-
-	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
-			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
-		} else {
-			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor), manifests.Factory(ServiceMonitor))
-		}
-	}
 
 	for _, factory := range manifestFactories {
 		res, err := factory(params)

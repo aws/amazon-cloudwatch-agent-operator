@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 func TestServiceAccountNewDefault(t *testing.T) {
-	exporter := v1beta1.DcgmExporter{
+	exporter := v1alpha1.DcgmExporter{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -23,11 +23,11 @@ func TestServiceAccountNewDefault(t *testing.T) {
 }
 
 func TestServiceAccountOverride(t *testing.T) {
-	exporter := v1beta1.DcgmExporter{
+	exporter := v1alpha1.DcgmExporter{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1beta1.DcgmExporterSpec{
+		Spec: v1alpha1.DcgmExporterSpec{
 			ServiceAccount: "my-special-sa",
 		},
 	}

@@ -23,20 +23,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 	ctx := context.TODO()
 	cli := client.Client(fake.NewFakeClient())
 
-	changed := &v1beta1.AmazonCloudWatchAgent{
+	changed := &v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-sidecar",
 			Namespace: "default",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			Mode: v1beta1.ModeSidecar,
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Mode: v1alpha1.ModeSidecar,
 		},
 	}
 

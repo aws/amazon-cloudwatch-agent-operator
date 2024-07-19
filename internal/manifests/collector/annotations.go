@@ -7,11 +7,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 // Annotations return the annotations for AmazonCloudWatchAgent pod.
-func Annotations(instance v1beta1.AmazonCloudWatchAgent) map[string]string {
+func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -33,7 +33,7 @@ func Annotations(instance v1beta1.AmazonCloudWatchAgent) map[string]string {
 }
 
 // PodAnnotations return the spec annotations for AmazonCloudWatchAgent pod.
-func PodAnnotations(instance v1beta1.AmazonCloudWatchAgent) map[string]string {
+func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
 

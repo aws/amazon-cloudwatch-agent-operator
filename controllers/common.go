@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
@@ -144,8 +144,8 @@ func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client
 	return false
 }
 
-var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1beta1.AmazonCloudWatchAgent {
-	cr := &v1beta1.AmazonCloudWatchAgent{}
+var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
+	cr := &v1alpha1.AmazonCloudWatchAgent{}
 
 	_ = c.Get(ctx, client.ObjectKey{
 		Namespace: amazonCloudWatchNamespace,

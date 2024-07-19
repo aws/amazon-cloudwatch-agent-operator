@@ -10,7 +10,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
@@ -26,7 +26,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	}
 	var sm monitoringv1.ServiceMonitor
 
-	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 		return nil, nil
 	}
 	sm = monitoringv1.ServiceMonitor{
@@ -61,6 +61,6 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 }
 
 // No endpoints for service monitor currently as we need to open an endpoint from cloudwatch agent first
-func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.AmazonCloudWatchAgent) []monitoringv1.Endpoint {
+func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) []monitoringv1.Endpoint {
 	return []monitoringv1.Endpoint{}
 }

@@ -9,19 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
-	exporter := v1beta1.NeuronMonitor{}
+	exporter := v1alpha1.NeuronMonitor{}
 	volumes := Volumes(exporter)
 	assert.Len(t, volumes, 1)
 	assert.Equal(t, NeuronConfigMapVolumeName, volumes[0].Name)
 }
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
-	exporter := v1beta1.NeuronMonitor{
-		Spec: v1beta1.NeuronMonitorSpec{
+	exporter := v1alpha1.NeuronMonitor{
+		Spec: v1alpha1.NeuronMonitorSpec{
 			Volumes: []corev1.Volume{{
 				Name: "my-volume",
 			}},

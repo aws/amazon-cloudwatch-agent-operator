@@ -7,13 +7,13 @@ package collector
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, otelcol v1beta1.AmazonCloudWatchAgent) []corev1.Volume {
+func Volumes(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) []corev1.Volume {
 	configMapName := naming.ConfigMap(otelcol.Name)
 	volumes := []corev1.Volume{{
 		Name: naming.ConfigMapVolume(),

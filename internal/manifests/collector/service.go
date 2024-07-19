@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
@@ -92,7 +92,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
-	if params.OtelCol.Spec.Mode == v1beta1.ModeDaemonSet {
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeDaemonSet {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
@@ -162,7 +162,7 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 //	return numbers, names
 //}
 
-func extractPortNumbersAndNames(ports []v1beta1.PortsSpec) (map[int32]bool, map[string]bool) {
+func extractPortNumbersAndNames(ports []v1alpha1.PortsSpec) (map[int32]bool, map[string]bool) {
 	numbers := map[int32]bool{}
 	names := map[string]bool{}
 

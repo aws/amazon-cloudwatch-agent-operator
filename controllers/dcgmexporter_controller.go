@@ -17,7 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/dcgmexporter"
@@ -33,7 +33,7 @@ type DcgmExporterReconciler struct {
 	config   config.Config
 }
 
-func (r *DcgmExporterReconciler) getParams(instance v1beta1.DcgmExporter) manifests.Params {
+func (r *DcgmExporterReconciler) getParams(instance v1alpha1.DcgmExporter) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -73,7 +73,7 @@ func NewDcgmExporterReconciler(p Params) *DcgmExporterReconciler {
 func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("DcgmExporter", req.NamespacedName)
 
-	var instance v1beta1.DcgmExporter
+	var instance v1alpha1.DcgmExporter
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch DcgmExporter")
@@ -129,7 +129,7 @@ func BuildDcgmExporter(params manifests.Params) ([]client.Object, error) {
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *DcgmExporterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1beta1.DcgmExporter{}).
+		For(&v1alpha1.DcgmExporter{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/flowcontrol/v1beta1"
+	"k8s.io/api/flowcontrol/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -31,8 +31,8 @@ func TestDaemonSetNewDefault(t *testing.T) {
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 					Tolerations: testTolerationValues,
 				},
 			},
@@ -90,12 +90,12 @@ func TestDaemonSetNewDefault(t *testing.T) {
 func TestDaemonsetHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1beta1.AmazonCloudWatchAgent{
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 		},
 		Log: logger,
 	}
@@ -108,13 +108,13 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1beta1.AmazonCloudWatchAgent{
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 					HostNetwork: true,
 				},
 			},
@@ -134,8 +134,8 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				PodAnnotations: testPodAnnotationValues,
 			},
 		},
@@ -174,12 +174,12 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				PodSecurityContext: &v1.PodSecurityContext{
 					RunAsNonRoot: &runAsNonRoot,
 					RunAsUser:    &runAsUser,
@@ -211,12 +211,12 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -242,12 +242,12 @@ func TestDaemonsetFilterAnnotations(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-instance",
 			Annotations: excludedAnnotations,
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 	}
 
 	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
@@ -269,7 +269,7 @@ func TestDaemonsetFilterAnnotations(t *testing.T) {
 
 func TestDaemonSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1beta1.AmazonCloudWatchAgent{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
@@ -290,12 +290,12 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1beta1.AmazonCloudWatchAgent{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				HostNetwork: true,
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
@@ -318,7 +318,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 }
 
 func TestDaemonSetPriorityClassName(t *testing.T) {
-	otelcol1 := v1beta1.AmazonCloudWatchAgent{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -338,12 +338,12 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1beta1.AmazonCloudWatchAgent{
+	otelcol2 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				PriorityClassName: priorityClassName,
 			},
 		},
@@ -363,7 +363,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 }
 
 func TestDaemonSetAffinity(t *testing.T) {
-	otelcol1 := v1beta1.AmazonCloudWatchAgent{
+	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -381,12 +381,12 @@ func TestDaemonSetAffinity(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1beta1.Ama{
+	otelcol2 := v1alpha1.Ama{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				Affinity: testAffinityValue,
 			},
 		},
@@ -408,13 +408,13 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 func TestDaemonSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				InitContainers: []v1.Container{
 					{
 						Name: "test",
@@ -445,13 +445,13 @@ func TestDaemonSetInitContainer(t *testing.T) {
 
 func TestDaemonSetAdditionalContainer(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				AdditionalContainers: []v1.Container{
 					{
 						Name: "test",
@@ -483,12 +483,12 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 
 func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
@@ -519,12 +519,12 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 
 func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "OnDelete",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
@@ -555,11 +555,11 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1beta1.AmazonCloudWatchAgent{
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{},
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{},
 		},
 		Log: logger,
 	}
@@ -571,12 +571,12 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1beta1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance-with-shareprocessnamespace",
 			},
-			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha1.OpenTelemetryCommonFields{
 					ShareProcessNamespace: true,
 				},
 			},

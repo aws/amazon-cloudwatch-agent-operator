@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	otelv1beta1 "github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
@@ -66,7 +65,6 @@ type tlsConfig struct {
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -153,6 +151,7 @@ func main() {
 		config.WithEnableMultiInstrumentation(true),
 		config.WithEnableJavaInstrumentation(true),
 		config.WithEnablePythonInstrumentation(true),
+		config.WithEnableDotNetInstrumentation(true),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
@@ -268,7 +267,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg); err != nil {
+		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AmazonCloudWatchAgent")
 			os.Exit(1)
 		}

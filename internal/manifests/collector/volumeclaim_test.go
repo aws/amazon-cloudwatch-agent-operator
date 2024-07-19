@@ -11,16 +11,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 )
 
 func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Mode: "statefulset",
-			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+			StatefulSetCommonFields: v1alpha1.StatefulSetCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",
@@ -54,10 +54,10 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 
 func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Mode: "daemonset",
-			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+			StatefulSetCommonFields: v1alpha1.StatefulSetCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",

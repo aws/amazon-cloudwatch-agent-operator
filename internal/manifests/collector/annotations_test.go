@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
 func TestDefaultAnnotations(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Config: "test",
 		},
 	}
@@ -42,7 +42,7 @@ func TestDefaultAnnotations(t *testing.T) {
 
 func TestUserAnnotations(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
@@ -52,7 +52,7 @@ func TestUserAnnotations(t *testing.T) {
 				"amazon-cloudwatch-agent-operator-config/sha256": "shouldBeOverwritten",
 			},
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Config: "test",
 		},
 	}
@@ -71,12 +71,12 @@ func TestUserAnnotations(t *testing.T) {
 
 func TestAnnotationsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.AmazonCloudWatchAgent{
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{"myapp": "mycomponent"},
 		},
-		Spec: v1beta1.AmazonCloudWatchAgentSpec{
-			AmazonCloudWatchAgentCommonFields: v1beta1.AmazonCloudWatchAgentCommonFields{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			AmazonCloudWatchAgentCommonFields: v1alpha1.AmazonCloudWatchAgentCommonFields{
 				PodAnnotations: map[string]string{"pod_annotation": "pod_annotation_value"},
 			},
 		},

@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
@@ -26,8 +26,8 @@ func TestDesiredDcgmService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			DcgmExp: v1beta1.DcgmExporter{
-				Spec: v1beta1.DcgmExporterSpec{},
+			DcgmExp: v1alpha1.DcgmExporter{
+				Spec: v1alpha1.DcgmExporterSpec{},
 			},
 		}
 		trafficPolicy := v1.ServiceInternalTrafficPolicyLocal
@@ -65,8 +65,8 @@ func TestDesiredDcgmService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			DcgmExp: v1beta1.DcgmExporter{
-				Spec: v1beta1.DcgmExporterSpec{
+			DcgmExp: v1alpha1.DcgmExporter{
+				Spec: v1alpha1.DcgmExporterSpec{
 					Ports: []v1.ServicePort{
 						{
 							Name: "test",

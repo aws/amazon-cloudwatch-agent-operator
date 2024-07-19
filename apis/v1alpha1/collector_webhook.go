@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1alpha1
 
 import (
 	"context"
@@ -52,9 +52,9 @@ var (
 	}
 )
 
-// +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1beta1-amazoncloudwatchagent,mutating=true,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=create;update,versions=v1beta1,name=mamazoncloudwatchagent.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloudwatch-aws-amazon-com-v1beta1-amazoncloudwatchagent,mutating=false,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,versions=v1beta1,name=vamazoncloudwatchagentcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=delete,path=/validate-cloudwatch-aws-amazon-com-v1beta1-amazoncloudwatchagent,mutating=false,failurePolicy=ignore,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,versions=v1beta1,name=vamazoncloudwatchagentdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=true,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=create;update,versions=v1alpha1,name=mamazoncloudwatchagent.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=false,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,versions=v1alpha1,name=vamazoncloudwatchagentcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=delete,path=/validate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=false,failurePolicy=ignore,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,versions=v1alpha1,name=vamazoncloudwatchagentdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
@@ -116,7 +116,7 @@ func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error
 	if otelcol.Spec.Ingress.Type == IngressTypeRoute && otelcol.Spec.Ingress.Route.Termination == "" {
 		otelcol.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
-	if otelcol.Spec.Ingress.Type == IngressTypeIngress && otelcol.Spec.Ingress.RuleType == "" {
+	if otelcol.Spec.Ingress.Type == IngressTypeNginx && otelcol.Spec.Ingress.RuleType == "" {
 		otelcol.Spec.Ingress.RuleType = IngressRuleTypePath
 	}
 	// If someone upgrades to a later version without upgrading their CRD they will not have a management state set.
@@ -241,13 +241,13 @@ func (c CollectorWebhook) validate(ctx context.Context, r *AmazonCloudWatchAgent
 		}
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
 		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
 		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
@@ -346,7 +346,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
 	cvw := &CollectorWebhook{
-		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
+		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1alpha1"),
 		scheme: mgr.GetScheme(),
 		cfg:    cfg,
 	}

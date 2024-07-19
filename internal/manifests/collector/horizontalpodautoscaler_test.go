@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1beta1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	. "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
@@ -32,13 +32,13 @@ func TestHPA(t *testing.T) {
 	var cpuUtilization int32 = 66
 	var memoryUtilization int32 = 77
 
-	otelcols := []v1beta1.AmazonCloudWatchAgent{
+	otelcols := []v1alpha1.AmazonCloudWatchAgent{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				Autoscaler: &v1beta1.AutoscalerSpec{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				Autoscaler: &v1alpha1.AutoscalerSpec{
 					MinReplicas:             &minReplicas,
 					MaxReplicas:             &maxReplicas,
 					TargetCPUUtilization:    &cpuUtilization,
@@ -50,8 +50,8 @@ func TestHPA(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1beta1.AmazonCloudWatchAgentSpec{
-				Autoscaler: &v1beta1.AutoscalerSpec{
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				Autoscaler: &v1alpha1.AutoscalerSpec{
 					MinReplicas:             &minReplicas,
 					MaxReplicas:             &maxReplicas,
 					TargetCPUUtilization:    &cpuUtilization,
@@ -67,10 +67,10 @@ func TestHPA(t *testing.T) {
 				configuration := config.New()
 				params := manifests.Params{
 					Config: configuration,
-					OtelCol: v1beta1.AmazonCloudWatchAgent{
+					OtelCol: v1alpha1.AmazonCloudWatchAgent{
 						ObjectMeta: otelcol.ObjectMeta,
-						Spec: v1beta1.AmazonCloudWatchAgentSpec{
-							Autoscaler: &v1beta1.AutoscalerSpec{
+						Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+							Autoscaler: &v1alpha1.AutoscalerSpec{
 								MinReplicas:             otelcol.Spec.Autoscaler.MinReplicas,
 								MaxReplicas:             otelcol.Spec.Autoscaler.MaxReplicas,
 								TargetCPUUtilization:    otelcol.Spec.Autoscaler.TargetCPUUtilization,
