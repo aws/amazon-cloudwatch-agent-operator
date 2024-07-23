@@ -99,7 +99,6 @@ jobs:
           cat integration-tests/dotnet/sample-deployment-dotnet.yaml
           kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
           sleep 5
-          kubectl delete pods --all -n default
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
@@ -120,7 +119,6 @@ jobs:
         run: |
           kubectl apply -f integration-tests/python-java-dotnet/sample-deployment-python-java-dotnet.yaml
           sleep 5
-          kubectl delete pods --all -n default
           kubectl wait --for=condition=Available deployment/nginx -n default
           sleep 5
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java-dotnet/default_instrumentation_python-java-dotnet_env_variables.json
