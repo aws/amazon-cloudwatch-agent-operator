@@ -26,26 +26,16 @@ const (
 	https = "https"
 )
 
-func getInstrumentationConfig(lang string) corev1.ResourceList {
+func getInstrumentationConfigLimits(lang string) corev1.ResourceList {
 	instrumentationConfigCpu, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_CPU_" + lang)
 	instrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_" + lang)
 
-	var instrumentationConfigLimits corev1.ResourceList
-	if instrumentationConfigCpu == "" && instrumentationConfigMemory == "" {
-		instrumentationConfigLimits = nil
-	} else if instrumentationConfigCpu == "" {
-		instrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse(instrumentationConfigMemory),
-		}
-	} else if instrumentationConfigMemory == "" {
-		instrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceCPU: resource.MustParse(instrumentationConfigCpu),
-		}
-	} else {
-		instrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse(instrumentationConfigCpu),
-			corev1.ResourceMemory: resource.MustParse(instrumentationConfigMemory),
-		}
+	instrumentationConfigLimits := corev1.ResourceList{}
+	if instrumentationConfigCpu != "" {
+		instrumentationConfigLimits[corev1.ResourceCPU] = resource.MustParse(instrumentationConfigCpu)
+	}
+	if instrumentationConfigMemory != "" {
+		instrumentationConfigLimits[corev1.ResourceMemory] = resource.MustParse(instrumentationConfigMemory)
 	}
 	return instrumentationConfigLimits
 }
@@ -112,7 +102,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: getInstrumentationConfig("JAVA"),
+					Limits: getInstrumentationConfigLimits("JAVA"),
 				},
 			},
 			Python: v1alpha1.Python{
@@ -132,7 +122,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: getInstrumentationConfig("PYTHON"),
+					Limits: getInstrumentationConfigLimits("PYTHON"),
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -152,7 +142,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: getInstrumentationConfig("DOTNET"),
+					Limits: getInstrumentationConfigLimits("DOTNET"),
 				},
 			},
 		},

@@ -20,8 +20,12 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_JAVA", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_JAVA", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_PYTHON", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_PYTHON", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_DOTNET", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_DOTNET", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -80,7 +84,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 			},
@@ -103,7 +107,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
 			},
@@ -166,7 +170,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 			},
@@ -189,7 +193,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
 			},
@@ -257,8 +261,12 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_JAVA", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_JAVA", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_PYTHON", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_PYTHON", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_DOTNET", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_DOTNET", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -317,7 +325,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 			},
@@ -340,7 +348,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
 			},
@@ -403,7 +411,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 			},
@@ -426,7 +434,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
 			},
