@@ -43,8 +43,16 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	autoInstrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_MEMORY")
 
 	var autoInstrumentationConfigLimits corev1.ResourceList
-	if autoInstrumentationConfigCpu == "" || autoInstrumentationConfigMemory == "" {
+	if autoInstrumentationConfigCpu == "" && autoInstrumentationConfigMemory == "" {
 		autoInstrumentationConfigLimits = nil
+	} else if autoInstrumentationConfigCpu == "" {
+		autoInstrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfigMemory),
+		}
+	} else if autoInstrumentationConfigMemory == "" {
+		autoInstrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceCPU: resource.MustParse(autoInstrumentationConfigCpu),
+		}
 	} else {
 		autoInstrumentationConfigLimits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfigCpu),
