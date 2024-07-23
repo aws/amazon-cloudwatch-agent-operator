@@ -124,9 +124,6 @@ jobs:
           kubectl delete pods --all -n default
           kubectl wait --for=condition=Available deployment/nginx -n default
           sleep 5
-          kubectl get pods -A 
-          kubectl describe pods -n default
-          kubectl describe pods -n amazon-cloudwatch
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java-dotnet/default_instrumentation_python-java-dotnet_env_variables.json
 
 
