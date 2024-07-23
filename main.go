@@ -81,6 +81,11 @@ func stringFlagOrEnv(p *string, name string, envName string, defaultValue string
 	pflag.StringVar(p, name, defaultValue, usage)
 }
 
+func setEnvLang(lang string, cfg map[string]string) {
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_"+lang, cfg["cpu"])
+	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_"+lang, cfg["memory"])
+}
+
 func main() {
 	// registers any flags that underlying libraries might use
 	opts := zap.Options{}
@@ -122,13 +127,14 @@ func main() {
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation
-	autoInstrumentationConfig := map[string]string{"cpu": "", "memory": ""}
+	autoInstrumentationConfig := map[string]map[string]string{"java": {"cpu": "500m", "memory": "64Mi"}, "python": {"cpu": "500m", "memory": "32Mi"}, "dotnet": {"cpu": "500m", "memory": "128Mi"}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-instrumentation config, assuming default values")
 	}
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU", autoInstrumentationConfig["cpu"])
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY", autoInstrumentationConfig["memory"])
+	setEnvLang("JAVA", autoInstrumentationConfig["java"])
+	setEnvLang("PYTHON", autoInstrumentationConfig["python"])
+	setEnvLang("DOTNET", autoInstrumentationConfig["dotnet"])
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)

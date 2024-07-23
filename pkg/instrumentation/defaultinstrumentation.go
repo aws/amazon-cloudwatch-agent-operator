@@ -26,6 +26,30 @@ const (
 	https = "https"
 )
 
+func getInstrumentationConfig(lang string) corev1.ResourceList {
+	instrumentationConfigCpu, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_CPU_" + lang)
+	instrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_" + lang)
+
+	var instrumentationConfigLimits corev1.ResourceList
+	if instrumentationConfigCpu == "" && instrumentationConfigMemory == "" {
+		instrumentationConfigLimits = nil
+	} else if instrumentationConfigCpu == "" {
+		instrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse(instrumentationConfigMemory),
+		}
+	} else if instrumentationConfigMemory == "" {
+		instrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceCPU: resource.MustParse(instrumentationConfigCpu),
+		}
+	} else {
+		instrumentationConfigLimits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(instrumentationConfigCpu),
+			corev1.ResourceMemory: resource.MustParse(instrumentationConfigMemory),
+		}
+	}
+	return instrumentationConfigLimits
+}
+
 func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
@@ -38,26 +62,6 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	dotNetInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_DOTNET")
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
-	}
-	autoInstrumentationConfigCpu, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_CPU")
-	autoInstrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_LIMIT_MEMORY")
-
-	var autoInstrumentationConfigLimits corev1.ResourceList
-	if autoInstrumentationConfigCpu == "" && autoInstrumentationConfigMemory == "" {
-		autoInstrumentationConfigLimits = nil
-	} else if autoInstrumentationConfigCpu == "" {
-		autoInstrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfigMemory),
-		}
-	} else if autoInstrumentationConfigMemory == "" {
-		autoInstrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceCPU: resource.MustParse(autoInstrumentationConfigCpu),
-		}
-	} else {
-		autoInstrumentationConfigLimits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse(autoInstrumentationConfigCpu),
-			corev1.ResourceMemory: resource.MustParse(autoInstrumentationConfigMemory),
-		}
 	}
 
 	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
@@ -108,7 +112,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: autoInstrumentationConfigLimits,
+					Limits: getInstrumentationConfig("JAVA"),
 				},
 			},
 			Python: v1alpha1.Python{
@@ -128,7 +132,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: autoInstrumentationConfigLimits,
+					Limits: getInstrumentationConfig("PYTHON"),
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -148,7 +152,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits: autoInstrumentationConfigLimits,
+					Limits: getInstrumentationConfig("DOTNET"),
 				},
 			},
 		},
