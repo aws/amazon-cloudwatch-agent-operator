@@ -78,7 +78,6 @@ jobs:
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
-          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A 
