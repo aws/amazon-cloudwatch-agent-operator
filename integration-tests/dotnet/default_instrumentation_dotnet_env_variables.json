@@ -5,5 +5,12 @@
   "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces",
   "OTEL_METRICS_EXPORTER": "none",
   "OTEL_DOTNET_DISTRO": "aws_distro",
-  "OTEL_LOGS_EXPORTER": "none"
+  "OTEL_LOGS_EXPORTER": "none",
+  "CORECLR_PROFILER_PATH": "/otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so",
+  "DOTNET_STARTUP_HOOKS": "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll",
+  "DOTNET_ADDITIONAL_DEPS": "/otel-auto-instrumentation-dotnet/AdditionalDeps",
+  "OTEL_DOTNET_AUTO_HOME": "/otel-auto-instrumentation-dotnet",
+  "DOTNET_SHARED_STORE": "/otel-auto-instrumentation-dotnet/store",
+  "CORECLR_ENABLE_PROFILING": "1"
+
 }

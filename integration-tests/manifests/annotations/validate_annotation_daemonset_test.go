@@ -14,7 +14,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
-func TestJavaPythonDotNetDaemonSet(t *testing.T) {
+func TestAllLanguagesDaemonSet(t *testing.T) {
 	clientSet := setupTest(t)
 	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
 	if err != nil {
