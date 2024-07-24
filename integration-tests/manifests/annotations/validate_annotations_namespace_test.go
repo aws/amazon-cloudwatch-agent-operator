@@ -59,7 +59,7 @@ func TestAllLanguagesNamespace(t *testing.T) {
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
-		t.Error("Missing Java/Python/Dotnet annotations")
+		t.Error("Missing Languages annotations")
 	}
 }
 
