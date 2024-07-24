@@ -59,7 +59,7 @@ jobs:
       - name: Test case for cloudwatch agent pod creation
         run: |
           kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset.yaml -n amazon-cloudwatch
-          sleep 5
+          sleep 20
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
           
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
