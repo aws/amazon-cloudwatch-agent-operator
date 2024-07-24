@@ -21,7 +21,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
-func TestJavaPythonDotNetNamespace(t *testing.T) {
+func TestAllLanguagesNamespace(t *testing.T) {
 
 	clientSet := setupTest(t)
 	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
