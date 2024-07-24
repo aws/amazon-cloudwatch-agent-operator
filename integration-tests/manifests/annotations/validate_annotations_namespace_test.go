@@ -29,7 +29,7 @@ func TestAllLanguagesNamespace(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("namespace-java-python-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("namespace-all-languages-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -151,7 +151,7 @@ func TestDotNetOnlyNamespace(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("namespace-python-only-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("namespace-dotnet-only-%d", randomNumber)
 	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 	}

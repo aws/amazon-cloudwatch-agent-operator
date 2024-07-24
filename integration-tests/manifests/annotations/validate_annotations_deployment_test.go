@@ -24,7 +24,7 @@ func TestAllLanguagesDeployment(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("deployment-namespace-java-python-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-all-languages-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -141,7 +141,7 @@ func TestDotNetOnlyDeployment(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("deployment-namespace-python-only-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-dotnet-only-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		DotNet: auto.AnnotationResources{

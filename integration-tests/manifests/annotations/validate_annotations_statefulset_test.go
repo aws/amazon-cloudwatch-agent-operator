@@ -22,7 +22,7 @@ func TestAllLanguagesStatefulSet(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("statefulset-namespace-java-python-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("statefulset-namespace-all-languages-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Namespaces:   []string{""},
@@ -133,7 +133,7 @@ func TestDotNetOnlyStatefulSet(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("statefulset-namespace-python-only-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("statefulset-namespace-dotnet-only-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		DotNet: auto.AnnotationResources{
 			Namespaces:   []string{""},
