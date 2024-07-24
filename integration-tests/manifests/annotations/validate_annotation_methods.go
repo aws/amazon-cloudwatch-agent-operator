@@ -32,10 +32,13 @@ const (
 	autoAnnotateJavaAnnotation   = "cloudwatch.aws.amazon.com/auto-annotate-java"
 	injectPythonAnnotation       = "instrumentation.opentelemetry.io/inject-python"
 	autoAnnotatePythonAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-python"
-	deploymentName               = "sample-deployment"
-	nginxDeploymentName          = "nginx"
-	statefulSetName              = "sample-statefulset"
-	amazonCloudwatchNamespace    = "amazon-cloudwatch"
+	injectDotNetAnnotation       = "instrumentation.opentelemetry.io/inject-dotnet"
+	autoAnnotateDotNetAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-dotnet"
+
+	deploymentName            = "sample-deployment"
+	nginxDeploymentName       = "nginx"
+	statefulSetName           = "sample-statefulset"
+	amazonCloudwatchNamespace = "amazon-cloudwatch"
 
 	daemonSetName = "sample-daemonset"
 
