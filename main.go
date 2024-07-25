@@ -145,9 +145,15 @@ func main() {
 	if err != nil {
 		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
 	}
-	setLangEnvVars("JAVA", autoInstrumentationConfig["java"])
-	setLangEnvVars("PYTHON", autoInstrumentationConfig["python"])
-	setLangEnvVars("DOTNET", autoInstrumentationConfig["dotnet"])
+	if javaVar, ok := autoInstrumentationConfig["java"]; ok {
+		setLangEnvVars("JAVA", javaVar)
+	}
+	if pythonVar, ok := autoInstrumentationConfig["python"]; ok {
+		setLangEnvVars("PYTHON", pythonVar)
+	}
+	if dotNetVar, ok := autoInstrumentationConfig["dotnet"]; ok {
+		setLangEnvVars("DOTNET", dotNetVar)
+	}
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
