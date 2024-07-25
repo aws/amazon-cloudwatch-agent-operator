@@ -11,7 +11,15 @@
   "OTEL_METRICS_EXPORTER": "none",
   "OTEL_PYTHON_DISTRO": "aws_distro",
   "OTEL_PYTHON_CONFIGURATOR": "aws_configurator",
+  "OTEL_DOTNET_DISTRO": "aws_distro",
+  "OTEL_LOGS_EXPORTER": "none",
   "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
-  "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+  "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar",
+  "CORECLR_PROFILER_PATH": "/otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so",
+  "DOTNET_STARTUP_HOOKS": "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll",
+  "DOTNET_ADDITIONAL_DEPS": "/otel-auto-instrumentation-dotnet/AdditionalDeps",
+  "OTEL_DOTNET_AUTO_HOME": "/otel-auto-instrumentation-dotnet",
+  "DOTNET_SHARED_STORE": "/otel-auto-instrumentation-dotnet/store",
+  "CORECLR_ENABLE_PROFILING": "1"
 
 }
