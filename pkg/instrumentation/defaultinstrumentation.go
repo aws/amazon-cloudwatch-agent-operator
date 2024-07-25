@@ -31,11 +31,13 @@ func getInstrumentationConfigForResource(langStr string, resourceStr string) cor
 	instrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_MEM_" + resourceStr)
 
 	instrumentationConfigForResource := corev1.ResourceList{}
-	if instrumentationConfigCpu != "" {
-		instrumentationConfigForResource[corev1.ResourceCPU] = resource.MustParse(instrumentationConfigCpu)
+	instrumentationConfigCpuQuantity, err := resource.ParseQuantity(instrumentationConfigCpu)
+	if err == nil {
+		instrumentationConfigForResource[corev1.ResourceCPU] = instrumentationConfigCpuQuantity
 	}
-	if instrumentationConfigMemory != "" {
-		instrumentationConfigForResource[corev1.ResourceMemory] = resource.MustParse(instrumentationConfigMemory)
+	instrumentationConfigMemoryQuantity, err := resource.ParseQuantity(instrumentationConfigMemory)
+	if err == nil {
+		instrumentationConfigForResource[corev1.ResourceMemory] = instrumentationConfigMemoryQuantity
 	}
 	return instrumentationConfigForResource
 }
