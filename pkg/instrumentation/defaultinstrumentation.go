@@ -25,6 +25,12 @@ const (
 
 	http  = "http"
 	https = "https"
+
+	java    = "JAVA"
+	python  = "PYTHON"
+	dotNet  = "DOTNET"
+	limit   = "LIMIT"
+	request = "REQUEST"
 )
 
 func getInstrumentationConfigForResource(langStr string, resourceStr string) corev1.ResourceList {
@@ -105,8 +111,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits:   getInstrumentationConfigForResource("JAVA", "LIMIT"),
-					Requests: getInstrumentationConfigForResource("JAVA", "REQUEST"),
+					Limits:   getInstrumentationConfigForResource(java, limit),
+					Requests: getInstrumentationConfigForResource(java, request),
 				},
 			},
 			Python: v1alpha1.Python{
@@ -126,8 +132,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits:   getInstrumentationConfigForResource("PYTHON", "LIMIT"),
-					Requests: getInstrumentationConfigForResource("PYTHON", "REQUEST"),
+					Limits:   getInstrumentationConfigForResource(python, limit),
+					Requests: getInstrumentationConfigForResource(python, request),
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -147,8 +153,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits:   getInstrumentationConfigForResource("DOTNET", "LIMIT"),
-					Requests: getInstrumentationConfigForResource("DOTNET", "REQUEST"),
+					Limits:   getInstrumentationConfigForResource(dotNet, limit),
+					Requests: getInstrumentationConfigForResource(dotNet, request),
 				},
 			},
 		},
