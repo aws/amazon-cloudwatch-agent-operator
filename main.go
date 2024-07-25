@@ -81,9 +81,22 @@ func stringFlagOrEnv(p *string, name string, envName string, defaultValue string
 	pflag.StringVar(p, name, defaultValue, usage)
 }
 
-func setEnvLang(lang string, cfg map[string]string) {
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_"+lang, cfg["cpu"])
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_"+lang, cfg["memory"])
+func setLangEnvVarsForResource(langStr string, resourceStr string, resource map[string]string) {
+	if cpu, ok := resource["cpu"]; ok {
+		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_CPU_"+resourceStr, cpu)
+	}
+	if memory, ok := resource["memory"]; ok {
+		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_MEM_"+resourceStr, memory)
+	}
+}
+
+func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
+	if limits, ok := cfg["limits"]; ok {
+		setLangEnvVarsForResource(langStr, "LIMIT", limits)
+	}
+	if requests, ok := cfg["requests"]; ok {
+		setLangEnvVarsForResource(langStr, "REQUEST", requests)
+	}
 }
 
 func main() {
@@ -101,12 +114,12 @@ func main() {
 		metricsAddr                  string
 		probeAddr                    string
 		pprofAddr                    string
-		autoInstrumentationConfigStr string
 		agentImage                   string
 		autoInstrumentationJava      string
 		autoInstrumentationPython    string
 		autoInstrumentationDotNet    string
 		autoAnnotationConfigStr      string
+		autoInstrumentationConfigStr string
 		webhookPort                  int
 		tlsOpt                       tlsConfig
 		dcgmExporterImage            string
@@ -116,25 +129,25 @@ func main() {
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.StringVar(&pprofAddr, "pprof-addr", "", "The address to expose the pprof server. Default is empty string which disables the pprof server.")
-	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
+	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation
-	autoInstrumentationConfig := map[string]map[string]string{"java": {"cpu": "500m", "memory": "64Mi"}, "python": {"cpu": "500m", "memory": "32Mi"}, "dotnet": {"cpu": "500m", "memory": "128Mi"}}
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "64Mi", "memory": "500m"}, "requests": {"cpu": "64Mi", "memory": "50m"}}, "python": {"limits": {"cpu": "32Mi", "memory": "500m"}, "requests": {"cpu": "32Mi", "memory": "50m"}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
-		setupLog.Error(err, "Unable to unmarshal auto-instrumentation config, assuming default values")
+		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
 	}
-	setEnvLang("JAVA", autoInstrumentationConfig["java"])
-	setEnvLang("PYTHON", autoInstrumentationConfig["python"])
-	setEnvLang("DOTNET", autoInstrumentationConfig["dotnet"])
+	setLangEnvVars("JAVA", autoInstrumentationConfig["java"])
+	setLangEnvVars("PYTHON", autoInstrumentationConfig["python"])
+	setLangEnvVars("DOTNET", autoInstrumentationConfig["dotnet"])
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
