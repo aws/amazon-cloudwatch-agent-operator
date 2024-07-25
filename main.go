@@ -140,7 +140,7 @@ func main() {
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation
-	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "64Mi", "memory": "500m"}, "requests": {"cpu": "64Mi", "memory": "50m"}}, "python": {"limits": {"cpu": "32Mi", "memory": "500m"}, "requests": {"cpu": "32Mi", "memory": "50m"}}, "dotnet": {"limits": {"cpu": "128Mi", "memory": "500m"}, "requests": {"cpu": "128Mi", "memory": "50m"}}}
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "64Mi", "memory": "500m"}, "requests": {"cpu": "128Mi", "memory": "50m"}}, "python": {"limits": {"cpu": "32Mi", "memory": "500m"}, "requests": {"cpu": "128Mi", "memory": "50m"}}, "dotnet": {"limits": {"cpu": "128Mi", "memory": "500m"}, "requests": {"cpu": "128Mi", "memory": "50m"}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
 		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
