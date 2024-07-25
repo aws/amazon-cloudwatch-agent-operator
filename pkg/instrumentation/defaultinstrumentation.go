@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -23,7 +25,29 @@ const (
 
 	http  = "http"
 	https = "https"
+
+	java    = "JAVA"
+	python  = "PYTHON"
+	dotNet  = "DOTNET"
+	limit   = "LIMIT"
+	request = "REQUEST"
 )
+
+func getInstrumentationConfigForResource(langStr string, resourceStr string) corev1.ResourceList {
+	instrumentationConfigCpu, _ := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_CPU_" + resourceStr)
+	instrumentationConfigMemory, _ := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_MEM_" + resourceStr)
+
+	instrumentationConfigForResource := corev1.ResourceList{}
+	instrumentationConfigCpuQuantity, err := resource.ParseQuantity(instrumentationConfigCpu)
+	if err == nil {
+		instrumentationConfigForResource[corev1.ResourceCPU] = instrumentationConfigCpuQuantity
+	}
+	instrumentationConfigMemoryQuantity, err := resource.ParseQuantity(instrumentationConfigMemory)
+	if err == nil {
+		instrumentationConfigForResource[corev1.ResourceMemory] = instrumentationConfigMemoryQuantity
+	}
+	return instrumentationConfigForResource
+}
 
 func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
@@ -86,6 +110,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits:   getInstrumentationConfigForResource(java, limit),
+					Requests: getInstrumentationConfigForResource(java, request),
+				},
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,
@@ -103,6 +131,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits:   getInstrumentationConfigForResource(python, limit),
+					Requests: getInstrumentationConfigForResource(python, request),
+				},
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
@@ -119,6 +151,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits:   getInstrumentationConfigForResource(dotNet, limit),
+					Requests: getInstrumentationConfigForResource(dotNet, request),
 				},
 			},
 		},
