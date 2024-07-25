@@ -20,12 +20,18 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_JAVA", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_JAVA", "64Mi")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_PYTHON", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_PYTHON", "32Mi")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_DOTNET", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_DOTNET", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_REQUEST", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_MEM_LIMIT", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_MEM_REQUEST", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_LIMIT", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_REQUEST", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -63,6 +69,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -86,6 +96,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
+					},
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -107,6 +121,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
@@ -149,6 +167,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -172,6 +194,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
+					},
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -193,6 +219,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
@@ -261,12 +291,18 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_JAVA", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_JAVA", "64Mi")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_PYTHON", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_PYTHON", "32Mi")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_CPU_DOTNET", "500m")
-	os.Setenv("AUTO_INSTRUMENTATION_LIMIT_MEMORY_DOTNET", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_REQUEST", "64Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_MEM_LIMIT", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_MEM_REQUEST", "32Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_LIMIT", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_REQUEST", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -304,6 +340,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -327,6 +367,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
+					},
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -348,6 +392,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
@@ -390,6 +438,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
+					},
 				},
 			},
 			Python: v1alpha1.Python{
@@ -413,6 +465,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("500m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
+					},
 				},
 			},
 			DotNet: v1alpha1.DotNet{
@@ -434,6 +490,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("128Mi"),
 					},
 				},
