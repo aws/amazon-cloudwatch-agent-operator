@@ -4,10 +4,11 @@
 package instrumentation
 
 import (
-	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"reflect"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

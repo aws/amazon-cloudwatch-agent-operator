@@ -188,14 +188,19 @@ jobs:
           kubectl describe pods -n default
           sleep 5
           go test -v -run TestAllLanguagesDeployment ./integration-tests/manifests/annotations -timeout 30m
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestDotNetOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
+          kubectl describe pods -n default
 
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
