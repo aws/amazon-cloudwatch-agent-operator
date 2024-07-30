@@ -1,4 +1,9 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.6.0 (2024-07-30)
+========================================================================
+* [ApplicationSignals] Allow configurable resource requests and limits for auto-instrumentation SDK init containers (#196)
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.5.0 (2024-07-18)
 ========================================================================
 Enhancements:
