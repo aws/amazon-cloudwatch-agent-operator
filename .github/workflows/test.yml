@@ -1,0 +1,24 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build And Upload Artifact
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
+
+on:
+  push:
+
+jobs:
+  e2e-test:
+    name: "Application Signals E2E Test"
+    needs: MakeBinary
+    uses: ./.github/workflows/application-signals-e2e-test.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      tag: staging

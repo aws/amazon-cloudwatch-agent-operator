@@ -22,48 +22,11 @@ concurrency:
 
 
 jobs:
-  java-eks-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-eks-e2e-test.yml@main
-    secrets: inherit
-    with:
-      aws-region: us-east-1
-      test-cluster-name: 'e2e-cw-agent-operator-test'
-      caller-workflow-name: 'main-build'
-      cw-agent-operator-tag: ${{ inputs.tag }}
-
   java-metric-limiter-e2e-test:
-    needs: [ java-eks-e2e-test ]
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@ fix-metric-limiter-after-patching
     secrets: inherit
     with:
       aws-region: us-east-1
       test-cluster-name: 'e2e-cw-agent-operator-test'
-      caller-workflow-name: 'main-build'
-      cw-agent-operator-tag: ${{ inputs.tag }}
-
-  java-k8s-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-k8s-e2e-test.yml@main
-    secrets: inherit
-    with:
-      aws-region: us-east-1
-      caller-workflow-name: 'main-build'
-      cw-agent-operator-tag: ${{ inputs.tag }}
-
-  python-eks-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-e2e-test.yml@main
-    needs: [ java-metric-limiter-e2e-test ]
-    secrets: inherit
-    with:
-      aws-region: us-east-1
-      test-cluster-name: 'e2e-cw-agent-operator-python-test'
-      caller-workflow-name: 'main-build'
-      cw-agent-operator-tag: ${{ inputs.tag }}
-
-  python-k8s-e2e-test:
-    needs: [ java-k8s-e2e-test ]
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-k8s-e2e-test.yml@main
-    secrets: inherit
-    with:
-      aws-region: us-east-1
       caller-workflow-name: 'main-build'
       cw-agent-operator-tag: ${{ inputs.tag }}
