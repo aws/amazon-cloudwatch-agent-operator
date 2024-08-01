@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   java-metric-limiter-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@ fix-metric-limiter-after-patching
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@fix-metric-limiter-after-patching
     secrets: inherit
     with:
       aws-region: us-east-1
