@@ -30,3 +30,4 @@ jobs:
       test-cluster-name: 'e2e-cw-agent-operator-test'
       caller-workflow-name: 'main-build'
       cw-agent-operator-tag: ${{ inputs.tag }}
+
