@@ -60,7 +60,7 @@ jobs:
 
   e2e-test:
     name: "Application Signals E2E Test"
-    needs: MakeBinary
+#    needs: MakeBinary
     uses: ./.github/workflows/application-signals-e2e-test.yml
     secrets: inherit
     permissions:
