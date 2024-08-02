@@ -32,7 +32,7 @@ jobs:
 #      cw-agent-operator-tag: ${{ inputs.tag }}
 
   java-metric-limiter-e2e-test:
-    needs: [ java-eks-e2e-test ]
+#    needs: [ java-eks-e2e-test ]
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@clean-terraform
     secrets: inherit
     with:
