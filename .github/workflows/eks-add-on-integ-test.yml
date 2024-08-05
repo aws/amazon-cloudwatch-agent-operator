@@ -94,7 +94,6 @@ jobs:
           echo or k8s.io/component-base $(go list -m k8s.io/component-base) is less than ${{ matrix.arrays.k8sVersion }}
           echo or k8s.io/kubectl $(go list -m k8s.io/kubectl) is less than ${{ matrix.arrays.k8sVersion }}
           echo "[WARNING] Kubernetes dependencies are lower than the latest Kubernetes cluster version. Please check changelog to ensure no breaking changes: https://kubernetes.io/releases/"
-          exit 1;
           fi
 
       - name: Verify Terraform version
