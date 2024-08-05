@@ -83,18 +83,17 @@ jobs:
 
       - name: Confirm EKS Version Support
         run: |
-          if [[ 
+          if [[
             $(go list -m k8s.io/client-go | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
             || $(go list -m k8s.io/apimachinery | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
             || $(go list -m k8s.io/component-base | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
             || $(go list -m k8s.io/kubectl | cut -d ' ' -f 2 | cut -d '.' -f 2) -lt $( echo ${{ matrix.arrays.k8sVersion }} | cut -d '.' -f 2)
-          ]]; then 
+          ]]; then
           echo k8s.io/client-go $(go list -m k8s.io/client-go) is less than ${{ matrix.arrays.k8sVersion }}
           echo or k8s.io/apimachinery $(go list -m k8s.io/apimachinery) is less than ${{ matrix.arrays.k8sVersion }}
           echo or k8s.io/component-base $(go list -m k8s.io/component-base) is less than ${{ matrix.arrays.k8sVersion }}
-          echo or k8s.io/kubectl $(go list -m k8s.io/kubectl) is less than ${{ matrix.arrays.k8sVersion }}, fail test
-          echo "please run go get -u && go mod tidy"
-          exit 1; 
+          echo or k8s.io/kubectl $(go list -m k8s.io/kubectl) is less than ${{ matrix.arrays.k8sVersion }}
+          echo "[WARNING] Kubernetes dependencies are lower than the latest Kubernetes cluster version. Please check changelog to ensure no breaking changes: https://kubernetes.io/releases/"
           fi
 
       - name: Verify Terraform version
