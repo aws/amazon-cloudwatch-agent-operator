@@ -15,7 +15,8 @@ IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
-
+TARGETALLOCATOR_IMG_REPO ?= target-allocator
+TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
