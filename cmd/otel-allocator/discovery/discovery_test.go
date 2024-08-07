@@ -7,9 +7,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/config"
 	gokitlog "github.com/go-kit/log"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"

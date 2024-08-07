@@ -9,7 +9,7 @@ AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator |  awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
-
+COMMON_LDFLAGS ?= -s -w
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
@@ -82,7 +82,7 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
-all: manager
+all: manager targetallocator
 .PHONY: ci
 ci: test
 
@@ -96,6 +96,11 @@ test: generate fmt vet envtest
 .PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
+
+# Build target allocator binary
+.PHONY: targetallocator
+targetallocator:
+	go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} ./cmd/otel-allocator
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -156,6 +161,11 @@ generate: controller-gen api-docs
 .PHONY: container
 container:
 	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} --build-arg DCGM_EXPORTER_VERSION=${DCGM_EXPORTER_VERSION} --build-arg NEURON_MONITOR_VERSION=${NEURON_MONITOR_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} .
+
+.PHONY: container-target-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push

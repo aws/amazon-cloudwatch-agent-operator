@@ -3,10 +3,10 @@ package discovery
 import (
 	"context"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/config"
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 )
