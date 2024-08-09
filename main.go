@@ -48,6 +48,7 @@ const (
 	cloudwatchAgentImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent"
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
+	autoInstrumentationDotNetImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
@@ -80,6 +81,24 @@ func stringFlagOrEnv(p *string, name string, envName string, defaultValue string
 	pflag.StringVar(p, name, defaultValue, usage)
 }
 
+func setLangEnvVarsForResource(langStr string, resourceStr string, resource map[string]string) {
+	if cpu, ok := resource["cpu"]; ok {
+		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_CPU_"+resourceStr, cpu)
+	}
+	if memory, ok := resource["memory"]; ok {
+		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_MEM_"+resourceStr, memory)
+	}
+}
+
+func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
+	if limits, ok := cfg["limits"]; ok {
+		setLangEnvVarsForResource(langStr, "LIMIT", limits)
+	}
+	if requests, ok := cfg["requests"]; ok {
+		setLangEnvVarsForResource(langStr, "REQUEST", requests)
+	}
+}
+
 func main() {
 	// registers any flags that underlying libraries might use
 	opts := zap.Options{}
@@ -92,17 +111,19 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr               string
-		probeAddr                 string
-		pprofAddr                 string
-		agentImage                string
-		autoInstrumentationJava   string
-		autoInstrumentationPython string
-		autoAnnotationConfigStr   string
-		webhookPort               int
-		tlsOpt                    tlsConfig
-		dcgmExporterImage         string
-		neuronMonitorImage        string
+		metricsAddr                  string
+		probeAddr                    string
+		pprofAddr                    string
+		agentImage                   string
+		autoInstrumentationJava      string
+		autoInstrumentationPython    string
+		autoInstrumentationDotNet    string
+		autoAnnotationConfigStr      string
+		autoInstrumentationConfigStr string
+		webhookPort                  int
+		tlsOpt                       tlsConfig
+		dcgmExporterImage            string
+		neuronMonitorImage           string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -111,14 +132,33 @@ func main() {
 	stringFlagOrEnv(&agentImage, "agent-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("%s:%s", cloudwatchAgentImageRepository, v.AmazonCloudWatchAgent), "The default CloudWatch Agent image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
+	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
-	// set java instrumentation java image in environment variable to be used for default instrumentation
+	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
+	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
+	if err != nil {
+		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
+	}
+	if javaVar, ok := autoInstrumentationConfig["java"]; ok {
+		setLangEnvVars("JAVA", javaVar)
+	}
+	if pythonVar, ok := autoInstrumentationConfig["python"]; ok {
+		setLangEnvVars("PYTHON", pythonVar)
+	}
+	if dotNetVar, ok := autoInstrumentationConfig["dotnet"]; ok {
+		setLangEnvVars("DOTNET", dotNetVar)
+	}
+
+	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -128,6 +168,7 @@ func main() {
 		"cloudwatch-agent", agentImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-python", autoInstrumentationPython,
+		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
 		"build-date", v.BuildDate,
@@ -142,6 +183,7 @@ func main() {
 		config.WithCollectorImage(agentImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithDcgmExporterImage(dcgmExporterImage),
 		config.WithNeuronMonitorImage(neuronMonitorImage),
 	)
@@ -238,6 +280,7 @@ func main() {
 				instrumentation.NewTypeSet(
 					instrumentation.TypeJava,
 					instrumentation.TypePython,
+					instrumentation.TypeDotNet,
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
