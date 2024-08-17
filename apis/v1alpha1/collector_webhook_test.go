@@ -273,6 +273,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()
@@ -374,6 +375,43 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "does not support the attribute 'tolerations'",
 		},
 		{
+			name: "invalid mode with target allocator",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "does not support the target allocation deployment",
+		},
+		{
+			name: "invalid target allocator config",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeStatefulSet,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "the AmazonCloudWatchAgent Spec Prometheus configuration is incorrect",
+		},
+		{
+			name: "invalid target allocation strategy",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeDaemonSet,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled:            true,
+						AllocationStrategy: TargetAllocatorAllocationStrategyLeastWeighted,
+					},
+				},
+			},
+			expectedErr: "mode is set to daemonset, which must be used with target allocation strategy per-node",
+		},
+		{
 			name: "invalid port name",
 			otelcol: AmazonCloudWatchAgent{
 				Spec: AmazonCloudWatchAgentSpec{
@@ -387,7 +425,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
+			expectedErr: "the AmazonCloudWatchAgent Spec Ports configuration is incorrect",
 		},
 		{
 			name: "invalid port name, too long",
@@ -755,6 +793,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()

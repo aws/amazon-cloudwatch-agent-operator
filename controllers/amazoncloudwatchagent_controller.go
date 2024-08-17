@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,8 +41,8 @@ type Params struct {
 	Config   config.Config
 }
 
-func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) manifests.Params {
-	return manifests.Params{
+func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) (manifests.Params, error) {
+	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		OtelCol:  instance,
@@ -49,6 +50,14 @@ func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonClou
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
 	}
+
+	// generate the target allocator CR from the collector CR
+	targetAllocator, err := collector.TargetAllocator(p)
+	if err != nil {
+		return p, err
+	}
+	p.TargetAllocator = targetAllocator
+	return p, nil
 }
 
 // NewReconciler creates a new reconciler for AmazonCloudWatchAgent objects.
@@ -76,7 +85,7 @@ func NewReconciler(p Params) *AmazonCloudWatchAgentReconciler {
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents/finalizers,verbs=get;update;patch
 
-// Reconcile the current state of an OpenTelemetry collector resource with the desired state.
+// Reconcile the current state of an AmazonCloudWatchAgent collector resource with the desired state.
 func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("amazoncloudwatchagent", req.NamespacedName)
 
@@ -102,13 +111,17 @@ func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	params := r.getParams(instance)
+	params, err := r.getParams(instance)
+	if err != nil {
+		log.Error(err, "Failed to create manifest.Params")
+		return ctrl.Result{}, err
+	}
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
+	err = reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 

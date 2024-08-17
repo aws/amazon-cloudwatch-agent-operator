@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -44,6 +45,39 @@ func isNamespaceScoped(obj client.Object) bool {
 func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder{
 		collector.Build,
+	}
+	var resources []client.Object
+	for _, builder := range builders {
+		objs, err := builder(params)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, objs...)
+	}
+	// TODO: Remove this after TargetAllocator CRD is reconciled
+	if params.TargetAllocator != nil {
+		taParams := targetallocator.Params{
+			Client:          params.Client,
+			Scheme:          params.Scheme,
+			Recorder:        params.Recorder,
+			Log:             params.Log,
+			Config:          params.Config,
+			Collector:       params.OtelCol,
+			TargetAllocator: *params.TargetAllocator,
+		}
+		taResources, err := BuildTargetAllocator(taParams)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, taResources...)
+	}
+	return resources, nil
+}
+
+// BuildTargetAllocator returns the generation and collected errors of all manifests for a given instance.
+func BuildTargetAllocator(params targetallocator.Params) ([]client.Object, error) {
+	builders := []manifests.Builder[targetallocator.Params]{
+		targetallocator.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {

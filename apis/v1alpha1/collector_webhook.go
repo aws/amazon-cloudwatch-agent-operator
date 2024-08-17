@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/rbac"
 )
 
 var (
@@ -29,9 +31,10 @@ var (
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
-	logger logr.Logger
-	cfg    config.Config
-	scheme *runtime.Scheme
+	logger   logr.Logger
+	cfg      config.Config
+	scheme   *runtime.Scheme
+	reviewer *rbac.Reviewer
 }
 
 func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
@@ -47,7 +50,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if !ok {
 		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -55,7 +58,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	if !ok {
 		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", newObj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -63,7 +66,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	if !ok || otelcol == nil {
 		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
@@ -86,6 +89,9 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	one := int32(1)
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
+	}
+	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
+		r.Spec.TargetAllocator.Replicas = &one
 	}
 
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
@@ -137,30 +143,41 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	return nil
 }
 
-func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings, error) {
+func (c CollectorWebhook) validate(ctx context.Context, r *AmazonCloudWatchAgent) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+	}
+
+	// validate target allocator configs
+	if r.Spec.TargetAllocator.Enabled {
+		taWarnings, err := c.validateTargetAllocatorConfig(ctx, r)
+		if taWarnings != nil {
+			warnings = append(warnings, taWarnings...)
+		}
+		if err != nil {
+			return warnings, err
+		}
 	}
 
 	// validator port config
@@ -168,7 +185,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		nameErrs := validation.IsValidPortName(p.Name)
 		numErrs := validation.IsValidPortNum(int(p.Port))
 		if len(nameErrs) > 0 || len(numErrs) > 0 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
 				p.Name, nameErrs, p.Port, numErrs)
 		}
 	}
@@ -200,7 +217,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
@@ -208,19 +225,19 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
 		if *maxReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
 		}
 
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas > *maxReplicas {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
 		if r.Spec.Autoscaler != nil {
@@ -229,7 +246,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
@@ -239,79 +256,134 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	if r.Spec.LivenessProbe != nil {
 		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
 		}
 		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the AmazonCloudWatchAgent Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
 		}
 	}
 
 	// validate updateStrategy for DaemonSet
 	if r.Spec.Mode != ModeDaemonSet && len(r.Spec.UpdateStrategy.Type) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'updateStrategy'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the attribute 'updateStrategy'", r.Spec.Mode)
 	}
 
 	return warnings, nil
+}
+
+func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *AmazonCloudWatchAgent) (admission.Warnings, error) {
+	if r.Spec.Mode != ModeStatefulSet && r.Spec.Mode != ModeDaemonSet {
+		return nil, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+	}
+
+	if r.Spec.Mode == ModeDaemonSet && r.Spec.TargetAllocator.AllocationStrategy != TargetAllocatorAllocationStrategyPerNode {
+		return nil, fmt.Errorf("the AmazonCloudWatchAgent mode is set to %s, which must be used with target allocation strategy %s ", r.Spec.Mode, TargetAllocatorAllocationStrategyPerNode)
+	}
+
+	if r.Spec.TargetAllocator.AllocationStrategy == TargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
+		return nil, fmt.Errorf("target allocation strategy %s is only supported in AmazonCloudWatchAgent mode %s", TargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
+	}
+
+	cfgYaml, err := r.Spec.Config.Yaml()
+	if err != nil {
+		return nil, err
+	}
+	// validate Prometheus config for target allocation
+	promCfg, err := ta.ConfigToPromConfig(cfgYaml)
+	if err != nil {
+		return nil, fmt.Errorf("the AmazonCloudWatchAgent Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled)
+	if err != nil {
+		return nil, fmt.Errorf("the AmazonCloudWatchAgent Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
+	if err != nil {
+		return nil, fmt.Errorf("the AmazonCloudWatchAgent Spec Prometheus configuration is incorrect, %w", err)
+	}
+	// if the prometheusCR is enabled, it needs a suite of permissions to function
+	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
+		warnings, err := CheckTargetAllocatorPrometheusCRPolicyRules(
+			ctx, c.reviewer, r.Spec.TargetAllocator.ServiceAccount, r.GetNamespace())
+		if err != nil || len(warnings) > 0 {
+			return warnings, err
+		}
+	}
+
+	return nil, nil
+}
+
+func ValidatePorts(ports []PortsSpec) error {
+	for _, p := range ports {
+		nameErrs := validation.IsValidPortName(p.Name)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return fmt.Errorf("the AmazonCloudWatchAgent Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
+				p.Name, nameErrs, p.Port, numErrs)
+		}
+	}
+	return nil
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	if autoscaler.Behavior != nil {
 		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
 			*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+			return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, scaleDown should be one or more")
 		}
 
 		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
 			*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+			return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, scaleUp should be one or more")
 		}
 	}
 	if autoscaler.TargetCPUUtilization != nil && (*autoscaler.TargetCPUUtilization < int32(1) || *autoscaler.TargetCPUUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+		return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
 	}
 	if autoscaler.TargetMemoryUtilization != nil && (*autoscaler.TargetMemoryUtilization < int32(1) || *autoscaler.TargetMemoryUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+		return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
 	}
 
 	for _, metric := range autoscaler.Metrics {
 		if metric.Type != autoscalingv2.PodsMetricSourceType {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
+			return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
 		}
 
 		// pod metrics target only support value and averageValue.
 		if metric.Pods.Target.Type == autoscalingv2.AverageValueMetricType {
 			if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
+				return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, average value should be greater than 0")
 			}
 		} else if metric.Pods.Target.Type == autoscalingv2.ValueMetricType {
 			if val, ok := metric.Pods.Target.Value.AsInt64(); !ok || val < int64(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
+				return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, value should be greater than 0")
 			}
 		} else {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
+			return fmt.Errorf("the AmazonCloudWatchAgent Spec autoscale configuration is incorrect, invalid pods target type")
 		}
 	}
 
 	return nil
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
 	cvw := &CollectorWebhook{
-		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
-		scheme: mgr.GetScheme(),
-		cfg:    cfg,
+		reviewer: reviewer,
+		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
+		scheme:   mgr.GetScheme(),
+		cfg:      cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&AmazonCloudWatchAgent{}).

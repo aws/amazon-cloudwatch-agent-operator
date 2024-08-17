@@ -4,6 +4,7 @@
 package manifestutils
 
 import (
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"regexp"
 	"strings"
 
@@ -11,6 +12,16 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
+
+func IsFilteredSet(sourceSet string, filterSet []string) bool {
+	for _, basePattern := range filterSet {
+		pattern, _ := regexp.Compile(basePattern)
+		if match := pattern.MatchString(sourceSet); match {
+			return match
+		}
+	}
+	return false
+}
 
 func isFilteredLabel(label string, filterLabels []string) bool {
 	for _, pattern := range filterLabels {
@@ -69,4 +80,19 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 		"app.kubernetes.io/component":  component,
 	}
+}
+
+// SelectorLabels return the selector labels for Target Allocator Pods.
+func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[string]string {
+	selectorLabels := SelectorLabels(instance.ObjectMeta, component)
+
+	// TargetAllocator uses the name label as well for selection
+	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
+	// Don't override the app name if it already exists
+	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+		selectorLabels["app.kubernetes.io/name"] = name
+	} else {
+		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	}
+	return selectorLabels
 }

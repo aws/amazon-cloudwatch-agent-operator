@@ -13,6 +13,7 @@ var (
 	version                        string
 	buildDate                      string
 	otelCol                        string
+	targetAllocator                string
 	autoInstrumentationJava        string
 	autoInstrumentationNodeJS      string
 	autoInstrumentationPython      string
@@ -30,6 +31,7 @@ type Version struct {
 	BuildDate                      string `json:"build-date"`
 	AmazonCloudWatchAgent          string `json:"amazon-cloudwatch-agent-version"`
 	Go                             string `json:"go-version"`
+	TargetAllocator                string `json:"target-allocator-version"`
 	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
 	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
@@ -48,6 +50,7 @@ func Get() Version {
 		BuildDate:                      buildDate,
 		AmazonCloudWatchAgent:          AmazonCloudWatchAgent(),
 		Go:                             runtime.Version(),
+		TargetAllocator:                TargetAllocator(),
 		AutoInstrumentationJava:        AutoInstrumentationJava(),
 		AutoInstrumentationNodeJS:      AutoInstrumentationNodeJS(),
 		AutoInstrumentationPython:      AutoInstrumentationPython(),
@@ -62,11 +65,12 @@ func Get() Version {
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v', , NeuronMonitor='%v')",
+		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v', , NeuronMonitor='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.AmazonCloudWatchAgent,
 		v.Go,
+		v.TargetAllocator,
 		v.AutoInstrumentationJava,
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
@@ -84,6 +88,17 @@ func AmazonCloudWatchAgent() string {
 	if len(otelCol) > 0 {
 		// this should always be set, as it's specified during the build
 		return otelCol
+	}
+
+	// fallback value, useful for tests
+	return "0.0.0"
+}
+
+// TargetAllocator returns the default TargetAllocator to use when no versions are specified via CLI or configuration.
+func TargetAllocator() string {
+	if len(targetAllocator) > 0 {
+		// this should always be set, as it's specified during the build
+		return targetAllocator
 	}
 
 	// fallback value, useful for tests

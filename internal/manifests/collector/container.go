@@ -79,6 +79,18 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		logger.Error(err, "error parsing config")
 	}
 
+	if agent.Spec.TargetAllocator.Enabled {
+		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
+		// added by default by the Prometheus operator's config generator.
+		// All collector instances use SHARD == 0 as they only receive targets
+		// allocated to them and should not use the Prometheus hashmod-based
+		// allocation.
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "SHARD",
+			Value: "0",
+		})
+	}
+
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,

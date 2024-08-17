@@ -17,22 +17,89 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/version":    "0.47.0",
 	}
 
-	t.Run("should return expected cwagent config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
-		expectedLables["app.kubernetes.io/name"] = "test"
-		expectedLables["app.kubernetes.io/version"] = "0.0.0"
+	t.Run("should return expected collector config map", func(t *testing.T) {
 
 		expectedData := map[string]string{
-			"cwagentconfig.json": `{"logs":{"metrics_collected":{"application_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"application_signals":{}}}}`,
+			"collector.yaml": `receivers:
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: otel-collector
+        scrape_interval: 10s
+        static_configs:
+          - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
+
+exporters:
+  debug:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus, jaeger]
+      exporters: [debug]`,
 		}
 
 		param := deploymentParams()
+
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
+	})
+
+	t.Run("should return expected escaped collector config map with target_allocator config block", func(t *testing.T) {
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  debug:
+receivers:
+  prometheus:
+    config: {}
+    target_allocator:
+      collector_id: ${POD_NAME}
+      endpoint: http://test-targetallocator.default.svc.cluster.local:80
+      interval: 30s
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - debug
+      receivers:
+      - prometheus
+`,
+		}
+
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml")
+		assert.NoError(t, err)
+
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
+
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := ConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
+
+		// Reset the value
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+		assert.NoError(t, err)
 
 	})
+
 }

@@ -8,12 +8,16 @@ AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-dotnet-instrumentation | awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
+TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
+
+TARGETALLOCATOR_IMG_REPO ?= target-allocator
+TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -81,7 +85,7 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
-all: manager
+all: manager targetallocator
 .PHONY: ci
 ci: test
 
@@ -95,6 +99,11 @@ test: generate fmt vet envtest
 .PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
+
+# Build target allocator binary
+.PHONY: targetallocator
+targetallocator:
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -115,6 +124,10 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+
+.PHONY: add-image-targetallocator
+add-image-targetallocator:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
@@ -160,6 +173,15 @@ container:
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
+
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGETALLOCATOR_IMG}
+
+.PHONY: container-target-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker build --load -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.

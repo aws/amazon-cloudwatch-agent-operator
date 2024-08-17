@@ -27,7 +27,7 @@ const (
 	ManagementStateUnmanaged ManagementStateType = "unmanaged"
 )
 
-// Ingress is used to specify how OpenTelemetry Collector is exposed. This
+// Ingress is used to specify how AmazonCloudWatchAgent is exposed. This
 // functionality is only available if one of the valid modes is set.
 // Valid modes are: deployment, daemonset and statefulset.
 // NOTE: If this feature is activated, all specified receivers are exposed.
@@ -81,6 +81,8 @@ type OpenShiftRoute struct {
 
 // AmazonCloudWatchAgentSpec defines the desired state of AmazonCloudWatchAgent.
 type AmazonCloudWatchAgentSpec struct {
+	// AmazonCloudWatchAgentCommonFields are fields that are on all AmazonCloudWatchAgent CRD workloads.
+	AmazonCloudWatchAgentCommonFields `json:",inline"`
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
@@ -88,17 +90,17 @@ type AmazonCloudWatchAgentSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
-	// Resources to set on the OpenTelemetry Collector pods.
+	// Resources to set on the AmazonCloudWatchAgent pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
-	// NodeSelector to schedule OpenTelemetry Collector pods.
+	// NodeSelector to schedule AmazonCloudWatchAgent pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
+	// Args is the set of arguments to pass to the AmazonCloudWatchAgent binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
+	// Replicas is the number of pod instances for the underlying AmazonCloudWatchAgent. Set this if your are not using autoscaling
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
@@ -143,6 +145,9 @@ type AmazonCloudWatchAgentSpec struct {
 	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
+	// +optional
+	TargetAllocator AmazonCloudWatchAgentTargetAllocator `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
@@ -150,7 +155,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// the operator will not automatically create a ServiceAccount for the collector.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
-	// Image indicates the container image to use for the OpenTelemetry Collector.
+	// Image indicates the container image to use for the AmazonCloudWatchAgent.
 	// +optional
 	Image string `json:"image,omitempty"`
 	// WorkingDir represents Container's working directory. If not specified,
@@ -164,7 +169,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
+	// Config is the raw JSON to be used as the collector's configuration. Refer to the AmazonCloudWatchAgent documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
@@ -177,11 +182,11 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	// +listType=atomic
 	Ports []v1.ServicePort `json:"ports,omitempty"`
-	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
+	// ENV vars to set on the AmazonCloudWatchAgent's Pods. These can then in certain cases be
 	// consumed in the config file for the Collector.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
-	// List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
+	// List of sources to populate environment variables on the AmazonCloudWatchAgent's Pods.
 	// These can then in certain cases be consumed in the config file for the Collector.
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
@@ -189,7 +194,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	// +listType=atomic
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
-	// Toleration to schedule OpenTelemetry Collector pods.
+	// Toleration to schedule AmazonCloudWatchAgent pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
@@ -197,7 +202,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	// +listType=atomic
 	Volumes []v1.Volume `json:"volumes,omitempty"`
-	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
+	// Ingress is used to specify how AmazonCloudWatchAgent is exposed. This
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
@@ -219,8 +224,8 @@ type AmazonCloudWatchAgentSpec struct {
 	// Duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
-	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// Liveness config for the AmazonCloudWatchAgent except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the AmazonCloudWatchAgent pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
 	// InitContainers allows injecting initContainers to the Collector's pod definition.
@@ -273,6 +278,108 @@ type AmazonCloudWatchAgentSpec struct {
 	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
+// AmazonCloudWatchAgentTargetAllocator defines the configurations for the Prometheus target allocator.
+type AmazonCloudWatchAgentTargetAllocator struct {
+	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
+	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
+	// that can be run in a high availability mode is consistent-hashing.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector to schedule AmazonCloudWatchAgent TargetAllocator pods.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Resources to set on the AmazonCloudWatchAgentTargetAllocator containers.
+	// +optional
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// AllocationStrategy determines which strategy the target allocator should use for allocation.
+	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// consistent-hashing.
+	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
+	// +optional
+	// +kubebuilder:default:=consistent-hashing
+	AllocationStrategy AmazonCloudWatchAgentTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	// FilterStrategy determines how to filter targets before allocating them among the collectors.
+	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// The default is relabel-config.
+	// +optional
+	// +kubebuilder:default:=relabel-config
+	FilterStrategy string `json:"filterStrategy,omitempty"`
+	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Image indicates the container image to use for the AmazonCloudWatchAgent TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// If specified, indicates the pod's scheduling constraints
+	// +optional
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+	// +optional
+	PrometheusCR AmazonCloudWatchAgentTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// SecurityContext configures the container security context for
+	// the targetallocator.
+	// +optional
+	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
+	// PodSecurityContext configures the pod security context for the
+	// targetallocator.
+	// +optional
+	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+	// TopologySpreadConstraints embedded kubernetes pod configuration option,
+	// controls how pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains
+	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Toleration embedded kubernetes pod configuration option,
+	// controls how pods can be scheduled with matching taints
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// ENV vars to set on the AmazonCloudWatchAgent TargetAllocator's Pods. These can then in certain cases be
+	// consumed in the config file for the TargetAllocator.
+	// +optional
+	Env []v1.EnvVar `json:"env,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the target allocator workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+}
+
+type AmazonCloudWatchAgentTargetAllocatorPrometheusCR struct {
+	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD.
+	//
+	// Default: "30s"
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// PodMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// PodMonitor's meta labels. The requirements are ANDed.
+	// Empty or nil map matches all pod monitors.
+	// +optional
+	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
+	// ServiceMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// Empty or nil map matches all service monitors.
+	// +optional
+	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
+}
+
 // ScaleSubresourceStatus defines the observed state of the AmazonCloudWatchAgent's
 // scale subresource.
 type ScaleSubresourceStatus struct {
@@ -299,11 +406,11 @@ type AmazonCloudWatchAgentStatus struct {
 	// +optional
 	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
-	// Version of the managed OpenTelemetry Collector (operand)
+	// Version of the managed AmazonCloudWatchAgent (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
 
-	// Image indicates the container image to use for the OpenTelemetry Collector.
+	// Image indicates the container image to use for the AmazonCloudWatchAgent.
 	// +optional
 	Image string `json:"image,omitempty"`
 
@@ -396,12 +503,12 @@ type PodDisruptionBudgetSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
+	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the AmazonCloudWatchAgent Operator.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for AmazonCloudWatchAgent"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
 }
 
@@ -415,7 +522,7 @@ type ObservabilitySpec struct {
 	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
 }
 
-// Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.
+// Probe defines the AmazonCloudWatchAgent's pod probe config. Only Liveness probe is supported currently.
 type Probe struct {
 	// Number of seconds after the container has started before liveness probes are initiated.
 	// Defaults to 0 seconds. Minimum value is 0.

@@ -4,6 +4,7 @@
 package manifestutils
 
 import (
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,8 @@ import (
 const (
 	collectorName      = "my-instance"
 	collectorNamespace = "my-ns"
+	taname             = "my-instance"
+	tanamespace        = "my-ns"
 )
 
 func TestLabelsCommonSet(t *testing.T) {
@@ -145,15 +148,86 @@ func TestSelectorLabels(t *testing.T) {
 		"app.kubernetes.io/component":  "amazon-cloudwatch-agent",
 		"app.kubernetes.io/instance":   "my-namespace.my-amazon-cloudwatch-agent",
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+		"app.kubernetes.io/name":       "my-amazon-cloudwatch-agent-targetallocator",
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 	}
+	tainstance := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-amazon-cloudwatch-agent-collector", Namespace: "my-namespace"},
+	}
+
+	// test
+	result := TASelectorLabels(tainstance, "amazon-cloudwatch-agent-collector")
+
+	// verify
+	assert.Equal(t, expected, result)
+
 	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-amazon-cloudwatch-agent", Namespace: "my-namespace"},
 	}
 
 	// test
-	result := SelectorLabels(otelcol.ObjectMeta, "amazon-cloudwatch-agent")
+	result = SelectorLabels(otelcol.ObjectMeta, "amazon-cloudwatch-agent")
 
 	// verify
 	assert.Equal(t, expected, result)
+}
+
+func TestLabelsTACommonSet(t *testing.T) {
+	// prepare
+	tainstance := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      taname,
+			Namespace: tanamespace,
+		},
+	}
+
+	// test
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "amazon-cloudwatch-agent-targetallocator", nil)
+	assert.Equal(t, "amazon-cloudwatch-agent-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "amazon-cloudwatch-agent", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "amazon-cloudwatch-agent-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
+	assert.Equal(t, taname, labels["app.kubernetes.io/name"])
+}
+
+func TestLabelsTAPropagateDown(t *testing.T) {
+	// prepare
+	tainstance := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"myapp":                  "mycomponent",
+				"app.kubernetes.io/name": "test",
+			},
+		},
+	}
+
+	// test
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "amazon-cloudwatch-agent-targetallocator", nil)
+
+	selectorLabels := TASelectorLabels(tainstance, "amazon-cloudwatch-agent-targetallocator")
+
+	// verify
+	assert.Len(t, labels, 7)
+	assert.Equal(t, "mycomponent", labels["myapp"])
+	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
+	assert.Equal(t, "test", selectorLabels["app.kubernetes.io/name"])
+}
+
+func TestSelectorTALabels(t *testing.T) {
+	// prepare
+	tainstance := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      taname,
+			Namespace: tanamespace,
+		},
+	}
+
+	// test
+	labels := TASelectorLabels(tainstance, "amazon-cloudwatch-agent-targetallocator")
+	assert.Equal(t, "amazon-cloudwatch-agent-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "amazon-cloudwatch-agent", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "amazon-cloudwatch-agent-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, naming.TargetAllocator(tainstance.Name), labels["app.kubernetes.io/name"])
 }
