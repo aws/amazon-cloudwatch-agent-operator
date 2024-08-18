@@ -111,7 +111,7 @@ func (r *NeuronMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 // BuildNeuronMonitor returns the generation and collected errors of all manifests for a given instance.
 func BuildNeuronMonitor(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder{
+	builders := []manifests.Builder[manifests.Params]{
 		neuronmonitor.Build,
 	}
 	var resources []client.Object

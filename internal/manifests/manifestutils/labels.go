@@ -4,9 +4,10 @@
 package manifestutils
 
 import (
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"regexp"
 	"strings"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

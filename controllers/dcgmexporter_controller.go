@@ -112,7 +112,7 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 // BuildDcgmExporter returns the generation and collected errors of all manifests for a given instance.
 func BuildDcgmExporter(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder{
+	builders := []manifests.Builder[manifests.Params]{
 		dcgmexporter.Build,
 	}
 	var resources []client.Object
