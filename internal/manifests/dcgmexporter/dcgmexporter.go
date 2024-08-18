@@ -16,8 +16,8 @@ const (
 // Build creates the manifest for the exporter resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	var manifestFactories []manifests.K8sManifestFactory
-	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
+	var manifestFactories []manifests.K8sManifestFactory[manifests.Params]
+	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.FactoryWithoutError(DaemonSet),
 		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(ServiceAccount),

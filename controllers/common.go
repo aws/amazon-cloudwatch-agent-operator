@@ -43,7 +43,7 @@ func isNamespaceScoped(obj client.Object) bool {
 
 // BuildCollector returns the generation and collected errors of all manifests for a given instance.
 func BuildCollector(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder{
+	builders := []manifests.Builder[manifests.Params]{
 		collector.Build,
 	}
 	var resources []client.Object
