@@ -29,12 +29,12 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	decoder            *admission.Decoder
+	decoder            admission.Decoder
 	annotationMutators *auto.AnnotationMutators
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) WebhookHandler {
+func NewWebhookHandler(decoder admission.Decoder, annotationMutators *auto.AnnotationMutators) WebhookHandler {
 	return &workloadMutationWebhook{
 		decoder:            decoder,
 		annotationMutators: annotationMutators,
