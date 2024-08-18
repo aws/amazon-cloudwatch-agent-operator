@@ -29,9 +29,22 @@ type options struct {
 	collectorConfigMapEntry             string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	targetAllocatorConfigMapEntry       string
+	targetAllocatorImage                string
 	labelsFilter                        []string
+	annotationsFilter                   []string
 }
 
+func WithTargetAllocatorImage(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorImage = s
+	}
+}
+func WithTargetAllocatorConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorConfigMapEntry = s
+	}
+}
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
@@ -129,5 +142,14 @@ func WithLabelFilters(labelFilters []string) Option {
 		}
 
 		o.labelsFilter = filters
+	}
+}
+
+// WithAnnotationFilters is additive if called multiple times. It works off of a few default filters
+// to prevent unnecessary rollouts. The defaults include the following:
+// * kubectl.kubernetes.io/last-applied-configuration.
+func WithAnnotationFilters(annotationFilters []string) Option {
+	return func(o *options) {
+		o.annotationsFilter = append(o.annotationsFilter, annotationFilters...)
 	}
 }

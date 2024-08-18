@@ -80,6 +80,15 @@ var (
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
 
+	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
+	// collector, bridge, and target allocator.
+	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
+		"operator.golang.flags",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
+		featuregate.WithRegisterFromVersion("v0.100.0"),
+	)
+
 	// SkipMultiInstrumentationContainerValidation is the feature gate that controls whether the operator will skip
 	// container name validation during pod mutation for multi-instrumentation. Enabling this feature allows multiple
 	// instrumentations for pods without specified container name annotations. Does not prevent specification
