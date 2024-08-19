@@ -7,6 +7,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/rbac"
+	"k8s.io/client-go/kubernetes"
 	"net"
 	"os"
 	"path/filepath"
@@ -87,7 +89,13 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
+	clientset, clientErr := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		fmt.Printf("failed to setup kubernetes clientset %v", clientErr)
+	}
+	reviewer := rbac.NewReviewer(clientset)
+
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

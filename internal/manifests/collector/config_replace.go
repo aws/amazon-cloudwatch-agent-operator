@@ -42,7 +42,7 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent, targetAllocator *v1a
 		return cfgStr, nil
 	}
 
-	config, err := adapters.ConfigFromJSONString(instance.Spec.Config)
+	config, err := adapters.ConfigFromString(cfgStr)
 	if err != nil {
 		return "", err
 	}

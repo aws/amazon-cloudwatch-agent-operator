@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/rbac"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"runtime"
 	"strings"
@@ -232,7 +234,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+	}
+
 	ctx := ctrl.SetupSignalHandler()
+
+	reviewer := rbac.NewReviewer(clientset)
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
@@ -305,7 +314,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
+		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AmazonCloudWatchAgent")
 			os.Exit(1)
 		}

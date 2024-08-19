@@ -379,7 +379,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: AmazonCloudWatchAgent{
 				Spec: AmazonCloudWatchAgentSpec{
 					Mode: ModeDeployment,
-					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: TargetAllocatorEmbedded{
 						Enabled: true,
 					},
 				},
@@ -391,7 +391,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: AmazonCloudWatchAgent{
 				Spec: AmazonCloudWatchAgentSpec{
 					Mode: ModeStatefulSet,
-					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: TargetAllocatorEmbedded{
 						Enabled: true,
 					},
 				},
@@ -403,7 +403,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: AmazonCloudWatchAgent{
 				Spec: AmazonCloudWatchAgentSpec{
 					Mode: ModeDaemonSet,
-					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: TargetAllocatorEmbedded{
 						Enabled:            true,
 						AllocationStrategy: TargetAllocatorAllocationStrategyLeastWeighted,
 					},

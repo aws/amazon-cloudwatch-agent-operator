@@ -57,7 +57,7 @@ func TestTargetAllocator(t *testing.T) {
 			name: "disabled",
 			input: v1alpha1.AmazonCloudWatchAgent{
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: v1alpha1.TargetAllocatorEmbedded{
 						Enabled: false,
 					},
 				},
@@ -70,7 +70,7 @@ func TestTargetAllocator(t *testing.T) {
 				ObjectMeta: objectMetadata,
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Config: otelcolConfig,
-					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: v1alpha1.TargetAllocatorEmbedded{
 						Enabled: true,
 					},
 				},
@@ -87,7 +87,7 @@ func TestTargetAllocator(t *testing.T) {
 			input: v1alpha1.AmazonCloudWatchAgent{
 				ObjectMeta: objectMetadata,
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+					TargetAllocator: v1alpha1.TargetAllocatorEmbedded{
 						Replicas:     &replicas,
 						NodeSelector: map[string]string{"key": "value"},
 						Resources: v1.ResourceRequirements{

@@ -147,7 +147,7 @@ type AmazonCloudWatchAgentSpec struct {
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
-	TargetAllocator AmazonCloudWatchAgentTargetAllocator `json:"targetAllocator,omitempty"`
+	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
@@ -170,8 +170,10 @@ type AmazonCloudWatchAgentSpec struct {
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the AmazonCloudWatchAgent documentation for details.
+	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
 	// +required
-	Config string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config Config `json:"config"`
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
 	// +optional
 	// +listType=atomic
@@ -278,8 +280,9 @@ type AmazonCloudWatchAgentSpec struct {
 	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
-// AmazonCloudWatchAgentTargetAllocator defines the configurations for the Prometheus target allocator.
-type AmazonCloudWatchAgentTargetAllocator struct {
+// TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
+// AmazonCloudWatchAgent spec.
+type TargetAllocatorEmbedded struct {
 	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
 	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
 	// that can be run in a high availability mode is consistent-hashing.
@@ -297,13 +300,13 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
-	AllocationStrategy AmazonCloudWatchAgentTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
-	FilterStrategy string `json:"filterStrategy,omitempty"`
+	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
 	// +optional
@@ -320,7 +323,7 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
-	PrometheusCR AmazonCloudWatchAgentTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 	// SecurityContext configures the container security context for
 	// the targetallocator.
 	// +optional
@@ -350,7 +353,8 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the target allocator workload.
+	// for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+	// allocation strategy.
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`

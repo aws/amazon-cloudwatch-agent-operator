@@ -190,7 +190,7 @@ func collectorInstance() v1alpha1.AmazonCloudWatchAgent {
 				Image: "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
 			},
 			Config: cfg,
-			TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+			TargetAllocator: v1alpha1.TargetAllocatorEmbedded{
 				Image:          "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-targetallocator:0.47.0",
 				FilterStrategy: "relabel-config",
 			},

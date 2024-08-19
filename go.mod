@@ -23,9 +23,9 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/operator-framework/operator-lib v0.14.0
-	github.com/prometheus-operator/prometheus-operator v0.76.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.0
+	github.com/prometheus-operator/prometheus-operator v0.75.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.75.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.75.2
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/prometheus v0.54.0
