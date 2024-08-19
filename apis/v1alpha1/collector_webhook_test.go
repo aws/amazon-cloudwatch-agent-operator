@@ -6,11 +6,13 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -284,6 +286,22 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 	}
 }
 
+var cfgYaml = `receivers:
+ examplereceiver:
+   endpoint: "0.0.0.0:12345"
+ examplereceiver/settings:
+   endpoint: "0.0.0.0:12346"
+ prometheus:
+   config:
+     scrape_configs:
+       - job_name: otel-collector
+         scrape_interval: 10s
+ jaeger/custom:
+   protocols:
+     thrift_http:
+       endpoint: 0.0.0.0:15268
+`
+
 // TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
 // deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
 // still supported but should eventually be updated.
@@ -294,6 +312,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
+
+	cfg := Config{}
+	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
 		name             string
@@ -314,21 +336,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Replicas:        &three,
 					MaxReplicas:     &five,
 					UpgradeStrategy: "adhoc",
-					Config: `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: otel-collector
-          scrape_interval: 10s
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
-`,
+					Config:          cfg,
 					Ports: []v1.ServicePort{
 						{
 							Name: "port1",
