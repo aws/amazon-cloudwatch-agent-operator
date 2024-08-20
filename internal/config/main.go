@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry = "cwagentconfig.json"
+	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -29,6 +30,8 @@ type Config struct {
 	autoInstrumentationJavaImage        string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	targetAllocatorImage                string
+	targetAllocatorConfigMapEntry       string
 	labelsFilter                        []string
 }
 
@@ -36,9 +39,10 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
-		logger:                  logf.Log.WithName("config"),
-		version:                 version.Get(),
+		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		logger:                        logf.Log.WithName("config"),
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -57,6 +61,8 @@ func New(opts ...Option) Config {
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		dcgmExporterImage:                   o.dcgmExporterImage,
 		neuronMonitorImage:                  o.neuronMonitorImage,
+		targetAllocatorImage:                o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -114,6 +120,16 @@ func (c *Config) DcgmExporterImage() string {
 // NeuronMonitorImage returns Neuron Monitor Exporter container image.
 func (c *Config) NeuronMonitorImage() string {
 	return c.neuronMonitorImage
+}
+
+// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+func (c *Config) TargetAllocatorImage() string {
+	return c.targetAllocatorImage
+}
+
+// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+func (c *Config) TargetAllocatorConfigMapEntry() string {
+	return c.targetAllocatorConfigMapEntry
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

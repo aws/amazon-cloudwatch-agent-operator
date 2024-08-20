@@ -23,6 +23,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 )
 
 const (
@@ -44,6 +45,7 @@ func isNamespaceScoped(obj client.Object) bool {
 func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder{
 		collector.Build,
+		targetallocator.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {

@@ -29,6 +29,8 @@ type options struct {
 	collectorConfigMapEntry             string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	targetAllocatorImage                string
+	targetAllocatorConfigMapEntry       string
 	labelsFilter                        []string
 }
 
