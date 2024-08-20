@@ -38,7 +38,7 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 label_selector:
-  app.kubernetes.io/component: amazon-cloudwatch-agent-collector
+  app.kubernetes.io/component: amazon-cloudwatch-agent
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
@@ -74,7 +74,7 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 label_selector:
-  app.kubernetes.io/component: amazon-cloudwatch-agent-collector
+  app.kubernetes.io/component: amazon-cloudwatch-agent
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
@@ -120,7 +120,7 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 label_selector:
-  app.kubernetes.io/component: amazon-cloudwatch-agent-collector
+  app.kubernetes.io/component: amazon-cloudwatch-agent
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
