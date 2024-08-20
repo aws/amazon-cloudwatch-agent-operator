@@ -95,7 +95,21 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 // UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
 // both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
 func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
+	prometheus, err := ConfigToPromConfig(`receivers:
+	  examplereceiver:
+		endpoint: "0.0.0.0:12345"
+	  examplereceiver/settings:
+		endpoint: "0.0.0.0:12346"
+	  prometheus:
+		config:
+		  scrape_config:
+			job_name: otel-collector
+			scrape_interval: 10s
+	  jaeger/custom:
+		protocols:
+		  thrift_http:
+			endpoint: 0.0.0.0:15268
+	`) // This is a temporary configuration, which is to be adjusted.
 	if err != nil {
 		return nil, err
 	}
