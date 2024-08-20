@@ -4,6 +4,9 @@ cloudwatch-agent=1.300041.0b681
 # Represents the current release of the CloudWatch Agent Operator.
 operator=1.4.1
 
+# Represents the current release of the Target Allocator.
+targetallocator=1.0.0
+
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.2
 aws-otel-python-instrumentation=v0.2.0

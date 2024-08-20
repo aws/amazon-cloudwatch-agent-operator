@@ -109,6 +109,12 @@ func WithNeuronMonitorImage(s string) Option {
 	}
 }
 
+func WithTargetAllocatorImage(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorImage = s
+	}
+}
+
 func WithLabelFilters(labelFilters []string) Option {
 	return func(o *options) {
 

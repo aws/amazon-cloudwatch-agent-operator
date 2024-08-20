@@ -51,6 +51,7 @@ const (
 	autoInstrumentationDotNetImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
+	targetAllocatorImageRepository           = "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator"
 )
 
 var (
@@ -124,6 +125,7 @@ func main() {
 		tlsOpt                       tlsConfig
 		dcgmExporterImage            string
 		neuronMonitorImage           string
+		targetAllocatorImage         string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -137,6 +139,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("%s:%s", targetAllocatorImageRepository, v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
@@ -171,6 +174,7 @@ func main() {
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
+		"amazon-cloudwatch-agent-targetallocator", targetAllocatorImage,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -186,6 +190,7 @@ func main() {
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithDcgmExporterImage(dcgmExporterImage),
 		config.WithNeuronMonitorImage(neuronMonitorImage),
+		config.WithTargetAllocatorImage(targetAllocatorImage),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
