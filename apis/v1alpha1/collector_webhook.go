@@ -6,8 +6,6 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -89,9 +87,6 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
 	}
-	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
-		r.Spec.TargetAllocator.Replicas = &one
-	}
 
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
 		if r.Spec.Autoscaler == nil {
@@ -166,27 +161,6 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
-	}
-
-	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
-	}
-
-	// validate Prometheus config for target allocation
-	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
 	}
 
 	// validator port config
