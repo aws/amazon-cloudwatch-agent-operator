@@ -87,6 +87,9 @@ func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
 	}
+	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
+		r.Spec.TargetAllocator.Replicas = &one
+	}
 
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
 		if r.Spec.Autoscaler == nil {
