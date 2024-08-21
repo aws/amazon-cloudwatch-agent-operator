@@ -34,7 +34,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.Config)
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.PrometheusConfig)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

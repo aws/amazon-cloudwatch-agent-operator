@@ -4800,6 +4800,10 @@ spec:
                   If not specified, the pod priority will be default or zero if there is no
                   default.
                 type: string
+              prometheusConfig:
+                description: PrometheusConfig is the raw JSON to be used as the collector's
+                  prometheus configuration.
+                type: string
               replicas:
                 description: Replicas is the number of pod instances for the underlying
                   OpenTelemetry Collector. Set this if your are not using autoscaling
