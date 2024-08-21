@@ -169,11 +169,6 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}
 
-	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
-	}
-
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
 		promCfg, err := ta.ConfigToPromConfig(r.Spec.PrometheusConfig)
