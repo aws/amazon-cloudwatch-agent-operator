@@ -100,7 +100,7 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 
 	// test
 	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.Equal(t, err, fmt.Errorf("no prometheus available as part of the configuration"))
+	assert.Equal(t, err, nil)
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())

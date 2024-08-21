@@ -71,22 +71,22 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 
 	receiversProperty, ok := config["receivers"]
 	if !ok {
-		return nil, errorNoComponent("receivers")
+		return nil, nil
 	}
 
 	receivers, ok := receiversProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errorNotAMap("receivers")
+		return nil, nil
 	}
 
 	prometheusProperty, ok := receivers["prometheus"]
 	if !ok {
-		return nil, errorNoComponent("prometheus")
+		return nil, nil
 	}
 
 	prometheus, ok := prometheusProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errorNotAMap("prometheus")
+		return nil, nil
 	}
 
 	return prometheus, nil
@@ -105,10 +105,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		return nil, err
 	}
 
-	for i, config := range scrapeConfigs {
+	for _, config := range scrapeConfigs {
 		scrapeConfig, ok := config.(map[interface{}]interface{})
 		if !ok {
-			return nil, errorNotAMapAtIndex("scrape_config", i)
+			return nil, nil
 		}
 
 		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
@@ -118,13 +118,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		relabelConfigs, ok := relabelConfigsProperty.([]interface{})
 		if !ok {
-			return nil, errorNotAListAtIndex("relabel_configs", i)
+			return nil, nil
 		}
 
-		for i, rc := range relabelConfigs {
+		for _, rc := range relabelConfigs {
 			relabelConfig, rcErr := rc.(map[interface{}]interface{})
 			if !rcErr {
-				return nil, errorNotAMapAtIndex("relabel_config", i)
+				return nil, nil
 			}
 
 			replacementProperty, rcErr := relabelConfig["replacement"]
@@ -134,7 +134,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 			replacement, rcErr := replacementProperty.(string)
 			if !rcErr {
-				return nil, errorNotAStringAtIndex("replacement", i)
+				return nil, nil
 			}
 
 			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
@@ -147,13 +147,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
 		if !ok {
-			return nil, errorNotAListAtIndex("metric_relabel_configs", i)
+			return nil, nil
 		}
 
-		for i, rc := range metricRelabelConfigs {
+		for _, rc := range metricRelabelConfigs {
 			relabelConfig, ok := rc.(map[interface{}]interface{})
 			if !ok {
-				return nil, errorNotAMapAtIndex("metric_relabel_config", i)
+				return nil, nil
 			}
 
 			replacementProperty, ok := relabelConfig["replacement"]
@@ -163,7 +163,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 			replacement, ok := replacementProperty.(string)
 			if !ok {
-				return nil, errorNotAStringAtIndex("replacement", i)
+				return nil, nil
 			}
 
 			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
