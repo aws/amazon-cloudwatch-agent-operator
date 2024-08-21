@@ -321,6 +321,13 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>prometheusConfig</b></td>
+        <td>string</td>
+        <td>
+          PrometheusConfig is the raw JSON to be used as the collector's prometheus configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>

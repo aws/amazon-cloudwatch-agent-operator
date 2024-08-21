@@ -68,6 +68,9 @@ type AmazonCloudWatchAgentSpec struct {
 	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
+	// +optional
+	TargetAllocator v1alpha1.AmazonCloudWatchAgentTargetAllocator `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode v1alpha1.Mode `json:"mode,omitempty"`
@@ -89,6 +92,9 @@ type AmazonCloudWatchAgentSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// PrometheusConfig is the raw JSON to be used as the collector's prometheus configuration.
+	// +optional
+	PrometheusConfig string `json:"prometheusConfig,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`

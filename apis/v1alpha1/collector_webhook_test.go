@@ -273,6 +273,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()
@@ -313,7 +314,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Replicas:        &three,
 					MaxReplicas:     &five,
 					UpgradeStrategy: "adhoc",
-					Config: `receivers:
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+					PrometheusConfig: `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
   examplereceiver/settings:
@@ -372,6 +376,30 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "does not support the attribute 'tolerations'",
+		},
+		{
+			name: "invalid mode with target allocator",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "does not support the target allocation deployment",
+		},
+		{
+			name: "invalid target allocator config",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeStatefulSet,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec Prometheus configuration is incorrect",
 		},
 		{
 			name: "invalid port name",
@@ -755,6 +783,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()
