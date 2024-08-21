@@ -6,6 +6,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 

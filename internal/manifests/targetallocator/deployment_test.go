@@ -174,8 +174,8 @@ func collectorInstance() v1alpha1.AmazonCloudWatchAgent {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Image:  "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
-			Config: string(configYAML),
+			Image:            "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
+			PrometheusConfig: string(configYAML),
 		},
 	}
 }
