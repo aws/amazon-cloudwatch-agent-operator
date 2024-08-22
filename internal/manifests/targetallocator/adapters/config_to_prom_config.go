@@ -39,14 +39,14 @@ func errorNotAStringAtIndex(component string, index int) error {
 
 // getScrapeConfigsFromPromConfig extracts the scrapeConfig array from prometheus receiver config.
 func getScrapeConfigsFromPromConfig(promReceiverConfig map[interface{}]interface{}) ([]interface{}, error) {
-	prometheusConfigProperty, ok := promReceiverConfig["global"]
+	prometheusConfigProperty, ok := promReceiverConfig["config"]
 	if !ok {
-		return nil, errorNoComponent("global")
+		return nil, errorNoComponent("prometheusConfig")
 	}
 
 	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errorNotAMap("global")
+		return nil, errorNotAMap("prometheusConfig")
 	}
 
 	scrapeConfigsProperty, ok := prometheusConfig["scrape_configs"]
@@ -148,14 +148,14 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 // from the `scrape_configs` section and adds a single `http_sd_configs` configuration.
 // The `http_sd_configs` points to the TA (Target Allocator) endpoint that provides the list of targets for the given job.
 func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
-	prometheusConfigProperty, ok := prometheus["global"]
+	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
-		return nil, errorNoComponent("global")
+		return nil, errorNoComponent("prometheusConfig")
 	}
 
 	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errorNotAMap("global")
+		return nil, errorNotAMap("prometheusConfig")
 	}
 
 	scrapeConfigsProperty, ok := prometheusConfig["scrape_configs"]
@@ -212,14 +212,14 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
 func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
-	prometheusConfigProperty, ok := prometheus["global"]
+	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
-		return nil, errorNoComponent("global")
+		return nil, errorNoComponent("prometheusConfig")
 	}
 
 	prometheusCfg, ok := prometheusConfigProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errorNotAMap("global")
+		return nil, errorNotAMap("prometheusConfig")
 	}
 
 	// Create the TargetAllocConfig dynamically if it doesn't exist
@@ -244,7 +244,7 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 
 // ValidatePromConfig checks if the prometheus receiver config is valid given other collector-level settings.
 func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool, targetAllocatorRewriteEnabled bool) error {
-	_, promConfigExists := config["global"]
+	_, promConfigExists := config["config"]
 
 	if targetAllocatorEnabled {
 		if targetAllocatorRewriteEnabled { // if rewrite is enabled, we will add a target_allocator section during rewrite
@@ -261,7 +261,7 @@ func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabl
 	}
 	// if target allocator isn't enabled, we need a config section
 	if !promConfigExists {
-		return errorNoComponent("global")
+		return errorNoComponent("prometheusConfig")
 	}
 
 	return nil

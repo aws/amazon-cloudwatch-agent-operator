@@ -19,13 +19,13 @@ import (
 
 func TestExtractPromConfigFromConfig(t *testing.T) {
 	configStr := `
-global:
+config:
   scrape_config:
     job_name: otel-collector
     scrape_interval: 10s
 `
 	expectedData := map[interface{}]interface{}{
-		"global": map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{
 			"scrape_config": map[interface{}]interface{}{
 				"job_name":        "otel-collector",
 				"scrape_interval": "10s",
@@ -43,7 +43,7 @@ global:
 
 func TestExtractPromConfigWithTAConfigFromConfig(t *testing.T) {
 	configStr := `
-global:
+config:
   scrape_config:
     job_name: otel-collector
     scrape_interval: 10s
@@ -51,7 +51,7 @@ target_allocator:
   endpoint: "test:80"
 `
 	expectedData := map[interface{}]interface{}{
-		"global": map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{
 			"scrape_config": map[interface{}]interface{}{
 				"job_name":        "otel-collector",
 				"scrape_interval": "10s",
@@ -72,7 +72,7 @@ target_allocator:
 
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	actual := `
-global:
+config:
   scrape_configs:
   - job_name: 'example'
     relabel_configs:
@@ -88,7 +88,7 @@ global:
       replacement: '$1_$2'
 `
 	expected := `
-global:
+config:
   scrape_configs:
   - job_name: 'example'
     relabel_configs:
@@ -122,7 +122,7 @@ global:
 func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 	t.Run("ValidConfiguration, add http_sd_config", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"global": map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -139,7 +139,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 		}
 		taServiceName := "test-service"
 		expectedCfg := map[interface{}]interface{}{
-			"global": map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -160,7 +160,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 
 	t.Run("invalid config property, returns error", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"global": map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
 				"job_name": "test_job",
 				"static_configs": []interface{}{
 					map[interface{}]interface{}{
@@ -183,7 +183,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 func TestAddTAConfigToPromConfig(t *testing.T) {
 	t.Run("should return expected prom config map with TA config", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"global": map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -202,7 +202,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		taServiceName := "test-targetallocator"
 
 		expectedResult := map[interface{}]interface{}{
-			"global": map[interface{}]interface{}{},
+			"config": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
 				"endpoint":     "http://test-targetallocator:80",
 				"interval":     "30s",
@@ -216,7 +216,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		assert.Equal(t, expectedResult, result)
 	})
 
-	t.Run("missing or invalid global property, returns error", func(t *testing.T) {
+	t.Run("missing or invalid prometheusConfig property, returns error", func(t *testing.T) {
 		testCases := []struct {
 			name    string
 			cfg     map[interface{}]interface{}
@@ -225,14 +225,14 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			{
 				name:    "missing config property",
 				cfg:     map[interface{}]interface{}{},
-				errText: "no global available as part of the configuration",
+				errText: "no prometheusConfig available as part of the configuration",
 			},
 			{
 				name: "invalid config property",
 				cfg: map[interface{}]interface{}{
-					"global": "invalid",
+					"config": "invalid",
 				},
-				errText: "global property in the configuration doesn't contain valid global",
+				errText: "prometheusConfig property in the configuration doesn't contain valid prometheusConfig",
 			},
 		}
 
@@ -276,7 +276,7 @@ func TestValidatePromConfig(t *testing.T) {
 		{
 			description: "target_allocator enabled, config section present",
 			config: map[interface{}]interface{}{
-				"global": map[interface{}]interface{}{},
+				"config": map[interface{}]interface{}{},
 			},
 			targetAllocatorEnabled:        true,
 			targetAllocatorRewriteEnabled: false,
@@ -292,7 +292,7 @@ func TestValidatePromConfig(t *testing.T) {
 		{
 			description: "target_allocator disabled, config section present",
 			config: map[interface{}]interface{}{
-				"global": map[interface{}]interface{}{},
+				"config": map[interface{}]interface{}{},
 			},
 			targetAllocatorEnabled:        false,
 			targetAllocatorRewriteEnabled: false,
@@ -303,7 +303,7 @@ func TestValidatePromConfig(t *testing.T) {
 			config:                        map[interface{}]interface{}{},
 			targetAllocatorEnabled:        false,
 			targetAllocatorRewriteEnabled: false,
-			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "global"),
+			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
 		},
 	}
 
@@ -326,7 +326,7 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 		{
 			description: "scrape configs present and PrometheusCR enabled",
 			config: map[interface{}]interface{}{
-				"global": map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{
 						map[interface{}]interface{}{
 							"job_name": "test_job",
@@ -347,7 +347,7 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 		{
 			description: "scrape configs present and PrometheusCR disabled",
 			config: map[interface{}]interface{}{
-				"global": map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{
 						map[interface{}]interface{}{
 							"job_name": "test_job",
@@ -375,12 +375,12 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 			description:                 "receiver config empty and PrometheusCR disabled",
 			config:                      map[interface{}]interface{}{},
 			targetAllocatorPrometheusCR: false,
-			expectedError:               fmt.Errorf("no %s available as part of the configuration", "global"),
+			expectedError:               fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
 		},
 		{
 			description: "scrape configs empty and PrometheusCR disabled",
 			config: map[interface{}]interface{}{
-				"global": map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{},
 				},
 			},
