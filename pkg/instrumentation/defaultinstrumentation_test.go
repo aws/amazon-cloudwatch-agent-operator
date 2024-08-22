@@ -55,6 +55,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Java: v1alpha1.Java{
 				Image: defaultJavaInstrumentationImage,
 				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
@@ -79,6 +80,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Python: v1alpha1.Python{
 				Image: defaultPythonInstrumentationImage,
 				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
@@ -437,7 +439,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
