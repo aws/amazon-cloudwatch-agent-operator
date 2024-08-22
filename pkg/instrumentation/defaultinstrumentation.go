@@ -58,11 +58,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	if !ok {
 		return nil, errors.New("unable to determine python instrumentation image")
 	}
-<<<<<<< HEAD
 	nodeJSInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_NODEJS")
 	if !ok {
 		return nil, errors.New("unable to determine nodejs instrumentation image")
-=======
+	}
 	dotNetInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_DOTNET")
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
@@ -73,7 +72,6 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 		// Windows pods use the headless service endpoint due to limitations with the agent on host network mode
 		// https://kubernetes.io/docs/concepts/services-networking/windows-networking/#limitations
 		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
->>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 	}
 
 	// set protocol by checking cloudwatch agent config for tls setting

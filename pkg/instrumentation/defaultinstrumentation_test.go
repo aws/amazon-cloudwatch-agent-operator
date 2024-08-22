@@ -20,9 +20,7 @@ import (
 func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
-<<<<<<< HEAD
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
-=======
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
@@ -36,7 +34,6 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_LIMIT", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_REQUEST", "50m")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_REQUEST", "128Mi")
->>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -342,7 +339,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{

@@ -19,15 +19,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 const (
 	defaultJavaInstrumentationImage   = "test.registry/adot-autoinstrumentation-java:test-tag"
 	defaultPythonInstrumentationImage = "test.registry/adot-autoinstrumentation-python:test-tag"
-<<<<<<< HEAD
 	defaultNodeJSInstrumentationImage = "test.registry/adot-autoinstrumentation-nodejs:test-tag"
+	defaultDotNetInstrumentationImage = "test.registry/adot-autoinstrumentation-dotnet:test-tag"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
@@ -84,7 +83,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
-			//TODO: temporary environment variables. Update with the latest values from the ADOT SDK for NodeJS
 			NodeJS: v1alpha1.NodeJS{
 				Image: defaultNodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
@@ -100,14 +98,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 			},
 		},
 	}
-=======
-	defaultDotNetInstrumentationImage = "test.registry/adot-autoinstrumentation-dotnet:test-tag"
-)
-
-func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
-	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
-
->>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",
@@ -125,7 +115,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
-
 }
 
 func TestMutatePod(t *testing.T) {
