@@ -25,7 +25,11 @@ func TestConfig(t *testing.T) {
 			DaemonSets:   []string{"ds2"},
 			StatefulSets: []string{"ss2"},
 		},
+<<<<<<< HEAD
 		NodeJS: AnnotationResources{
+=======
+		DotNet: AnnotationResources{
+>>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 			Namespaces:   []string{"n3"},
 			Deployments:  []string{"d3"},
 			DaemonSets:   []string{"ds3"},
@@ -38,8 +42,14 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, cfg.Python, cfg.getResources(instrumentation.TypePython))
 	assert.Equal(t, []string{"ds2"}, getDaemonSets(cfg.Python))
 	assert.Equal(t, []string{"ss2"}, getStatefulSets(cfg.Python))
+<<<<<<< HEAD
 	assert.Equal(t, cfg.Python, cfg.getResources(instrumentation.TypeNodeJS))
 	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.NodeJS))
 	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.NodeJS))
+=======
+	assert.Equal(t, cfg.DotNet, cfg.getResources(instrumentation.TypeDotNet))
+	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.DotNet))
+	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.DotNet))
+>>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 	assert.Equal(t, AnnotationResources{}, cfg.getResources("invalidType"))
 }

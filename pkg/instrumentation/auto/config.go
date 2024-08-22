@@ -10,7 +10,11 @@ import "github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 type AnnotationConfig struct {
 	Java   AnnotationResources `json:"java"`
 	Python AnnotationResources `json:"python"`
+<<<<<<< HEAD
 	NodeJS AnnotationResources `json:"nodejs"`
+=======
+	DotNet AnnotationResources `json:"dotnet"`
+>>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 }
 
 func (c AnnotationConfig) getResources(instType instrumentation.Type) AnnotationResources {
@@ -19,8 +23,13 @@ func (c AnnotationConfig) getResources(instType instrumentation.Type) Annotation
 		return c.Java
 	case instrumentation.TypePython:
 		return c.Python
+<<<<<<< HEAD
 	case instrumentation.TypeNodeJS:
 		return c.NodeJS
+=======
+	case instrumentation.TypeDotNet:
+		return c.DotNet
+>>>>>>> 099460aea6622b73557017a14b5c46e1b10de680
 	default:
 		return AnnotationResources{}
 	}
