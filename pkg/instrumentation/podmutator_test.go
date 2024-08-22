@@ -95,8 +95,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_NODEJS_DISTRO", Value: "aws_distro"},
-					{Name: "OTEL_NODEJS_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},

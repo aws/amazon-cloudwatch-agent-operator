@@ -49,7 +49,7 @@ const (
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
 	//TODO: Update with the latest release of ADOT SDK for NodeJS
-	autoInstrumentationNodeJSImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs"
+	autoInstrumentationNodeJSImageRepository = "637423224110.dkr.ecr.us-east-1.amazonaws.com/aws-observability/adot-autoinstrumentation-node-staging"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
