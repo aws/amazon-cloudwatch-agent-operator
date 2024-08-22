@@ -161,16 +161,15 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					Requests: getInstrumentationConfigForResource(dotNet, request),
 				},
 			},
-			//TODO: temporary environment variables. Update with the latest values from the ADOT SDK for NodeJS
 			NodeJS: v1alpha1.NodeJS{
 				Image: nodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: exporterPrefix + "cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},

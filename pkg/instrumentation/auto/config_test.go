@@ -45,7 +45,7 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, cfg.Python, cfg.getResources(instrumentation.TypePython))
 	assert.Equal(t, []string{"ds2"}, getDaemonSets(cfg.Python))
 	assert.Equal(t, []string{"ss2"}, getStatefulSets(cfg.Python))
-	assert.Equal(t, cfg.Python, cfg.getResources(instrumentation.TypeNodeJS))
+	assert.Equal(t, cfg.NodeJS, cfg.getResources(instrumentation.TypeNodeJS))
 	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.NodeJS))
 	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.NodeJS))
 	assert.Equal(t, cfg.DotNet, cfg.getResources(instrumentation.TypeDotNet))

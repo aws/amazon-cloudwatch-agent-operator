@@ -6,9 +6,10 @@ package instrumentation
 import (
 	"context"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"os"
 	"testing"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
