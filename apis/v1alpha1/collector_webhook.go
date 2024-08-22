@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 
@@ -171,7 +173,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := ta.ConfigToPromConfig(r.Spec.PrometheusConfig)
+		promCfg, err := adapters.ConfigFromString(r.Spec.PrometheusConfig)
 		if err != nil {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}

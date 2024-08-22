@@ -317,20 +317,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 					},
-					PrometheusConfig: `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: otel-collector
-          scrape_interval: 10s
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
+					PrometheusConfig: `global:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
 `,
 					Ports: []v1.ServicePort{
 						{

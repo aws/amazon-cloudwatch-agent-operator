@@ -10,29 +10,22 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractPromConfigFromConfig(t *testing.T) {
-	configStr := `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
-      scrape_config:
-        job_name: otel-collector
-        scrape_interval: 10s
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
+	configStr := `
+global:
+  scrape_config:
+    job_name: otel-collector
+    scrape_interval: 10s
 `
 	expectedData := map[interface{}]interface{}{
-		"config": map[interface{}]interface{}{
+		"global": map[interface{}]interface{}{
 			"scrape_config": map[interface{}]interface{}{
 				"job_name":        "otel-collector",
 				"scrape_interval": "10s",
@@ -41,7 +34,7 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
 	}
 
 	// test
-	promConfig, err := ta.ConfigToPromConfig(configStr)
+	promConfig, err := adapters.ConfigFromString(configStr)
 	assert.NoError(t, err)
 
 	// verify
@@ -49,25 +42,16 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
 }
 
 func TestExtractPromConfigWithTAConfigFromConfig(t *testing.T) {
-	configStr := `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
-      scrape_config:
-        job_name: otel-collector
-        scrape_interval: 10s
-    target_allocator:
-      endpoint: "test:80"
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
+	configStr := `
+global:
+  scrape_config:
+    job_name: otel-collector
+    scrape_interval: 10s
+target_allocator:
+  endpoint: "test:80"
 `
 	expectedData := map[interface{}]interface{}{
-		"config": map[interface{}]interface{}{
+		"global": map[interface{}]interface{}{
 			"scrape_config": map[interface{}]interface{}{
 				"job_name":        "otel-collector",
 				"scrape_interval": "10s",
@@ -79,69 +63,45 @@ func TestExtractPromConfigWithTAConfigFromConfig(t *testing.T) {
 	}
 
 	// test
-	promConfig, err := ta.ConfigToPromConfig(configStr)
+	promConfig, err := adapters.ConfigFromString(configStr)
 	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, expectedData, promConfig)
 }
 
-func TestExtractPromConfigFromNullConfig(t *testing.T) {
-	configStr := `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
-`
-
-	// test
-	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.Equal(t, err, fmt.Errorf("no prometheus available as part of the configuration"))
-
-	// verify
-	assert.True(t, reflect.ValueOf(promConfig).IsNil())
-}
-
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	actual := `
-receivers:
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: 'example'
-        relabel_configs:
-        - source_labels: ['__meta_service_id']
-          target_label: 'job'
-          replacement: 'my_service_$$1'
-        - source_labels: ['__meta_service_name']
-          target_label: 'instance'
-          replacement: '$1'
-        metric_relabel_configs:
-        - source_labels: ['job']
-          target_label: 'job'
-          replacement: '$$1_$2'
+global:
+  scrape_configs:
+  - job_name: 'example'
+    relabel_configs:
+    - source_labels: ['__meta_service_id']
+      target_label: 'job'
+      replacement: 'my_service_$1'
+    - source_labels: ['__meta_service_name']
+      target_label: 'instance'
+      replacement: '$1'
+    metric_relabel_configs:
+    - source_labels: ['job']
+      target_label: 'job'
+      replacement: '$1_$2'
 `
 	expected := `
-receivers:
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: 'example'
-        relabel_configs:
-        - source_labels: ['__meta_service_id']
-          target_label: 'job'
-          replacement: 'my_service_$1'
-        - source_labels: ['__meta_service_name']
-          target_label: 'instance'
-          replacement: '$1'
-        metric_relabel_configs:
-        - source_labels: ['job']
-          target_label: 'job'
-          replacement: '$1_$2'
+global:
+  scrape_configs:
+  - job_name: 'example'
+    relabel_configs:
+    - source_labels: ['__meta_service_id']
+      target_label: 'job'
+      replacement: 'my_service_$1'
+    - source_labels: ['__meta_service_name']
+      target_label: 'instance'
+      replacement: '$1'
+    metric_relabel_configs:
+    - source_labels: ['job']
+      target_label: 'job'
+      replacement: '$1_$2'
 `
 
 	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
@@ -162,7 +122,7 @@ receivers:
 func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 	t.Run("ValidConfiguration, add http_sd_config", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"config": map[interface{}]interface{}{
+			"global": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -179,7 +139,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 		}
 		taServiceName := "test-service"
 		expectedCfg := map[interface{}]interface{}{
-			"config": map[interface{}]interface{}{
+			"global": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -200,7 +160,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 
 	t.Run("invalid config property, returns error", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"config": map[interface{}]interface{}{
+			"global": map[interface{}]interface{}{
 				"job_name": "test_job",
 				"static_configs": []interface{}{
 					map[interface{}]interface{}{
@@ -223,7 +183,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 func TestAddTAConfigToPromConfig(t *testing.T) {
 	t.Run("should return expected prom config map with TA config", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
-			"config": map[interface{}]interface{}{
+			"global": map[interface{}]interface{}{
 				"scrape_configs": []interface{}{
 					map[interface{}]interface{}{
 						"job_name": "test_job",
@@ -242,7 +202,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		taServiceName := "test-targetallocator"
 
 		expectedResult := map[interface{}]interface{}{
-			"config": map[interface{}]interface{}{},
+			"global": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
 				"endpoint":     "http://test-targetallocator:80",
 				"interval":     "30s",
@@ -256,7 +216,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		assert.Equal(t, expectedResult, result)
 	})
 
-	t.Run("missing or invalid prometheusConfig property, returns error", func(t *testing.T) {
+	t.Run("missing or invalid global property, returns error", func(t *testing.T) {
 		testCases := []struct {
 			name    string
 			cfg     map[interface{}]interface{}
@@ -265,14 +225,14 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			{
 				name:    "missing config property",
 				cfg:     map[interface{}]interface{}{},
-				errText: "no prometheusConfig available as part of the configuration",
+				errText: "no global available as part of the configuration",
 			},
 			{
 				name: "invalid config property",
 				cfg: map[interface{}]interface{}{
-					"config": "invalid",
+					"global": "invalid",
 				},
-				errText: "prometheusConfig property in the configuration doesn't contain valid prometheusConfig",
+				errText: "global property in the configuration doesn't contain valid global",
 			},
 		}
 
@@ -316,7 +276,7 @@ func TestValidatePromConfig(t *testing.T) {
 		{
 			description: "target_allocator enabled, config section present",
 			config: map[interface{}]interface{}{
-				"config": map[interface{}]interface{}{},
+				"global": map[interface{}]interface{}{},
 			},
 			targetAllocatorEnabled:        true,
 			targetAllocatorRewriteEnabled: false,
@@ -332,7 +292,7 @@ func TestValidatePromConfig(t *testing.T) {
 		{
 			description: "target_allocator disabled, config section present",
 			config: map[interface{}]interface{}{
-				"config": map[interface{}]interface{}{},
+				"global": map[interface{}]interface{}{},
 			},
 			targetAllocatorEnabled:        false,
 			targetAllocatorRewriteEnabled: false,
@@ -343,7 +303,7 @@ func TestValidatePromConfig(t *testing.T) {
 			config:                        map[interface{}]interface{}{},
 			targetAllocatorEnabled:        false,
 			targetAllocatorRewriteEnabled: false,
-			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "global"),
 		},
 	}
 
@@ -366,7 +326,7 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 		{
 			description: "scrape configs present and PrometheusCR enabled",
 			config: map[interface{}]interface{}{
-				"config": map[interface{}]interface{}{
+				"global": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{
 						map[interface{}]interface{}{
 							"job_name": "test_job",
@@ -387,7 +347,7 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 		{
 			description: "scrape configs present and PrometheusCR disabled",
 			config: map[interface{}]interface{}{
-				"config": map[interface{}]interface{}{
+				"global": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{
 						map[interface{}]interface{}{
 							"job_name": "test_job",
@@ -415,12 +375,12 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 			description:                 "receiver config empty and PrometheusCR disabled",
 			config:                      map[interface{}]interface{}{},
 			targetAllocatorPrometheusCR: false,
-			expectedError:               fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+			expectedError:               fmt.Errorf("no %s available as part of the configuration", "global"),
 		},
 		{
 			description: "scrape configs empty and PrometheusCR disabled",
 			config: map[interface{}]interface{}{
-				"config": map[interface{}]interface{}{
+				"global": map[interface{}]interface{}{
 					"scrape_configs": []interface{}{},
 				},
 			},

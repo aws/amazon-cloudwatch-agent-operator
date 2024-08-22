@@ -29,7 +29,7 @@ func TestDesiredConfigMap(t *testing.T) {
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
+global:
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
@@ -65,7 +65,7 @@ label_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
+global:
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
@@ -111,7 +111,7 @@ service_monitor_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
+global:
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
