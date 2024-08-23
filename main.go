@@ -50,7 +50,7 @@ const (
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
 	autoInstrumentationDotNetImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet"
 
-	autoInstrumentationNodeJSImageRepository = "637423224110.dkr.ecr.us-east-1.amazonaws.com/aws-observability/adot-autoinstrumentation-node-staging"
+	autoInstrumentationNodeJSImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 )
@@ -167,6 +167,7 @@ func main() {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationNodeJS)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)

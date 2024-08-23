@@ -35,6 +35,9 @@ const (
 	injectDotNetAnnotation       = "instrumentation.opentelemetry.io/inject-dotnet"
 	autoAnnotateDotNetAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-dotnet"
 
+	injectNodeJSAnnotation       = "instrumentation.opentelemetry.io/inject-nodejs"
+	autoAnnotateNodeJSAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-nodejs"
+
 	deploymentName            = "sample-deployment"
 	nginxDeploymentName       = "nginx"
 	statefulSetName           = "sample-statefulset"
@@ -175,8 +178,9 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 			fmt.Println("There was an error getting namespace, ", err)
 			return false
 		}
+
 		for _, annotation := range expectedAnnotations {
-			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", annotation, ns.Status, ns.Name)
+			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", ns.ObjectMeta.Annotations, ns.Status, ns.Name)
 			if ns.ObjectMeta.Annotations[annotation] != "true" {
 				time.Sleep(timeBetweenRetries)
 				correct = false

@@ -127,6 +127,24 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
+      - name: Test for default instrumentation resources for nodejs
+        run: |
+          cat integration-tests/nodejs/sample-deployment-nodejs.yaml
+          kubectl apply -f integration-tests/nodejs/sample-deployment-nodejs.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/nodejs/default_instrumentation_nodejs_env_variables.json
+
+      - name: Test for defined instrumentation resources for nodejs
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          kubectl delete pods --all -n default
+          sleep 5
+          kubectl wait --for=condition=Ready pod --all -n default  
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
 
       - name: Test for default instrumentation resources for all languages
         run: |
@@ -195,6 +213,8 @@ jobs:
           sleep 5
           go test -v -run TestDotNetOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
+          go test -v -run TestNodeJSOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
 
   DaemonsetAnnotationsTest:
@@ -245,6 +265,8 @@ jobs:
           sleep 5
           go test -v -run TestDotNetOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
+          go test -v -run TestNodeJSOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
           go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
 
   StatefulsetAnnotationsTest:
@@ -292,6 +314,10 @@ jobs:
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestPythonOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestDotNetOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestNodeJSOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestOnlyNonAnnotatedAppsShouldBeRestarted ./integration-tests/manifests/annotations -timeout 30m
 
@@ -341,5 +367,7 @@ jobs:
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestDotNetOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestNodeJSOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
