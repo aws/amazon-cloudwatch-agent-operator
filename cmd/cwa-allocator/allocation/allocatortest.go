@@ -20,7 +20,7 @@ import (
 
 	"github.com/prometheus/common/model"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 )
 
 func colIndex(index, numCols int) int {

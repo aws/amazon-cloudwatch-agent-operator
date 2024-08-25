@@ -29,13 +29,13 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/collector"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/prehook"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/server"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
-	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/watcher"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/prehook"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/server"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
+	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/watcher"
 )
 
 var (

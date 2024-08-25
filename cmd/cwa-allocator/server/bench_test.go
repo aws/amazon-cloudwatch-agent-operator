@@ -26,8 +26,8 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 )
 
 func BenchmarkServerTargetsHandler(b *testing.B) {

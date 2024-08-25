@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 )
 
 var logger = logf.Log.WithName("unit-tests")

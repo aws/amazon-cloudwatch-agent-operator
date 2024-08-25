@@ -15,8 +15,8 @@
 package server
 
 import (
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 )
 
 var _ allocation.Allocator = &mockAllocator{}

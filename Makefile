@@ -13,7 +13,11 @@ NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monit
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
-ARCH ?= $(shell go env GOARCH)
+ARCH ?= 'amd64' #$(shell go env GOARCH)
+
+
+TARGETALLOCATOR_IMG_REPO ?= target-allocator
+TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -95,6 +99,9 @@ test: generate fmt vet envtest
 .PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
+# Build target allocator binary
+targetallocator:
+	cd cmd/cwa-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -161,6 +168,14 @@ container:
 container-push:
 	docker push ${IMG}
 
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGETALLOCATOR_IMG}
+
+.PHONY: container-target-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker build -t ${TARGETALLOCATOR_IMG} cmd/cwa-allocator
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))

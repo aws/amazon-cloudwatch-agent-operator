@@ -17,8 +17,8 @@ package allocation
 import (
 	"sync"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/diff"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/diff"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"

@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/prometheus/model/relabel"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
 )
 
 const (

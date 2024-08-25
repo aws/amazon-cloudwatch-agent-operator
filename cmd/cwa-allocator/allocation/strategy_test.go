@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/diff"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/diff"
 )
 
 func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {

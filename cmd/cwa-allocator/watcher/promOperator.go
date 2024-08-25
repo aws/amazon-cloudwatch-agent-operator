@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/config"
+	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/config"
 )
 
 const minEventInterval = time.Second * 5

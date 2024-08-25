@@ -22,7 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	promconfig "github.com/prometheus/prometheus/config"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/config"
 )
 
 var _ Watcher = &FileWatcher{}

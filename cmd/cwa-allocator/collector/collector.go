@@ -29,7 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/otel-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
 )
 
 const (
