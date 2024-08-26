@@ -167,7 +167,7 @@ func main() {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
-	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationNodeJS)
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", autoInstrumentationNodeJS)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
