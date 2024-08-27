@@ -16,8 +16,10 @@ package collector
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
+	"encoding/json"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -57,13 +59,18 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}
 
 	return &Client{
-		log:       logger.WithValues("component", "amazon-cloudwatch-agent-target-allocator"),
+		log:       logger.WithValues("component", "amazon-cloudwatchagent-target-allocator"),
 		k8sClient: clientset,
 		close:     make(chan struct{}),
 	}, nil
 }
 
 func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
+	pplabelMap, err := json.MarshalIndent(labelMap,"","   ")
+	if err != nil{
+		os.Exit(1)
+	}
+	k.log.Info(fmt.Sprintf("Starting watch for %s",string(pplabelMap)))
 	collectorMap := map[string]*allocation.Collector{}
 
 	opts := metav1.ListOptions{
@@ -80,9 +87,8 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 			collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
 		}
 	}
-
 	fn(collectorMap)
-
+	
 	for {
 		if !k.restartWatch(ctx, opts, collectorMap, fn) {
 			return nil

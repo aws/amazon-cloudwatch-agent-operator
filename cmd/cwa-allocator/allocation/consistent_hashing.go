@@ -15,6 +15,7 @@
 package allocation
 
 import (
+	"encoding/json"
 	"strings"
 	"sync"
 
@@ -234,6 +235,11 @@ func (c *consistentHashingAllocator) SetTargets(targets map[string]*target.Item)
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // This method is called when Collectors are added or removed.
 func (c *consistentHashingAllocator) SetCollectors(collectors map[string]*Collector) {
+	ppCollector , err := json.MarshalIndent(collectors, "","   ")
+	if err !=nil{
+		return
+	}
+	c.log.Info("Setting collectors for " + string(ppCollector))
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", consistentHashingStrategyName))
 	defer timer.ObserveDuration()
 

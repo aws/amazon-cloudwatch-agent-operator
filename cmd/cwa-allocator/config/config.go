@@ -37,7 +37,7 @@ import (
 const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
-
+const DefaultAllocationStrategy string = "consistent-hashing"
 type Config struct {
 	ListenAddr             string             `yaml:"listen_addr,omitempty"`
 	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
@@ -62,7 +62,7 @@ func (c Config) GetAllocationStrategy() string {
 	if c.AllocationStrategy != nil {
 		return *c.AllocationStrategy
 	}
-	return "least-weighted"
+	return DefaultAllocationStrategy
 }
 
 func (c Config) GetTargetsFilterStrategy() string {
@@ -132,10 +132,12 @@ func unmarshal(cfg *Config, configFile string) error {
 }
 
 func CreateDefaultConfig() Config {
+	var allocation_strategy = DefaultAllocationStrategy
 	return Config{
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
+		AllocationStrategy: &allocation_strategy,
 	}
 }
 
