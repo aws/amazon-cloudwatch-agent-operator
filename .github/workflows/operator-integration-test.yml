@@ -206,11 +206,12 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-deployment.yaml
           kubectl get pods -A
           kubectl describe pods -n default
-          sleep 5
+          sleep 10
           go test -v -run TestAllLanguagesDeployment ./integration-tests/manifests/annotations -timeout 30m
+          kubectl get pods -A
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
@@ -258,7 +259,6 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-daemonset.yaml
           sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
@@ -310,8 +310,6 @@ jobs:
 
       - name: Test Annotations
         run: |
-          kubectl apply -f integration-tests/manifests/sample-statefulset.yaml
-          sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestAllLanguagesStatefulSet ./integration-tests/manifests/annotations -timeout 30m

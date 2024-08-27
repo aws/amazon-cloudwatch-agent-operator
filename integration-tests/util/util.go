@@ -6,7 +6,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"time"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -52,12 +51,10 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 				return nil
 			} else if pod.CreationTimestamp.Time.After(startTime) {
 				fmt.Printf("Operator pod %s created after start time but is not in running stage\n", pod.Name)
-				getCmd := exec.Command("kubectl", "get", "pods", "-A")
-
-				getCmd.Run()
-				desCmd := exec.Command("kubectl", "describe", "pods", "-A")
-
-				desCmd.Run()
+				fmt.Println(pod.Status)
+				fmt.Println(pod.Namespace)
+				fmt.Println(pod.CreationTimestamp)
+				fmt.Println(pod.Spec)
 
 			}
 		}
