@@ -145,7 +145,8 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
           sleep 5
-          kubectl wait --for=condition=Ready pod --all -n default  
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
@@ -163,7 +164,8 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
           sleep 5
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
