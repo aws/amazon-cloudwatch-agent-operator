@@ -130,6 +130,8 @@ jobs:
 
       - name: Test for default instrumentation resources for nodejs
         run: |
+          kubectl delete pods --all -n default
+          sleep 5
           cat integration-tests/nodejs/sample-deployment-nodejs.yaml
           kubectl apply -f integration-tests/nodejs/sample-deployment-nodejs.yaml
           sleep 5
