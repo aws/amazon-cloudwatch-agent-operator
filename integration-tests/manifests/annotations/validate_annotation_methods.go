@@ -45,7 +45,7 @@ const (
 
 	daemonSetName = "sample-daemonset"
 
-	amazonControllerManager = "cloudwatch-controller-manager"
+	amazonControllerManager = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath      = "../sample-daemonset.yaml"
 	sampleDeploymentYamlNameRelPath = "../sample-deployment.yaml"
@@ -265,6 +265,25 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
+		cmd := exec.Command("kubectl", "rollout", "restart", "deployment", amazonControllerManager, "-n", amazonCloudwatchNamespace)
+
+		// Run the command and capture the output
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("Error restarting deployment: %v\n", err)
+			fmt.Printf("Output: %s\n", output)
+		} else {
+			fmt.Printf("Successfully deleted deployment: %s\n", output)
+		}
+		waitCmd := exec.Command("kubectl", "wait", "--for=condition=Available", "deployment/"+amazonControllerManager, "-n", amazonCloudwatchNamespace, "--timeout=300s")
+
+		waitOutput, err := waitCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("Error waiting for deployment: %v\n", err)
+			fmt.Printf("Output: %s\n", waitOutput)
+		} else {
+			fmt.Printf("Deployment is now available: %s\n", waitOutput)
+		}
 		time.Sleep(timeBetweenRetries)
 	}
 }
