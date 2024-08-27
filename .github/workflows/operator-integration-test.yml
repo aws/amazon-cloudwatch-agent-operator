@@ -263,6 +263,8 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestAllLanguagesDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          kubectl get pods -A
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestJavaOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
@@ -313,6 +315,8 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestAllLanguagesStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          kubectl get pods -A
+          kubectl describe pods -n default
           sleep 5
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
