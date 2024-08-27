@@ -311,7 +311,7 @@ func main() {
 		}
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
-				[]podmutation.PodMutator{
+			[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
 				}),

@@ -57,7 +57,7 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}
 
 	return &Client{
-		log:       logger.WithValues("component", "opentelemetry-targetallocator"),
+		log:       logger.WithValues("component", "amazon-cloudwatch-agent-target-allocator"),
 		k8sClient: clientset,
 		close:     make(chan struct{}),
 	}, nil

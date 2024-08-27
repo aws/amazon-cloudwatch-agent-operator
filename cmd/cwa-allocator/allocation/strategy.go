@@ -34,19 +34,19 @@ var (
 	// TargetsPerCollector records how many targets have been assigned to each collector.
 	// It is currently the responsibility of the strategy to track this information.
 	TargetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_per_collector",
+		Name: "cloudwatchagent_allocator_targets_per_collector",
 		Help: "The number of targets for each collector.",
 	}, []string{"collector_name", "strategy"})
 	CollectorsAllocatable = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_collectors_allocatable",
+		Name: "cloudwatchagent_allocator_collectors_allocatable",
 		Help: "Number of collectors the allocator is able to allocate to.",
 	}, []string{"strategy"})
 	TimeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "opentelemetry_allocator_time_to_allocate",
+		Name: "cloudwatchagent_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method", "strategy"})
 	targetsRemaining = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "opentelemetry_allocator_targets_remaining",
+		Name: "cloudwatchagent_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
 )

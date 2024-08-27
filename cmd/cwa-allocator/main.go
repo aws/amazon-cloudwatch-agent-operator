@@ -41,7 +41,7 @@ import (
 var (
 	setupLog     = ctrl.Log.WithName("setup")
 	eventsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "opentelemetry_allocator_events",
+		Name: "cloudwatchagent_allocator_events",
 		Help: "Number of events in the channel.",
 	}, []string{"source"})
 )

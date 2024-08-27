@@ -8,16 +8,16 @@ AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-dotnet-instrumentation | awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
-
+TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep target-allocator | awk -F= '{print $$2}')
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= 'amd64' #$(shell go env GOARCH)
-
+ACCOUNT_ID = 956457624121
 
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
-TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
+TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:${TARGETALLOCATOR_VERSION}
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -100,6 +100,7 @@ test: generate fmt vet envtest
 manager: generate fmt vet
 	go build -o bin/manager main.go
 # Build target allocator binary
+.PHONY: targetallocator
 targetallocator:
 	cd cmd/cwa-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" .
 
@@ -175,7 +176,18 @@ container-target-allocator-push:
 .PHONY: container-target-allocator
 container-target-allocator: GOOS = linux
 container-target-allocator: targetallocator
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/cwa-allocator
+	docker buildx build --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG}  cmd/cwa-allocator
+
+
+.PHONY: eks-target-allocator-push
+eks-target-allocator-push: 
+	docker tag ${TARGETALLOCATOR_IMG} $(ACCOUNT_ID).dkr.ecr.us-west-2.amazonaws.com/target-allocator:${TARGETALLOCATOR_VERSION}
+	docker push $(ACCOUNT_ID).dkr.ecr.us-west-2.amazonaws.com/target-allocator:${TARGETALLOCATOR_VERSION}
+
+.PHONY: ta-build-and-push
+ta-build-and-push: container-target-allocator
+ta-build-and-push: 	eks-target-allocator-push
+
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))

@@ -46,7 +46,7 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				LabelSelector: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: model.Duration(time.Second * 60),
@@ -110,7 +110,7 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				LabelSelector: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 				},
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: DefaultCRScrapeInterval,

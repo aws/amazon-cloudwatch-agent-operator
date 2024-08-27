@@ -45,7 +45,7 @@ func getTestClient() (Client, watch.Interface) {
 
 	labelMap := map[string]string{
 		"app.kubernetes.io/instance":   "default.test",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 	}
 
 	opts := metav1.ListOptions{
@@ -62,7 +62,7 @@ func getTestClient() (Client, watch.Interface) {
 func pod(name string) *v1.Pod {
 	labelSet := make(map[string]string)
 	labelSet["app.kubernetes.io/instance"] = "default.test"
-	labelSet["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+	labelSet["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
 
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

@@ -4,7 +4,8 @@ FROM alpine:3.18 as certificates
 RUN apk --no-cache add ca-certificates
 
 # Start a new stage from scratch
-FROM scratch
+FROM bash 
+#scratch
 
 ARG TARGETARCH
 
