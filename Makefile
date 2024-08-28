@@ -5,11 +5,8 @@ VERSION_PKG ?= "github.com/aws/amazon-cloudwatch-agent-operator/internal/version
 AGENT_VERSION ?= "$(shell grep -v '\#' versions.txt | grep cloudwatch-agent | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-java-instrumentation | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-python-instrumentation | awk -F= '{print $$2}')"
-<<<<<<< HEAD
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-dotnet-instrumentation | awk -F= '{print $$2}')"
-=======
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-nodejs-instrumentation | awk -F= '{print $$2}')"
->>>>>>> nodejs-instrumentation
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
 
