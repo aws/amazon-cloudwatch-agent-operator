@@ -210,7 +210,7 @@ func TestNodeJSOnlyNamespace(t *testing.T) {
 	}()
 
 	annotationConfig := auto.AnnotationConfig{
-		DotNet: auto.AnnotationResources{
+		NodeJS: auto.AnnotationResources{
 			Namespaces: []string{uniqueNamespace},
 		},
 	}
