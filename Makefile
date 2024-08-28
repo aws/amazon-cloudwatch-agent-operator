@@ -13,8 +13,8 @@ TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep target-alloc
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
-ARCH ?= 'amd64' #$(shell go env GOARCH)
-ACCOUNT_ID = 956457624121
+ARCH ?= $(shell go env GOARCH)
+ACCOUNT_ID = ""
 
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
 TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:${TARGETALLOCATOR_VERSION}

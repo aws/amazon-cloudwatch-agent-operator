@@ -17,9 +17,8 @@ package allocation
 import (
 	"testing"
 
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"github.com/stretchr/testify/assert"
-	
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("unit-tests")

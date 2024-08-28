@@ -38,6 +38,7 @@ const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 const DefaultAllocationStrategy string = "consistent-hashing"
+
 type Config struct {
 	ListenAddr             string             `yaml:"listen_addr,omitempty"`
 	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`

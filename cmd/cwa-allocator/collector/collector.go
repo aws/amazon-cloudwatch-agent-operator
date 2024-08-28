@@ -16,8 +16,6 @@ package collector
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -66,11 +64,6 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 }
 
 func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
-	pplabelMap, err := json.MarshalIndent(labelMap, "", "   ")
-	if err != nil {
-		os.Exit(1)
-	}
-	k.log.Info(fmt.Sprintf("Starting watch for %s", string(pplabelMap)))
 	collectorMap := map[string]*allocation.Collector{}
 
 	opts := metav1.ListOptions{
