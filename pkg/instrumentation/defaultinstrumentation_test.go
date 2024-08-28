@@ -4,9 +4,11 @@
 package instrumentation
 
 import (
+	"fmt"
 	"os"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -20,6 +22,7 @@ import (
 func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
@@ -41,7 +44,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -130,6 +133,19 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					},
 				},
 			},
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
 		},
 	}
 	httpsInst := &v1alpha1.Instrumentation{
@@ -139,7 +155,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -228,6 +244,19 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					},
 				},
 			},
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
 		},
 	}
 
@@ -281,17 +310,19 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getDefaultInstrumentation() got = %v, want %v", got, tt.want)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("getDefaultInstrumentation() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
+
 }
 
 func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_REQUEST", "50m")
@@ -312,7 +343,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -401,6 +432,19 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					},
 				},
 			},
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
 		},
 	}
 	httpsInst := &v1alpha1.Instrumentation{
@@ -410,7 +454,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -499,6 +543,19 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					},
 				},
 			},
+			NodeJS: v1alpha1.NodeJS{
+				Image: defaultNodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+			},
 		},
 	}
 
@@ -548,12 +605,14 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := getDefaultInstrumentation(tt.args.agentConfig, true)
+			fmt.Println(got)
+			fmt.Println("___------__---__")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getDefaultInstrumentation() got = %v, want %v", got, tt.want)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("getDefaultInstrumentation() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

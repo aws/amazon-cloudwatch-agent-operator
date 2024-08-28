@@ -25,6 +25,12 @@ func TestConfig(t *testing.T) {
 			DaemonSets:   []string{"ds2"},
 			StatefulSets: []string{"ss2"},
 		},
+		NodeJS: AnnotationResources{
+			Namespaces:   []string{"n3"},
+			Deployments:  []string{"d3"},
+			DaemonSets:   []string{"ds3"},
+			StatefulSets: []string{"ss3"},
+		},
 		DotNet: AnnotationResources{
 			Namespaces:   []string{"n3"},
 			Deployments:  []string{"d3"},
@@ -32,12 +38,16 @@ func TestConfig(t *testing.T) {
 			StatefulSets: []string{"ss3"},
 		},
 	}
+
 	assert.Equal(t, cfg.Java, cfg.getResources(instrumentation.TypeJava))
 	assert.Equal(t, []string{"n1"}, getNamespaces(cfg.Java))
 	assert.Equal(t, []string{"d1"}, getDeployments(cfg.Java))
 	assert.Equal(t, cfg.Python, cfg.getResources(instrumentation.TypePython))
 	assert.Equal(t, []string{"ds2"}, getDaemonSets(cfg.Python))
 	assert.Equal(t, []string{"ss2"}, getStatefulSets(cfg.Python))
+	assert.Equal(t, cfg.NodeJS, cfg.getResources(instrumentation.TypeNodeJS))
+	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.NodeJS))
+	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.NodeJS))
 	assert.Equal(t, cfg.DotNet, cfg.getResources(instrumentation.TypeDotNet))
 	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.DotNet))
 	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.DotNet))
