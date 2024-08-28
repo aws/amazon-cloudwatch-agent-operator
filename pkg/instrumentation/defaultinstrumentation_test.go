@@ -327,7 +327,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig, false)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, nil, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -650,7 +650,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig, true)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, nil, true)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
