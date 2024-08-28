@@ -19,6 +19,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
@@ -368,8 +369,19 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		return nil, nil
 	}
 
+	var additionalEnvs map[Type]map[string]string
+	if instAnnotation == annotationInjectJava {
+		additionalEnvs = map[Type]map[string]string{}
+		targetSystems := getJmxTargetSystems(ns, pod)
+		if len(targetSystems) != 0 {
+			additionalEnvs[TypeJava] = map[string]string{
+				jmx.EnvTargetSystem: strings.Join(targetSystems, ","),
+			}
+		}
+	}
+
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, isWindowsPod(pod))
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, additionalEnvs, isWindowsPod(pod))
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -388,7 +400,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, additionalEnvs map[Type]map[string]string, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
@@ -403,7 +415,7 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
 		}
 
-		return getDefaultInstrumentation(config, isWindowsPod)
+		return getDefaultInstrumentation(config, additionalEnvs, isWindowsPod)
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
@@ -424,4 +436,15 @@ func GetAmazonCloudWatchAgentResource(ctx context.Context, c client.Client, name
 
 func isWindowsPod(pod corev1.Pod) bool {
 	return pod.Spec.NodeSelector["kubernetes.io/os"] == "windows"
+}
+
+func getJmxTargetSystems(ns corev1.Namespace, pod corev1.Pod) []string {
+	var targetSystems []string
+	for _, target := range jmx.SupportedTargets {
+		value := annotationValue(ns.ObjectMeta, pod.ObjectMeta, jmx.AnnotationKey(target))
+		if strings.EqualFold(value, "true") {
+			targetSystems = append(targetSystems, target)
+		}
+	}
+	return targetSystems
 }

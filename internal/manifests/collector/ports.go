@@ -34,12 +34,14 @@ const (
 	EMFTcp          = "emf-tcp"
 	EMFUdp          = "emf-udp"
 	CWA             = "cwa-"
+	JmxHttp         = "jmx-http"
 )
 
 var receiverDefaultPortsMap = map[string]int32{
 	StatsD:     8125,
 	CollectD:   25826,
 	XrayTraces: 2000,
+	JmxHttp:    4314,
 	OtlpGrpc:   4317,
 	OtlpHttp:   4318,
 	EMF:        25888,
@@ -81,6 +83,7 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 		logger.Error(err, "error parsing cw agent config")
 		servicePorts = PortMapToServicePortList(AppSignalsPortToServicePortMap)
 	} else {
+		logger.Info("%v", config)
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
 
@@ -133,6 +136,9 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 	//CollectD - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-custom-metrics-collectd.html
 	if config.Metrics.MetricsCollected.CollectD != nil {
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, servicePortsMap)
+	}
+	if config.Metrics.MetricsCollected.JMX != nil {
+		getReceiverServicePort(logger, "", JmxHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
 }
 

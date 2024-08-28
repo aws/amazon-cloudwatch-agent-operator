@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
@@ -49,7 +49,7 @@ func getInstrumentationConfigForResource(langStr string, resourceStr string) cor
 	return instrumentationConfigForResource
 }
 
-func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs map[Type]map[string]string, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -98,18 +98,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-				},
+				Env:   getJavaEnvs(cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeJava]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(java, limit),
 					Requests: getInstrumentationConfigForResource(java, request),
@@ -159,4 +148,39 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 		},
 	}, nil
+}
+
+func getJavaEnvs(cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
+	envs := []corev1.EnvVar{
+		{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+		{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+		{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
+		{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+		{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+		{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+		{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
+		{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+	}
+	var jmxEnvs []corev1.EnvVar
+	if targetSystems, ok := additionalEnvs[jmx.EnvTargetSystem]; ok {
+		jmxEnvs = []corev1.EnvVar{
+			{Name: "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", Value: fmt.Sprintf("%s://%s:4314/v1/metrics", http, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED", Value: "false"},
+			{Name: "OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED", Value: "false"},
+			{Name: "OTEL_JMX_ENABLED", Value: "true"},
+			{Name: "OTEL_JMX_TARGET_SYSTEM", Value: targetSystems},
+			{Name: "OTEL_EXPERIMENTAL_METRICS_VIEW_CONFIG", Value: "classpath:/jmx/view.yaml"},
+		}
+	}
+	if len(jmxEnvs) == 0 {
+		envs = append(
+			envs,
+			corev1.EnvVar{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+			corev1.EnvVar{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+		)
+	} else {
+		envs = append(envs, corev1.EnvVar{Name: "OTEL_LOGS_EXPORTER", Value: "none"})
+		envs = append(envs, jmxEnvs...)
+	}
+	return envs
 }

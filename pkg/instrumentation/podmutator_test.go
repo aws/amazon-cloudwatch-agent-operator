@@ -9,6 +9,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
+
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +32,7 @@ const (
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
-	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
+	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, nil, false)
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -45,11 +47,59 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 		Client: fake.NewClientBuilder().Build(),
 		Logger: logr.Logger{},
 	}
-	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, false)
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, nil, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
 
+}
+
+func TestGetInstrumentationInstanceJMX(t *testing.T) {
+	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+	mutator := instPodMutator{
+		Client: fake.NewClientBuilder().Build(),
+		Logger: logr.Discard(),
+	}
+
+	tests := []struct {
+		name    string
+		pod     corev1.Pod
+		ns      corev1.Namespace
+		wantLen int
+		wantEnv []corev1.EnvVar
+	}{
+		{
+			name: "enable jvm/tomcat",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava:                "true",
+						jmx.AnnotationKey(jmx.TargetJVM):    "true",
+						jmx.AnnotationKey(jmx.TargetTomcat): "true",
+					},
+				},
+			},
+			ns:      corev1.Namespace{},
+			wantLen: 15,
+			wantEnv: []corev1.EnvVar{
+				{Name: "OTEL_JMX_ENABLED", Value: "true"},
+				{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm,tomcat"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inst, err := mutator.getInstrumentationInstance(context.Background(), tt.ns, tt.pod, annotationInjectJava)
+			assert.NoError(t, err)
+			assert.Len(t, inst.Spec.Java.Env, tt.wantLen)
+			for _, env := range tt.wantEnv {
+				assert.Containsf(t, inst.Spec.Java.Env, env, "java env does not contain %s:%s", env.Name, env.Value)
+			}
+		})
+	}
 }
 
 func TestMutatePod(t *testing.T) {

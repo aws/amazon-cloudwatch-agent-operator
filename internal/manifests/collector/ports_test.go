@@ -259,6 +259,21 @@ func TestInvalidConfigGetContainerPorts(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 }
 
+func TestJMXGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("testdata/jmx.json")
+	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	assert.Equal(t, 4, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
+	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
 func getJSONStringFromFile(path string) string {
 	buf, err := os.ReadFile(path)
 	if err != nil {
