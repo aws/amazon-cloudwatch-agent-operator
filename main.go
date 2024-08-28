@@ -147,6 +147,8 @@ func main() {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", autoInstrumentationNodeJS)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
+
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
 	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
@@ -162,11 +164,9 @@ func main() {
 	if dotNetVar, ok := autoInstrumentationConfig["dotnet"]; ok {
 		setLangEnvVars("DOTNET", dotNetVar)
 	}
-
-	// set supported language instrumentation images in environment variable to be used for default instrumentation
-	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
-	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
-	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
+	if dotNetVar, ok := autoInstrumentationConfig["nodejs"]; ok {
+		setLangEnvVars("NODES", dotNetVar)
+	}
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)

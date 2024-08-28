@@ -34,6 +34,7 @@ const (
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 
 	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
