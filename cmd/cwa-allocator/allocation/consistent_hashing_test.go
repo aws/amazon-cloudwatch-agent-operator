@@ -17,8 +17,12 @@ package allocation
 import (
 	"testing"
 
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"github.com/stretchr/testify/assert"
+	
 )
+
+var logger = logf.Log.WithName("unit-tests")
 
 func TestCanSetSingleTarget(t *testing.T) {
 	cols := MakeNCollectors(3, 0)

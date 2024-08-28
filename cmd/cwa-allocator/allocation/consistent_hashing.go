@@ -257,6 +257,7 @@ func (c *consistentHashingAllocator) SetCollectors(collectors map[string]*Collec
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		c.handleCollectors(collectorsDiff)
 	}
+	c.log.Info("Setting collector completed")
 }
 
 func (c *consistentHashingAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {

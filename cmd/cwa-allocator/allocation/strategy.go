@@ -122,11 +122,7 @@ func NewCollector(name string) *Collector {
 }
 
 func init() {
-	err := Register(leastWeightedStrategyName, newLeastWeightedAllocator)
-	if err != nil {
-		panic(err)
-	}
-	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	err := Register(consistentHashingStrategyName, newConsistentHashingAllocator)
 	if err != nil {
 		panic(err)
 	}

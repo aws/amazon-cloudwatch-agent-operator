@@ -16,10 +16,10 @@ package collector
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
-	"encoding/json"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,11 +66,11 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 }
 
 func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
-	pplabelMap, err := json.MarshalIndent(labelMap,"","   ")
-	if err != nil{
+	pplabelMap, err := json.MarshalIndent(labelMap, "", "   ")
+	if err != nil {
 		os.Exit(1)
 	}
-	k.log.Info(fmt.Sprintf("Starting watch for %s",string(pplabelMap)))
+	k.log.Info(fmt.Sprintf("Starting watch for %s", string(pplabelMap)))
 	collectorMap := map[string]*allocation.Collector{}
 
 	opts := metav1.ListOptions{
@@ -88,7 +88,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 		}
 	}
 	fn(collectorMap)
-	
+
 	for {
 		if !k.restartWatch(ctx, opts, collectorMap, fn) {
 			return nil
@@ -121,7 +121,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 		case <-k.close:
 			return "kubernetes client closed"
 		case <-ctx.Done():
-			return ""
+			return "Timed-Out"
 		case event, ok := <-c:
 			if !ok {
 				k.log.Info("No event found. Restarting watch routine")
