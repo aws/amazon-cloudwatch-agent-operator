@@ -95,7 +95,7 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	updateTheOperator(t, clientSet, string(jsonStr))
 
 	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
-		t.Fatalf("Failed annotation check: %s", err.Error())
+		t.Fatalf("Failed annotation check:  %s", err.Error())
 	}
 }
 
@@ -195,6 +195,8 @@ func TestNodeJSOnlyDeployment(t *testing.T) {
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
 		t.Error("Error:", err)
+		t.Error("Error:", err)
+
 	}
 
 	startTime := time.Now()
