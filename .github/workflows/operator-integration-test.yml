@@ -55,10 +55,11 @@ jobs:
           make deploy
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
+
       - name: Test case for cloudwatch agent pod creation
         run: |
           kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset.yaml -n amazon-cloudwatch
-          sleep 5
+          sleep 20
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
           
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
@@ -75,7 +76,8 @@ jobs:
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
           sleep 5 
           kubectl wait --for=condition=Ready pod --all -n default
-          
+          kubectl get pods -A 
+          kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json
 
       - name: Test for defined instrumentation resources for Java
@@ -85,17 +87,16 @@ jobs:
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
           
-          cd integration-tests/manifests/cmd
-          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json     
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json     
           kubectl delete instrumentation sample-instrumentation
 
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
-          kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
-          
+          kubectl get pods -A 
+          kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json
 
       - name: Test for defined instrumentation resources for python
@@ -104,30 +105,47 @@ jobs:
           kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
-          
-          cd integration-tests/manifests/cmd
-          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
-      - name: Test for default instrumentation resources for python and java
+      - name: Test for default instrumentation resources for dotnet
         run: |
-          kubectl apply -f integration-tests/python-java/sample-deployment-python-java.yaml
+          cat integration-tests/dotnet/sample-deployment-dotnet.yaml
+          kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/dotnet/default_instrumentation_dotnet_env_variables.json
+
+      - name: Test for defined instrumentation resources for dotnet
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
           sleep 5
-          kubectl wait --for=condition=Ready pod --all -n default
-          
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python-java/default_instrumentation_python-java_env_variables.json
+          kubectl wait --for=condition=Ready pod --all -n default  
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
 
-      - name: Test for defined instrumentation resources for python and java
+
+      - name: Test for default instrumentation resources for all languages
+        run: |
+          kubectl apply -f integration-tests/all-languages/sample-deployment-all-languages.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/all-languages/default_instrumentation_all-languages_env_variables.json
+
+
+      - name: Test for defined instrumentation resources for all languages
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
-          
-          cd integration-tests/manifests/cmd
-          go run validate_instrumentation_vars.go default ns_instrumentation_env_variables.json
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
+
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
@@ -169,16 +187,15 @@ jobs:
           kubectl get pods -A
           kubectl describe pods -n default
           sleep 5
-          go test -v -run TestJavaAndPythonDeployment ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestAllLanguagesDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestJavaOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestPythonOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
+          go test -v -run TestDotNetOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
-  
-  
-  
 
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
@@ -220,15 +237,15 @@ jobs:
           sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
-          go test -v -run TestJavaAndPythonDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestAllLanguagesDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestJavaOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestPythonOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
+          go test -v -run TestDotNetOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
           go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
-  
-  
 
   StatefulsetAnnotationsTest:
     name: StatefulsetAnnotationsTest
@@ -270,7 +287,7 @@ jobs:
           sleep 5
           kubectl get pods -A
           kubectl describe pods -n default
-          go test -v -run TestJavaAndPythonStatefulSet ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestAllLanguagesStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestJavaOnlyStatefulSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
@@ -317,10 +334,12 @@ jobs:
         run: |
           kubectl get pods -A
           kubectl describe pods -n default
-          go test -v -run TestJavaAndPythonNamespace ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestAllLanguagesNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          sleep 5
+          go test -v -run TestDotNetOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m

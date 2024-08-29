@@ -21,7 +21,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
-func TestJavaAndPythonNamespace(t *testing.T) {
+func TestAllLanguagesNamespace(t *testing.T) {
 
 	clientSet := setupTest(t)
 	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
@@ -29,7 +29,7 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 		panic(err)
 	}
 	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("namespace-java-python-%d", randomNumber)
+	uniqueNamespace := fmt.Sprintf("namespace-all-languages-%d", randomNumber)
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -44,6 +44,12 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
+		DotNet: auto.AnnotationResources{
+			Namespaces:   []string{uniqueNamespace},
+			DaemonSets:   []string{""},
+			Deployments:  []string{""},
+			StatefulSets: []string{""},
+		},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
@@ -52,8 +58,8 @@ func TestJavaAndPythonNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime) {
-		t.Error("Missing java and python annotations")
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
+		t.Error("Missing Languages annotations")
 	}
 }
 
@@ -134,6 +140,47 @@ func TestPythonOnlyNamespace(t *testing.T) {
 
 	if !checkNameSpaceAnnotations(t, clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Python annotations")
+	}
+}
+
+func TestDotNetOnlyNamespace(t *testing.T) {
+
+	clientSet := setupTest(t)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
+	}
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("namespace-dotnet-only-%d", randomNumber)
+	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
+		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
+	}
+
+	defer func() {
+		if err := deleteNamespace(clientSet, uniqueNamespace); err != nil {
+			t.Fatalf("Failed to delete namespace: %v", err)
+		}
+	}()
+
+	annotationConfig := auto.AnnotationConfig{
+		DotNet: auto.AnnotationResources{
+			Namespaces:   []string{uniqueNamespace},
+			DaemonSets:   []string{""},
+			Deployments:  []string{""},
+			StatefulSets: []string{""},
+		},
+	}
+	jsonStr, err := json.Marshal(annotationConfig)
+	if err != nil {
+		t.Error("Error:", err)
+	}
+
+	startTime := time.Now()
+
+	updateTheOperator(t, clientSet, string(jsonStr))
+
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
+		t.Error("Missing DotNet annotations")
 	}
 }
 
