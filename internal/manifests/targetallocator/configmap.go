@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	targetAllocatorFilename = "target-allocator.yaml"
+	targetAllocatorFilename = "targetallocator.yaml"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {

@@ -28,7 +28,7 @@ func TestDesiredConfigMap(t *testing.T) {
 		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"target-allocator.yaml": `allocation_strategy: consistent-hashing
+			"targetallocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -64,7 +64,7 @@ label_selector:
 		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"target-allocator.yaml": `allocation_strategy: consistent-hashing
+			"targetallocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -110,7 +110,7 @@ service_monitor_selector:
 		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"target-allocator.yaml": `allocation_strategy: consistent-hashing
+			"targetallocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector

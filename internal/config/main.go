@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
-	defaultTargetAllocatorConfigMapEntry = "target-allocator.yaml"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 )
 
 // Config holds the static configuration for this operator.
