@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"strings"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
@@ -62,9 +61,8 @@ func getScrapeConfigsFromPromConfig(promReceiverConfig map[interface{}]interface
 	return scrapeConfigs, nil
 }
 
-// UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
-// both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
-func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, error) {
+// GetPromConfig returns a Prometheus configuration file.
+func GetPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	prometheus, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
@@ -102,12 +100,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 				continue
 			}
 
-			replacement, rcErr := replacementProperty.(string)
+			_, rcErr = replacementProperty.(string)
 			if !rcErr {
 				return nil, errorNotAStringAtIndex("replacement", i)
 			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
 		}
 
 		metricRelabelConfigsProperty, ok := scrapeConfig["metric_relabel_configs"]
@@ -131,12 +127,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 				continue
 			}
 
-			replacement, ok := replacementProperty.(string)
+			_, ok = replacementProperty.(string)
 			if !ok {
 				return nil, errorNotAStringAtIndex("replacement", i)
 			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
 		}
 	}
 

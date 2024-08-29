@@ -70,7 +70,7 @@ target_allocator:
 	assert.Equal(t, expectedData, promConfig)
 }
 
-func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
+func TestGetPromConfig(t *testing.T) {
 	actual := `
 config:
   scrape_configs:
@@ -104,12 +104,12 @@ config:
       replacement: '$1_$2'
 `
 
-	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
+	config, err := ta.GetPromConfig(actual)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expected)
+	expectedConfig, err := ta.GetPromConfig(expected)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
