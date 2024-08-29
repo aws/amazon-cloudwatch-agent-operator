@@ -129,8 +129,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "my-instance-targetallocator", d.GetName())
-	assert.Equal(t, "my-instance-targetallocator", d.GetLabels()["app.kubernetes.io/name"])
+	assert.Equal(t, "my-instance-target-allocator", d.GetName())
+	assert.Equal(t, "my-instance-target-allocator", d.GetLabels()["app.kubernetes.io/name"])
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
@@ -159,7 +159,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	ds, err := Deployment(params)
 	assert.NoError(t, err)
 	// verify
-	assert.Equal(t, "my-instance-targetallocator", ds.Name)
+	assert.Equal(t, "my-instance-target-allocator", ds.Name)
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
@@ -285,7 +285,7 @@ func TestDeploymentTolerations(t *testing.T) {
 	}
 	d1, err := Deployment(params1)
 	assert.NoError(t, err)
-	assert.Equal(t, "my-instance-targetallocator", d1.Name)
+	assert.Equal(t, "my-instance-target-allocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
 	// Test Tolerations
@@ -307,7 +307,7 @@ func TestDeploymentTolerations(t *testing.T) {
 	}
 	d2, err := Deployment(params2)
 	assert.NoError(t, err)
-	assert.Equal(t, "my-instance-toleration-targetallocator", d2.Name)
+	assert.Equal(t, "my-instance-toleration-target-allocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.Tolerations)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.Tolerations)
 	assert.Equal(t, testTolerationValues, d2.Spec.Template.Spec.Tolerations)
@@ -330,7 +330,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 	d1, err := Deployment(params1)
 	assert.NoError(t, err)
-	assert.Equal(t, "my-instance-targetallocator", d1.Name)
+	assert.Equal(t, "my-instance-target-allocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
@@ -354,7 +354,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 	d2, err := Deployment(params2)
 	assert.NoError(t, err)
-	assert.Equal(t, "my-instance-topologyspreadconstraint-targetallocator", d2.Name)
+	assert.Equal(t, "my-instance-topologyspreadconstraint-target-allocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)

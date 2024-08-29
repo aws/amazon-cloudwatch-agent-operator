@@ -174,7 +174,7 @@ func main() {
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
-		"amazon-cloudwatch-agent-targetallocator", targetAllocatorImage,
+		"amazon-cloudwatch-agent-target-allocator", targetAllocatorImage,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,

@@ -324,7 +324,7 @@ default.<br/>
         <td><b>prometheusConfig</b></td>
         <td>string</td>
         <td>
-          PrometheusConfig is the raw JSON to be used as the collector's prometheus configuration.<br/>
+          PrometheusConfig is the raw YAML to be used as the collector's prometheus configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10421,9 +10421,9 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation.
-The current options are least-weighted and consistent-hashing. The default option is least-weighted<br/>
+The current option is consistent-hashing.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing<br/>
+            <i>Enum</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10495,7 +10495,7 @@ that can be run in a high availability mode is consistent-hashing.<br/>
         <td>object</td>
         <td>
           SecurityContext configures the container security context for
-the targetallocator.<br/>
+the target-allocator.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12566,7 +12566,7 @@ inside a container.<br/>
 
 
 SecurityContext configures the container security context for
-the targetallocator.
+the target-allocator.
 
 <table>
     <thead>

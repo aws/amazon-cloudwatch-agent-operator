@@ -24,11 +24,11 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
+			"target-allocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -54,17 +54,17 @@ label_selector:
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, "my-instance-target-allocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
+			"target-allocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -100,17 +100,17 @@ service_monitor_selector:
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, "my-instance-target-allocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
+			"target-allocator.yaml": `allocation_strategy: consistent-hashing
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -140,7 +140,7 @@ prometheus_cr:
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, "my-instance-target-allocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 

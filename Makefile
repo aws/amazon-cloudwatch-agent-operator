@@ -8,7 +8,7 @@ AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-dotnet-instrumentation | awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
-TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator |  awk -F= '{print $$2}')"
+TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-allocator |  awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws

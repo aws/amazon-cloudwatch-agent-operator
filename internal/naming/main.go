@@ -11,7 +11,7 @@ func ConfigMap(otelcol string) string {
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
 func TAConfigMap(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
@@ -66,7 +66,7 @@ func AmazonCloudWatchAgentName(otelcolName string) string {
 
 // TargetAllocator returns the TargetAllocator deployment resource name.
 func TargetAllocator(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
@@ -96,7 +96,7 @@ func Route(otelcol string, prefix string) string {
 
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
 // ServiceAccount builds the service account name based on the instance.
@@ -116,5 +116,5 @@ func PodMonitor(otelcol string) string {
 
 // TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.
 func TargetAllocatorServiceAccount(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }

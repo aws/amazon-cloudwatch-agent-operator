@@ -167,7 +167,7 @@ type AmazonCloudWatchAgentSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// PrometheusConfig is the raw JSON to be used as the collector's prometheus configuration.
+	// PrometheusConfig is the raw YAML to be used as the collector's prometheus configuration.
 	// +optional
 	PrometheusConfig string `json:"prometheusConfig,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
@@ -293,7 +293,7 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
+	// The current option is consistent-hashing.
 	// +optional
 	AllocationStrategy AmazonCloudWatchAgentTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
@@ -319,7 +319,7 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// +optional
 	PrometheusCR AmazonCloudWatchAgentTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 	// SecurityContext configures the container security context for
-	// the targetallocator.
+	// the target-allocator.
 	// +optional
 	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
 	// TopologySpreadConstraints embedded kubernetes pod configuration option,

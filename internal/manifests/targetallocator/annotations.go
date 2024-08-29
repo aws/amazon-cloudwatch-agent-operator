@@ -12,7 +12,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
-const configMapHashAnnotationKey = "amazon-cloudwatch-agent-targetallocator-config/hash"
+const configMapHashAnnotationKey = "amazon-cloudwatch-agent-target-allocator-config/hash"
 
 // Annotations returns the annotations for the TargetAllocator Pod.
 func Annotations(instance v1alpha1.AmazonCloudWatchAgent, configMap *v1.ConfigMap) map[string]string {

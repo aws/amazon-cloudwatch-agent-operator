@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	targetAllocatorFilename = "targetallocator.yaml"
+	targetAllocatorFilename = "target-allocator.yaml"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
@@ -47,11 +47,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["config"] = prometheusConfig
 	}
 
-	if len(params.OtelCol.Spec.TargetAllocator.AllocationStrategy) > 0 {
-		taConfig["allocation_strategy"] = params.OtelCol.Spec.TargetAllocator.AllocationStrategy
-	} else {
-		taConfig["allocation_strategy"] = v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyLeastWeighted
-	}
+	taConfig["allocation_strategy"] = v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyConsistentHashing
 
 	if len(params.OtelCol.Spec.TargetAllocator.FilterStrategy) > 0 {
 		taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy

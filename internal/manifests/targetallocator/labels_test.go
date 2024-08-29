@@ -31,7 +31,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	assert.Equal(t, "amazon-cloudwatch-agent-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "amazon-cloudwatch-agent", labels["app.kubernetes.io/part-of"])
-	assert.Equal(t, "amazon-cloudwatch-agent-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, "amazon-cloudwatch-agent-target-allocator", labels["app.kubernetes.io/component"])
 	assert.Equal(t, name, labels["app.kubernetes.io/name"])
 }
 

@@ -21,7 +21,7 @@ func Labels(instance v1alpha1.AmazonCloudWatchAgent, name string) map[string]str
 	base["app.kubernetes.io/managed-by"] = "amazon-cloudwatch-agent-operator"
 	base["app.kubernetes.io/instance"] = naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name)
 	base["app.kubernetes.io/part-of"] = "amazon-cloudwatch-agent"
-	base["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-targetallocator"
+	base["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
 
 	if _, ok := base["app.kubernetes.io/name"]; !ok {
 		base["app.kubernetes.io/name"] = name

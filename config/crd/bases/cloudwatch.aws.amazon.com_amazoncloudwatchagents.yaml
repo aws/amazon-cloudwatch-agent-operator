@@ -4801,7 +4801,7 @@ spec:
                   default.
                 type: string
               prometheusConfig:
-                description: PrometheusConfig is the raw JSON to be used as the collector's
+                description: PrometheusConfig is the raw YAML to be used as the collector's
                   prometheus configuration.
                 type: string
               replicas:
@@ -5945,9 +5945,8 @@ spec:
                   allocationStrategy:
                     description: |-
                       AllocationStrategy determines which strategy the target allocator should use for allocation.
-                      The current options are least-weighted and consistent-hashing. The default option is least-weighted
+                      The current option is consistent-hashing.
                     enum:
-                    - least-weighted
                     - consistent-hashing
                     type: string
                   enabled:
@@ -6187,7 +6186,7 @@ spec:
                   securityContext:
                     description: |-
                       SecurityContext configures the container security context for
-                      the targetallocator.
+                      the target-allocator.
                     properties:
                       fsGroup:
                         description: |-
