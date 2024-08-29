@@ -4800,8 +4800,8 @@ spec:
                   If not specified, the pod priority will be default or zero if there is no
                   default.
                 type: string
-              prometheusConfig:
-                description: PrometheusConfig is the raw YAML to be used as the collector's
+              prometheus:
+                description: Prometheus is the raw YAML to be used as the collector's
                   prometheus configuration.
                 type: string
               replicas:

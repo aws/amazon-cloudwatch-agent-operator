@@ -173,7 +173,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := adapters.ConfigFromString(r.Spec.PrometheusConfig)
+		promCfg, err := adapters.ConfigFromString(r.Spec.Prometheus)
 		if err != nil {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}

@@ -321,10 +321,10 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>prometheusConfig</b></td>
+        <td><b>prometheus</b></td>
         <td>string</td>
         <td>
-          PrometheusConfig is the raw YAML to be used as the collector's prometheus configuration.<br/>
+          Prometheus is the raw YAML to be used as the collector's prometheus configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>

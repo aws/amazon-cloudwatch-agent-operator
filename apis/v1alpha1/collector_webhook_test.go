@@ -317,7 +317,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 					},
-					PrometheusConfig: `config:
+					Prometheus: `config:
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
