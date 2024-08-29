@@ -26,8 +26,8 @@ import (
 const (
 	defaultJavaInstrumentationImage   = "test.registry/adot-autoinstrumentation-java:test-tag"
 	defaultPythonInstrumentationImage = "test.registry/adot-autoinstrumentation-python:test-tag"
-	defaultNodeJSInstrumentationImage = "test.registry/adot-autoinstrumentation-nodejs:test-tag"
 	defaultDotNetInstrumentationImage = "test.registry/adot-autoinstrumentation-dotnet:test-tag"
+	defaultNodeJSInstrumentationImage = "test.registry/adot-autoinstrumentation-nodejs:test-tag"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {

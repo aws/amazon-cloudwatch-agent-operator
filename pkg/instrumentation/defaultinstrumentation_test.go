@@ -20,8 +20,8 @@ import (
 func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", defaultJavaInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", defaultPythonInstrumentationImage)
-	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", defaultDotNetInstrumentationImage)
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", defaultNodeJSInstrumentationImage)
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_LIMIT", "500m")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_MEM_LIMIT", "64Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_CPU_REQUEST", "50m")
