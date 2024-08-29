@@ -18,6 +18,7 @@ import (
 )
 
 func TestLoad(t *testing.T) {
+	var defaulAllocationStrategy = DefaultAllocationStrategy
 	type args struct {
 		file string
 	}
@@ -33,6 +34,7 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/config_test.yaml",
 			},
 			want: Config{
+				AllocationStrategy: &defaulAllocationStrategy,
 				LabelSelector: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
@@ -97,6 +99,7 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
 			want: Config{
+				AllocationStrategy: &defaulAllocationStrategy,
 				LabelSelector: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",

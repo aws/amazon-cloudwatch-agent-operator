@@ -103,7 +103,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 		case <-k.close:
 			return "kubernetes client closed"
 		case <-ctx.Done():
-			return "Timed-Out"
+			return "" // this means that the watcher most likely timed out
 		case event, ok := <-c:
 			if !ok {
 				k.log.Info("No event found. Restarting watch routine")

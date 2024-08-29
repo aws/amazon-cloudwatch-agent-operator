@@ -40,9 +40,9 @@ var (
 )
 
 func TestServer_LivenessProbeHandler(t *testing.T) {
-	leastWeighted, _ := allocation.New("least-weighted", logger)
+	consistentHashing, _ := allocation.New("consistent-hashing", logger)
 	listenAddr := ":8080"
-	s := NewServer(logger, leastWeighted, listenAddr)
+	s := NewServer(logger, consistentHashing, listenAddr)
 	request := httptest.NewRequest("GET", "/livez", nil)
 	w := httptest.NewRecorder()
 
@@ -53,7 +53,7 @@ func TestServer_LivenessProbeHandler(t *testing.T) {
 }
 
 func TestServer_TargetsHandler(t *testing.T) {
-	leastWeighted, _ := allocation.New("least-weighted", logger)
+	consistentHashing, _ := allocation.New("consistent-hashing", logger)
 	type args struct {
 		collector string
 		job       string
@@ -75,7 +75,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				collector: "test-collector",
 				job:       "test-job",
 				cMap:      map[string]*target.Item{},
-				allocator: leastWeighted,
+				allocator: consistentHashing,
 			},
 			want: want{
 				items: []*target.Item{},
@@ -89,7 +89,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				cMap: map[string]*target.Item{
 					baseTargetItem.Hash(): baseTargetItem,
 				},
-				allocator: leastWeighted,
+				allocator: consistentHashing,
 			},
 			want: want{
 				items: []*target.Item{
@@ -111,7 +111,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 					baseTargetItem.Hash():   baseTargetItem,
 					secondTargetItem.Hash(): secondTargetItem,
 				},
-				allocator: leastWeighted,
+				allocator: consistentHashing,
 			},
 			want: want{
 				items: []*target.Item{
@@ -133,7 +133,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 					baseTargetItem.Hash():       baseTargetItem,
 					testJobTargetItemTwo.Hash(): testJobTargetItemTwo,
 				},
-				allocator: leastWeighted,
+				allocator: consistentHashing,
 			},
 			want: want{
 				items: []*target.Item{
