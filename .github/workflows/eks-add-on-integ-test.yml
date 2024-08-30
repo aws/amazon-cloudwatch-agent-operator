@@ -110,12 +110,13 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+            terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve
+#            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
 #              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve
-              echo "hello test have succeeded"
-            else
+#              echo "hello test have succeeded"
+#            else
 #              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve && exit 1
-            fi
+#            fi
 
 #      - name: Terraform destroy
 #        if: ${{ cancelled() || failure() }}
