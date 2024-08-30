@@ -225,6 +225,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
 }
+
 func TestDeploymentAffinity(t *testing.T) {
 	// Test default
 	otelcol1 := v1alpha1.AmazonCloudWatchAgent{
