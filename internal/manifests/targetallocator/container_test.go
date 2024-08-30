@@ -308,6 +308,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, c)
 }
+
 func TestReadinessProbe(t *testing.T) {
 	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
@@ -332,6 +333,7 @@ func TestReadinessProbe(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
 }
+
 func TestLivenessProbe(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.AmazonCloudWatchAgent{
