@@ -14,6 +14,7 @@ import (
 const (
 	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
 	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
+	defaultPrometheusConfigMapEntry      = "prometheus.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -32,6 +33,7 @@ type Config struct {
 	neuronMonitorImage                  string
 	targetAllocatorImage                string
 	targetAllocatorConfigMapEntry       string
+	prometheusConfigMapEntry            string
 	labelsFilter                        []string
 }
 
@@ -41,6 +43,7 @@ func New(opts ...Option) Config {
 	o := options{
 		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		prometheusConfigMapEntry:      defaultPrometheusConfigMapEntry,
 		logger:                        logf.Log.WithName("config"),
 		version:                       version.Get(),
 	}
@@ -63,6 +66,7 @@ func New(opts ...Option) Config {
 		neuronMonitorImage:                  o.neuronMonitorImage,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		prometheusConfigMapEntry:            o.prometheusConfigMapEntry,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -131,6 +135,9 @@ func (c *Config) TargetAllocatorImage() string {
 func (c *Config) TargetAllocatorConfigMapEntry() string {
 	return c.targetAllocatorConfigMapEntry
 }
+
+// PrometheusConfigMapEntry represents the configuration file name for Prometheus.
+func (c *Config) PrometheusConfigMapEntry() string { return c.prometheusConfigMapEntry }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {

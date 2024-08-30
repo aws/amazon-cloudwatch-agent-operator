@@ -31,6 +31,7 @@ type options struct {
 	neuronMonitorImage                  string
 	targetAllocatorImage                string
 	targetAllocatorConfigMapEntry       string
+	prometheusConfigMapEntry            string
 	labelsFilter                        []string
 }
 

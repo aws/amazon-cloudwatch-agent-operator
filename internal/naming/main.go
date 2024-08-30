@@ -14,6 +14,11 @@ func TAConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
+// PrometheusConfigMap returns the name for the prometheus config map.
+func PrometheusConfigMap(otelcol string) string {
+	return DNSName(Truncate("%s-prometheus-config", 63, otelcol))
+}
+
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"
@@ -27,6 +32,11 @@ func ConfigMapExtra(extraConfigMapName string) string {
 // TAConfigMapVolume returns the name to use for the config map's volume in the TargetAllocator pod.
 func TAConfigMapVolume() string {
 	return "ta-internal"
+}
+
+// PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
+func PrometheusConfigMapVolume() string {
+	return "prometheus-config"
 }
 
 // Container returns the name to use for the container in the pod.

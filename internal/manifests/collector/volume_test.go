@@ -20,6 +20,8 @@ func TestVolumeNewDefault(t *testing.T) {
 	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New()
 
+	// TBD: Prometheus
+
 	// test
 	volumes := Volumes(cfg, otelcol)
 
@@ -40,6 +42,8 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 		},
 	}
 	cfg := config.New()
+
+	// TBD: Prometheus
 
 	// test
 	volumes := Volumes(cfg, otelcol)
@@ -65,6 +69,8 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 		},
 	}
 	cfg := config.New()
+
+	// TBD: Prometheus
 
 	// test
 	volumes := Volumes(cfg, otelcol)

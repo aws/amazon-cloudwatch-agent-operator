@@ -36,3 +36,7 @@ func TestDesiredConfigMap(t *testing.T) {
 
 	})
 }
+
+func TestDesiredPrometheusConfigMap(t *testing.T) {
+	// TBD
+}

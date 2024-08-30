@@ -45,6 +45,10 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 
 	if addConfig {
 		volumeMounts = append(volumeMounts, getVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
+
+		if len(agent.Spec.Prometheus) > 0 {
+			volumeMounts = append(volumeMounts, getPrometheusVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
+		}
 	}
 
 	// ensure that the v1alpha1.AmazonCloudWatchAgentSpec.Args are ordered when moved to container.Args,
@@ -118,6 +122,22 @@ func getVolumeMounts(os string) corev1.VolumeMount {
 		volumeMount = corev1.VolumeMount{
 			Name:      naming.ConfigMapVolume(),
 			MountPath: "/etc/cwagentconfig",
+		}
+	}
+	return volumeMount
+}
+
+func getPrometheusVolumeMounts(os string) corev1.VolumeMount {
+	var volumeMount corev1.VolumeMount
+	if os == "windows" {
+		volumeMount = corev1.VolumeMount{
+			Name:      naming.PrometheusConfigMapVolume(),
+			MountPath: "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\prometheusconfig",
+		}
+	} else {
+		volumeMount = corev1.VolumeMount{
+			Name:      naming.PrometheusConfigMapVolume(),
+			MountPath: "/etc/prometheusconfig",
 		}
 	}
 	return volumeMount
