@@ -29,7 +29,7 @@ import (
 
 var (
 	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "opentelemetry_allocator_http_duration_seconds",
+		Name: "amazon_cloudwatch_agent_allocator_http_duration_seconds",
 		Help: "Duration of received HTTP requests.",
 	}, []string{"path"})
 )

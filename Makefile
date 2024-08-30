@@ -179,7 +179,7 @@ container-target-allocator: targetallocator
 
 .PHONY: ta-build-and-push
 ta-build-and-push: container-target-allocator
-ta-build-and-push: 	container-target-allocator-push
+ta-build-and-push: container-target-allocator-push
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.

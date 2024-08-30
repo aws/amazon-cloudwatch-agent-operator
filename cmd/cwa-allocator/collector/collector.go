@@ -28,7 +28,7 @@ const (
 var (
 	ns                   = os.Getenv("OTELCOL_NAMESPACE")
 	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_collectors_discovered",
+		Name: "amazon_cloudwatch_agent_allocator_collectors_discovered",
 		Help: "Number of collectors discovered.",
 	})
 )

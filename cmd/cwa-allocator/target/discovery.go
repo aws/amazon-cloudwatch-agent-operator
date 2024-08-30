@@ -21,7 +21,7 @@ import (
 
 var (
 	targetsDiscovered = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets",
+		Name: "amazon_cloudwatch_agent_allocator_targets",
 		Help: "Number of targets discovered.",
 	}, []string{"job_name"})
 )
