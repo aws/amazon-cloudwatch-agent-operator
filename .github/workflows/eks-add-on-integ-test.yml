@@ -110,22 +110,20 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve
-#            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-#              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve
-#              echo "hello test have succeeded"
-#            else
-#              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve && exit 1
-#            fi
+            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve
+            else
+              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve && exit 1
+            fi
 
-#      - name: Terraform destroy
-#        if: ${{ cancelled() || failure() }}
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 8
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks
-#
-#            terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" --auto-approve
+      - name: Terraform destroy
+        if: ${{ cancelled() || failure() }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 8
+          retry_wait_seconds: 5
+          command: |
+            cd integration-tests/terraform/eks
+
+            terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" --auto-approve
