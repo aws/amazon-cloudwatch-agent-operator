@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	defaultAPIVersion     = "cloudwatch.aws.amazon.com/v1alpha1"
-	defaultInstrumenation = "java-instrumentation"
-	defaultNamespace      = "default"
-	defaultKind           = "Instrumentation"
+	defaultAPIVersion      = "cloudwatch.aws.amazon.com/v1alpha1"
+	defaultInstrumentation = "java-instrumentation"
+	defaultNamespace       = "default"
+	defaultKind            = "Instrumentation"
 
 	http  = "http"
 	https = "https"
@@ -62,6 +62,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 	if !ok {
 		return nil, errors.New("unable to determine dotnet instrumentation image")
 	}
+	nodeJSInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_NODEJS")
+	if !ok {
+		return nil, errors.New("unable to determine nodejs instrumentation image")
+	}
 
 	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
 	if isWindowsPod {
@@ -86,7 +90,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			Kind:       defaultKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultInstrumenation,
+			Name:      defaultInstrumentation,
 			Namespace: defaultNamespace,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -155,6 +159,19 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(dotNet, limit),
 					Requests: getInstrumentationConfigForResource(dotNet, request),
+				},
+			},
+			NodeJS: v1alpha1.NodeJS{
+				Image: nodeJSInstrumentationImage,
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 			},
 		},
