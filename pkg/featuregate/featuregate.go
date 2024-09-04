@@ -66,7 +66,7 @@ var (
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
-		"operator.collector.rewritetarget-allocator",
+		"operator.collector.rewritetargetallocator",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
