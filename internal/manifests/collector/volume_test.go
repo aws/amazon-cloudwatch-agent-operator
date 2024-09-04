@@ -20,8 +20,6 @@ func TestVolumeNewDefault(t *testing.T) {
 	otelcol := v1alpha1.AmazonCloudWatchAgent{}
 	cfg := config.New()
 
-	// TBD: Prometheus
-
 	// test
 	volumes := Volumes(cfg, otelcol)
 
@@ -42,8 +40,6 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 		},
 	}
 	cfg := config.New()
-
-	// TBD: Prometheus
 
 	// test
 	volumes := Volumes(cfg, otelcol)
@@ -70,8 +66,6 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	}
 	cfg := config.New()
 
-	// TBD: Prometheus
-
 	// test
 	volumes := Volumes(cfg, otelcol)
 
@@ -81,4 +75,26 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// check if the volume with the configmap prefix is mounted after defining the config map.
 	assert.Equal(t, "configmap-configmap-test", volumes[1].Name)
 	assert.Equal(t, "configmap-configmap-test2", volumes[2].Name)
+}
+
+func TestVolumePrometheus(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Prometheus: "test",
+		},
+	}
+	cfg := config.New()
+
+	// test
+	volumes := Volumes(cfg, otelcol)
+
+	// verify
+	assert.Len(t, volumes, 2)
+
+	// check that it's the otc-internal volume, with the config map
+	assert.Equal(t, naming.ConfigMapVolume(), volumes[0].Name)
+
+	// check that the second volume is prometheus-config, with the config map
+	assert.Equal(t, naming.PrometheusConfigMapVolume(), volumes[1].Name)
 }
