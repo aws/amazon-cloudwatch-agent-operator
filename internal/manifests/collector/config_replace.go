@@ -50,7 +50,17 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		return instance.Spec.Prometheus, nil
+		prometheusReceiverConfig, err := ta.GetPromConfig(instance.Spec.Prometheus)
+		if err != nil {
+			return "", err
+		}
+
+		prometheusConfigYAML, err := yaml.Marshal(prometheusReceiverConfig)
+		if err != nil {
+			return "", err
+		}
+
+		return string(prometheusConfigYAML), nil
 	}
 
 	promCfgMap, getCfgPromErr := adapters.ConfigFromString(instance.Spec.Prometheus)

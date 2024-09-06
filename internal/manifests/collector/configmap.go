@@ -4,11 +4,8 @@
 package collector
 
 import (
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
@@ -48,16 +45,6 @@ func PrometheusConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		return nil, err
 	}
 
-	prometheusReceiverConfig, err := ta.GetPromConfig(replacedPrometheusConf)
-	if err != nil {
-		return nil, err
-	}
-
-	prometheusConfigYAML, err := yaml.Marshal(prometheusReceiverConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -66,7 +53,7 @@ func PrometheusConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Data: map[string]string{
-			"prometheus.yaml": string(prometheusConfigYAML),
+			"prometheus.yaml": replacedPrometheusConf,
 		},
 	}, nil
 }
