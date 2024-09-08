@@ -199,6 +199,10 @@ target_allocator:
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
 					Prometheus: string(httpTAConfigYAML),
+					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+						Image:   "test/test-img",
+					},
 				},
 			},
 		}
@@ -244,6 +248,10 @@ target_allocator:
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
 					Prometheus: string(httpConfigYAML),
+					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+						Image:   "test/test-img",
+					},
 				},
 			},
 		}

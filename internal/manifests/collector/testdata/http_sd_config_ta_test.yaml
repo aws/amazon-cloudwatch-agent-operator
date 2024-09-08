@@ -1,0 +1,12 @@
+config:
+  scrape_configs:
+  - job_name: prometheus
+
+    static_configs:
+    - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
+      labels:
+        my: label
+target_allocator:
+  collector_id: ${POD_NAME}
+  endpoint: http://test-sd-target-allocator:80
+  interval: 60s
