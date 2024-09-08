@@ -29,7 +29,7 @@ const (
 	java    = "JAVA"
 	python  = "PYTHON"
 	dotNet  = "DOTNET"
-	nodejs  = "NODEJS"
+	nodeJS  = "NODEJS"
 	limit   = "LIMIT"
 	request = "REQUEST"
 )
@@ -175,8 +175,8 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
-					Limits:   getInstrumentationConfigForResource(nodejs, limit),
-					Requests: getInstrumentationConfigForResource(nodejs, request),
+					Limits:   getInstrumentationConfigForResource(nodeJS, limit),
+					Requests: getInstrumentationConfigForResource(nodeJS, request),
 				},
 			},
 		},
