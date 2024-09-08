@@ -29,6 +29,7 @@ const (
 	java    = "JAVA"
 	python  = "PYTHON"
 	dotNet  = "DOTNET"
+	nodejs  = "NODEJS"
 	limit   = "LIMIT"
 	request = "REQUEST"
 )
@@ -172,6 +173,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits:   getInstrumentationConfigForResource(nodejs, limit),
+					Requests: getInstrumentationConfigForResource(nodejs, request),
 				},
 			},
 		},

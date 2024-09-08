@@ -34,6 +34,10 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_LIMIT", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_REQUEST", "50m")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_REQUEST", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_LIMIT", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -142,6 +146,16 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
 				},
 			},
 		},
@@ -254,6 +268,16 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+				},
 			},
 		},
 	}
@@ -333,6 +357,10 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_LIMIT", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_CPU_REQUEST", "50m")
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_MEM_REQUEST", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_LIMIT", "500m")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_LIMIT", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_REQUEST", "50m")
+	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -441,6 +469,16 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
 				},
 			},
 		},
@@ -552,6 +590,16 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("128Mi"),
+					},
 				},
 			},
 		},
