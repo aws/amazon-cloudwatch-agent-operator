@@ -8,6 +8,10 @@ import (
 	"os"
 	"testing"
 
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -57,6 +61,16 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 
+	httpConfigYAML, err := os.ReadFile("testdata/http_sd_config_servicemonitor_test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+
+	httpTAConfigYAML, err := os.ReadFile("testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+
 	t.Run("should return expected prometheus config map", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
@@ -96,5 +110,155 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		assert.Equal(t, "test-prometheus-config", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
+
+	})
+
+	t.Run("should return expected prometheus config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
+		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
+
+		expectedData := map[string]string{
+			"prometheus.yaml": `config:
+  scrape_configs:
+  - http_sd_configs:
+    - url: http://test-target-allocator:80/jobs/cloudwatch-agent/targets?collector_id=$POD_NAME
+    job_name: cloudwatch-agent
+    scrape_interval: 10s
+`,
+		}
+
+		param := manifests.Params{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "cloudwatch.aws.amazon.com",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Prometheus: string(configYAML),
+				},
+			},
+		}
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := PrometheusConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "test-prometheus-config", actual.GetName())
+		assert.Equal(t, expectedLabels, actual.GetLabels())
+		assert.Equal(t, expectedData, actual.Data)
+
+	})
+
+	t.Run("should return expected escaped prometheus config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+
+		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
+		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
+		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
+
+		expectedData := map[string]string{
+			"prometheus.yaml": `config:
+  scrape_configs:
+  - http_sd_configs:
+    - url: http://test-target-allocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+    job_name: serviceMonitor/test/test/0
+target_allocator:
+  collector_id: ${POD_NAME}
+  endpoint: http://test-target-allocator:80
+  http_sd_config:
+    refresh_interval: 60s
+  interval: 30s
+`,
+		}
+
+		param := manifests.Params{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "cloudwatch.aws.amazon.com",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Prometheus: string(httpTAConfigYAML),
+				},
+			},
+		}
+		assert.NoError(t, err)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := PrometheusConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "test-prometheus-config", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+		// Reset the value
+		expectedLabels["app.kubernetes.io/version"] = "0.47.0"
+
+	})
+
+	t.Run("should return expected escaped prometheus config map with target_allocator config block", func(t *testing.T) {
+		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
+		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
+		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
+
+		expectedData := map[string]string{
+			"prometheus.yaml": `config: {}
+target_allocator:
+  collector_id: ${POD_NAME}
+  endpoint: http://test-target-allocator:80
+  interval: 30s
+`,
+		}
+
+		param := manifests.Params{
+			OtelCol: v1alpha1.AmazonCloudWatchAgent{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "cloudwatch.aws.amazon.com",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Prometheus: string(httpConfigYAML),
+				},
+			},
+		}
+		assert.NoError(t, err)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := PrometheusConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "test-prometheus-config", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+		// Reset the value
+		expectedLabels["app.kubernetes.io/version"] = "0.47.0"
+		assert.NoError(t, err)
+
 	})
 }
