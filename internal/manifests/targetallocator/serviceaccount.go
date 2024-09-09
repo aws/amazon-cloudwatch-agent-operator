@@ -11,12 +11,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
-const targetAllocatorAcctName = "target-allocator-service-acct"
+const targetAllocatorServiceAcctName = "target-allocator-service-acct"
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
 func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
 	if len(instance.Spec.TargetAllocator.ServiceAccount) == 0 {
-		return targetAllocatorAcctName
+		return targetAllocatorServiceAcctName
 	}
 
 	return instance.Spec.TargetAllocator.ServiceAccount
@@ -24,11 +24,11 @@ func ServiceAccountName(instance v1alpha1.AmazonCloudWatchAgent) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	labels := Labels(params.OtelCol, targetAllocatorAcctName)
+	labels := Labels(params.OtelCol, targetAllocatorServiceAcctName)
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        targetAllocatorAcctName,
+			Name:        targetAllocatorServiceAcctName,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: params.OtelCol.Annotations,
