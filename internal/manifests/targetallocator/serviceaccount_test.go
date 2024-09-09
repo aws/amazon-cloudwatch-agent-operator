@@ -24,7 +24,7 @@ func TestServiceAccountNewDefault(t *testing.T) {
 	sa := ServiceAccountName(otelcol)
 
 	// verify
-	assert.Equal(t, "my-instance", sa)
+	assert.Equal(t, "target-allocator-service-acct", sa)
 }
 
 func TestServiceAccountOverride(t *testing.T) {

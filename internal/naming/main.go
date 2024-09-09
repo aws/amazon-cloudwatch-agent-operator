@@ -123,8 +123,3 @@ func ServiceMonitor(otelcol string) string {
 func PodMonitor(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
-
-// TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.
-func TargetAllocatorServiceAccount(otelcol string) string {
-	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
-}
