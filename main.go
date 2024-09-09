@@ -89,6 +89,9 @@ func setLangEnvVarsForResource(langStr string, resourceStr string, resource map[
 	if memory, ok := resource["memory"]; ok {
 		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_MEM_"+resourceStr, memory)
 	}
+	if enabled, ok := resource["enabled"]; ok {
+		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_RUNTIME_ENABLED", enabled)
+	}
 }
 
 func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
@@ -97,6 +100,9 @@ func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
 	}
 	if requests, ok := cfg["requests"]; ok {
 		setLangEnvVarsForResource(langStr, "REQUEST", requests)
+	}
+	if runtime, ok := cfg["runtime"]; ok {
+		setLangEnvVarsForResource(langStr, "", runtime)
 	}
 }
 
@@ -143,7 +149,7 @@ func main() {
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
-	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}, "nodejs": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}, "runtime": {"enabled": "true"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}, "runtime": {"enabled": "true"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}, "nodejs": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
 		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
