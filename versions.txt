@@ -1,4 +1,3 @@
-# Represents the latest stable release of the CloudWatch Agent
 cloudwatch-agent=1.300041.0b681
 
 # Represents the current release of the CloudWatch Agent Operator.
@@ -9,7 +8,6 @@ aws-otel-java-instrumentation=v1.32.2
 aws-otel-python-instrumentation=v0.2.0
 # This needs to be updated with the latest release of ADOT SDK
 aws-otel-dotnet-instrumentation=1.6.0
-# TODO - Update with the latest release of ADOT SDK
 aws-otel-nodejs-instrumentation=0.52.1
 
 dcgm-exporter=3.3.3-3.3.1-ubuntu22.04
