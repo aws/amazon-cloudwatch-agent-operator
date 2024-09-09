@@ -6,9 +6,9 @@ operator=1.7.0
 
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.2
-aws-otel-python-instrumentation=v0.4.0
-aws-otel-dotnet-instrumentation=v1.3.0
-aws-otel-nodejs-instrumentation=v0.1.0
+aws-otel-python-instrumentation=v0.2.0
+aws-otel-dotnet-instrumentation=1.6.0
+aws-otel-nodejs-instrumentation=0.52.1
 
 dcgm-exporter=3.3.7-3.5.0-ubuntu22.04
 neuron-monitor=1.0.1
