@@ -101,7 +101,7 @@ manager: generate fmt vet
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" .
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}" .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
