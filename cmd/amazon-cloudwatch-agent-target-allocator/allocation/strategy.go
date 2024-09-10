@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
 )
 
 type AllocatorProvider func(log logr.Logger, opts ...AllocationOption) Allocator

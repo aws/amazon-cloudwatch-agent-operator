@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/config"
-	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/watcher"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
+	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/watcher"
 )
 
 func TestDiscovery(t *testing.T) {

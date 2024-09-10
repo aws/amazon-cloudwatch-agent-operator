@@ -4,8 +4,8 @@
 package server
 
 import (
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
 )
 
 var _ allocation.Allocator = &mockAllocator{}

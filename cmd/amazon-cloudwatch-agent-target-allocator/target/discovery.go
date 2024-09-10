@@ -16,7 +16,7 @@ import (
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
 
-	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/watcher"
+	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/watcher"
 )
 
 var (

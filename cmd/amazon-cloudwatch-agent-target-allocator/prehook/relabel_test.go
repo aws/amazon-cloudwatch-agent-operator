@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
 )
 
 var (

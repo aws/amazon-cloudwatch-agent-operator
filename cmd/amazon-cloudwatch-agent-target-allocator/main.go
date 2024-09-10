@@ -18,13 +18,13 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/allocation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/collector"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/prehook"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/server"
-	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/target"
-	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/cwa-allocator/watcher"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/collector"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/prehook"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/server"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
+	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/watcher"
 )
 
 var (
