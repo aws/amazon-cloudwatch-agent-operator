@@ -53,7 +53,6 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   "default.test",
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
-		"app.kubernetes.io/version":    "0.47.0",
 	}
 
 	configYAML, err := os.ReadFile("testdata/prometheus_test.yaml")
@@ -74,7 +73,6 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 	t.Run("should return expected prometheus config map", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
-		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
 			"prometheus.yaml": `config:
@@ -168,7 +166,6 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 
 		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
-		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
 			"prometheus.yaml": `config:
@@ -215,15 +212,11 @@ target_allocator:
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
-		// Reset the value
-		expectedLabels["app.kubernetes.io/version"] = "0.47.0"
-
 	})
 
 	t.Run("should return expected escaped prometheus config map with target_allocator config block", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
-		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
 			"prometheus.yaml": `config: {}
@@ -263,10 +256,6 @@ target_allocator:
 		assert.Equal(t, "test-prometheus-config", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
-
-		// Reset the value
-		expectedLabels["app.kubernetes.io/version"] = "0.47.0"
-		assert.NoError(t, err)
 
 	})
 }

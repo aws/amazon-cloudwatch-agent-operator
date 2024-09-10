@@ -37,7 +37,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 func PrometheusConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.PrometheusConfigMap(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, "", ComponentAmazonCloudWatchAgent, []string{})
 
 	replacedPrometheusConf, err := ReplacePrometheusConfig(params.OtelCol)
 	if err != nil {

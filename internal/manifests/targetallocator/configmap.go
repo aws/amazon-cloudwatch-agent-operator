@@ -32,7 +32,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	prometheusReceiverConfig, err := adapters.GetPromConfig(params.OtelCol.Spec.Prometheus)
+	prometheusConfig, err := adapters.GetPromConfig(params.OtelCol.Spec.Prometheus)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}
@@ -41,7 +41,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	prometheusCRConfig := make(map[interface{}]interface{})
 	taConfig["label_selector"] = manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentAmazonCloudWatchAgent)
 	// We only take the "config" from the returned object, if it's present
-	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
+	if prometheusConfig, ok := prometheusConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig
 	}
 

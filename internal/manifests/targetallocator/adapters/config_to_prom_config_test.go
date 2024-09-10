@@ -366,13 +366,13 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 			expectedError:               nil,
 		},
 		{
-			description:                 "receiver config empty and PrometheusCR enabled",
+			description:                 "config empty and PrometheusCR enabled",
 			config:                      map[interface{}]interface{}{},
 			targetAllocatorPrometheusCR: true,
 			expectedError:               nil,
 		},
 		{
-			description:                 "receiver config empty and PrometheusCR disabled",
+			description:                 "config empty and PrometheusCR disabled",
 			config:                      map[interface{}]interface{}{},
 			targetAllocatorPrometheusCR: false,
 			expectedError:               fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
