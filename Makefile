@@ -8,12 +8,15 @@ AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-dotnet-instrumentation | awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
-
+TARGET_ALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep target-allocator | awk -F= '{print $$2}')
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
+
+TARGET_ALLOCATOR_IMG_REPO ?= target-allocator
+TARGET_ALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGET_ALLOCATOR_IMG_REPO}:${TARGET_ALLOCATOR_VERSION}
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -95,6 +98,10 @@ test: generate fmt vet envtest
 .PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
+# Build target allocator binary
+.PHONY: targetallocator
+targetallocator:
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}" .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -160,6 +167,19 @@ container:
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
+
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGET_ALLOCATOR_IMG}
+
+.PHONY: container-target-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker buildx build --load --platform linux/${ARCH} -t ${TARGET_ALLOCATOR_IMG}  cmd/amazon-cloudwatch-agent-target-allocator
+
+.PHONY: ta-build-and-push
+ta-build-and-push: container-target-allocator
+ta-build-and-push: container-target-allocator-push
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
