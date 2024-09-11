@@ -66,18 +66,6 @@ func TestApplicationSignals(t *testing.T) {
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 }
 
-func TestAppSignals(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/app_signals.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
-	assert.Equal(t, 3, len(containerPorts))
-	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
-	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
-	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
-}
-
 func TestEMFGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/emfAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})

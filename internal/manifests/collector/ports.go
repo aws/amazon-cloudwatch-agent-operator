@@ -5,7 +5,6 @@ package collector
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -117,12 +116,7 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
 	servicePortsMap := make(map[int32][]corev1.ServicePort)
 
-	fmt.Println("Inside get service ports")
-	if isAppSignalEnabled(config) {
-		fmt.Println("App Signals is enabled???")
-		addAppSignalServicePorts(servicePortsMap)
-	}
-
+	getApplicationSignalsReceiversServicePorts(config, servicePortsMap)
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
 	getLogsReceiversServicePorts(logger, config, servicePortsMap)
 	getTracesReceiversServicePorts(logger, config, servicePortsMap)
@@ -231,6 +225,12 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 func addAppSignalServicePorts(servicePortsMap map[int32][]corev1.ServicePort) {
 	for k, v := range AppSignalsPortToServicePortMap {
 		servicePortsMap[k] = v
+	}
+}
+
+func getApplicationSignalsReceiversServicePorts(config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
+	if isAppSignalEnabled(config) {
+		addAppSignalServicePorts(servicePortsMap)
 	}
 }
 
