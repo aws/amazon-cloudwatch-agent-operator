@@ -5,6 +5,7 @@ package collector
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -79,7 +80,6 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 	config, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
-		servicePorts = PortMapToServicePortList(AppSignalsPortToServicePortMap)
 	} else {
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
@@ -115,11 +115,28 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 }
 
 func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
-	servicePortsMap := getAppSignalsServicePortsMap()
+	servicePortsMap := make(map[int32][]corev1.ServicePort)
+
+	fmt.Println("Inside get service ports")
+	if isAppSignalEnabled(config) {
+		fmt.Println("App Signals is enabled???")
+		addAppSignalServicePorts(servicePortsMap)
+	}
+
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
 	getLogsReceiversServicePorts(logger, config, servicePortsMap)
 	getTracesReceiversServicePorts(logger, config, servicePortsMap)
+
 	return PortMapToServicePortList(servicePortsMap)
+}
+
+func isAppSignalEnabled(config *adapters.CwaConfig) bool {
+	if config.GetApplicationSignalsConfig() != nil {
+		fmt.Println("Below is the application signals config-------")
+		fmt.Println(config.GetApplicationSignalsConfig())
+		return true
+	}
+	return false
 }
 
 func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
@@ -213,12 +230,10 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 	return tracesPorts
 }
 
-func getAppSignalsServicePortsMap() map[int32][]corev1.ServicePort {
-	servicePortMap := make(map[int32][]corev1.ServicePort)
+func addAppSignalServicePorts(servicePortsMap map[int32][]corev1.ServicePort) {
 	for k, v := range AppSignalsPortToServicePortMap {
-		servicePortMap[k] = v
+		servicePortsMap[k] = v
 	}
-	return servicePortMap
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {
