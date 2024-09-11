@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -94,7 +93,6 @@ func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/xrayAndOTLPAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
-	fmt.Println(containerPorts)
 	assert.Equal(t, int32(2000), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
 	assert.Equal(t, int32(4327), containerPorts[CWA+OtlpGrpc].ContainerPort)
@@ -109,7 +107,6 @@ func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/xrayAndOTLPDefaultAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
-	fmt.Println(containerPorts)
 	assert.Equal(t, int32(2000), containerPorts[XrayTraces].ContainerPort)
 	assert.Equal(t, XrayTraces, containerPorts[XrayTraces].Name)
 	assert.Equal(t, int32(4317), containerPorts[OtlpGrpc].ContainerPort)
@@ -136,8 +133,6 @@ func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/xrayAgentConfig.json")
 	strings.Replace(cfg, "2800", "2000", 1)
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
-	fmt.Println(containerPorts)
-
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
@@ -225,8 +220,6 @@ func TestInvalidConfigGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/nilMetrics.json")
 	cfg = cfg + ","
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
-	fmt.Println(containerPorts)
-
 	assert.Equal(t, 0, len(containerPorts))
 
 }

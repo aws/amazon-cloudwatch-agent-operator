@@ -132,8 +132,6 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 
 func isAppSignalEnabled(config *adapters.CwaConfig) bool {
 	if config.GetApplicationSignalsConfig() != nil {
-		fmt.Println("Below is the application signals config-------")
-		fmt.Println(config.GetApplicationSignalsConfig())
 		return true
 	}
 	return false
