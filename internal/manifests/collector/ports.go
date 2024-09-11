@@ -5,6 +5,7 @@ package collector
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -21,19 +22,22 @@ import (
 )
 
 const (
-	StatsD          = "statsd"
-	CollectD        = "collectd"
-	XrayProxy       = "aws-proxy"
-	XrayTraces      = "aws-traces"
-	OtlpGrpc        = "otlp-grpc"
-	OtlpHttp        = "otlp-http"
-	AppSignalsGrpc  = "appsignals-grpc"
-	AppSignalsHttp  = "appsignals-http"
-	AppSignalsProxy = "appsignals-xray"
-	EMF             = "emf"
-	EMFTcp          = "emf-tcp"
-	EMFUdp          = "emf-udp"
-	CWA             = "cwa-"
+	StatsD            = "statsd"
+	CollectD          = "collectd"
+	XrayProxy         = "aws-proxy"
+	XrayTraces        = "aws-traces"
+	OtlpGrpc          = "otlp-grpc"
+	OtlpHttp          = "otlp-http"
+	AppSignalsGrpc    = "appsignals-grpc"
+	AppSignalsHttp    = "appsignals-http"
+	AppSignalsProxy   = "appsignals-xray"
+	AppSignalsGrpcSA  = ":4315"
+	AppSignalsHttpSA  = ":4316"
+	AppSignalsProxySA = ":2000"
+	EMF               = "emf"
+	EMFTcp            = "emf-tcp"
+	EMFUdp            = "emf-udp"
+	CWA               = "cwa-"
 )
 
 var receiverDefaultPortsMap = map[string]int32{
@@ -114,9 +118,9 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 }
 
 func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
-	servicePortsMap := make(map[int32][]corev1.ServicePort)
+	servicePortsMap := getAppSignalsServicePortsMap()
 
-	getApplicationSignalsReceiversServicePorts(config, servicePortsMap)
+	getApplicationSignalsReceiversServicePorts(logger, config, servicePortsMap)
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
 	getLogsReceiversServicePorts(logger, config, servicePortsMap)
 	getTracesReceiversServicePorts(logger, config, servicePortsMap)
@@ -146,8 +150,11 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 }
 
 func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32][]corev1.ServicePort) {
+	fmt.Println(serviceAddress)
 	if serviceAddress != "" {
+		fmt.Println("----------")
 		port, err := portFromEndpoint(serviceAddress)
+		fmt.Println(servicePortsMap[port])
 		if err != nil {
 			logger.Error(err, "error parsing port from endpoint for receiver", zap.String("endpoint", serviceAddress), zap.String("receiver", receiverName))
 		} else {
@@ -222,15 +229,19 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 	return tracesPorts
 }
 
-func addAppSignalServicePorts(servicePortsMap map[int32][]corev1.ServicePort) {
+func getAppSignalsServicePortsMap() map[int32][]corev1.ServicePort {
+	servicePortMap := make(map[int32][]corev1.ServicePort)
 	for k, v := range AppSignalsPortToServicePortMap {
-		servicePortsMap[k] = v
+		servicePortMap[k] = v
 	}
+	return servicePortMap
 }
 
-func getApplicationSignalsReceiversServicePorts(config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
+func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
 	if isAppSignalEnabled(config) {
-		addAppSignalServicePorts(servicePortsMap)
+		getReceiverServicePort(logger, AppSignalsGrpcSA, AppSignalsGrpc, corev1.ProtocolUDP, servicePortsMap)
+		getReceiverServicePort(logger, AppSignalsHttpSA, AppSignalsHttp, corev1.ProtocolUDP, servicePortsMap)
+		getReceiverServicePort(logger, AppSignalsProxySA, AppSignalsProxy, corev1.ProtocolUDP, servicePortsMap)
 	}
 }
 
