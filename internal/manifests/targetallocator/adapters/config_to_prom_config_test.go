@@ -70,7 +70,7 @@ target_allocator:
 	assert.Equal(t, expectedData, promConfig)
 }
 
-func TestGetPromConfig(t *testing.T) {
+func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	actual := `
 config:
   scrape_configs:
@@ -78,14 +78,14 @@ config:
     relabel_configs:
     - source_labels: ['__meta_service_id']
       target_label: 'job'
-      replacement: 'my_service_$1'
+      replacement: 'my_service_$$1'
     - source_labels: ['__meta_service_name']
       target_label: 'instance'
       replacement: '$1'
     metric_relabel_configs:
     - source_labels: ['job']
       target_label: 'job'
-      replacement: '$1_$2'
+      replacement: '$$1_$2'
 `
 	expected := `
 config:
@@ -104,12 +104,12 @@ config:
       replacement: '$1_$2'
 `
 
-	config, err := ta.GetPromConfig(actual)
+	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	expectedConfig, err := ta.GetPromConfig(expected)
+	expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expected)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

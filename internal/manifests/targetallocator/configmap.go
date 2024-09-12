@@ -32,7 +32,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	prometheusConfig, err := adapters.GetPromConfig(params.OtelCol.Spec.Prometheus)
+	prometheusConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.Prometheus)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

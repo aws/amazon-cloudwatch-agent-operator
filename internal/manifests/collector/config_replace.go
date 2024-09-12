@@ -50,7 +50,7 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		prometheusConfig, err := ta.GetPromConfig(instance.Spec.Prometheus)
+		prometheusConfig, err := ta.UnescapeDollarSignsInPromConfig(instance.Spec.Prometheus)
 		if err != nil {
 			return "", err
 		}
@@ -74,6 +74,8 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
+		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
@@ -87,6 +89,8 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 		return string(out), nil
 	}
 
+	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 	if err != nil {
 		return "", err
