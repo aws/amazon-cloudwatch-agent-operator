@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
