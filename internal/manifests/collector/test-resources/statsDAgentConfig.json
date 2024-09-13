@@ -8,10 +8,5 @@
         "service_address": ":8135"
       }
     }
-  },
-  "logs": {
-    "metrics_collected": {
-      "application_signals": {}
-    }
   }
 }

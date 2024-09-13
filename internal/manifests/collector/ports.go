@@ -5,6 +5,7 @@ package collector
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -27,9 +28,9 @@ const (
 	XrayTraces        = "aws-traces"
 	OtlpGrpc          = "otlp-grpc"
 	OtlpHttp          = "otlp-http"
-	AppSignalsGrpc    = "appsignals-grpc"
-	AppSignalsHttp    = "appsignals-http"
-	AppSignalsProxy   = "appsignals-xray"
+	AppSignalsGrpc    = "appsig-grpc"
+	AppSignalsHttp    = "appsig-http"
+	AppSignalsProxy   = "appsig-xray"
 	AppSignalsGrpcSA  = ":4315"
 	AppSignalsHttpSA  = ":4316"
 	AppSignalsProxySA = ":2000"
@@ -85,9 +86,11 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 	} else {
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
+	fmt.Println(servicePorts)
 
 	for _, p := range servicePorts {
 		truncName := naming.Truncate(p.Name, maxPortLen)
+		fmt.Println(truncName)
 		if p.Name != truncName {
 			logger.Info("truncating container port name",
 				zap.String("port.name.prev", p.Name), zap.String("port.name.new", truncName))
@@ -128,10 +131,7 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 }
 
 func isAppSignalEnabled(config *adapters.CwaConfig) bool {
-	if config.GetApplicationSignalsConfig() != nil {
-		return true
-	}
-	return false
+	return config.GetApplicationSignalsConfig() != nil
 }
 
 func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
@@ -157,12 +157,7 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 			if _, ok := servicePortsMap[port]; ok {
 				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
-				var serviceName string
-				if len(receiverName) < 12 {
-					serviceName = CWA + receiverName
-				} else {
-					serviceName = receiverName
-				}
+				serviceName := CWA + receiverName
 
 				sp := corev1.ServicePort{
 					Name:     serviceName,
@@ -246,9 +241,9 @@ func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adap
 		return
 	}
 
-	getReceiverServicePort(logger, AppSignalsGrpcSA, AppSignalsGrpc, corev1.ProtocolUDP, servicePortsMap)   // GRPC
-	getReceiverServicePort(logger, AppSignalsHttpSA, AppSignalsHttp, corev1.ProtocolUDP, servicePortsMap)   // HTTP
-	getReceiverServicePort(logger, AppSignalsProxySA, AppSignalsProxy, corev1.ProtocolUDP, servicePortsMap) // Proxy
+	getReceiverServicePort(logger, AppSignalsGrpcSA, AppSignalsGrpc, corev1.ProtocolTCP, servicePortsMap)
+	getReceiverServicePort(logger, AppSignalsHttpSA, AppSignalsHttp, corev1.ProtocolTCP, servicePortsMap)
+	getReceiverServicePort(logger, AppSignalsProxySA, AppSignalsProxy, corev1.ProtocolTCP, servicePortsMap)
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {

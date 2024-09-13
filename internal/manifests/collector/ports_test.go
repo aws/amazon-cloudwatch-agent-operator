@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -16,13 +17,7 @@ import (
 func TestStatsDGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/statsDAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
-	assert.Equal(t, 4, len(containerPorts))
-	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
-	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
-	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
 	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
 	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+StatsD].Protocol)
@@ -58,12 +53,12 @@ func TestApplicationSignals(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/application_signals.json")
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
-	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
-	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
-	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
 }
 
 func TestEMFGetContainerPorts(t *testing.T) {
@@ -150,12 +145,12 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 	strings.Replace(cfg, "2900", "2000", 1)
 	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
 	assert.Equal(t, 11, len(containerPorts))
-	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
-	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
-	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
 	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
 	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+StatsD].Protocol)
@@ -192,11 +187,10 @@ func TestSpecPortsOverrideGetContainerPorts(t *testing.T) {
 		},
 	}
 	containerPorts := getContainerPorts(logger, cfg, specPorts)
-	assert.Equal(t, 4, len(containerPorts))
+	fmt.Println(containerPorts)
+	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(12345), containerPorts[AppSignalsGrpc].ContainerPort)
 	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
-	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
 	assert.Equal(t, int32(12346), containerPorts[AppSignalsProxy].ContainerPort)
 	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)

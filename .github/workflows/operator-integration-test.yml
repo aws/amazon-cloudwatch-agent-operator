@@ -364,6 +364,7 @@ jobs:
 
       - name: Test Annotations
         run: |
+          sleep 10
           kubectl get pods -A
           kubectl describe pods -n default
           go test -v -run TestAllLanguagesNamespace ./integration-tests/manifests/annotations -timeout 30m
