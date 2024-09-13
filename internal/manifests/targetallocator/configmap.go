@@ -4,6 +4,7 @@
 package targetallocator
 
 import (
+	"fmt"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -32,7 +33,12 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	prometheusConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.Prometheus)
+	promConfigYaml, err := params.OtelCol.Spec.Prometheus.Yaml()
+	if err != nil {
+		return &corev1.ConfigMap{}, fmt.Errorf("%s could not convert json to yaml", err)
+	}
+
+	prometheusConfig, err := adapters.UnescapeDollarSignsInPromConfig(promConfigYaml)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

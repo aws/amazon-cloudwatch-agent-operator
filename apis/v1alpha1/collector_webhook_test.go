@@ -9,6 +9,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
+
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -284,6 +287,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 	}
 }
 
+var promCfgYaml = `config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+`
+
 // TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
 // deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
 // still supported but should eventually be updated.
@@ -294,6 +303,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
+
+	promCfg := PrometheusConfig{}
+	err := yaml.Unmarshal([]byte(promCfgYaml), &promCfg)
+	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
 		name             string
@@ -317,11 +330,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 					},
-					Prometheus: `config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-`,
+					Prometheus: promCfg,
 					Ports: []v1.ServicePort{
 						{
 							Name: "port1",

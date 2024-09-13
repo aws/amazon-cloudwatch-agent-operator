@@ -46,7 +46,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 	if addConfig {
 		volumeMounts = append(volumeMounts, getVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
 
-		if len(agent.Spec.Prometheus) > 0 {
+		if !agent.Spec.Prometheus.IsEmpty() {
 			volumeMounts = append(volumeMounts, getPrometheusVolumeMounts(agent.Spec.NodeSelector["kubernetes.io/os"]))
 		}
 	}

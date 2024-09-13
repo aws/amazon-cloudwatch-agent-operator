@@ -4803,7 +4803,28 @@ spec:
               prometheus:
                 description: Prometheus is the raw YAML to be used as the collector's
                   prometheus configuration.
-                type: string
+                properties:
+                  config:
+                    description: AnyConfig represent parts of the config.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  report_extra_scrape_metrics:
+                    type: boolean
+                    x-kubernetes-preserve-unknown-fields: true
+                  start_time_metric_regex:
+                    type: string
+                    x-kubernetes-preserve-unknown-fields: true
+                  target_allocator:
+                    description: AnyConfig represent parts of the config.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  trim_metric_suffixes:
+                    type: boolean
+                    x-kubernetes-preserve-unknown-fields: true
+                  use_start_time_metric:
+                    type: boolean
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
               replicas:
                 description: Replicas is the number of pod instances for the underlying
                   OpenTelemetry Collector. Set this if your are not using autoscaling

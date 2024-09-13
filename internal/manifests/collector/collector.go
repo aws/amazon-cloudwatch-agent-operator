@@ -47,7 +47,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 		}
 	}
-	if len(params.OtelCol.Spec.Prometheus) > 0 {
+	if !params.OtelCol.Spec.Prometheus.IsEmpty() {
 		manifestFactories = append(manifestFactories, manifests.Factory(PrometheusConfigMap))
 	}
 	for _, factory := range manifestFactories {

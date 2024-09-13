@@ -5,6 +5,7 @@ package collector
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
@@ -48,9 +49,14 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 }
 
 func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
+	promConfigYaml, err := instance.Spec.Prometheus.Yaml()
+	if err != nil {
+		return "", fmt.Errorf("%s could not convert json to yaml", err)
+	}
+
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		prometheusConfig, err := ta.UnescapeDollarSignsInPromConfig(instance.Spec.Prometheus)
+		prometheusConfig, err := ta.UnescapeDollarSignsInPromConfig(promConfigYaml)
 		if err != nil {
 			return "", err
 		}
@@ -63,7 +69,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 		return string(prometheusConfigYAML), nil
 	}
 
-	promCfgMap, getCfgPromErr := adapters.ConfigFromString(instance.Spec.Prometheus)
+	promCfgMap, getCfgPromErr := adapters.ConfigFromString(promConfigYaml)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}

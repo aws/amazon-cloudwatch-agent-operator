@@ -28,6 +28,11 @@ func TestPrometheusParser(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	promCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(httpConfigYAML, &promCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
+	}
 	param := manifests.Params{
 		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			TypeMeta: metav1.TypeMeta{
@@ -41,7 +46,7 @@ func TestPrometheusParser(t *testing.T) {
 			},
 			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 				Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-				Prometheus: string(httpConfigYAML),
+				Prometheus: promCfg,
 				TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 					Enabled: true,
 					Image:   "test/test-img",
@@ -117,6 +122,11 @@ func TestPrometheusParser(t *testing.T) {
 		if err != nil {
 			fmt.Printf("Error getting yaml file: %v", err)
 		}
+		promCfg := v1alpha1.PrometheusConfig{}
+		err = yaml.Unmarshal(httpTAConfigYAML, &promCfg)
+		if err != nil {
+			fmt.Printf("failed to unmarshal config: %v", err)
+		}
 		paramTa := manifests.Params{
 			OtelCol: v1alpha1.AmazonCloudWatchAgent{
 				TypeMeta: metav1.TypeMeta{
@@ -130,7 +140,7 @@ func TestPrometheusParser(t *testing.T) {
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Prometheus: string(httpTAConfigYAML),
+					Prometheus: promCfg,
 					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 						Image:   "test/test-img",
@@ -201,6 +211,11 @@ func TestReplacePrometheusConfig(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	promCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(relabelConfigYAML, &promCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
+	}
 	param := manifests.Params{
 		OtelCol: v1alpha1.AmazonCloudWatchAgent{
 			TypeMeta: metav1.TypeMeta{
@@ -214,7 +229,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
 			},
 			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 				Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-				Prometheus: string(relabelConfigYAML),
+				Prometheus: promCfg,
 				TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 					Enabled: true,
 					Image:   "test/test-img",

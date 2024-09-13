@@ -178,7 +178,12 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := adapters.ConfigFromString(r.Spec.Prometheus)
+		promConfigYaml, err := r.Spec.Prometheus.Yaml()
+		if err != nil {
+			return warnings, fmt.Errorf("%s could not convert json to yaml", err)
+		}
+
+		promCfg, err := adapters.ConfigFromString(promConfigYaml)
 		if err != nil {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}

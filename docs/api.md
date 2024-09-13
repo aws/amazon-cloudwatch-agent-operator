@@ -321,8 +321,8 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>prometheus</b></td>
-        <td>string</td>
+        <td><b><a href="#amazoncloudwatchagentspecprometheus">prometheus</a></b></td>
+        <td>object</td>
         <td>
           Prometheus is the raw YAML to be used as the collector's prometheus configuration.<br/>
         </td>
@@ -9961,6 +9961,68 @@ of the 'port' field is used (an identity map).
 This field is ignored for services with clusterIP=None, and should be
 omitted or set equal to the 'port' field.
 More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.prometheus
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspec)</sup></sup>
+
+
+
+Prometheus is the raw YAML to be used as the collector's prometheus configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>config</b></td>
+        <td>object</td>
+        <td>
+          AnyConfig represent parts of the config.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>report_extra_scrape_metrics</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>start_time_metric_regex</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>target_allocator</b></td>
+        <td>object</td>
+        <td>
+          AnyConfig represent parts of the config.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>trim_metric_suffixes</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>use_start_time_metric</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>

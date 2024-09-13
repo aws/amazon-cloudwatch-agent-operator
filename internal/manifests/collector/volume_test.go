@@ -81,9 +81,10 @@ func TestVolumePrometheus(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.AmazonCloudWatchAgent{
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			Prometheus: "test",
+			Prometheus: v1alpha1.PrometheusConfig{Config: &v1alpha1.AnyConfig{}},
 		},
 	}
+
 	cfg := config.New()
 
 	// test

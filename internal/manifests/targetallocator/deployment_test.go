@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,6 +170,11 @@ func collectorInstance() v1alpha1.AmazonCloudWatchAgent {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	promCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(configYAML, &promCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
+	}
 	return v1alpha1.AmazonCloudWatchAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
@@ -175,7 +182,7 @@ func collectorInstance() v1alpha1.AmazonCloudWatchAgent {
 		},
 		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 			Image:      "ghcr.io/aws/amazon-cloudwatch-agent-operator/amazon-cloudwatch-agent-operator:0.47.0",
-			Prometheus: string(configYAML),
+			Prometheus: promCfg,
 		},
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
@@ -59,15 +61,30 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	promCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(configYAML, &promCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
+	}
 
 	httpConfigYAML, err := os.ReadFile("testdata/http_sd_config_servicemonitor_test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	httpPromCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(httpConfigYAML, &httpPromCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
+	}
 
 	httpTAConfigYAML, err := os.ReadFile("testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	httpTAPromCfg := v1alpha1.PrometheusConfig{}
+	err = yaml.Unmarshal(httpTAConfigYAML, &httpTAPromCfg)
+	if err != nil {
+		fmt.Printf("failed to unmarshal config: %v", err)
 	}
 
 	t.Run("should return expected prometheus config map", func(t *testing.T) {
@@ -98,7 +115,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Prometheus: string(configYAML),
+					Prometheus: promCfg,
 				},
 			},
 		}
@@ -143,7 +160,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Prometheus: string(configYAML),
+					Prometheus: promCfg,
 				},
 			},
 		}
@@ -195,7 +212,7 @@ target_allocator:
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Prometheus: string(httpTAConfigYAML),
+					Prometheus: httpTAPromCfg,
 					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 						Image:   "test/test-img",
@@ -240,7 +257,7 @@ target_allocator:
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
-					Prometheus: string(httpConfigYAML),
+					Prometheus: httpPromCfg,
 					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
 						Image:   "test/test-img",
