@@ -123,6 +123,7 @@ func (in *AmazonCloudWatchAgentSpec) DeepCopyInto(out *AmazonCloudWatchAgentSpec
 		}
 	}
 	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
+	in.Prometheus.DeepCopyInto(&out.Prometheus)
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))

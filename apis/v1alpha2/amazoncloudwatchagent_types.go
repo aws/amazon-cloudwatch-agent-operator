@@ -94,7 +94,7 @@ type AmazonCloudWatchAgentSpec struct {
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Prometheus is the raw YAML to be used as the collector's prometheus configuration.
 	// +optional
-	Prometheus string `json:"prometheus,omitempty"`
+	Prometheus v1alpha1.PrometheusConfig `json:"prometheus,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
