@@ -5,7 +5,6 @@ package collector
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -86,11 +85,9 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 	} else {
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
-	fmt.Println(servicePorts)
 
 	for _, p := range servicePorts {
 		truncName := naming.Truncate(p.Name, maxPortLen)
-		fmt.Println(truncName)
 		if p.Name != truncName {
 			logger.Info("truncating container port name",
 				zap.String("port.name.prev", p.Name), zap.String("port.name.new", truncName))
@@ -157,14 +154,11 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 			if _, ok := servicePortsMap[port]; ok {
 				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
-				serviceName := CWA + receiverName
-
 				sp := corev1.ServicePort{
-					Name:     serviceName,
+					Name:     CWA + receiverName,
 					Port:     port,
 					Protocol: protocol,
 				}
-
 				servicePortsMap[port] = []corev1.ServicePort{sp}
 			}
 		}
