@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -187,7 +186,6 @@ func TestSpecPortsOverrideGetContainerPorts(t *testing.T) {
 		},
 	}
 	containerPorts := getContainerPorts(logger, cfg, specPorts)
-	fmt.Println(containerPorts)
 	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(12345), containerPorts[AppSignalsGrpc].ContainerPort)
 	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
