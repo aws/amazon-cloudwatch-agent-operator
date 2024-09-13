@@ -4,6 +4,8 @@
 package targetallocator
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -14,7 +16,13 @@ import (
 
 func Service(params manifests.Params) *corev1.Service {
 	name := naming.TAService(params.OtelCol.Name)
+	version := strings.Split(params.OtelCol.Spec.TargetAllocator.Image, ":")
 	labels := Labels(params.OtelCol, name)
+	if len(version) > 1 {
+		labels["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		labels["app.kubernetes.io/version"] = "latest"
+	}
 
 	selector := Labels(params.OtelCol, name)
 

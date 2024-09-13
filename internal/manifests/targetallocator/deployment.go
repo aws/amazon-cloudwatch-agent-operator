@@ -4,6 +4,8 @@
 package targetallocator
 
 import (
+	"strings"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +17,13 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.OtelCol.Name)
+	version := strings.Split(params.OtelCol.Spec.TargetAllocator.Image, ":")
 	labels := Labels(params.OtelCol, name)
+	if len(version) > 1 {
+		labels["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		labels["app.kubernetes.io/version"] = "latest"
+	}
 
 	configMap, err := ConfigMap(params)
 	if err != nil {

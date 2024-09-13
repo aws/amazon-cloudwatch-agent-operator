@@ -20,7 +20,7 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
-		"app.kubernetes.io/version":    "0.47.0",
+		"app.kubernetes.io/version":    "latest",
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
