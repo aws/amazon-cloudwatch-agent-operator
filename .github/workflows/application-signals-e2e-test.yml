@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   java-eks-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-eks-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-eks-test.yml@main
     secrets: inherit
     with:
       aws-region: us-east-1
@@ -33,7 +33,7 @@ jobs:
 
   java-metric-limiter-e2e-test:
     needs: [ java-eks-e2e-test ]
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-metric-limiter-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/metric-limiter-test.yml@main
     secrets: inherit
     with:
       aws-region: us-east-1
@@ -42,7 +42,7 @@ jobs:
       cw-agent-operator-tag: ${{ inputs.tag }}
 
   java-k8s-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-k8s-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-k8s-test.yml@main
     secrets: inherit
     with:
       aws-region: us-east-1
@@ -50,7 +50,7 @@ jobs:
       cw-agent-operator-tag: ${{ inputs.tag }}
 
   python-eks-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-test.yml@main
     needs: [ java-metric-limiter-e2e-test ]
     secrets: inherit
     with:
@@ -61,7 +61,7 @@ jobs:
 
   python-k8s-e2e-test:
     needs: [ java-k8s-e2e-test ]
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-k8s-e2e-test.yml@main
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-k8s-test.yml@main
     secrets: inherit
     with:
       aws-region: us-east-1

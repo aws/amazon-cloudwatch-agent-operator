@@ -44,6 +44,12 @@ func TestAllLanguagesDeployment(t *testing.T) {
 			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
 			StatefulSets: []string{""},
 		},
+		NodeJS: auto.AnnotationResources{
+			Namespaces:   []string{""},
+			DaemonSets:   []string{""},
+			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
+			StatefulSets: []string{""},
+		},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	assert.Nil(t, err)
@@ -51,7 +57,7 @@ func TestAllLanguagesDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -163,6 +169,43 @@ func TestDotNetOnlyDeployment(t *testing.T) {
 	}
 
 	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
+		t.Fatalf("Failed annotation check: %s", err.Error())
+	}
+
+}
+
+func TestNodeJSOnlyDeployment(t *testing.T) {
+
+	clientSet := setupTest(t)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
+	}
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("deployment-namespace-nodejs-only-%d", randomNumber)
+
+	annotationConfig := auto.AnnotationConfig{
+		NodeJS: auto.AnnotationResources{
+			Namespaces:   []string{""},
+			DaemonSets:   []string{""},
+			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
+			StatefulSets: []string{""},
+		},
+	}
+	jsonStr, err := json.Marshal(annotationConfig)
+	if err != nil {
+		t.Error("Error:", err)
+		t.Error("Error:", err)
+
+	}
+
+	startTime := time.Now()
+	updateTheOperator(t, clientSet, string(jsonStr))
+	if err != nil {
+		t.Errorf("Failed to get deployment app: %s", err.Error())
+	}
+
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
