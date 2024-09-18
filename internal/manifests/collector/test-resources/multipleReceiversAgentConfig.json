@@ -16,7 +16,8 @@
   },
   "logs": {
     "metrics_collected": {
-      "emf": {}
+      "emf": {},
+      "application_signals": {}
     }
   },
   "traces": {
