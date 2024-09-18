@@ -1,8 +1,8 @@
 # Represents the latest stable release of the CloudWatch Agent
-cloudwatch-agent=1.300041.0b681
+cloudwatch-agent=1.300045.0b810
 
 # Represents the current release of the CloudWatch Agent Operator.
-operator=1.4.1
+operator=1.7.0
 
 # Represents the current release of the Target Allocator.
 target-allocator=0.90.0
@@ -10,8 +10,8 @@ target-allocator=0.90.0
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.2
 aws-otel-python-instrumentation=v0.2.0
-# This needs to be updated with the latest release of ADOT SDK
 aws-otel-dotnet-instrumentation=1.6.0
+aws-otel-nodejs-instrumentation=0.52.1
 
-dcgm-exporter=3.3.3-3.3.1-ubuntu22.04
-neuron-monitor=1.0.0
+dcgm-exporter=3.3.7-3.5.0-ubuntu22.04
+neuron-monitor=1.0.1
