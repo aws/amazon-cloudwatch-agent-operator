@@ -84,6 +84,16 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 		}
 	}
 
+	// retrieve runtime configs
+	isJavaRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_ENABLED")
+	if !ok {
+		return nil, errors.New("unable to determine Java runtime configuration")
+	}
+	isPythonRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_ENABLED")
+	if !ok {
+		return nil, errors.New("unable to determine Python runtime configuration")
+	}
+
 	return &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
@@ -112,6 +122,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isJavaRuntimeEnabled},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				},
@@ -131,6 +142,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isPythonRuntimeEnabled},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
