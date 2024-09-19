@@ -42,6 +42,12 @@ func TestAllLanguagesDaemonSet(t *testing.T) {
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
+		NodeJS: auto.AnnotationResources{
+			Namespaces:   []string{""},
+			DaemonSets:   []string{filepath.Join(uniqueNamespace, daemonSetName)},
+			Deployments:  []string{""},
+			StatefulSets: []string{""},
+		},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
@@ -51,7 +57,7 @@ func TestAllLanguagesDaemonSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -155,4 +161,28 @@ func TestDotNetOnlyDaemonSet(t *testing.T) {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
+}
+func TestNodeJSOnlyDaemonSet(t *testing.T) {
+	clientSet := setupTest(t)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
+	}
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("daemonset-namespace-nodejs-only-%d", randomNumber)
+	annotationConfig := auto.AnnotationConfig{
+		NodeJS: auto.AnnotationResources{
+			DaemonSets: []string{filepath.Join(uniqueNamespace, daemonSetName)},
+		},
+	}
+	jsonStr, err := json.Marshal(annotationConfig)
+	if err != nil {
+		t.Error("Error:", err)
+	}
+	startTime := time.Now()
+	updateTheOperator(t, clientSet, string(jsonStr))
+
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
+		t.Fatalf("Failed annotation check: %s", err.Error())
+	}
 }
