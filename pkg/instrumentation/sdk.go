@@ -245,11 +245,15 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	container := &pod.Spec.Containers[agentIndex]
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
+	instrumentationSource, workloadSource := false, false
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELServiceName,
 			Value: chooseServiceName(pod, resourceMap, appIndex),
 		})
+		workloadSource = true
+	} else {
+		instrumentationSource = true
 	}
 	if otelinst.Spec.Exporter.Endpoint != "" {
 		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
@@ -309,6 +313,11 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	resStr := resourceMapToStr(resourceMap)
+	if instrumentationSource {
+		resStr = resStr + "," + constants.ServiceNameSource + "=" + constants.Instrumentation
+	} else if workloadSource {
+		resStr = resStr + "," + constants.ServiceNameSource + "=" + constants.K8sWorkload
+	}
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELResourceAttrs,

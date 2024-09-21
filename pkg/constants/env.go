@@ -23,4 +23,8 @@ const (
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+
+	ServiceNameSource = "service.name.source"
+	Instrumentation   = "Instrumentation"
+	K8sWorkload       = "K8sWorkload"
 )
