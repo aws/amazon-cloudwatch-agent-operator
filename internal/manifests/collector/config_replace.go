@@ -56,7 +56,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		prometheusConfig, err := ta.UnescapeDollarSignsInPromConfig(promConfigYaml)
+		prometheusConfig, err := adapters.ConfigFromString(promConfigYaml)
 		if err != nil {
 			return "", err
 		}
