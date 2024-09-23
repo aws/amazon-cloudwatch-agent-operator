@@ -33,10 +33,12 @@ const (
 	AppSignalsGrpcSA  = ":4315"
 	AppSignalsHttpSA  = ":4316"
 	AppSignalsProxySA = ":2000"
+	AgentServerPort   = 4311
 	EMF               = "emf"
 	EMFTcp            = "emf-tcp"
 	EMFUdp            = "emf-udp"
 	CWA               = "cwa-"
+	Server            = "server"
 )
 
 var receiverDefaultPortsMap = map[string]int32{
@@ -46,21 +48,6 @@ var receiverDefaultPortsMap = map[string]int32{
 	OtlpGrpc:   4317,
 	OtlpHttp:   4318,
 	EMF:        25888,
-}
-
-var AppSignalsPortToServicePortMap = map[int32][]corev1.ServicePort{
-	4315: {{
-		Name: AppSignalsGrpc,
-		Port: 4315,
-	}},
-	4316: {{
-		Name: AppSignalsHttp,
-		Port: 4316,
-	}},
-	2000: {{
-		Name: AppSignalsProxy,
-		Port: 2000,
-	}},
 }
 
 func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
@@ -82,6 +69,7 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 	config, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
+		servicePorts = PortMapToServicePortList(getAgentServerPort())
 	} else {
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
@@ -117,7 +105,7 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 }
 
 func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
-	servicePortsMap := make(map[int32][]corev1.ServicePort)
+	servicePortsMap := getAgentServerPort()
 
 	getApplicationSignalsReceiversServicePorts(logger, config, servicePortsMap)
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
@@ -129,6 +117,18 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 
 func isAppSignalEnabled(config *adapters.CwaConfig) bool {
 	return config.GetApplicationSignalsConfig() != nil
+}
+
+func getAgentServerPort() map[int32][]corev1.ServicePort {
+	servicePortMap := make(map[int32][]corev1.ServicePort)
+	// Adding the port 4311 as default port for agent server
+	agentServicePort := corev1.ServicePort{
+		Name:     CWA + Server,
+		Port:     AgentServerPort,
+		Protocol: corev1.ProtocolTCP,
+	}
+	servicePortMap[AgentServerPort] = []corev1.ServicePort{agentServicePort}
+	return servicePortMap
 }
 
 func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
@@ -220,14 +220,6 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 		}
 	}
 	return tracesPorts
-}
-
-func getAppSignalsServicePortsMap() map[int32][]corev1.ServicePort {
-	servicePortMap := make(map[int32][]corev1.ServicePort)
-	for k, v := range AppSignalsPortToServicePortMap {
-		servicePortMap[k] = v
-	}
-	return servicePortMap
 }
 
 func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
