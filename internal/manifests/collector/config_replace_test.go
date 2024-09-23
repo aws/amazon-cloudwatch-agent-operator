@@ -330,7 +330,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
       - label1
     - action: replace
       regex: (.*)
-      replacement: $$1_$$2
+      replacement: $1_$2
       separator: ;
       source_labels:
       - label2
