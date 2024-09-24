@@ -7,6 +7,5 @@ config:
       labels:
         my: label
 target_allocator:
-  collector_id: ${POD_NAME}
   endpoint: http://test-sd-target-allocator:80
   interval: 60s

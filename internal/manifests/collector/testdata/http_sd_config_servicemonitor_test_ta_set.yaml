@@ -13,6 +13,5 @@ config:
 target_allocator:
   endpoint: http://test-target-allocator:80
   interval: 30s
-  collector_id: ${POD_NAME}
   http_sd_config:
     refresh_interval: 60s

@@ -4,6 +4,5 @@ config:
     scrape_interval: 1m
     scrape_timeout: 10s
 target_allocator:
-  collector_id: ${POD_NAME}
   endpoint: http://test-target-allocator:80
   interval: 30s

@@ -38,7 +38,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		return &corev1.ConfigMap{}, fmt.Errorf("%s could not convert json to yaml", err)
 	}
 
-	prometheusConfig, err := adapters.UnescapeDollarSignsInPromConfig(promConfigYaml)
+	prometheusConfig, err := adapters.GetPromConfig(promConfigYaml)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

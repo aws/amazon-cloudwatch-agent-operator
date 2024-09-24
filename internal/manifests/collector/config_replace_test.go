@@ -108,9 +108,8 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint":     "http://test-target-allocator:80",
-			"interval":     "30s",
-			"collector_id": "${POD_NAME}",
+			"endpoint": "http://test-target-allocator:80",
+			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
 		assert.NoError(t, err)
@@ -163,9 +162,8 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint":     "http://test-target-allocator:80",
-			"interval":     "30s",
-			"collector_id": "${POD_NAME}",
+			"endpoint": "http://test-target-allocator:80",
+			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
 		assert.NoError(t, err)
@@ -362,7 +360,6 @@ func TestReplacePrometheusConfig(t *testing.T) {
     scrape_interval: 1m
     scrape_timeout: 10s
 target_allocator:
-  collector_id: ${POD_NAME}
   endpoint: http://test-target-allocator:80
   interval: 30s
 `

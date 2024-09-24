@@ -6,11 +6,9 @@ package adapters
 import (
 	"errors"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"net/url"
 	"regexp"
-	"strings"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
 func errorNoComponent(component string) error {
@@ -62,9 +60,8 @@ func getScrapeConfigsFromPromConfig(promConfig map[interface{}]interface{}) ([]i
 	return scrapeConfigs, nil
 }
 
-// UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
-// both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
-func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, error) {
+// GetPromConfig returns a Prometheus configuration file.
+func GetPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	prometheus, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
@@ -102,12 +99,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 				continue
 			}
 
-			replacement, rcErr := replacementProperty.(string)
+			_, rcErr = replacementProperty.(string)
 			if !rcErr {
 				return nil, errorNotAStringAtIndex("replacement", i)
 			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
 		}
 
 		metricRelabelConfigsProperty, ok := scrapeConfig["metric_relabel_configs"]
@@ -131,12 +126,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 				continue
 			}
 
-			replacement, ok := replacementProperty.(string)
+			_, ok = replacementProperty.(string)
 			if !ok {
 				return nil, errorNotAStringAtIndex("replacement", i)
 			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
 		}
 	}
 
@@ -234,7 +227,6 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 
 	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", taServiceName)
 	targetAllocatorCfg["interval"] = "30s"
-	targetAllocatorCfg["collector_id"] = "${POD_NAME}"
 
 	// Remove the scrape_configs key from the map
 	delete(prometheusCfg, "scrape_configs")

@@ -21,9 +21,8 @@ import (
 )
 
 type targetAllocator struct {
-	Endpoint    string        `yaml:"endpoint"`
-	Interval    time.Duration `yaml:"interval"`
-	CollectorID string        `yaml:"collector_id"`
+	Endpoint string        `yaml:"endpoint"`
+	Interval time.Duration `yaml:"interval"`
 	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
 	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
 	HTTPSDConfig interface{} `yaml:"http_sd_config,omitempty"`
@@ -80,8 +79,6 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
-		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
@@ -95,8 +92,6 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 		return string(out), nil
 	}
 
-	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
-	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 	if err != nil {
 		return "", err

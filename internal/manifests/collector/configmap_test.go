@@ -191,7 +191,6 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
     - url: http://test-target-allocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
     job_name: serviceMonitor/test/test/0
 target_allocator:
-  collector_id: ${POD_NAME}
   endpoint: http://test-target-allocator:80
   http_sd_config:
     refresh_interval: 60s
@@ -238,7 +237,6 @@ target_allocator:
 		expectedData := map[string]string{
 			"prometheus.yaml": `config: {}
 target_allocator:
-  collector_id: ${POD_NAME}
   endpoint: http://test-target-allocator:80
   interval: 30s
 `,
