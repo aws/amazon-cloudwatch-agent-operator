@@ -6,9 +6,10 @@ package adapters
 import (
 	"errors"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"net/url"
 	"regexp"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
 func errorNoComponent(component string) error {
