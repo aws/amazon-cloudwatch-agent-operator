@@ -26,6 +26,6 @@ const (
 
 	AWSEntityPrefix       = "com.amazonaws.cloudwatch.entity.internal."
 	ServiceNameSource     = AWSEntityPrefix + "service.name.source"
-	SourceInstrumentation = "SourceInstrumentation"
-	SourceK8sWorkload     = "SourceK8sWorkload"
+	SourceInstrumentation = "Instrumentation"
+	SourceK8sWorkload     = "K8sWorkload"
 )
