@@ -78,14 +78,14 @@ config:
     relabel_configs:
     - source_labels: ['__meta_service_id']
       target_label: 'job'
-      replacement: 'my_service_$$1'
+      replacement: 'my_service_$1'
     - source_labels: ['__meta_service_name']
       target_label: 'instance'
       replacement: '$1'
     metric_relabel_configs:
     - source_labels: ['job']
       target_label: 'job'
-      replacement: '$$1_$2'
+      replacement: '$1_$2'
 `
 	expected := `
 config:
