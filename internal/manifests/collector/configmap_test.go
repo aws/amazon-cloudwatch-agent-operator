@@ -27,12 +27,12 @@ func TestDesiredConfigMap(t *testing.T) {
 		}
 
 		param := deploymentParams()
-		actual, err := ConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test", actual[0].Name)
+		assert.Equal(t, expectedLables, actual[0].Labels)
+		assert.Equal(t, expectedData, actual[0].Data)
 
 	})
 }

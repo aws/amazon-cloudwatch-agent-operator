@@ -12,17 +12,17 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
+func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 	name := naming.ConfigMap(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	replacedConf, err := ReplaceConfig(params.OtelCol)
 	if err != nil {
-		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
+		params.Log.V(2).Info("failed to update config: ", "err", err)
 		return nil, err
 	}
 
-	return &corev1.ConfigMap{
+	cms := []*corev1.ConfigMap{{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
@@ -32,5 +32,28 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		Data: map[string]string{
 			"cwagentconfig.json": replacedConf,
 		},
-	}, nil
+	}}
+
+	if params.OtelCol.Spec.OtelConfig != "" {
+		otelName := naming.ConfigMapOtelCollector(params.OtelCol.Name)
+
+		replacedOtelConfig, err := ReplaceOtelConfig(params.OtelCol)
+		if err != nil {
+			params.Log.V(2).Info("failed to update otel config: ", "err", err)
+			return nil, err
+		}
+
+		cms = append(cms, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        otelName,
+				Namespace:   params.OtelCol.Namespace,
+				Labels:      labels,
+				Annotations: params.OtelCol.Annotations,
+			},
+			Data: map[string]string{
+				"cwagentotelconfig.yaml": replacedOtelConfig,
+			},
+		})
+	}
+	return cms, nil
 }

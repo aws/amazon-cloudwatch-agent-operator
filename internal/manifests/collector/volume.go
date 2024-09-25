@@ -17,12 +17,31 @@ func Volumes(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) []corev1
 	volumes := []corev1.Volume{{
 		Name: naming.ConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
-				Items: []corev1.KeyToPath{{
-					Key:  cfg.CollectorConfigMapEntry(),
-					Path: cfg.CollectorConfigMapEntry(),
-				}},
+			Projected: &corev1.ProjectedVolumeSource{
+				Sources: []corev1.VolumeProjection{
+					{
+						ConfigMap: &corev1.ConfigMapProjection{
+							LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  cfg.CollectorConfigMapEntry(),
+									Path: cfg.CollectorConfigMapEntry(),
+								},
+							},
+						},
+					},
+					{
+						ConfigMap: &corev1.ConfigMapProjection{
+							LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMapOtelCollector(otelcol.Name)},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  cfg.OtelCollectorConfigMapEntry(),
+									Path: cfg.OtelCollectorConfigMapEntry(),
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}}
