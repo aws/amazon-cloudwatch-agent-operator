@@ -5,7 +5,6 @@ Supported Languages:
 - Java
 - Python
 - .NET
-- NodeJS
 
 This repo is based off of the [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator)
 

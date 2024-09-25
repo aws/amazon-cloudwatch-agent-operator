@@ -1,13 +1,6 @@
 ========================================================================
-Amazon CloudWatch Agent Operator v1.7.0 (2024-09-03)
-========================================================================
-Enhancements:
-* [ApplicationSignals] Support NodeJS auto-instrumentation on Linux platforms
-
-========================================================================
 Amazon CloudWatch Agent Operator v1.6.0 (2024-07-30)
 ========================================================================
-Enhancements:
 * [ApplicationSignals] Allow configurable resource requests and limits for auto-instrumentation SDK init containers (#196)
 
 ========================================================================

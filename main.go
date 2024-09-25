@@ -49,7 +49,6 @@ const (
 	autoInstrumentationJavaImageRepository   = "public.ecr.aws/aws-observability/adot-autoinstrumentation-java"
 	autoInstrumentationPythonImageRepository = "public.ecr.aws/aws-observability/adot-autoinstrumentation-python"
 	autoInstrumentationDotNetImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet"
-	autoInstrumentationNodeJSImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
 	targetAllocatorImageRepository           = "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator"
@@ -120,7 +119,6 @@ func main() {
 		autoInstrumentationJava      string
 		autoInstrumentationPython    string
 		autoInstrumentationDotNet    string
-		autoInstrumentationNodeJS    string
 		autoAnnotationConfigStr      string
 		autoInstrumentationConfigStr string
 		webhookPort                  int
@@ -137,7 +135,6 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("%s:%s", autoInstrumentationJavaImageRepository, v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("%s:%s", autoInstrumentationPythonImageRepository, v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("%s:%s", autoInstrumentationNodeJSImageRepository, v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
@@ -146,7 +143,7 @@ func main() {
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
-	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}, "nodejs": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
 		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
@@ -160,15 +157,11 @@ func main() {
 	if dotNetVar, ok := autoInstrumentationConfig["dotnet"]; ok {
 		setLangEnvVars("DOTNET", dotNetVar)
 	}
-	if nodeJSVar, ok := autoInstrumentationConfig["nodejs"]; ok {
-		setLangEnvVars("NODEJS", nodeJSVar)
-	}
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
 	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
-	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", autoInstrumentationNodeJS)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -179,7 +172,6 @@ func main() {
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-python", autoInstrumentationPython,
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
-		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
 		"amazon-cloudwatch-agent-target-allocator", targetAllocatorImage,
@@ -196,7 +188,6 @@ func main() {
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithDcgmExporterImage(dcgmExporterImage),
 		config.WithNeuronMonitorImage(neuronMonitorImage),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
@@ -295,7 +286,6 @@ func main() {
 					instrumentation.TypeJava,
 					instrumentation.TypePython,
 					instrumentation.TypeDotNet,
-					instrumentation.TypeNodeJS,
 				),
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{

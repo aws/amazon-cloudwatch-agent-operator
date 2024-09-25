@@ -35,9 +35,6 @@ const (
 	injectDotNetAnnotation       = "instrumentation.opentelemetry.io/inject-dotnet"
 	autoAnnotateDotNetAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-dotnet"
 
-	injectNodeJSAnnotation       = "instrumentation.opentelemetry.io/inject-nodejs"
-	autoAnnotateNodeJSAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-nodejs"
-
 	deploymentName            = "sample-deployment"
 	nginxDeploymentName       = "nginx"
 	statefulSetName           = "sample-statefulset"
@@ -178,9 +175,8 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 			fmt.Println("There was an error getting namespace, ", err)
 			return false
 		}
-
 		for _, annotation := range expectedAnnotations {
-			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", ns.ObjectMeta.Annotations, ns.Status, ns.Name)
+			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", annotation, ns.Status, ns.Name)
 			if ns.ObjectMeta.Annotations[annotation] != "true" {
 				time.Sleep(timeBetweenRetries)
 				correct = false
@@ -265,25 +261,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 		}
 
 		fmt.Println("Annotations not found in all pods or some pods are not in Running phase. Retrying...")
-		cmd := exec.Command("kubectl", "rollout", "restart", "deployment", amazonControllerManager, "-n", amazonCloudwatchNamespace)
-
-		// Run the command and capture the output
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("Error restarting deployment: %v\n", err)
-			fmt.Printf("Output: %s\n", output)
-		} else {
-			fmt.Printf("Successfully deleted deployment: %s\n", output)
-		}
-		waitCmd := exec.Command("kubectl", "wait", "--for=condition=Available", "deployment/"+amazonControllerManager, "-n", amazonCloudwatchNamespace, "--timeout=300s")
-
-		waitOutput, err := waitCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("Error waiting for deployment: %v\n", err)
-			fmt.Printf("Output: %s\n", waitOutput)
-		} else {
-			fmt.Printf("Deployment is now available: %s\n", waitOutput)
-		}
 		time.Sleep(timeBetweenRetries)
 	}
 }

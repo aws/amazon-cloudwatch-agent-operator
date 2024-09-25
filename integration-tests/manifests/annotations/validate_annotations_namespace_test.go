@@ -50,12 +50,6 @@ func TestAllLanguagesNamespace(t *testing.T) {
 			Deployments:  []string{""},
 			StatefulSets: []string{""},
 		},
-		NodeJS: auto.AnnotationResources{
-			Namespaces:   []string{uniqueNamespace},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
-		},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
 	if err != nil {
@@ -64,7 +58,7 @@ func TestAllLanguagesNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Languages annotations")
 	}
 }
@@ -187,44 +181,6 @@ func TestDotNetOnlyNamespace(t *testing.T) {
 
 	if !checkNameSpaceAnnotations(t, clientSet, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing DotNet annotations")
-	}
-}
-
-func TestNodeJSOnlyNamespace(t *testing.T) {
-
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("namespace-nodejs-only-%d", randomNumber)
-	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
-		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
-	}
-
-	defer func() {
-		if err := deleteNamespace(clientSet, uniqueNamespace); err != nil {
-			t.Fatalf("Failed to delete namespace: %v", err)
-		}
-	}()
-
-	annotationConfig := auto.AnnotationConfig{
-		NodeJS: auto.AnnotationResources{
-			Namespaces: []string{uniqueNamespace},
-		},
-	}
-	jsonStr, err := json.Marshal(annotationConfig)
-	if err != nil {
-		t.Error("Error:", err)
-	}
-
-	startTime := time.Now()
-
-	updateTheOperator(t, clientSet, string(jsonStr))
-
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
-		t.Error("Missing nodejs annotations")
 	}
 }
 

@@ -26,18 +26,17 @@ import (
 )
 
 const (
-	nameSpace                         = "amazon-cloudwatch"
-	addOnName                         = "amazon-cloudwatch-observability"
-	agentName                         = "cloudwatch-agent"
-	agentNameWindows                  = "cloudwatch-agent-windows"
-	agentNameWindowsContainerInsights = "cloudwatch-agent-windows-container-insights"
-	operatorName                      = addOnName + "-controller-manager"
-	fluentBitName                     = "fluent-bit"
-	fluentBitNameWindows              = "fluent-bit-windows"
-	dcgmExporterName                  = "dcgm-exporter"
-	neuronMonitor                     = "neuron-monitor"
-	podNameRegex                      = "(" + agentName + "|" + agentNameWindows + "|" + agentNameWindowsContainerInsights + "|" + operatorName + "|" + fluentBitName + "|" + fluentBitNameWindows + ")-*"
-	serviceNameRegex                  = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + agentNameWindowsContainerInsights + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service|" + neuronMonitor + "-service"
+	nameSpace            = "amazon-cloudwatch"
+	addOnName            = "amazon-cloudwatch-observability"
+	agentName            = "cloudwatch-agent"
+	agentNameWindows     = "cloudwatch-agent-windows"
+	operatorName         = addOnName + "-controller-manager"
+	fluentBitName        = "fluent-bit"
+	fluentBitNameWindows = "fluent-bit-windows"
+	dcgmExporterName     = "dcgm-exporter"
+	neuronMonitor        = "neuron-monitor"
+	podNameRegex         = "(" + agentName + "|" + agentNameWindows + "|" + operatorName + "|" + fluentBitName + "|" + fluentBitNameWindows + ")-*"
+	serviceNameRegex     = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service|" + neuronMonitor + "-service"
 )
 
 const (
@@ -103,9 +102,6 @@ func TestOperatorOnEKs(t *testing.T) {
 		// - cloudwatch-agent-windows
 		// - cloudwatch-agent-windows-headless
 		// - cloudwatch-agent-windows-monitoring
-		// - cloudwatch-agent-windows-container-insights
-		// - cloudwatch-agent-windows-container-insights-headless
-		// - cloudwatch-agent-windows-container-insights-monitoring
 		// - dcgm-exporter-service
 		// - neuron-monitor-service
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
@@ -137,7 +133,6 @@ func TestOperatorOnEKs(t *testing.T) {
 		// matches
 		// - cloudwatch-agent
 		// - cloudwatch-agent-windows
-		// - cloudwatch-agent-windows-container-insights
 		// - fluent-bit
 		// - fluent-bit-windows
 		// - dcgm-exporter (this can be removed in the future)
