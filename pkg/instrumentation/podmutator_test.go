@@ -27,11 +27,11 @@ const (
 	defaultJavaInstrumentationImage   = "test.registry/adot-autoinstrumentation-java:test-tag"
 	defaultPythonInstrumentationImage = "test.registry/adot-autoinstrumentation-python:test-tag"
 	defaultDotNetInstrumentationImage = "test.registry/adot-autoinstrumentation-dotnet:test-tag"
+	defaultNodeJSInstrumentationImage = "test.registry/adot-autoinstrumentation-nodejs:test-tag"
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
-
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",
@@ -49,7 +49,6 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
-
 }
 
 func TestMutatePod(t *testing.T) {

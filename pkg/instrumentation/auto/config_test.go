@@ -31,7 +31,14 @@ func TestConfig(t *testing.T) {
 			DaemonSets:   []string{"ds3"},
 			StatefulSets: []string{"ss3"},
 		},
+		NodeJS: AnnotationResources{
+			Namespaces:   []string{"n3"},
+			Deployments:  []string{"d3"},
+			DaemonSets:   []string{"ds3"},
+			StatefulSets: []string{"ss3"},
+		},
 	}
+
 	assert.Equal(t, cfg.Java, cfg.getResources(instrumentation.TypeJava))
 	assert.Equal(t, []string{"n1"}, getNamespaces(cfg.Java))
 	assert.Equal(t, []string{"d1"}, getDeployments(cfg.Java))
@@ -42,4 +49,7 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.DotNet))
 	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.DotNet))
 	assert.Equal(t, AnnotationResources{}, cfg.getResources("invalidType"))
+	assert.Equal(t, cfg.NodeJS, cfg.getResources(instrumentation.TypeNodeJS))
+	assert.Equal(t, []string{"ds3"}, getDaemonSets(cfg.NodeJS))
+	assert.Equal(t, []string{"ss3"}, getStatefulSets(cfg.NodeJS))
 }
