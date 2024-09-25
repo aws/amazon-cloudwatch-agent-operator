@@ -194,7 +194,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		escapedJob := url.QueryEscape(jobName)
 		scrapeConfig["http_sd_configs"] = []interface{}{
 			map[string]interface{}{
-				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, escapedJob),
+				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets", taServiceName, escapedJob),
 			},
 		}
 	}

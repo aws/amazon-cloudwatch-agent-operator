@@ -84,7 +84,7 @@ func TestPrometheusParser(t *testing.T) {
 		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
 			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-target-allocator:80/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-target-allocator:80/jobs/"+scrapeConfig.JobName+"/targets")
 			expectedMap[scrapeConfig.JobName] = true
 		}
 		for k := range expectedMap {
@@ -307,7 +307,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
   scrape_configs:
   - honor_labels: true
     http_sd_configs:
-    - url: http://test-target-allocator:80/jobs/service-x/targets?collector_id=$POD_NAME
+    - url: http://test-target-allocator:80/jobs/service-x/targets
     job_name: service-x
     metric_relabel_configs:
     - action: keep

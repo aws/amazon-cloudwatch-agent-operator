@@ -141,7 +141,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 			"prometheus.yaml": `config:
   scrape_configs:
   - http_sd_configs:
-    - url: http://test-target-allocator:80/jobs/cloudwatch-agent/targets?collector_id=$POD_NAME
+    - url: http://test-target-allocator:80/jobs/cloudwatch-agent/targets
     job_name: cloudwatch-agent
     scrape_interval: 10s
 `,
@@ -188,7 +188,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 			"prometheus.yaml": `config:
   scrape_configs:
   - http_sd_configs:
-    - url: http://test-target-allocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+    - url: http://test-target-allocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets
     job_name: serviceMonitor/test/test/0
 target_allocator:
   endpoint: http://test-target-allocator:80

@@ -145,7 +145,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 						"job_name": "test_job",
 						"http_sd_configs": []interface{}{
 							map[string]interface{}{
-								"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, url.QueryEscape("test_job")),
+								"url": fmt.Sprintf("http://%s:80/jobs/%s/targets", taServiceName, url.QueryEscape("test_job")),
 							},
 						},
 					},
