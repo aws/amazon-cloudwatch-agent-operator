@@ -14,34 +14,26 @@ import (
 
 // Volumes builds the volumes for the given instance, including the config map volume.
 func Volumes(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) []corev1.Volume {
+	items := []corev1.KeyToPath{
+		{
+			Key:  cfg.CollectorConfigMapEntry(),
+			Path: cfg.CollectorConfigMapEntry(),
+		},
+	}
+
+	if otelcol.Spec.OtelConfig != "" {
+		items = append(items, corev1.KeyToPath{
+			Key:  cfg.OtelCollectorConfigMapEntry(),
+			Path: cfg.OtelCollectorConfigMapEntry(),
+		})
+	}
+
 	volumes := []corev1.Volume{{
 		Name: naming.ConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				Sources: []corev1.VolumeProjection{
-					{
-						ConfigMap: &corev1.ConfigMapProjection{
-							LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
-							Items: []corev1.KeyToPath{
-								{
-									Key:  cfg.CollectorConfigMapEntry(),
-									Path: cfg.CollectorConfigMapEntry(),
-								},
-							},
-						},
-					},
-					{
-						ConfigMap: &corev1.ConfigMapProjection{
-							LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMapOtelCollector(otelcol.Name)},
-							Items: []corev1.KeyToPath{
-								{
-									Key:  cfg.OtelCollectorConfigMapEntry(),
-									Path: cfg.OtelCollectorConfigMapEntry(),
-								},
-							},
-						},
-					},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
+				Items:                items,
 			},
 		},
 	}}

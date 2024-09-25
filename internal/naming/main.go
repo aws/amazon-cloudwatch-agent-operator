@@ -9,11 +9,6 @@ func ConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
 
-// ConfigMapOtelCollector builds the name for the config map used in the AmazonCloudWatchAgent Otel config.
-func ConfigMapOtelCollector(otelcol string) string {
-	return DNSName(Truncate("%s-otel", 63, otelcol))
-}
-
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"

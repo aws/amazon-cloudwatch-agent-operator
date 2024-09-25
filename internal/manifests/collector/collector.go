@@ -32,6 +32,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
+		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.Factory(Service),
@@ -61,15 +62,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)
-	}
-
-	configMaps, err := ConfigMaps(params)
-	if err != nil {
-		return nil, err
-	}
-	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
-	for _, configMap := range configMaps {
-		resourceManifests = append(resourceManifests, configMap)
 	}
 	return resourceManifests, nil
 }

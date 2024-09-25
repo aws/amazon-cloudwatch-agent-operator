@@ -12,7 +12,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
+func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.ConfigMap(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
@@ -22,38 +22,26 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 		return nil, err
 	}
 
-	cms := []*corev1.ConfigMap{{
+	sourceDataMap := map[string]string{
+		"cwagentconfig.json": replacedConf,
+	}
+
+	if params.OtelCol.Spec.OtelConfig != "" {
+		replacedOtelConfig, err := ReplaceOtelConfig(params.OtelCol)
+		if err != nil {
+			params.Log.V(2).Info("failed to update otel config: ", "err", err)
+			return nil, err
+		}
+		sourceDataMap["cwagentotelconfig.yaml"] = replacedOtelConfig
+	}
+
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: params.OtelCol.Annotations,
 		},
-		Data: map[string]string{
-			"cwagentconfig.json": replacedConf,
-		},
-	}}
-
-	if params.OtelCol.Spec.OtelConfig != "" {
-		otelName := naming.ConfigMapOtelCollector(params.OtelCol.Name)
-
-		replacedOtelConfig, err := ReplaceOtelConfig(params.OtelCol)
-		if err != nil {
-			params.Log.V(2).Info("failed to update otel config: ", "err", err)
-			return nil, err
-		}
-
-		cms = append(cms, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        otelName,
-				Namespace:   params.OtelCol.Namespace,
-				Labels:      labels,
-				Annotations: params.OtelCol.Annotations,
-			},
-			Data: map[string]string{
-				"cwagentotelconfig.yaml": replacedOtelConfig,
-			},
-		})
-	}
-	return cms, nil
+		Data: sourceDataMap,
+	}, nil
 }
