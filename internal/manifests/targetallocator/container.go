@@ -5,7 +5,6 @@ package targetallocator
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -76,7 +75,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		},
 	}
 
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:           naming.TAContainer(),
 		Image:          image,
