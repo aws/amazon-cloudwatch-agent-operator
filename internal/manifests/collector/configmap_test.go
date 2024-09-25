@@ -87,7 +87,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		fmt.Printf("failed to unmarshal config: %v", err)
 	}
 
-	t.Run("should return expected prometheus config map", func(t *testing.T) {
+	t.Run("should return expected prometheus config map with no target allocator", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
 

@@ -47,6 +47,9 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	return string(out), nil
 }
 
+// ReplacePrometheusConfig replaces the prometheus configuration that the customer provides with itself (if the
+// target-allocator isn't enabled) or the target_allocator configuration (if the target-allocator is enabled)
+// and populates it into the prometheus.yaml file, which is seen in its PrometheusConfigMap.
 func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	promConfigYaml, err := instance.Spec.Prometheus.Yaml()
 	if err != nil {

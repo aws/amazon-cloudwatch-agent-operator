@@ -99,3 +99,23 @@ func TestVolumePrometheus(t *testing.T) {
 	// check that the second volume is prometheus-config, with the config map
 	assert.Equal(t, naming.PrometheusConfigMapVolume(), volumes[1].Name)
 }
+
+func TestVolumeNoPrometheus(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Prometheus: v1alpha1.PrometheusConfig{},
+		},
+	}
+
+	cfg := config.New()
+
+	// test
+	volumes := Volumes(cfg, otelcol)
+
+	// verify
+	assert.Len(t, volumes, 1)
+
+	// check that it's not the prometheus-config volume, with the config map
+	assert.NotEqual(t, naming.PrometheusConfigMapVolume(), volumes[0].Name)
+}
