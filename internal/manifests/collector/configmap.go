@@ -4,8 +4,13 @@
 package collector
 
 import (
+	"fmt"
+
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
@@ -44,6 +49,25 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 		if err != nil {
 			params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 			return nil, err
+		}
+
+		if !params.OtelCol.Spec.TargetAllocator.Enabled {
+			replacedPrometheusConfig, err := adapters.ConfigFromString(replacedPrometheusConf)
+			if err != nil {
+				return nil, err
+			}
+
+			replacedPrometheusConfProp, ok := replacedPrometheusConfig["config"]
+			if !ok {
+				return nil, fmt.Errorf("no prometheusConfig available as part of the configuration")
+			}
+
+			replacedPrometheusConfPropYAML, err := yaml.Marshal(replacedPrometheusConfProp)
+			if err != nil {
+				return nil, err
+			}
+
+			replacedPrometheusConf = string(replacedPrometheusConfPropYAML)
 		}
 
 		configmaps = append(configmaps, &corev1.ConfigMap{

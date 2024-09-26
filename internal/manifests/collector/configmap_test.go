@@ -92,13 +92,12 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		expectedLabels["app.kubernetes.io/name"] = "test-prometheus-config"
 
 		expectedData := map[string]string{
-			"prometheus.yaml": `config:
-  scrape_configs:
-  - job_name: cloudwatch-agent
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
+			"prometheus.yaml": `scrape_configs:
+- job_name: cloudwatch-agent
+  scrape_interval: 10s
+  static_configs:
+  - targets:
+    - 0.0.0.0:8888
 `,
 		}
 
