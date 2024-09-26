@@ -23,7 +23,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	}
 
 	sourceDataMap := map[string]string{
-		"cwagentconfig.json": replacedConf,
+		params.Config.CollectorConfigMapEntry(): replacedConf,
 	}
 
 	if params.OtelCol.Spec.OtelConfig != "" {
@@ -32,7 +32,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			params.Log.V(2).Info("failed to update otel config: ", "err", err)
 			return nil, err
 		}
-		sourceDataMap["cwagentotelconfig.yaml"] = replacedOtelConfig
+		sourceDataMap[params.Config.OtelCollectorConfigMapEntry()] = replacedOtelConfig
 	}
 
 	return &corev1.ConfigMap{
