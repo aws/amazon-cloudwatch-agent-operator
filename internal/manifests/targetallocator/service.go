@@ -11,24 +11,24 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
+const TargetAllocatorServiceName = "target-allocator-service"
+
 func Service(params manifests.Params) *corev1.Service {
-	name := naming.TAService(params.OtelCol.Name)
 	version := strings.Split(params.OtelCol.Spec.TargetAllocator.Image, ":")
-	labels := Labels(params.OtelCol, name)
+	labels := Labels(params.OtelCol, TargetAllocatorServiceName)
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	selector := Labels(params.OtelCol, name)
+	selector := Labels(params.OtelCol, TargetAllocatorServiceName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.OtelCol.Name),
+			Name:      TargetAllocatorServiceName,
 			Namespace: params.OtelCol.Namespace,
 			Labels:    labels,
 		},
