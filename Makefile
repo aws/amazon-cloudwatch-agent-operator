@@ -156,7 +156,7 @@ vet:
 
 # Generate code
 .PHONY: generate
-generate: controller-gen
+generate: controller-gen api-docs
 	$(CONTROLLER_GEN) object:headerFile="licensing/header.txt" paths="./..."
 
 # Build the container image, used only for local dev purposes
