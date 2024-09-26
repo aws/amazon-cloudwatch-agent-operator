@@ -40,12 +40,12 @@ func TestDesiredConfigMap(t *testing.T) {
 		}
 
 		param := deploymentParams()
-		actual, err := ConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test", actual[0].Name)
+		assert.Equal(t, expectedLables, actual[0].Labels)
+		assert.Equal(t, expectedData, actual[0].Data)
 
 	})
 }
@@ -115,16 +115,17 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Config:     "{}",
 					Prometheus: promCfg,
 				},
 			},
 		}
-		actual, err := PrometheusConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-prometheus-config", actual.Name)
-		assert.Equal(t, expectedLabels, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test-prometheus-config", actual[1].Name)
+		assert.Equal(t, expectedLabels, actual[1].Labels)
+		assert.Equal(t, expectedData, actual[1].Data)
 
 	})
 
@@ -160,17 +161,18 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Config:     "{}",
 					Prometheus: promCfg,
 				},
 			},
 		}
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual, err := PrometheusConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-prometheus-config", actual.GetName())
-		assert.Equal(t, expectedLabels, actual.GetLabels())
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test-prometheus-config", actual[1].GetName())
+		assert.Equal(t, expectedLabels, actual[1].GetLabels())
+		assert.Equal(t, expectedData, actual[1].Data)
 
 	})
 
@@ -211,6 +213,7 @@ target_allocator:
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Config:     "{}",
 					Prometheus: httpTAPromCfg,
 					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
@@ -221,12 +224,12 @@ target_allocator:
 		}
 		assert.NoError(t, err)
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual, err := PrometheusConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-prometheus-config", actual.Name)
-		assert.Equal(t, expectedLabels, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test-prometheus-config", actual[1].Name)
+		assert.Equal(t, expectedLabels, actual[1].Labels)
+		assert.Equal(t, expectedData, actual[1].Data)
 
 	})
 
@@ -255,6 +258,7 @@ target_allocator:
 				},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
 					Image:      "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+					Config:     "{}",
 					Prometheus: httpPromCfg,
 					TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
 						Enabled: true,
@@ -265,12 +269,12 @@ target_allocator:
 		}
 		assert.NoError(t, err)
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual, err := PrometheusConfigMap(param)
+		actual, err := ConfigMaps(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-prometheus-config", actual.Name)
-		assert.Equal(t, expectedLabels, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, "test-prometheus-config", actual[1].Name)
+		assert.Equal(t, expectedLabels, actual[1].Labels)
+		assert.Equal(t, expectedData, actual[1].Data)
 
 	})
 }

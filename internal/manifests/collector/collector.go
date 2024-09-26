@@ -46,13 +46,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 		}
 	}
-	configmaps, err := ConfigMaps(params)
-	if err != nil {
-		return nil, err
-	}
-	for _, configmap := range configmaps {
-		manifestFactories = append(manifestFactories, configmap)
-	}
 	for _, factory := range manifestFactories {
 		res, err := factory(params)
 		if err != nil {
@@ -60,6 +53,14 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
+	}
+	configmaps, err := ConfigMaps(params)
+	if err != nil {
+		return nil, err
+	}
+	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
+	for _, configmap := range configmaps {
+		resourceManifests = append(resourceManifests, configmap)
 	}
 	routes, err := Routes(params)
 	if err != nil {
