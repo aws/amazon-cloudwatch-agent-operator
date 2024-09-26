@@ -199,12 +199,12 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			},
 		}
 
-		taServiceName := "test-target-allocator"
+		taServiceName := "target-allocator-service"
 
 		expectedResult := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
-				"endpoint": "http://test-target-allocator:80",
+				"endpoint": "http://target-allocator-service:80",
 				"interval": "30s",
 			},
 		}
@@ -235,7 +235,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			},
 		}
 
-		taServiceName := "test-target-allocator"
+		taServiceName := "target-allocator-service"
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {

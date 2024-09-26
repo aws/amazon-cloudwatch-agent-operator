@@ -4,6 +4,8 @@
 // Package naming is for determining the names for components (containers, services, ...).
 package naming
 
+const TargetAllocatorServiceName = "target-allocator-service"
+
 // ConfigMap builds the name for the config map used in the AmazonCloudWatchAgent containers.
 func ConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
@@ -102,11 +104,6 @@ func Ingress(otelcol string) string {
 // Route builds the route name based on the instance.
 func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
-}
-
-// TAService returns the name to use for the TargetAllocator service.
-func TAService(otelcol string) string {
-	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
 // ServiceAccount builds the service account name based on the instance.

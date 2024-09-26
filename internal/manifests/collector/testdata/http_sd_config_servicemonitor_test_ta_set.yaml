@@ -11,7 +11,7 @@ config:
     - files:
       - file2.json
 target_allocator:
-  endpoint: http://test-target-allocator:80
+  endpoint: http://target-allocator-service:80
   interval: 30s
   http_sd_config:
     refresh_interval: 60s
