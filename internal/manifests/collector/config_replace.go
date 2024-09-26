@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 
 	promconfig "github.com/prometheus/prometheus/config"
@@ -82,7 +82,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, targetallocator.TargetAllocatorServiceName)
+		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
 		}
@@ -95,7 +95,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 		return string(out), nil
 	}
 
-	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, targetallocator.TargetAllocatorServiceName)
+	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 	if err != nil {
 		return "", err
 	}

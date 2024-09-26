@@ -104,6 +104,11 @@ func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
 }
 
+// TAService returns the name to use for the TargetAllocator service.
+func TAService(otelcol string) string {
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
+}
+
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
