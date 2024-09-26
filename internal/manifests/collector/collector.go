@@ -32,7 +32,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
-		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.Factory(Service),
@@ -47,8 +46,12 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 		}
 	}
-	if !params.OtelCol.Spec.Prometheus.IsEmpty() {
-		manifestFactories = append(manifestFactories, manifests.Factory(PrometheusConfigMap))
+	configmaps, err := ConfigMaps(params)
+	if err != nil {
+		return nil, err
+	}
+	for _, configmap := range configmaps {
+		manifestFactories = append(manifestFactories, configmap)
 	}
 	for _, factory := range manifestFactories {
 		res, err := factory(params)
