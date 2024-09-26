@@ -76,14 +76,25 @@ func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.S
 	return ports
 }
 
-func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
+func getContainerPorts(logger logr.Logger, cfg string, otelCfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
 	var servicePorts []corev1.ServicePort
 	config, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
+		return ports
+	}
+	servicePorts = getServicePortsFromCWAgentConfig(logger, config)
+
+	otelConfig, err := adapters.ConfigFromString(otelCfg)
+	if err != nil {
+		logger.Error(err, "error parsing cw agent otel config")
 	} else {
-		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
+		otelPorts, err := adapters.GetServicePortsFromCWAgentOtelConfig(logger, otelConfig)
+		if err != nil {
+			logger.Error(err, "error parsing ports from cw agent otel config")
+		}
+		servicePorts = append(servicePorts, otelPorts...)
 	}
 
 	for _, p := range servicePorts {
@@ -99,6 +110,12 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 				zap.Strings("port.name.errs", nameErrs), zap.Strings("num.errs", numErrs))
 			continue
 		}
+		// remove duplicate ports
+		if isDuplicatePort(ports, p) {
+			logger.Info("dropping duplicate container port", zap.String("port.name", truncName), zap.Int32("port.num", p.Port))
+			continue
+		}
+
 		ports[truncName] = corev1.ContainerPort{
 			Name:          truncName,
 			ContainerPort: p.Port,
@@ -259,4 +276,11 @@ func portFromEndpoint(endpoint string) (int32, error) {
 	}
 
 	return int32(port), err
+}
+
+func isDuplicatePort(portsMap map[string]corev1.ContainerPort, servicePort corev1.ServicePort) bool {
+	for _, containerPort := range portsMap {
+		return containerPort.Protocol == servicePort.Protocol && containerPort.ContainerPort == servicePort.Port
+	}
+	return false
 }
