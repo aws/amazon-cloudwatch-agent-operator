@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry = "cwagentconfig.json"
+	defaultCollectorConfigMapEntry     = "cwagentconfig.json"
+	defaultOtelCollectorConfigMapEntry = "cwagentotelconfig.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -21,6 +22,7 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	otelCollectorConfigMapEntry         string
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -36,9 +38,10 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
-		logger:                  logf.Log.WithName("config"),
-		version:                 version.Get(),
+		collectorConfigMapEntry:     defaultCollectorConfigMapEntry,
+		otelCollectorConfigMapEntry: defaultOtelCollectorConfigMapEntry,
+		logger:                      logf.Log.WithName("config"),
+		version:                     version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -47,6 +50,7 @@ func New(opts ...Option) Config {
 	return Config{
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		otelCollectorConfigMapEntry:         o.otelCollectorConfigMapEntry,
 		logger:                              o.logger,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
@@ -66,9 +70,14 @@ func (c *Config) CollectorImage() string {
 	return c.collectorImage
 }
 
-// CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
+// CollectorConfigMapEntry represents the configuration JSON file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
+}
+
+// OtelCollectorConfigMapEntry represents the configuration YAML file name for the collector. Immutable.
+func (c *Config) OtelCollectorConfigMapEntry() string {
+	return c.otelCollectorConfigMapEntry
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
