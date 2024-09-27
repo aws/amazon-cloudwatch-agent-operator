@@ -37,7 +37,7 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Data: map[string]string{
-			"cwagentconfig.json": replacedConf,
+			params.Config.CollectorConfigMapEntry(): replacedConf,
 		},
 	})
 
@@ -78,7 +78,7 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 				Annotations: params.OtelCol.Annotations,
 			},
 			Data: map[string]string{
-				"prometheus.yaml": replacedPrometheusConf,
+				params.Config.PrometheusConfigMapEntry(): replacedPrometheusConf,
 			},
 		})
 	}
