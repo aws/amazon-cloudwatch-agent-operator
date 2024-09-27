@@ -45,6 +45,11 @@ func WithCollectorConfigMapEntry(s string) Option {
 		o.collectorConfigMapEntry = s
 	}
 }
+func WithTargetAllocatorConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorConfigMapEntry = s
+	}
+}
 func WithPrometheusConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.prometheusConfigMapEntry = s
