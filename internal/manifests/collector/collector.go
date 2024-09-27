@@ -58,7 +58,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, configmap := range configmaps {
 		resourceManifests = append(resourceManifests, configmap)
 	}
