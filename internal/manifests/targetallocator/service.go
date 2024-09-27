@@ -35,8 +35,8 @@ func Service(params manifests.Params) *corev1.Service {
 			Selector: selector,
 			Ports: []corev1.ServicePort{{
 				Name:       "targetallocation",
-				Port:       naming.TargetAllocatorPort,
-				TargetPort: intstr.FromInt32(naming.TargetAllocatorTargetPort),
+				Port:       naming.TargetAllocatorServicePort,
+				TargetPort: intstr.FromInt32(naming.TargetAllocatorContainerPort),
 			}},
 		},
 	}

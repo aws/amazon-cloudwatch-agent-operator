@@ -196,7 +196,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		escapedJob := url.QueryEscape(jobName)
 		scrapeConfig["http_sd_configs"] = []interface{}{
 			map[string]interface{}{
-				"url": fmt.Sprintf("http://%s:%d/jobs/%s/targets", taServiceName, naming.TargetAllocatorPort, escapedJob),
+				"url": fmt.Sprintf("http://%s:%d/jobs/%s/targets", taServiceName, naming.TargetAllocatorServicePort, escapedJob),
 			},
 		}
 	}
@@ -228,7 +228,7 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 		return nil, errorNotAMap("target_allocator")
 	}
 
-	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:%d", taServiceName, naming.TargetAllocatorPort)
+	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:%d", taServiceName, naming.TargetAllocatorServicePort)
 	targetAllocatorCfg["interval"] = "30s"
 
 	// Remove the scrape_configs key from the map

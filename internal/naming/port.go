@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	TargetAllocatorPort       = 80
-	TargetAllocatorTargetPort = 8080
+	TargetAllocatorServicePort   = 80
+	TargetAllocatorContainerPort = 8080
 )
 
 var (

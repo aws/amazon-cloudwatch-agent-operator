@@ -23,7 +23,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 	ports := make([]corev1.ContainerPort, 0)
 	ports = append(ports, corev1.ContainerPort{
 		Name:          "http",
-		ContainerPort: naming.TargetAllocatorTargetPort,
+		ContainerPort: naming.TargetAllocatorContainerPort,
 		Protocol:      corev1.ProtocolTCP,
 	})
 
