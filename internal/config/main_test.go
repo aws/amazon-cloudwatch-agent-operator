@@ -16,9 +16,11 @@ func TestNewConfig(t *testing.T) {
 	cfg := config.New(
 		config.WithCollectorImage("some-image"),
 		config.WithCollectorConfigMapEntry("some-config.yaml"),
+		config.WithPrometheusConfigMapEntry("some-prom-config.yaml"),
 	)
 
 	// test
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
+	assert.Equal(t, "some-prom-config.yaml", cfg.PrometheusConfigMapEntry())
 }

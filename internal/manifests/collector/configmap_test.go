@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+
 	"gopkg.in/yaml.v2"
 
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
@@ -102,6 +104,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		}
 
 		param := manifests.Params{
+			Config: config.New(),
 			OtelCol: v1alpha1.AmazonCloudWatchAgent{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "cloudwatch.aws.amazon.com",
@@ -148,6 +151,7 @@ func TestDesiredPrometheusConfigMap(t *testing.T) {
 		}
 
 		param := manifests.Params{
+			Config: config.New(),
 			OtelCol: v1alpha1.AmazonCloudWatchAgent{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "cloudwatch.aws.amazon.com",
@@ -200,6 +204,7 @@ target_allocator:
 		}
 
 		param := manifests.Params{
+			Config: config.New(),
 			OtelCol: v1alpha1.AmazonCloudWatchAgent{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "cloudwatch.aws.amazon.com",
@@ -245,6 +250,7 @@ target_allocator:
 		}
 
 		param := manifests.Params{
+			Config: config.New(),
 			OtelCol: v1alpha1.AmazonCloudWatchAgent{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "cloudwatch.aws.amazon.com",

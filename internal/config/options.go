@@ -45,6 +45,11 @@ func WithCollectorConfigMapEntry(s string) Option {
 		o.collectorConfigMapEntry = s
 	}
 }
+func WithPrometheusConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.prometheusConfigMapEntry = s
+	}
+}
 func WithLogger(logger logr.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
