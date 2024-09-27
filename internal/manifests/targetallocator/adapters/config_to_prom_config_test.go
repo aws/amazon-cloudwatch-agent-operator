@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
@@ -199,8 +201,6 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			},
 		}
 
-		taServiceName := "target-allocator-service"
-
 		expectedResult := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
@@ -209,7 +209,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			},
 		}
 
-		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
+		result, err := ta.AddTAConfigToPromConfig(cfg, naming.TAService())
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResult, result)
@@ -235,11 +235,9 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 			},
 		}
 
-		taServiceName := "target-allocator-service"
-
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := ta.AddTAConfigToPromConfig(tc.cfg, taServiceName)
+				_, err := ta.AddTAConfigToPromConfig(tc.cfg, naming.TAService())
 
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errText)
