@@ -16,18 +16,18 @@ import (
 
 func Service(params manifests.Params) *corev1.Service {
 	version := strings.Split(params.OtelCol.Spec.TargetAllocator.Image, ":")
-	labels := Labels(params.OtelCol, naming.TargetAllocatorServiceName)
+	labels := Labels(params.OtelCol, naming.TAService())
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	selector := Labels(params.OtelCol, naming.TargetAllocatorServiceName)
+	selector := Labels(params.OtelCol, naming.TAService())
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TargetAllocatorServiceName,
+			Name:      naming.TAService(),
 			Namespace: params.OtelCol.Namespace,
 			Labels:    labels,
 		},
