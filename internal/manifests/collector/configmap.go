@@ -17,6 +17,11 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
+const (
+	cwAgentFilename = "cwagentconfig.json"
+	promFilename    = "prometheus.yaml"
+)
+
 func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 	var configmaps []*corev1.ConfigMap
 
@@ -37,7 +42,7 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Data: map[string]string{
-			params.Config.CollectorConfigMapEntry(): replacedConf,
+			cwAgentFilename: replacedConf,
 		},
 	})
 
@@ -78,7 +83,7 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 				Annotations: params.OtelCol.Annotations,
 			},
 			Data: map[string]string{
-				params.Config.PrometheusConfigMapEntry(): replacedPrometheusConf,
+				promFilename: replacedPrometheusConf,
 			},
 		})
 	}
