@@ -86,15 +86,17 @@ func getContainerPorts(logger logr.Logger, cfg string, otelCfg string, specPorts
 	}
 	servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 
-	otelConfig, err := adapters.ConfigFromString(otelCfg)
-	if err != nil {
-		logger.Error(err, "error parsing cw agent otel config")
-	} else {
-		otelPorts, err := adapters.GetServicePortsFromCWAgentOtelConfig(logger, otelConfig)
+	if otelCfg != "" {
+		otelConfig, err := adapters.ConfigFromString(otelCfg)
 		if err != nil {
-			logger.Error(err, "error parsing ports from cw agent otel config")
+			logger.Error(err, "error parsing cw agent otel config")
+		} else {
+			otelPorts, otelPortsErr := adapters.GetServicePortsFromCWAgentOtelConfig(logger, otelConfig)
+			if otelPortsErr != nil {
+				logger.Error(otelPortsErr, "error parsing ports from cw agent otel config")
+			}
+			servicePorts = append(servicePorts, otelPorts...)
 		}
-		servicePorts = append(servicePorts, otelPorts...)
 	}
 
 	for _, p := range servicePorts {
