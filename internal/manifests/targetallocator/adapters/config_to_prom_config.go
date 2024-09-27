@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"regexp"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
@@ -194,7 +196,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		escapedJob := url.QueryEscape(jobName)
 		scrapeConfig["http_sd_configs"] = []interface{}{
 			map[string]interface{}{
-				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets", taServiceName, escapedJob),
+				"url": fmt.Sprintf("http://%s:%d/jobs/%s/targets", taServiceName, naming.TargetAllocatorPort, escapedJob),
 			},
 		}
 	}
@@ -226,7 +228,7 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 		return nil, errorNotAMap("target_allocator")
 	}
 
-	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", taServiceName)
+	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:%d", taServiceName, naming.TargetAllocatorPort)
 	targetAllocatorCfg["interval"] = "30s"
 
 	// Remove the scrape_configs key from the map

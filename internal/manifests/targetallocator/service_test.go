@@ -24,7 +24,7 @@ func TestServicePorts(t *testing.T) {
 		Log:     logger,
 	}
 
-	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromString("http")}}
+	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromInt32(8080)}}
 
 	s := Service(params)
 
