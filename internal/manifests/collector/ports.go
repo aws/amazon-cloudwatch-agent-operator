@@ -282,7 +282,9 @@ func portFromEndpoint(endpoint string) (int32, error) {
 
 func isDuplicatePort(portsMap map[string]corev1.ContainerPort, servicePort corev1.ServicePort) bool {
 	for _, containerPort := range portsMap {
-		return containerPort.Protocol == servicePort.Protocol && containerPort.ContainerPort == servicePort.Port
+		if containerPort.Protocol == servicePort.Protocol && containerPort.ContainerPort == servicePort.Port {
+			return true
+		}
 	}
 	return false
 }

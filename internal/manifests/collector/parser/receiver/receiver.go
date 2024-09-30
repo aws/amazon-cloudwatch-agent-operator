@@ -52,36 +52,7 @@ var (
 	endpointKey      = "endpoint"
 	listenAddressKey = "listen_address"
 	scraperReceivers = map[string]struct{}{
-		"prometheus":        {},
-		"kubeletstats":      {},
-		"sshcheck":          {},
-		"cloudfoundry":      {},
-		"vcenter":           {},
-		"oracledb":          {},
-		"snmp":              {},
-		"googlecloudpubsub": {},
-		"chrony":            {},
-		"jmx":               {},
-		"podman_stats":      {},
-		"pulsar":            {},
-		"docker_stats":      {},
-		"aerospike":         {},
-		"zookeeper":         {},
-		"prometheus_simple": {},
-		"saphana":           {},
-		"riak":              {},
-		"redis":             {},
-		"rabbitmq":          {},
-		"purefb":            {},
-		"postgresql":        {},
-		"nsxt":              {},
-		"nginx":             {},
-		"mysql":             {},
-		"memcached":         {},
-		"httpcheck":         {},
-		"haproxy":           {},
-		"flinkmetrics":      {},
-		"couchdb":           {},
+		"prometheus": {},
 	}
 )
 
@@ -93,20 +64,6 @@ func isScraperReceiver(name string) bool {
 func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
 	var endpoint interface{}
 	switch {
-	// syslog receiver contains the endpoint
-	// that needs to be exposed one level down inside config
-	// i.e. either in tcp or udp section with field key
-	// as `listen_address`
-	case name == "syslog":
-		var c map[interface{}]interface{}
-		if udp, isUDP := config["udp"]; isUDP && udp != nil {
-			c = udp.(map[interface{}]interface{})
-			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
-		} else if tcp, isTCP := config["tcp"]; isTCP && tcp != nil {
-			c = tcp.(map[interface{}]interface{})
-			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
-		}
-
 	// tcplog and udplog receivers hold the endpoint
 	// value in `listen_address` field
 	case name == "tcplog" || name == "udplog":

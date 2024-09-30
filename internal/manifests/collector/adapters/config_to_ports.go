@@ -10,13 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/parser"
-
-	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
-
 	receiverParser "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/parser/receiver"
 )
 
@@ -72,10 +70,6 @@ func GetServicePortsFromCWAgentOtelConfig(logger logr.Logger, config map[interfa
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 		return nil, err
 	}
-
-	sort.Slice(ports, func(i, j int) bool {
-		return ports[i].Name < ports[j].Name
-	})
 
 	return ports, nil
 }

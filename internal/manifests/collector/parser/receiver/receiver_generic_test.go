@@ -58,7 +58,6 @@ func TestDownstreamParsers(t *testing.T) {
 		{receiver.NewZipkinReceiverParser, "zipkin", "zipkin", "__zipkin", 9411},
 
 		// contrib receivers
-		{receiver.NewCollectdReceiverParser, "collectd", "collectd", "__collectd", 8081},
 		{receiver.NewStatsdReceiverParser, "statsd", "statsd", "__statsd", 8125},
 		{receiver.NewAWSXrayReceiverParser, "awsxray", "awsxray", "__awsxray", 2000},
 	} {
