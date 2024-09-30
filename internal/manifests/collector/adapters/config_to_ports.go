@@ -85,9 +85,6 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 	// now, we gather which ports we might need to open
 	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
-	// ${instance.Name}-${exporter.name}-${exporter.qualifier}
-	// the exporter-name is typically the node name from the exporters map
-	// the exporter-qualifier is what comes after the slash in the exporter name, but typically nil
 	// examples:
 	// ```yaml
 	// components:
@@ -119,16 +116,16 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		if !compEnabled[key] {
 			continue
 		}
-		exporter, ok := val.(map[interface{}]interface{})
+		extractedComponent, ok := val.(map[interface{}]interface{})
 		if !ok {
 			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), key)
-			exporter = map[interface{}]interface{}{}
+			extractedComponent = map[interface{}]interface{}{}
 		}
 
 		cmptName := key.(string)
 		var cmptParser parser.ComponentPortParser
 		var err error
-		cmptParser, err = receiverParser.For(logger, cmptName, exporter)
+		cmptParser, err = receiverParser.For(logger, cmptName, extractedComponent)
 		if err != nil {
 			logger.V(2).Info("no parser found for '%s'", cmptName)
 			continue
