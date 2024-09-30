@@ -55,10 +55,12 @@ func main() {
 		errChan         = make(chan error)
 	)
 	cfg, configFilePath, err := config.Load()
+
 	if err != nil {
 		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
 	}
+	setupLog.Info("init config", "Config-Http", cfg.HTTPS)
 	ctrl.SetLogger(cfg.RootLogger)
 
 	if validationErr := config.ValidateConfig(cfg); validationErr != nil {
@@ -78,14 +80,12 @@ func main() {
 	}
 
 	httpOptions := []server.Option{}
-	if cfg.HTTPS.Enabled {
-		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
-		if confErr != nil {
-			setupLog.Error(confErr, "Unable to initialize TLS configuration")
-			os.Exit(1)
-		}
-		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
+	tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+	if confErr != nil {
+		setupLog.Error(confErr, "Unable to initialize TLS configuration", "Config", cfg.HTTPS)
+		os.Exit(1)
 	}
+	httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
@@ -181,30 +181,16 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := srv.Start()
-			setupLog.Info("Server failed to start")
+			err := srv.StartHTTPS()
+			setupLog.Info("HTTPS Server failed to start", "error", err)
 			return err
 		},
-		func(_ error) {
-			setupLog.Info("Closing server")
-			if shutdownErr := srv.Shutdown(ctx); shutdownErr != nil {
-				setupLog.Error(shutdownErr, "Error on server shutdown")
+		func(intrpError error) {
+			setupLog.Info("Closing HTTPS server", "intrp", intrpError)
+			if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
+				setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
 			}
 		})
-	if cfg.HTTPS.Enabled {
-		runGroup.Add(
-			func() error {
-				err := srv.StartHTTPS()
-				setupLog.Info("HTTPS Server failed to start")
-				return err
-			},
-			func(_ error) {
-				setupLog.Info("Closing HTTPS server")
-				if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
-					setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
-				}
-			})
-	}
 	runGroup.Add(
 		func() error {
 			for {

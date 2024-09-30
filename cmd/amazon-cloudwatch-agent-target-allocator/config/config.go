@@ -18,6 +18,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -31,23 +32,27 @@ const (
 	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                = "consistent-hashing"
 	DefaultFilterStrategy                    = "relabel-config"
+	DefaultTLSKeyPath                        = "/etc/amazon-cloudwatch-target-allocator-cert/server.key"
+	DefaultTLSCertPath                       = "/etc/amazon-cloudwatch-target-allocator-cert/server.crt"
+	//DefaultCABundlePath                      = "/etc/amazon-cloudwatch-target-allocator-cert/tls-ca.crt"
+	DefaultCABundlePath = ""
 )
 
 type Config struct {
-	ListenAddr             string             `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig          *rest.Config       `yaml:"-"`
-	RootLogger             logr.Logger        `yaml:"-"`
-	ReloadConfig           bool               `yaml:"-"`
-	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
-	PromConfig             *promconfig.Config `yaml:"config"`
-	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
-	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr             string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config          `yaml:"-"`
+	RootLogger             logr.Logger           `yaml:"-"`
+	ReloadConfig           bool                  `yaml:"-"`
+	LabelSelector          map[string]string     `yaml:"label_selector,omitempty"`
+	PromConfig             *promconfig.Config    `yaml:"config"`
+	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
+	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	HTTPS                  *HTTPSServerConfig    `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -106,15 +111,15 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 	target.ClusterConfig = clusterConfig
 
-	target.ListenAddr, err = getListenAddr(flagSet)
-	if err != nil {
-		return err
-	}
+	//target.ListenAddr, err = getListenAddr(flagSet)
+	//if err != nil {
+	//	return err
+	//}
 
-	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
-	if err != nil {
-		return err
-	}
+	//target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	//if err != nil {
+	//	return err
+	//}
 
 	target.ReloadConfig, err = getConfigReloadEnabled(flagSet)
 	if err != nil {
@@ -168,6 +173,13 @@ func CreateDefaultConfig() Config {
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
 		AllocationStrategy: &allocation_strategy,
+		HTTPS: &HTTPSServerConfig{
+			Enabled:         true,
+			ListenAddr:      ":8443",
+			CAFilePath:      DefaultCABundlePath,
+			TLSCertFilePath: DefaultTLSCertPath,
+			TLSKeyFilePath:  DefaultTLSKeyPath,
+		},
 	}
 }
 
@@ -182,7 +194,7 @@ func Load() (*Config, string, error) {
 
 	config := CreateDefaultConfig()
 
-	// load the config from the config file
+	//// load the config from the config file
 	configFilePath, err := getConfigFilePath(flagSet)
 	if err != nil {
 		return nil, "", err
@@ -214,20 +226,22 @@ func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.NoClientCert,
+		MinVersion:   tls.VersionTLS12,
+	}
+	if c.CAFilePath == "" {
+		return tlsConfig, nil
+	}
 	caCert, err := os.ReadFile(c.CAFilePath)
+	caCertPool := x509.NewCertPool()
 	if err != nil {
 		return nil, err
 	}
-
-	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
+	tlsConfig.ClientCAs = caCertPool
+	tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    caCertPool,
-		MinVersion:   tls.VersionTLS12,
-	}
 	return tlsConfig, nil
 }

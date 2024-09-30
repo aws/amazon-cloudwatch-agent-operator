@@ -15,7 +15,7 @@ TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-all
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
-ARCH ?= $(shell go env GOARCH)
+ARCH ?= "amd64"#$(shell go env GOARCH)
 
 TARGET_ALLOCATOR_IMG_REPO ?= target-allocator
 TARGET_ALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGET_ALLOCATOR_IMG_REPO}:${TARGET_ALLOCATOR_VERSION}
@@ -103,7 +103,7 @@ manager: generate fmt vet
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}" .
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}" -gcflags "all=-N -l" .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run

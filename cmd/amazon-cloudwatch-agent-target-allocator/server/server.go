@@ -178,13 +178,8 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 }
 
 func (s *Server) MarshalScrapeConfig(configs map[string]*promconfig.ScrapeConfig, marshalSecretValue bool) error {
-	promcommconfig.MarshalSecretValue = marshalSecretValue
-
-// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
-// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
-// in to a JSON format for consumers to use.
-func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
 	var configBytes []byte
+	promcommconfig.MarshalSecretValue = marshalSecretValue
 	configBytes, err := yaml.Marshal(configs)
 	if err != nil {
 		return err
@@ -192,6 +187,11 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 
 	var jsonConfig []byte
 	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		return err
+	}
+
+	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
 	if err != nil {
 		return err
 	}
