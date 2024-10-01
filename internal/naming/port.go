@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const (
+	TargetAllocatorServicePort   = 80
+	TargetAllocatorContainerPort = 8080
+)
+
 var (
 	// DNS_LABEL constraints: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	dnsLabelValidation = regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")

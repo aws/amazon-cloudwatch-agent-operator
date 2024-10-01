@@ -19,3 +19,14 @@ func TestGetVolumeMounts(t *testing.T) {
 	volumeMount = getVolumeMounts("")
 	assert.Equal(t, volumeMount.MountPath, "/etc/cwagentconfig")
 }
+
+func TestGetPrometheusVolumeMounts(t *testing.T) {
+	volumeMount := getPrometheusVolumeMounts("windows")
+	assert.Equal(t, volumeMount.MountPath, "C:\\Program Files\\Amazon\\AmazonCloudWatchAgent\\prometheusconfig")
+
+	volumeMount = getPrometheusVolumeMounts("linux")
+	assert.Equal(t, volumeMount.MountPath, "/etc/prometheusconfig")
+
+	volumeMount = getPrometheusVolumeMounts("")
+	assert.Equal(t, volumeMount.MountPath, "/etc/prometheusconfig")
+}

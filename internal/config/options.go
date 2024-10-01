@@ -29,6 +29,9 @@ type options struct {
 	collectorConfigMapEntry             string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	targetAllocatorImage                string
+	targetAllocatorConfigMapEntry       string
+	prometheusConfigMapEntry            string
 	labelsFilter                        []string
 }
 
@@ -40,6 +43,16 @@ func WithCollectorImage(s string) Option {
 func WithCollectorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.collectorConfigMapEntry = s
+	}
+}
+func WithTargetAllocatorConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorConfigMapEntry = s
+	}
+}
+func WithPrometheusConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.prometheusConfigMapEntry = s
 	}
 }
 func WithLogger(logger logr.Logger) Option {
@@ -104,6 +117,12 @@ func WithDcgmExporterImage(s string) Option {
 func WithNeuronMonitorImage(s string) Option {
 	return func(o *options) {
 		o.neuronMonitorImage = s
+	}
+}
+
+func WithTargetAllocatorImage(s string) Option {
+	return func(o *options) {
+		o.targetAllocatorImage = s
 	}
 }
 

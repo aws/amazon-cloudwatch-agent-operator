@@ -37,19 +37,21 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 		base[k] = v
 	}
 
-	version := strings.Split(image, ":")
-	for _, v := range version {
-		if strings.HasSuffix(v, "@sha256") {
-			versionLabel = strings.TrimSuffix(v, "@sha256")
+	if len(image) > 0 {
+		version := strings.Split(image, ":")
+		for _, v := range version {
+			if strings.HasSuffix(v, "@sha256") {
+				versionLabel = strings.TrimSuffix(v, "@sha256")
+			}
 		}
-	}
-	switch lenVersion := len(version); lenVersion {
-	case 3:
-		base["app.kubernetes.io/version"] = versionLabel
-	case 2:
-		base["app.kubernetes.io/version"] = naming.Truncate("%s", 63, version[len(version)-1])
-	default:
-		base["app.kubernetes.io/version"] = "latest"
+		switch lenVersion := len(version); lenVersion {
+		case 3:
+			base["app.kubernetes.io/version"] = versionLabel
+		case 2:
+			base["app.kubernetes.io/version"] = naming.Truncate("%s", 63, version[len(version)-1])
+		default:
+			base["app.kubernetes.io/version"] = "latest"
+		}
 	}
 
 	// Don't override the app name if it already exists

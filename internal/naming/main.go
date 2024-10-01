@@ -9,6 +9,16 @@ func ConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
 
+// TAConfigMap returns the name for the config map used in the TargetAllocator.
+func TAConfigMap(otelcol string) string {
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
+}
+
+// PrometheusConfigMap returns the name for the prometheus config map.
+func PrometheusConfigMap(otelcol string) string {
+	return DNSName(Truncate("%s-prometheus-config", 63, otelcol))
+}
+
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"
@@ -19,9 +29,24 @@ func ConfigMapExtra(extraConfigMapName string) string {
 	return DNSName(Truncate("configmap-%s", 63, extraConfigMapName))
 }
 
+// TAConfigMapVolume returns the name to use for the config map's volume in the TargetAllocator pod.
+func TAConfigMapVolume() string {
+	return "ta-internal"
+}
+
+// PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
+func PrometheusConfigMapVolume() string {
+	return "prometheus-config"
+}
+
 // Container returns the name to use for the container in the pod.
 func Container() string {
 	return "otc-container"
+}
+
+// TAContainer returns the name to use for the container in the TargetAllocator pod.
+func TAContainer() string {
+	return "ta-container"
 }
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.
@@ -49,6 +74,11 @@ func AmazonCloudWatchAgentName(otelcolName string) string {
 	return DNSName(Truncate("%s", 63, otelcolName))
 }
 
+// TargetAllocator returns the TargetAllocator deployment resource name.
+func TargetAllocator(otelcol string) string {
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
+}
+
 // HeadlessService builds the name for the headless service based on the instance.
 func HeadlessService(otelcol string) string {
 	return DNSName(Truncate("%s-headless", 63, Service(otelcol)))
@@ -72,6 +102,11 @@ func Ingress(otelcol string) string {
 // Route builds the route name based on the instance.
 func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
+}
+
+// TAService returns the name to use for the TargetAllocator service.
+func TAService() string {
+	return "target-allocator-service"
 }
 
 // ServiceAccount builds the service account name based on the instance.
