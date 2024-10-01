@@ -9,9 +9,8 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func errorNoComponent(component string) error {

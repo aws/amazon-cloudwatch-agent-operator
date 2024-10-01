@@ -7,13 +7,12 @@ package collector
 
 import (
 	"fmt"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"testing"
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 )
 
 func sidecarParams() manifests.Params {

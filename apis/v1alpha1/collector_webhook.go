@@ -7,11 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-
-	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
-
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,6 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 var (

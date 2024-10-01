@@ -8,20 +8,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-
-	"gopkg.in/yaml.v2"
-
+	"github.com/stretchr/testify/assert"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
-
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 )
 
 func TestDesiredConfigMap(t *testing.T) {

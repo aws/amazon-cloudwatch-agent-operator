@@ -10,13 +10,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func TestExtractPromConfigFromConfig(t *testing.T) {

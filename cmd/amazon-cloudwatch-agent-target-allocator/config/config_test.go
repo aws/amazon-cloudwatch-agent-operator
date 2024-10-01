@@ -9,9 +9,8 @@ import (
 	"time"
 
 	commonconfig "github.com/prometheus/common/config"
-	promconfig "github.com/prometheus/prometheus/config"
-
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"

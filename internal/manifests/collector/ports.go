@@ -12,12 +12,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
