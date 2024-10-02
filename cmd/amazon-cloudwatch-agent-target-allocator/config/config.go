@@ -8,10 +8,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"time"
-
 	naming "github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
@@ -19,12 +15,15 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	"io/fs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"time"
 )
 
 const (
@@ -33,6 +32,7 @@ const (
 	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                = "consistent-hashing"
 	DefaultFilterStrategy                    = "relabel-config"
+	DefaultListenAddr                        = ":8443"
 	DefaultCertMountPath                     = naming.TACertMountPath
 	DefaultTLSKeyPath                        = DefaultCertMountPath + "/server.key"
 	DefaultTLSCertPath                       = DefaultCertMountPath + "/server.crt"
@@ -53,7 +53,7 @@ type Config struct {
 	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
 	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	HTTPS                  *HTTPSServerConfig    `yaml:"https,omitempty"`
+	HTTPS                  HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -112,16 +112,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 	target.ClusterConfig = clusterConfig
 
-	//target.ListenAddr, err = getListenAddr(flagSet)
-	//if err != nil {
-	//	return err
-	//}
-
-	//target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
-	//if err != nil {
-	//	return err
-	//}
-
 	target.ReloadConfig, err = getConfigReloadEnabled(flagSet)
 	if err != nil {
 		return err
@@ -174,9 +164,9 @@ func CreateDefaultConfig() Config {
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
 		AllocationStrategy: &allocation_strategy,
-		HTTPS: &HTTPSServerConfig{
+		HTTPS: HTTPSServerConfig{
 			Enabled:         true,
-			ListenAddr:      ":8443",
+			ListenAddr:      DefaultListenAddr,
 			CAFilePath:      DefaultCABundlePath,
 			TLSCertFilePath: DefaultTLSCertPath,
 			TLSKeyFilePath:  DefaultTLSKeyPath,

@@ -32,8 +32,6 @@ var zapCmdLineOpts zap.Options
 func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(targetAllocatorName, errorHandling)
 	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
-	////flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
-	//flagSet.Bool(prometheusCREnabledFlagName, false, "Enable Prometheus CRs as target sources")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	flagSet.Bool(reloadConfigFlagName, false, "Enable automatic configuration reloading. This functionality is deprecated and will be removed in a future release.")
 	flagSet.Bool(httpsEnabledFlagName, true, "Enable HTTPS additional server")
@@ -53,14 +51,6 @@ func getConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
 
 func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
 	return flagSet.GetString(kubeConfigPathFlagName)
-}
-
-func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(listenAddrFlagName)
-}
-
-func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
-	return flagSet.GetBool(prometheusCREnabledFlagName)
 }
 
 func getConfigReloadEnabled(flagSet *pflag.FlagSet) (bool, error) {
