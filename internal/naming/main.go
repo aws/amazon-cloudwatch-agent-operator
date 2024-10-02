@@ -33,6 +33,11 @@ func ConfigMapExtra(extraConfigMapName string) string {
 func TAConfigMapVolume() string {
 	return "ta-internal"
 }
+func TASecretVolume() string {
+	return "ta-secret"
+}
+
+const TACertMountPath = "/etc/amazon-cloudwatch-target-allocator-cert"
 
 // PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
 func PrometheusConfigMapVolume() string {
@@ -107,6 +112,9 @@ func Route(otelcol string, prefix string) string {
 // TAService returns the name to use for the TargetAllocator service.
 func TAService() string {
 	return "target-allocator-service"
+}
+func TAPodDestination(otelcol string) string {
+	return DNSName(Truncate("%s-target-allocator", 63, otelcol))
 }
 
 // ServiceAccount builds the service account name based on the instance.

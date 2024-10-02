@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	naming "github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -32,10 +33,10 @@ const (
 	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                = "consistent-hashing"
 	DefaultFilterStrategy                    = "relabel-config"
-	DefaultTLSKeyPath                        = "/etc/amazon-cloudwatch-target-allocator-cert/server.key"
-	DefaultTLSCertPath                       = "/etc/amazon-cloudwatch-target-allocator-cert/server.crt"
-	//DefaultCABundlePath                      = "/etc/amazon-cloudwatch-target-allocator-cert/tls-ca.crt"
-	DefaultCABundlePath = ""
+	DefaultCertMountPath                     = naming.TACertMountPath
+	DefaultTLSKeyPath                        = DefaultCertMountPath + "/server.key"
+	DefaultTLSCertPath                       = DefaultCertMountPath + "/server.crt"
+	DefaultCABundlePath                      = ""
 )
 
 type Config struct {

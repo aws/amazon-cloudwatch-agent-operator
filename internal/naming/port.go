@@ -11,7 +11,7 @@ import (
 
 const (
 	TargetAllocatorServicePort   = 80
-	TargetAllocatorContainerPort = 8080
+	TargetAllocatorContainerPort = 8443
 )
 
 var (
