@@ -61,22 +61,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
 		args = append(args, "--enable-prometheus-cr-watcher")
 	}
-	//readinessProbe := &corev1.Probe{
-	//	ProbeHandler: corev1.ProbeHandler{
-	//		HTTPGet: &corev1.HTTPGetAction{
-	//			Path: "/readyz",
-	//			Port: intstr.FromInt(8080),
-	//		},
-	//	},
-	//}
-	//livenessProbe := &corev1.Probe{
-	//	ProbeHandler: corev1.ProbeHandler{
-	//		HTTPGet: &corev1.HTTPGetAction{
-	//			Path: "/livez",
-	//			Port: intstr.FromInt(8080),
-	//		},
-	//	},
-	//}
 
 	return corev1.Container{
 		Name:         naming.TAContainer(),
@@ -86,7 +70,5 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		VolumeMounts: volumeMounts,
 		Resources:    otelcol.Spec.TargetAllocator.Resources,
 		Args:         args,
-		//LivenessProbe:  livenessProbe,
-		//ReadinessProbe: readinessProbe,
 	}
 }
