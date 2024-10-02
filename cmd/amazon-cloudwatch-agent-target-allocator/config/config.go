@@ -8,22 +8,24 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	naming "github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+	"io/fs"
+	"os"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
-	"io/fs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"time"
+
+	naming "github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 const (

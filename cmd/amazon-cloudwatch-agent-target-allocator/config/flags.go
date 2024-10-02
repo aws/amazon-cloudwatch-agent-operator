@@ -5,9 +5,10 @@ package config
 
 import (
 	"flag"
+	"path/filepath"
+
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/util/homedir"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 

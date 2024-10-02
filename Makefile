@@ -14,11 +14,11 @@ TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-all
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
-IMG ?=956457624121.dkr.ecr.us-west-2.amazonaws.com/operator
-ARCH ?= "amd64" #$(shell go env GOARCH)
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+ARCH ?= $(shell go env GOARCH)
 
 TARGET_ALLOCATOR_IMG_REPO ?= target-allocator
-TARGET_ALLOCATOR_IMG ?= 956457624121.dkr.ecr.us-west-2.amazonaws.com/target-allocator
+TARGET_ALLOCATOR_IMG ?=${IMG_PREFIX}/${TARGET_ALLOCATOR_IMG_REPO}:${TARGET_ALLOCATOR_VERSION}
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -103,7 +103,7 @@ manager: generate fmt vet
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}" -gcflags "all=-N -l" .
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run

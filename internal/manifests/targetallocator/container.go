@@ -4,11 +4,12 @@
 package targetallocator
 
 import (
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // Container builds a container for the given TargetAllocator.

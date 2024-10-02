@@ -37,12 +37,12 @@ type Config struct {
 }
 
 /*
-	defaultType valid values include - "all" "counter" "gauge" "histogram" "summary"
-	defaultMetricsCount valid values should be >= 0
-	defaultFreq valid values should be >= 0
-	defaultRand valid values should be boolean
-	defaultLabelsCount valid values should be >= 0
-	defaultDataPointCount valid values should be > 0
+defaultType valid values include - "all" "counter" "gauge" "histogram" "summary"
+defaultMetricsCount valid values should be >= 0
+defaultFreq valid values should be >= 0
+defaultRand valid values should be boolean
+defaultLabelsCount valid values should be >= 0
+defaultDataPointCount valid values should be > 0
 */
 var defaultType = "all"
 var defaultMetricsCount = 1
