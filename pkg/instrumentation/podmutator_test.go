@@ -9,8 +9,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
-
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,6 +21,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
@@ -82,8 +81,12 @@ func TestGetInstrumentationInstanceJMX(t *testing.T) {
 				},
 			},
 			ns:      corev1.Namespace{},
-			wantLen: 15,
+			wantLen: 6,
 			wantEnv: []corev1.EnvVar{
+				{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+				{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+				{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				{Name: "OTEL_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
 				{Name: "OTEL_JMX_ENABLED", Value: "true"},
 				{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm,tomcat"},
 			},

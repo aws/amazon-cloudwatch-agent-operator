@@ -27,9 +27,9 @@ const (
 	XrayTraces        = "aws-traces"
 	OtlpGrpc          = "otlp-grpc"
 	OtlpHttp          = "otlp-http"
-	AppSignalsGrpc    = "appsignals-grpc"
-	AppSignalsHttp    = "appsignals-http"
-	AppSignalsProxy   = "appsignals-xray"
+	AppSignalsGrpc    = "appsig-grpc"
+	AppSignalsHttp    = "appsig-http"
+	AppSignalsProxy   = "appsig-xray"
 	AppSignalsGrpcSA  = ":4315"
 	AppSignalsHttpSA  = ":4316"
 	AppSignalsProxySA = ":2000"
@@ -85,7 +85,6 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
 	} else {
-		logger.Info("%v", config)
 		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
 	}
 
