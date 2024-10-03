@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func TestServicePorts(t *testing.T) {
@@ -24,7 +25,7 @@ func TestServicePorts(t *testing.T) {
 		Log:     logger,
 	}
 
-	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromInt32(8080)}}
+	ports := []v1.ServicePort{{Name: "targetallocation", Port: naming.TargetAllocatorServicePort, TargetPort: intstr.FromInt32(naming.TargetAllocatorContainerPort)}}
 
 	expectedLabels := map[string]string{
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",

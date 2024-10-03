@@ -37,6 +37,7 @@ func TASecretVolume() string {
 	return "ta-secret"
 }
 
+// This has to be a constant so that TA container code can access it as well
 const TACertMountPath = "/etc/amazon-cloudwatch-target-allocator-cert"
 
 // PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -67,8 +66,8 @@ func TestContainerPorts(t *testing.T) {
 
 	// verify
 	assert.Len(t, c.Ports, 1)
-	assert.Equal(t, "http", c.Ports[0].Name)
-	assert.Equal(t, int32(8080), c.Ports[0].ContainerPort)
+	assert.Equal(t, "https", c.Ports[0].Name)
+	assert.Equal(t, int32(naming.TargetAllocatorContainerPort), c.Ports[0].ContainerPort)
 }
 
 func TestContainerVolumes(t *testing.T) {
@@ -87,7 +86,7 @@ func TestContainerVolumes(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Len(t, c.VolumeMounts, 1)
+	assert.Len(t, c.VolumeMounts, 2)
 	assert.Equal(t, naming.TAConfigMapVolume(), c.VolumeMounts[0].Name)
 }
 
@@ -176,28 +175,17 @@ func TestContainerHasEnvVars(t *testing.T) {
 				MountPropagation: nil,
 				SubPathExpr:      "",
 			},
+			{
+				Name:             "ta-secret",
+				ReadOnly:         true,
+				MountPath:        naming.TACertMountPath,
+			},
 		},
 		Ports: []corev1.ContainerPort{
 			{
-				Name:          "http",
-				ContainerPort: 8080,
+				Name:          "https",
+				ContainerPort: naming.TargetAllocatorContainerPort,
 				Protocol:      corev1.ProtocolTCP,
-			},
-		},
-		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/readyz",
-					Port: intstr.FromInt(8080),
-				},
-			},
-		},
-		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/livez",
-					Port: intstr.FromInt(8080),
-				},
 			},
 		},
 	}
@@ -244,28 +232,17 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				MountPropagation: nil,
 				SubPathExpr:      "",
 			},
+			{
+				Name:             "ta-secret",
+				ReadOnly:         true,
+				MountPath:        naming.TACertMountPath,
+			},
 		},
 		Ports: []corev1.ContainerPort{
 			{
-				Name:          "http",
-				ContainerPort: 8080,
+				Name:          "https",
+				ContainerPort: naming.TargetAllocatorContainerPort,
 				Protocol:      corev1.ProtocolTCP,
-			},
-		},
-		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/readyz",
-					Port: intstr.FromInt(8080),
-				},
-			},
-		},
-		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/livez",
-					Port: intstr.FromInt(8080),
-				},
 			},
 		},
 	}
@@ -275,55 +252,4 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c)
-}
-
-func TestReadinessProbe(t *testing.T) {
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
-				Enabled: true,
-			},
-		},
-	}
-	cfg := config.New()
-	expected := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/readyz",
-				Port: intstr.FromInt(8080),
-			},
-		},
-	}
-
-	// test
-	c := Container(cfg, logger, otelcol)
-
-	// verify
-	assert.Equal(t, expected, c.ReadinessProbe)
-}
-
-func TestLivenessProbe(t *testing.T) {
-	// prepare
-	otelcol := v1alpha1.AmazonCloudWatchAgent{
-		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-			TargetAllocator: v1alpha1.AmazonCloudWatchAgentTargetAllocator{
-				Enabled: true,
-			},
-		},
-	}
-	cfg := config.New()
-	expected := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/livez",
-				Port: intstr.FromInt(8080),
-			},
-		},
-	}
-
-	// test
-	c := Container(cfg, logger, otelcol)
-
-	// verify
-	assert.Equal(t, expected, c.LivenessProbe)
 }
