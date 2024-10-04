@@ -18,8 +18,21 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	replacedConf, err := ReplaceConfig(params.OtelCol)
 	if err != nil {
-		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
+		params.Log.V(2).Info("failed to update config: ", "err", err)
 		return nil, err
+	}
+
+	sourceDataMap := map[string]string{
+		params.Config.CollectorConfigMapEntry(): replacedConf,
+	}
+
+	if params.OtelCol.Spec.OtelConfig != "" {
+		replacedOtelConfig, err := ReplaceOtelConfig(params.OtelCol)
+		if err != nil {
+			params.Log.V(2).Info("failed to update otel config: ", "err", err)
+			return nil, err
+		}
+		sourceDataMap[params.Config.OtelCollectorConfigMapEntry()] = replacedOtelConfig
 	}
 
 	return &corev1.ConfigMap{
@@ -29,8 +42,6 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Labels:      labels,
 			Annotations: params.OtelCol.Annotations,
 		},
-		Data: map[string]string{
-			"cwagentconfig.json": replacedConf,
-		},
+		Data: sourceDataMap,
 	}, nil
 }

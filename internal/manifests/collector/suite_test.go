@@ -71,6 +71,54 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	}
 }
 
+func otelConfigParams() manifests.Params {
+	configYAML, err := os.ReadFile("testdata/otel-test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	return paramsWithOtelConfig(string(configYAML))
+}
+
+func paramsWithOtelConfig(otelCfg string) manifests.Params {
+	replicas := int32(2)
+	configJSON, err := os.ReadFile("testdata/test.json")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	return manifests.Params{
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage)),
+		OtelCol: v1alpha1.AmazonCloudWatchAgent{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "cloudwatch.aws.amazon.com",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+				Image: "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:0.0.0",
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Replicas:   &replicas,
+				Config:     string(configJSON),
+				OtelConfig: otelCfg,
+				Mode:       v1alpha1.ModeDeployment,
+			},
+		},
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
 func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	replicas := int32(1)
 	var configJSON []byte

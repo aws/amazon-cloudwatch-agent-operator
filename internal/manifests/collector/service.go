@@ -82,7 +82,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
-	ports := getContainerPorts(params.Log, params.OtelCol.Spec.Config, params.OtelCol.Spec.Ports)
+	ports := getContainerPorts(params.Log, params.OtelCol.Spec.Config, params.OtelCol.Spec.OtelConfig, params.OtelCol.Spec.Ports)
 
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
