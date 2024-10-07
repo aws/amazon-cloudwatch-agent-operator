@@ -23,7 +23,7 @@ func Service(params manifests.Params) *corev1.Service {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	selector := Labels(params.OtelCol, naming.TAService())
+	selector := Labels(params.OtelCol, naming.TargetAllocator(params.OtelCol.Name))
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
