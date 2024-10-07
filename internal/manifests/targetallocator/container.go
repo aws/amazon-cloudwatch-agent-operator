@@ -11,7 +11,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
-
+// This has to be a constant so that TA container code can access it as well
+const TACertMountPath = "/etc/amazon-cloudwatch-target-allocator-cert"
 // Container builds a container for the given TargetAllocator.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) corev1.Container {
 	image := otelcol.Spec.TargetAllocator.Image
@@ -31,7 +32,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 		MountPath: "/conf",
 	}, {
 		Name:      naming.TASecretVolume(),
-		MountPath: naming.TACertMountPath,
+		MountPath: TACertMountPath,
 		ReadOnly:  true,
 	},
 	}

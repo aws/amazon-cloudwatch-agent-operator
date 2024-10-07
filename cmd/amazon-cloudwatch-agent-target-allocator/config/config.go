@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	naming "github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
+	tamanifest "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 	DefaultAllocationStrategy                = "consistent-hashing"
 	DefaultFilterStrategy                    = "relabel-config"
 	DefaultListenAddr                        = ":8443"
-	DefaultCertMountPath                     = naming.TACertMountPath
+	DefaultCertMountPath                     = tamanifest.TACertMountPath
 	DefaultTLSKeyPath                        = DefaultCertMountPath + "/server.key"
 	DefaultTLSCertPath                       = DefaultCertMountPath + "/server.crt"
 	DefaultCABundlePath                      = ""
@@ -187,7 +187,7 @@ func Load() (*Config, string, error) {
 
 	config := CreateDefaultConfig()
 
-	//// load the config from the config file
+	// load the config from the config file
 	configFilePath, err := getConfigFilePath(flagSet)
 	if err != nil {
 		return nil, "", err

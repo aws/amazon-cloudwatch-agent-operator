@@ -178,7 +178,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 			{
 				Name:             "ta-secret",
 				ReadOnly:         true,
-				MountPath:        naming.TACertMountPath,
+				MountPath:        TACertMountPath,
 			},
 		},
 		Ports: []corev1.ContainerPort{
@@ -235,7 +235,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			{
 				Name:             "ta-secret",
 				ReadOnly:         true,
-				MountPath:        naming.TACertMountPath,
+				MountPath:        TACertMountPath,
 			},
 		},
 		Ports: []corev1.ContainerPort{
