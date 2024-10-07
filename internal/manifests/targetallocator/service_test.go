@@ -26,9 +26,18 @@ func TestServicePorts(t *testing.T) {
 
 	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromInt32(8080)}}
 
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+		"app.kubernetes.io/instance":   "default.my-instance",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
+		"app.kubernetes.io/component":  "amazon-cloudwatch-agent-target-allocator",
+		"app.kubernetes.io/name":       "my-instance-target-allocator",
+	}
+
 	s := Service(params)
 
 	assert.Equal(t, ports[0].Name, s.Spec.Ports[0].Name)
 	assert.Equal(t, ports[0].Port, s.Spec.Ports[0].Port)
 	assert.Equal(t, ports[0].TargetPort, s.Spec.Ports[0].TargetPort)
+	assert.Equal(t, expectedLabels, s.Spec.Selector)
 }
