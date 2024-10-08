@@ -38,6 +38,12 @@ const (
 	injectNodeJSAnnotation       = "instrumentation.opentelemetry.io/inject-nodejs"
 	autoAnnotateNodeJSAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-nodejs"
 
+	injectJVMAnnotation           = "cloudwatch.aws.amazon.com/inject-jmx-jvm"
+	injectTomcatAnnotation        = "cloudwatch.aws.amazon.com/inject-jmx-tomcat"
+	injectKafkaAnnotation         = "cloudwatch.aws.amazon.com/inject-jmx-kafka"
+	injectKafkaConsumerAnnotation = "cloudwatch.aws.amazon.com/inject-jmx-kakfa-consumer"
+	injectKafkaProducerAnnotation = "cloudwatch.aws.amazon.com/inject-jmx-kafka-producer"
+
 	deploymentName            = "sample-deployment"
 	nginxDeploymentName       = "nginx"
 	statefulSetName           = "sample-statefulset"

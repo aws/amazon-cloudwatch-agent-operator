@@ -149,6 +149,28 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
+      - name: Test for default instrumentation resources for jmx
+        run: |
+          kubectl delete pods --all -n default
+          sleep 5
+          cat integration-tests/nodejs/sample-deployment-jmx.yaml
+          kubectl apply -f integration-tests/nodejs/sample-deployment-jmx.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          kubectl get pods -A 
+          kubectl describe pods -n default
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/nodejs/default_instrumentation_jmx_env_variables.json
+
+      - name: Test for defined instrumentation resources for jmx
+        run: |
+          kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
+          kubectl delete pods --all -n default
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx -n default
+          sleep 5
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
+          kubectl delete instrumentation sample-instrumentation
+
       - name: Test for default instrumentation resources for all languages
         run: |
           kubectl apply -f integration-tests/all-languages/sample-deployment-all-languages.yaml
