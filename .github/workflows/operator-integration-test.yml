@@ -155,7 +155,7 @@ jobs:
           kubectl delete pods --all -n default
           sleep 5
           cat integration-tests/jmx/sample-deployment-jmx.yaml
-          kubectl apply -f integration-tests/nodejs/sample-deployment-jmx.yaml
+          kubectl apply -f integration-tests/jmx/sample-deployment-jmx.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
