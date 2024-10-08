@@ -212,7 +212,6 @@ func TestNodeJSOnlyDeployment(t *testing.T) {
 }
 
 func TestJMXOnlyDeployment(t *testing.T) {
-
 	clientSet := setupTest(t)
 	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
 	if err != nil {
