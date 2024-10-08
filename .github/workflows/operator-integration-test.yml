@@ -154,13 +154,13 @@ jobs:
         run: |
           kubectl delete pods --all -n default
           sleep 5
-          cat integration-tests/nodejs/sample-deployment-jmx.yaml
+          cat integration-tests/jmx/sample-deployment-jmx.yaml
           kubectl apply -f integration-tests/nodejs/sample-deployment-jmx.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/nodejs/default_instrumentation_jmx_env_variables.json
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables.json
 
       - name: Test for defined instrumentation resources for jmx
         run: |
