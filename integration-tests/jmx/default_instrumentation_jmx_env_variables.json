@@ -1,0 +1,5 @@
+{
+  "OTEL_JMX_EXPORTER_METRICS_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
+  "OTEL_JMX_ENABLED": "true",
+  "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer"
+}
