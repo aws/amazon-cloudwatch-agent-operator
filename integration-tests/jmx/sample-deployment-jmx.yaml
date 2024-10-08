@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        cloudwatch.aws.amazon.com/inject-jmx-jvm: "true"
+        cloudwatch.aws.amazon.com/inject-jmx-tomcat: "true"
+        cloudwatch.aws.amazon.com/inject-jmx-kafka: "true"
+        cloudwatch.aws.amazon.com/inject-jmx-kafka-consumer: "true"
+        cloudwatch.aws.amazon.com/inject-jmx-kafka-producer: "true"
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+      restartPolicy: Always
+status: {}
