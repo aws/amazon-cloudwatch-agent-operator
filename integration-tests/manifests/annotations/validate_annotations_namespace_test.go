@@ -64,7 +64,7 @@ func TestAllLanguagesNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Languages annotations")
 	}
 }
@@ -225,6 +225,33 @@ func TestNodeJSOnlyNamespace(t *testing.T) {
 
 	if !checkNameSpaceAnnotations(t, clientSet, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing nodejs annotations")
+	}
+}
+
+func TestJMXOnlyNamespace(t *testing.T) {
+	clientSet := setupTest(t)
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
+	if err != nil {
+		panic(err)
+	}
+	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
+	uniqueNamespace := fmt.Sprintf("namespace-jmx-only-%d", randomNumber)
+	annotationConfig := auto.AnnotationConfig{
+		Java: auto.AnnotationResources{
+			Namespaces:   []string{uniqueNamespace},
+			DaemonSets:   []string{""},
+			Deployments:  []string{""},
+			StatefulSets: []string{""},
+		},
+	}
+	jsonStr, err := json.Marshal(annotationConfig)
+	if err != nil {
+		t.Error("Error:", err)
+	}
+	startTime := time.Now()
+	updateTheOperator(t, clientSet, string(jsonStr))
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, uniqueNamespace, startTime) {
+		t.Error("Missing JMX annotations")
 	}
 }
 
