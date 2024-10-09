@@ -145,7 +145,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 						"job_name": "test_job",
 						"http_sd_configs": []interface{}{
 							map[string]interface{}{
-								"url": fmt.Sprintf("http://%s:80/jobs/%s/targets", taServiceName, url.QueryEscape("test_job")),
+								"url": fmt.Sprintf("https://%s:80/jobs/%s/targets", taServiceName, url.QueryEscape("test_job")),
 							},
 						},
 					},
@@ -202,7 +202,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		expectedResult := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
-				"endpoint": "http://target-allocator-service:80",
+				"endpoint": "https://target-allocator-service:80",
 				"interval": "30s",
 			},
 		}

@@ -41,6 +41,13 @@ func TestLoad(t *testing.T) {
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
+				HTTPS: HTTPSServerConfig{
+					Enabled:         true,
+					ListenAddr:      DefaultListenAddr,
+					CAFilePath:      "/path/to/ca.pem",
+					TLSCertFilePath: "/path/to/cert.pem",
+					TLSKeyFilePath:  "/path/to/key.pem",
+				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
@@ -105,6 +112,13 @@ func TestLoad(t *testing.T) {
 				},
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					Enabled:         true,
+					ListenAddr:      DefaultListenAddr,
+					CAFilePath:      DefaultCABundlePath,
+					TLSCertFilePath: DefaultTLSCertPath,
+					TLSKeyFilePath:  DefaultTLSKeyPath,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{

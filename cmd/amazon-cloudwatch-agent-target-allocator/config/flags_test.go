@@ -16,8 +16,6 @@ func TestGetFlagSet(t *testing.T) {
 
 	// Check if each flag exists
 	assert.NotNil(t, fs.Lookup(configFilePathFlagName), "Flag %s not found", configFilePathFlagName)
-	assert.NotNil(t, fs.Lookup(listenAddrFlagName), "Flag %s not found", listenAddrFlagName)
-	assert.NotNil(t, fs.Lookup(prometheusCREnabledFlagName), "Flag %s not found", prometheusCREnabledFlagName)
 	assert.NotNil(t, fs.Lookup(kubeConfigPathFlagName), "Flag %s not found", kubeConfigPathFlagName)
 }
 
@@ -42,18 +40,6 @@ func TestFlagGetters(t *testing.T) {
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getKubeConfigFilePath(fs) },
 		},
 		{
-			name:          "GetListenAddr",
-			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
-			expectedValue: ":8081",
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getListenAddr(fs) },
-		},
-		{
-			name:          "GetPrometheusCREnabled",
-			flagArgs:      []string{"--" + prometheusCREnabledFlagName, "true"},
-			expectedValue: true,
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getPrometheusCREnabled(fs) },
-		},
-		{
 			name:          "GetConfigReloadEnabled",
 			flagArgs:      []string{"--" + reloadConfigFlagName, "true"},
 			expectedValue: true,
@@ -64,6 +50,18 @@ func TestFlagGetters(t *testing.T) {
 			flagArgs:    []string{"--invalid-flag", "value"},
 			expectedErr: true,
 			getterFunc:  func(fs *pflag.FlagSet) (interface{}, error) { return getConfigFilePath(fs) },
+		},
+		{
+			name:          "HttpsServer",
+			flagArgs:      []string{"--" + httpsEnabledFlagName, "true"},
+			expectedValue: true,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHttpsEnabled(fs) },
+		},
+		{
+			name:          "HttpsServerKey",
+			flagArgs:      []string{"--" + httpsTLSKeyFilePathFlagName, "/path/to/tls.key"},
+			expectedValue: "/path/to/tls.key",
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHttpsTLSKeyFilePath(fs) },
 		},
 	}
 
