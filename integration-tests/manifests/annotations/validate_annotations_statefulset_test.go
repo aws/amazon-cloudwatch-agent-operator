@@ -55,7 +55,7 @@ func TestAllLanguagesStatefulSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false, true); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -90,7 +90,7 @@ func TestJavaOnlyStatefulSet(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -126,7 +126,7 @@ func TestPythonOnlyStatefulSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -156,7 +156,7 @@ func TestDotNetOnlyStatefulSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -185,32 +185,7 @@ func TestNodeJSOnlyStatefulSet(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false, false); err != nil {
-		t.Fatalf("Failed annotation check: %s", err.Error())
-	}
-}
-
-func TestJMXOnlyStatefulSet(t *testing.T) {
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("statefulset-jmx-only-%d", randomNumber)
-
-	annotationConfig := auto.AnnotationConfig{
-		Java: auto.AnnotationResources{
-			StatefulSets: []string{filepath.Join(uniqueNamespace, statefulSetName)},
-		},
-	}
-	jsonStr, err := json.Marshal(annotationConfig)
-	if err != nil {
-		t.Error("Error:", err)
-	}
-	startTime := time.Now()
-	updateTheOperator(t, clientSet, string(jsonStr))
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false, true); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }

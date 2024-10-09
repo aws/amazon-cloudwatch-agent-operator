@@ -64,7 +64,7 @@ func TestAllLanguagesNamespace(t *testing.T) {
 	startTime := time.Now()
 
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, uniqueNamespace, startTime, true) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Languages annotations")
 	}
 }
@@ -97,7 +97,7 @@ func TestJavaOnlyNamespace(t *testing.T) {
 	}
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, uniqueNamespace, startTime, false) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Java annotations")
 	}
 }
@@ -144,7 +144,7 @@ func TestPythonOnlyNamespace(t *testing.T) {
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime, false) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing Python annotations")
 	}
 }
@@ -185,7 +185,7 @@ func TestDotNetOnlyNamespace(t *testing.T) {
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime, false) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing DotNet annotations")
 	}
 }
@@ -223,32 +223,8 @@ func TestNodeJSOnlyNamespace(t *testing.T) {
 
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime, false) {
+	if !checkNameSpaceAnnotations(t, clientSet, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, uniqueNamespace, startTime) {
 		t.Error("Missing nodejs annotations")
-	}
-}
-
-func TestJMXOnlyNamespace(t *testing.T) {
-	clientSet := setupTest(t)
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-	if err != nil {
-		panic(err)
-	}
-	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-	uniqueNamespace := fmt.Sprintf("namespace-jmx-only-%d", randomNumber)
-	annotationConfig := auto.AnnotationConfig{
-		Java: auto.AnnotationResources{
-			Namespaces: []string{uniqueNamespace},
-		},
-	}
-	jsonStr, err := json.Marshal(annotationConfig)
-	if err != nil {
-		t.Error("Error:", err)
-	}
-	startTime := time.Now()
-	updateTheOperator(t, clientSet, string(jsonStr))
-	if !checkNameSpaceAnnotations(t, clientSet, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, uniqueNamespace, startTime, true) {
-		t.Error("Missing JMX annotations")
 	}
 }
 
@@ -278,13 +254,13 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
-	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "daemonset", uniqueNamespace, daemonSetName, sampleDaemonsetYamlRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
-	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "statefulset", uniqueNamespace, statefulSetName, sampleStatefulsetYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
