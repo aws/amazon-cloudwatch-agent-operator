@@ -57,7 +57,7 @@ func TestAllLanguagesDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -94,7 +94,7 @@ func TestJavaOnlyDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }
@@ -134,7 +134,7 @@ func TestPythonOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -168,7 +168,7 @@ func TestDotNetOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -205,7 +205,7 @@ func TestNodeJSOnlyDeployment(t *testing.T) {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
 	}
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false, false); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 
@@ -235,7 +235,7 @@ func TestJMXOnlyDeployment(t *testing.T) {
 	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 
-	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false); err != nil {
+	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectJVMAnnotation, injectTomcatAnnotation, injectKafkaAnnotation, injectKafkaConsumerAnnotation, injectKafkaProducerAnnotation}, false, true); err != nil {
 		t.Fatalf("Failed annotation check: %s", err.Error())
 	}
 }

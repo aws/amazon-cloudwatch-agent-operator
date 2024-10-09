@@ -6,6 +6,7 @@ package annotations
 import (
 	"context"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 	"strconv"
 	"testing"
 
@@ -152,7 +153,7 @@ func deleteNamespace(clientset *kubernetes.Clientset, name string) error {
 }
 
 // This function creates a namespace and checks it annotations and then deletes the namespace after check complete
-func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, expectedAnnotations []string, uniqueNamespace string, startTime time.Time) bool {
+func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, expectedAnnotations []string, uniqueNamespace string, startTime time.Time, jmxEnabled bool) bool {
 
 	if err := createNamespace(clientSet, uniqueNamespace); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
@@ -179,6 +180,15 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 	for i := 0; i < numberOfRetries; i++ {
 		correct := true
 		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), uniqueNamespace, metav1.GetOptions{})
+		if jmxEnabled {
+			ns.SetAnnotations(map[string]string{
+				jmx.AnnotationKey(jmx.TargetJVM):           "true",
+				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
+				jmx.AnnotationKey(jmx.TargetKafka):         "true",
+				jmx.AnnotationKey(jmx.TargetKafkaConsumer): "true",
+				jmx.AnnotationKey(jmx.TargetKafkaProducer): "true",
+			})
+		}
 		fmt.Printf("This is the loop iteration: %v\n, these are the annotation of ns %v", i, ns)
 		if err != nil {
 			fmt.Println("There was an error getting namespace, ", err)
@@ -350,7 +360,7 @@ func updateTheOperator(t *testing.T, clientSet *kubernetes.Clientset, jsonStr st
 	}
 }
 
-func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlPath string, startTime time.Time, annotations []string, skipDelete bool) error {
+func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, resourceType, uniqueNamespace, resourceName string, sampleAppYamlPath string, startTime time.Time, annotations []string, skipDelete bool, jmxEnabled bool) error {
 	if err := createNamespaceAndApplyResources(t, clientSet, uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 		t.Fatalf("Failed to create/apply resoures on namespace: %v", err)
 		return err
@@ -369,6 +379,15 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	case "deployment":
 		// Get deployment
 		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if jmxEnabled {
+			deployment.SetAnnotations(map[string]string{
+				jmx.AnnotationKey(jmx.TargetJVM):           "true",
+				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
+				jmx.AnnotationKey(jmx.TargetKafka):         "true",
+				jmx.AnnotationKey(jmx.TargetKafkaConsumer): "true",
+				jmx.AnnotationKey(jmx.TargetKafkaProducer): "true",
+			})
+		}
 		if err != nil {
 			return fmt.Errorf("failed to get deployment: %s", err.Error())
 		}
@@ -376,6 +395,15 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	case "daemonset":
 		// Get daemonset
 		daemonset, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if jmxEnabled {
+			daemonset.SetAnnotations(map[string]string{
+				jmx.AnnotationKey(jmx.TargetJVM):           "true",
+				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
+				jmx.AnnotationKey(jmx.TargetKafka):         "true",
+				jmx.AnnotationKey(jmx.TargetKafkaConsumer): "true",
+				jmx.AnnotationKey(jmx.TargetKafkaProducer): "true",
+			})
+		}
 		if err != nil {
 			return fmt.Errorf("failed to get daemonset: %s", err.Error())
 		}
@@ -383,6 +411,15 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 	case "statefulset":
 		// Get statefulset
 		statefulset, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if jmxEnabled {
+			statefulset.SetAnnotations(map[string]string{
+				jmx.AnnotationKey(jmx.TargetJVM):           "true",
+				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
+				jmx.AnnotationKey(jmx.TargetKafka):         "true",
+				jmx.AnnotationKey(jmx.TargetKafkaConsumer): "true",
+				jmx.AnnotationKey(jmx.TargetKafkaProducer): "true",
+			})
+		}
 		if err != nil {
 			return fmt.Errorf("failed to get statefulset: %s", err.Error())
 		}
