@@ -6,26 +6,24 @@ package annotations
 import (
 	"context"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
-	"strconv"
-	"testing"
-
-	"github.com/google/uuid"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
-
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
