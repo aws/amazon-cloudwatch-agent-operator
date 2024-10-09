@@ -238,10 +238,7 @@ func TestJMXOnlyNamespace(t *testing.T) {
 	uniqueNamespace := fmt.Sprintf("namespace-jmx-only-%d", randomNumber)
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{uniqueNamespace},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
-			StatefulSets: []string{""},
+			Namespaces: []string{uniqueNamespace},
 		},
 	}
 	jsonStr, err := json.Marshal(annotationConfig)
