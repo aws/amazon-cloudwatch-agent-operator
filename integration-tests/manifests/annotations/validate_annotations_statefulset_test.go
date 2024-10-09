@@ -201,9 +201,6 @@ func TestJMXOnlyStatefulSet(t *testing.T) {
 
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:   []string{""},
-			DaemonSets:   []string{""},
-			Deployments:  []string{""},
 			StatefulSets: []string{filepath.Join(uniqueNamespace, statefulSetName)},
 		},
 	}
