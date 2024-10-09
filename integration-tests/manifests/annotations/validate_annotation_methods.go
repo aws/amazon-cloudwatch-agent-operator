@@ -378,7 +378,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get deployment
 		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			deployment.ObjectMeta.SetAnnotations(map[string]string{
+			deployment.Spec.Template.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
@@ -394,7 +394,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get daemonset
 		daemonset, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			daemonset.ObjectMeta.SetAnnotations(map[string]string{
+			daemonset.Spec.Template.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
@@ -410,7 +410,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get statefulset
 		statefulset, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			statefulset.ObjectMeta.SetAnnotations(map[string]string{
+			statefulset.Spec.Template.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
