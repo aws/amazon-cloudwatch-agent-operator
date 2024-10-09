@@ -179,7 +179,7 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 		correct := true
 		ns, err := clientSet.CoreV1().Namespaces().Get(context.TODO(), uniqueNamespace, metav1.GetOptions{})
 		if jmxEnabled {
-			ns.SetAnnotations(map[string]string{
+			ns.ObjectMeta.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
@@ -378,7 +378,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get deployment
 		deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			deployment.SetAnnotations(map[string]string{
+			deployment.ObjectMeta.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
@@ -394,7 +394,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get daemonset
 		daemonset, err := clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			daemonset.SetAnnotations(map[string]string{
+			daemonset.ObjectMeta.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
@@ -410,7 +410,7 @@ func checkResourceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, res
 		// Get statefulset
 		statefulset, err := clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 		if jmxEnabled {
-			statefulset.SetAnnotations(map[string]string{
+			statefulset.ObjectMeta.SetAnnotations(map[string]string{
 				jmx.AnnotationKey(jmx.TargetJVM):           "true",
 				jmx.AnnotationKey(jmx.TargetTomcat):        "true",
 				jmx.AnnotationKey(jmx.TargetKafka):         "true",
