@@ -25,4 +25,3 @@
   "OTEL_JMX_ENABLED": "true",
   "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer"
 }
-
