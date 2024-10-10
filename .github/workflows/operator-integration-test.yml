@@ -190,7 +190,7 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json
           kubectl delete instrumentation sample-instrumentation
 
-      - name: Test case for cloudwatch agent pod creation
+      - name: Test case for cloudwatch agent without app signals pod creation
         run: |
           kubectl delete daemonset cloudwatch-agent -n amazon-cloudwatch
           sleep 5
