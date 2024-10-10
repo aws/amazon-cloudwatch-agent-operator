@@ -18,6 +18,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+var appSignalsEnvVarKeys = []string{
+	"OTEL_AWS_APP_SIGNALS_ENABLED",
+	"OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
+	"OTEL_TRACES_SAMPLER_ARG",
+	"OTEL_TRACES_SAMPLER",
+	"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+	"OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT",
+}
+
 func main() {
 
 	args := os.Args
@@ -90,6 +99,15 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 	fmt.Println("JSON data:", jsonData)
 
+	if appSignals == "no_app_signals" {
+		for _, key := range appSignalsEnvVarKeys {
+			if _, exists := jsonData[key]; exists {
+				fmt.Printf("Error: Key '%s' should not exist in jsonData when app signals is not enabled\n", key)
+				return false
+			}
+		}
+	}
+
 	for key, value := range jsonData {
 		if val, ok := envMap[key]; ok {
 			if strings.ReplaceAll(val, " ", "") != strings.ReplaceAll(value, " ", "") {
@@ -99,10 +117,8 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 				fmt.Printf("Match: Key '%s' values match. Pod value: %s, JSON value: %s\n", key, val, value)
 			}
 		} else {
-			if appSignals != "no_app_signals" {
-				fmt.Printf("Key '%s' not found in pod environment variables\n", key)
-				return false
-			}
+			fmt.Printf("Key '%s' not found in pod environment variables\n", key)
+			return false
 		}
 	}
 	return true
