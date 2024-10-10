@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - target-allocator
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
