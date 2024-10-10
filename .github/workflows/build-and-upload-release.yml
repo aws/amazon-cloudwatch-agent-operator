@@ -86,7 +86,7 @@ jobs:
         if: steps.cached_binaries.outputs.cache-hit == false
         with:
           file: ./Dockerfile
-          context: ./amazon-cloudwatch-agent-target-allocator
+          context: ./cmd/amazon-cloudwatch-agent-target-allocator
           push: true
           tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
