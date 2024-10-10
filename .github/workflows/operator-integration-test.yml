@@ -226,7 +226,7 @@ jobs:
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
           sleep 5
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json no_app_signals
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
   DeploymentAnnotationsTest:
