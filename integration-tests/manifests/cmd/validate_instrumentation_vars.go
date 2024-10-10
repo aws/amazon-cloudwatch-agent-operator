@@ -23,6 +23,7 @@ func main() {
 	args := os.Args
 	namespace := args[1]
 	jsonFilePath := args[2]
+	appSignals := args[3]
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -42,7 +43,7 @@ func main() {
 		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
 
-	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath)
+	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath, appSignals)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -51,7 +52,7 @@ func main() {
 	}
 }
 
-func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
+func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignals string) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app=nginx",
 		FieldSelector: "status.phase!=Terminating",
@@ -98,8 +99,10 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 				fmt.Printf("Match: Key '%s' values match. Pod value: %s, JSON value: %s\n", key, val, value)
 			}
 		} else {
-			fmt.Printf("Key '%s' not found in pod environment variables\n", key)
-			return false
+			if appSignals != "no_app_signals" {
+				fmt.Printf("Key '%s' not found in pod environment variables\n", key)
+				return false
+			}
 		}
 	}
 	return true
