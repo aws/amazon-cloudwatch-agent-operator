@@ -217,7 +217,8 @@ jobs:
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A 
           kubectl describe pods -n default
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables.json
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables.json no_app_signals
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables_no_app_signals.json
 
       - name: Test for defined instrumentation resources for jmx without app signals
         run: |
