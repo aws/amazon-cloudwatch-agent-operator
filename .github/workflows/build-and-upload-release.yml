@@ -71,6 +71,15 @@ jobs:
       - name: Set up QEMU
         if: steps.cached_binaries.outputs.cache-hit == false
         uses: docker/setup-qemu-action@v1
+      - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./cmd/amazon-cloudwatch-agent-target-allocator/Dockerfile
+          context: ./cmd/amazon-cloudwatch-agent-target-allocator
+          push: true
+          tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
+          platforms: linux/amd64, linux/arm64
 
       - name: Build Cloudwatch Agent Operator Image and push to ECR
         uses: docker/build-push-action@v4
@@ -81,15 +90,7 @@ jobs:
           push: true
           tags: ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
-      - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
-        uses: docker/build-push-action@v4
-        if: steps.cached_binaries.outputs.cache-hit == false
-        with:
-          file: ./Dockerfile
-          context: ./cmd/amazon-cloudwatch-agent-target-allocator
-          push: true
-          tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
-          platforms: linux/amd64, linux/arm64
+
 
   e2e-test:
     name: "Application Signals E2E Test"
