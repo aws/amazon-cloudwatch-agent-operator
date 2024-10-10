@@ -170,10 +170,6 @@ jobs:
 
       - name: Test for default instrumentation resources for jmx
         run: |
-          kubectl delete daemonset cloudwatch-agent -n amazon-cloudwatch
-          sleep 5
-          kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset-no-app-signals.yaml -n amazon-cloudwatch
-          sleep 20
           kubectl delete pods --all -n default
           sleep 5
           cat integration-tests/jmx/sample-deployment-jmx.yaml
@@ -196,6 +192,10 @@ jobs:
 
       - name: Test for default instrumentation resources for jmx without app signals
         run: |
+          kubectl delete daemonset cloudwatch-agent -n amazon-cloudwatch
+          sleep 5
+          kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset-no-app-signals.yaml -n amazon-cloudwatch
+          sleep 20
           kubectl delete pods --all -n default
           sleep 5
           cat integration-tests/jmx/sample-deployment-jmx.yaml
