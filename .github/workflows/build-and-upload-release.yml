@@ -6,6 +6,7 @@ env:
   # Use terraform assume role for uploading to ecr
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO}}
   ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
 
 on:
@@ -79,6 +80,15 @@ jobs:
           context: .
           push: true
           tags: ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+          platforms: linux/amd64, linux/arm64
+      - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./Dockerfile
+          context: ./amazon-cloudwatch-agent-target-allocator
+          push: true
+          tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
 
   e2e-test:
