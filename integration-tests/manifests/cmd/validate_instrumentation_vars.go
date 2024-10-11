@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/mitchellh/mapstructure"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -103,7 +105,6 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 		fmt.Println("Error retrieving configmap:", err)
 		return false
 	}
-
 	fmt.Println("ConfigMap data:", cloudwatchAgentConfigMap.Data)
 
 	if jsonPath == "integration-tests/jmx/default_instrumentation_jmx_env_variables_no_app_signals.json" {
@@ -114,6 +115,10 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 			}
 		}
 	}
+
+	var config adapters.CwaConfig
+	mapstructure.Decode(cloudwatchAgentConfigMap.Data, &config)
+	fmt.Println("AppSignals Config:", config.GetApplicationSignalsConfig())
 
 	for key, value := range jsonData {
 		if val, ok := envMap[key]; ok {
