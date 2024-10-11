@@ -93,6 +93,7 @@ type jmx struct{}
 type kubernetes struct {
 	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`
 	AcceleratedComputeMetrics bool `json:"accelerated_compute_metrics,omitempty"`
+	JMXContainerInsights      bool `json:"jmx_container_insights,omitempty"`
 }
 
 type xray struct {

@@ -200,6 +200,20 @@ func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig
 			servicePortsMap[receiverDefaultPortsMap[EMF]] = []corev1.ServicePort{tcp, udp}
 		}
 	}
+
+	//JMX Container Insights
+	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.Kubernetes != nil && config.Logs.LogMetricsCollected.Kubernetes.JMXContainerInsights {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[JmxHttp]]; ok {
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[JmxHttp]))
+		} else {
+			tcp := corev1.ServicePort{
+				Name:     JmxHttp,
+				Port:     receiverDefaultPortsMap[JmxHttp],
+				Protocol: corev1.ProtocolTCP,
+			}
+			servicePortsMap[receiverDefaultPortsMap[JmxHttp]] = []corev1.ServicePort{tcp}
+		}
+	}
 }
 
 func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
