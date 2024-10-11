@@ -117,7 +117,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 
 	var config adapters.CwaConfig
-	mapstructure.Decode(cloudwatchAgentConfigMap.Data, &config)
+	mapstructure.Decode(cloudwatchAgentConfigMap.Data["cwagentconfig.json"], &config) // make sure to check if Data exists then map exists
 	fmt.Println("AppSignals Config:", config.GetApplicationSignalsConfig())
 
 	for key, value := range jsonData {
