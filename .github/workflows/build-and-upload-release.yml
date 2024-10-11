@@ -7,7 +7,8 @@ env:
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
   ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO}}
-  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ vars.ECR_TARGET_ALLOCATOR_TEST_OPERATOR_REPO}}
+  ECR_TARGET_ALLOCATOR_RELEASE_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_RELEASE_REPO}}
 
 on:
   workflow_dispatch:
@@ -172,3 +173,9 @@ jobs:
           docker buildx imagetools create \
           -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+
+      - name: Push image to TA release ECR
+        run: |
+          docker buildx imagetools create \
+          -t ${{ env.ECR_TARGET_ALLOCATOR_RELEASE_REPO}} \
+          ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
