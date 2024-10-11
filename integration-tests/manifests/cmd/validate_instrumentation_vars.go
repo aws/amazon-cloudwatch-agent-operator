@@ -115,9 +115,11 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 		}
 	}
 
-	var config adapters.CwaConfig
-	err = json.Unmarshal([]byte(cloudwatchAgentConfigMap.Data["cwagentconfig.json"]), &config) // make sure to check if Data exists then map exists
+	var config *adapters.CwaConfig
+	err = json.Unmarshal([]byte(cloudwatchAgentConfigMap.Data["cwagentconfig.json"]), config) // make sure to check if Data exists then map exists
 	fmt.Println("Error decoding configmap, ", err)
+	fmt.Println("The config:", config)
+	fmt.Println("The &config:", &config)
 	fmt.Println("AppSignals Config:", config.GetApplicationSignalsConfig())
 
 	for key, value := range jsonData {
