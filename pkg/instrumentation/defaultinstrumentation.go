@@ -160,7 +160,6 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 	if targetSystems, ok := additionalEnvs[jmx.EnvTargetSystem]; ok {
 		jmxEnvs = []corev1.EnvVar{
 			{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: fmt.Sprintf("%s://%s:4314/v1/metrics", http, cloudwatchAgentServiceEndpoint)},
-			{Name: "OTEL_AWS_JMX_ENABLED", Value: "true"},
 			{Name: "OTEL_JMX_TARGET_SYSTEM", Value: targetSystems},
 		}
 	}

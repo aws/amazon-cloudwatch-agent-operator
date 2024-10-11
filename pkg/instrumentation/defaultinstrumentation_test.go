@@ -789,7 +789,6 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 					{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
-					{Name: "OTEL_AWS_JMX_ENABLED", Value: "true"},
 					{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm"},
 				},
 				Resources: corev1.ResourceRequirements{
