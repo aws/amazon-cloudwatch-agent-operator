@@ -105,7 +105,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 		fmt.Println("Error retrieving configmap:", err)
 		return false
 	}
-	fmt.Println("ConfigMap data:", cloudwatchAgentConfigMap.Data)
+	fmt.Println("ConfigMap data:", cloudwatchAgentConfigMap.Data["cwagentconfig.json"])
 
 	if jsonPath == "integration-tests/jmx/default_instrumentation_jmx_env_variables_no_app_signals.json" {
 		for _, key := range appSignalsEnvVarKeys {
@@ -117,7 +117,8 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 
 	var config adapters.CwaConfig
-	mapstructure.Decode(cloudwatchAgentConfigMap.Data["cwagentconfig.json"], &config) // make sure to check if Data exists then map exists
+	err = mapstructure.Decode(cloudwatchAgentConfigMap.Data["cwagentconfig.json"], &config) // make sure to check if Data exists then map exists
+	fmt.Println("Error decoding configmap, ", err)
 	fmt.Println("AppSignals Config:", config.GetApplicationSignalsConfig())
 
 	for key, value := range jsonData {
