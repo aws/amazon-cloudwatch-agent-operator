@@ -2,7 +2,7 @@
 cloudwatch-agent=1.300045.0b810
 
 # Represents the current release of the CloudWatch Agent Operator.
-operator=1.7.0
+operator=pentest
 
 # Represents the current release of ADOT language instrumentation.
 aws-otel-java-instrumentation=v1.32.2
@@ -12,4 +12,4 @@ aws-otel-nodejs-instrumentation=0.52.1
 
 dcgm-exporter=3.3.7-3.5.0-ubuntu22.04
 neuron-monitor=1.0.1
-target-allocator=0.90.0
+target-allocator=pentest
