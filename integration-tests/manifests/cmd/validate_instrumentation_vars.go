@@ -32,7 +32,6 @@ func main() {
 	args := os.Args
 	namespace := args[1]
 	jsonFilePath := args[2]
-	appSignals := args[3]
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -52,7 +51,7 @@ func main() {
 		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
 
-	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath, appSignals)
+	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -61,7 +60,7 @@ func main() {
 	}
 }
 
-func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignals string) bool {
+func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app=nginx",
 		FieldSelector: "status.phase!=Terminating",
@@ -99,7 +98,15 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 	fmt.Println("JSON data:", jsonData)
 
-	if appSignals == "no_app_signals" {
+	cloudwatchAgentConfigMap, err := clientset.CoreV1().ConfigMaps("amazon-cloudwatch").Get(context.TODO(), "cloudwatch-agent", metav1.GetOptions{})
+	if err != nil {
+		fmt.Println("Error retrieving configmap:", err)
+		return false
+	}
+
+	fmt.Println("ConfigMap data:", cloudwatchAgentConfigMap.Data)
+
+	if jsonPath == "integration-tests/jmx/default_instrumentation_jmx_env_variables_no_app_signals.json" {
 		for _, key := range appSignalsEnvVarKeys {
 			if _, exists := jsonData[key]; exists {
 				fmt.Printf("Error: Key '%s' should not exist in jsonData when app signals is not enabled\n", key)
