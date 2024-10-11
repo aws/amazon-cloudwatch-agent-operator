@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-	"github.com/mitchellh/mapstructure"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -117,7 +116,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 
 	var config adapters.CwaConfig
-	err = mapstructure.Decode(cloudwatchAgentConfigMap.Data["cwagentconfig.json"], &config) // make sure to check if Data exists then map exists
+	err = json.Unmarshal([]byte(cloudwatchAgentConfigMap.Data["cwagentconfig.json"]), &config) // make sure to check if Data exists then map exists
 	fmt.Println("Error decoding configmap, ", err)
 	fmt.Println("AppSignals Config:", config.GetApplicationSignalsConfig())
 
