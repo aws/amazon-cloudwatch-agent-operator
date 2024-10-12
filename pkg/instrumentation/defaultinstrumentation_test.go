@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -708,6 +707,7 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_TRACES_EXPORTER", Value: "none"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -788,6 +788,7 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_TRACES_EXPORTER", Value: "none"},
 					{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
 					{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm"},
 				},
@@ -900,22 +901,4 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 			}
 		})
 	}
-}
-
-func TestIsApplicationSignalsEnabled(t *testing.T) {
-	applicationSignalsConfig := &adapters.CwaConfig{
-		Logs: &adapters.Logs{
-			LogMetricsCollected: &adapters.LogMetricsCollected{
-				ApplicationSignals: &adapters.AppSignals{},
-			},
-		},
-	}
-	assert.True(t, isApplicationSignalsEnabled(applicationSignalsConfig))
-	applicationSignalsConfig = &adapters.CwaConfig{
-		Logs: &adapters.Logs{
-			LogMetricsCollected: &adapters.LogMetricsCollected{},
-		},
-	}
-	assert.False(t, isApplicationSignalsEnabled(applicationSignalsConfig))
-
 }

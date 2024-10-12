@@ -77,7 +77,9 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 
 	// set protocol by checking cloudwatch agent config for tls setting
 	exporterPrefix := http
-	if isApplicationSignalsEnabled(agentConfig) {
+	isApplicationSignalsEnabled := agentConfig != nil && agentConfig.GetApplicationSignalsConfig() != nil
+
+	if isApplicationSignalsEnabled {
 		if agentConfig.GetApplicationSignalsConfig().TLS != nil {
 			exporterPrefix = https
 		}
@@ -102,7 +104,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			},
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
-				Env:   getJavaEnvs(isApplicationSignalsEnabled(agentConfig), cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeJava]),
+				Env:   getJavaEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeJava]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(java, limit),
 					Requests: getInstrumentationConfigForResource(java, request),
@@ -110,7 +112,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,
-				Env:   getPythonEnvs(isApplicationSignalsEnabled(agentConfig), cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypePython]),
+				Env:   getPythonEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypePython]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(python, limit),
 					Requests: getInstrumentationConfigForResource(python, request),
@@ -118,7 +120,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
-				Env:   getDotNetEnvs(isApplicationSignalsEnabled(agentConfig), cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
+				Env:   getDotNetEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(dotNet, limit),
 					Requests: getInstrumentationConfigForResource(dotNet, request),
@@ -126,7 +128,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			},
 			NodeJS: v1alpha1.NodeJS{
 				Image: nodeJSInstrumentationImage,
-				Env:   getNodeJSEnvs(isApplicationSignalsEnabled(agentConfig), cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
+				Env:   getNodeJSEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(nodeJS, limit),
 					Requests: getInstrumentationConfigForResource(nodeJS, request),
@@ -154,6 +156,10 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 		}
 		envs = append(envs, appSignalsEnvs...)
+	} else {
+		envs = append(envs, corev1.EnvVar{
+			Name: "OTEL_TRACES_EXPORTER", Value: "none",
+		})
 	}
 
 	var jmxEnvs []corev1.EnvVar
@@ -226,11 +232,4 @@ func getNodeJSEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 		}
 	}
 	return envs
-}
-
-func isApplicationSignalsEnabled(agentConfig *adapters.CwaConfig) bool {
-	if agentConfig != nil {
-		return agentConfig.GetApplicationSignalsConfig() != nil
-	}
-	return false
 }

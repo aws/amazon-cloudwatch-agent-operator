@@ -81,11 +81,12 @@ func TestGetInstrumentationInstanceJMX(t *testing.T) {
 				},
 			},
 			ns:      corev1.Namespace{},
-			wantLen: 5,
+			wantLen: 6,
 			wantEnv: []corev1.EnvVar{
 				{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 				{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 				{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				{Name: "OTEL_TRACES_EXPORTER", Value: "none"},
 				{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
 				{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm,tomcat"},
 			},
