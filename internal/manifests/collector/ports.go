@@ -162,6 +162,14 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 	if config.Metrics.MetricsCollected.CollectD != nil {
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, servicePortsMap)
 	}
+
+	//OTLP
+	if config.Metrics.MetricsCollected.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+	}
 }
 
 func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverName string, protocol corev1.Protocol, servicePortsMap map[int32][]corev1.ServicePort) {
@@ -196,8 +204,12 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 }
 
 func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
+	if config.Logs == nil || config.Logs.LogMetricsCollected == nil {
+		return
+	}
+
 	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
-	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.EMF != nil {
+	if config.Logs.LogMetricsCollected.EMF != nil {
 		if _, ok := servicePortsMap[receiverDefaultPortsMap[EMF]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
 		} else {
@@ -213,6 +225,14 @@ func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig
 			}
 			servicePortsMap[receiverDefaultPortsMap[EMF]] = []corev1.ServicePort{tcp, udp}
 		}
+	}
+
+	//OTLP
+	if config.Logs.LogMetricsCollected.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
 }
 

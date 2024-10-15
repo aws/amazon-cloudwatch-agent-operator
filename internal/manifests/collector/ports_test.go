@@ -204,6 +204,37 @@ func TestInvalidConfigGetContainerPorts(t *testing.T) {
 
 }
 
+func TestValidOTLPMetricsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpMetricsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+
+}
+
+func TestValidOTLPLogsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpLogsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+}
+
+func TestValidOTLPLogsAndMetricsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpMetricsLogsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+}
+
 func TestValidJSONAndValidOtelConfig(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/application_signals.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/otlpOtelConfig.yaml")
@@ -243,6 +274,25 @@ func TestValidJSONAndConflictingOtelConfig(t *testing.T) {
 	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
 	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
 	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+}
+
+func TestValidJSONAndConflictingOtelConfigForXray(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/application_signals_with_traces.json")
+	otelCfg := getStringFromFile("./test-resources/otelConfigs/xrayOtelConfig.yaml")
+	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
+	assert.Equal(t, 6, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, int32(2000), containerPorts["awsxray"].ContainerPort)
+	assert.Equal(t, "awsxray", containerPorts["awsxray"].Name)
+	assert.Equal(t, int32(4317), containerPorts["otlp-grpc"].ContainerPort)
+	assert.Equal(t, "otlp-grpc", containerPorts["otlp-grpc"].Name)
+	assert.Equal(t, int32(4318), containerPorts["otlp-http"].ContainerPort)
+	assert.Equal(t, "otlp-http", containerPorts["otlp-http"].Name)
 }
 
 func TestIsDuplicatePort(t *testing.T) {
