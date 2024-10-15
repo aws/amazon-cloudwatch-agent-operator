@@ -37,12 +37,14 @@ const (
 	EMFTcp            = "emf-tcp"
 	EMFUdp            = "emf-udp"
 	CWA               = "cwa-"
+	JmxHttp           = "jmx-http"
 )
 
 var receiverDefaultPortsMap = map[string]int32{
 	StatsD:     8125,
 	CollectD:   25826,
 	XrayTraces: 2000,
+	JmxHttp:    4314,
 	OtlpGrpc:   4317,
 	OtlpHttp:   4318,
 	EMF:        25888,
@@ -169,6 +171,10 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+  }
+    
+	if config.Metrics.MetricsCollected.JMX != nil {
+		getReceiverServicePort(logger, "", JmxHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
 }
 
@@ -233,6 +239,20 @@ func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig
 		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
 		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+  }
+  
+	//JMX Container Insights
+	if config.Logs.LogMetricsCollected.Kubernetes != nil && config.Logs.LogMetricsCollected.Kubernetes.JMXContainerInsights {
+		if _, ok := servicePortsMap[receiverDefaultPortsMap[JmxHttp]]; ok {
+			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[JmxHttp]))
+		} else {
+			tcp := corev1.ServicePort{
+				Name:     JmxHttp,
+				Port:     receiverDefaultPortsMap[JmxHttp],
+				Protocol: corev1.ProtocolTCP,
+			}
+			servicePortsMap[receiverDefaultPortsMap[JmxHttp]] = []corev1.ServicePort{tcp}
+		}
 	}
 }
 

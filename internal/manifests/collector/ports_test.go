@@ -307,7 +307,33 @@ func TestIsDuplicatePort(t *testing.T) {
 	assert.True(t, isDuplicatePort(containerPorts, corev1.ServicePort{Name: "same-port-same-protocol", Port: 4315, Protocol: corev1.ProtocolTCP}))
 }
 
+func TestJMXGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/jmxAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	assert.Equal(t, 1, len(containerPorts))
+	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
+	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
+func TestJMXContainerInsightsGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/jmxContainerInsightsConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	assert.Equal(t, 1, len(containerPorts))
+	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
+	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
 func getStringFromFile(path string) string {
+	buf, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return string(buf)
+}
+
+func getJSONStringFromFile(path string) string {
 	buf, err := os.ReadFile(path)
 	if err != nil {
 		return ""

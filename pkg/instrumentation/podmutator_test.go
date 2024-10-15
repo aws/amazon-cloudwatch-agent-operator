@@ -21,6 +21,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
-	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, false)
+	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, nil, false)
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",
@@ -45,10 +46,62 @@ func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
 		Client: fake.NewClientBuilder().Build(),
 		Logger: logr.Logger{},
 	}
-	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, false)
+	instrumentation, err := podMutator.selectInstrumentationInstanceFromNamespace(context.Background(), namespace, nil, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, defaultInst, instrumentation)
+}
+
+func TestGetInstrumentationInstanceJMX(t *testing.T) {
+	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+	mutator := instPodMutator{
+		Client: fake.NewClientBuilder().Build(),
+		Logger: logr.Discard(),
+	}
+
+	tests := []struct {
+		name    string
+		pod     corev1.Pod
+		ns      corev1.Namespace
+		wantLen int
+		wantEnv []corev1.EnvVar
+	}{
+		{
+			name: "enable jvm/tomcat",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava:                "true",
+						jmx.AnnotationKey(jmx.TargetJVM):    "true",
+						jmx.AnnotationKey(jmx.TargetTomcat): "true",
+					},
+				},
+			},
+			ns:      corev1.Namespace{},
+			wantLen: 6,
+			wantEnv: []corev1.EnvVar{
+				{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+				{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+				{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+				{Name: "OTEL_TRACES_EXPORTER", Value: "none"},
+				{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
+				{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm,tomcat"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inst, err := mutator.getInstrumentationInstance(context.Background(), tt.ns, tt.pod, annotationInjectJava)
+			assert.NoError(t, err)
+			assert.Len(t, inst.Spec.Java.Env, tt.wantLen)
+			for _, env := range tt.wantEnv {
+				assert.Containsf(t, inst.Spec.Java.Env, env, "java env does not contain %s:%s", env.Name, env.Value)
+			}
+		})
+	}
 }
 
 func TestMutatePod(t *testing.T) {
