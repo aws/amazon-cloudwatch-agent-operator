@@ -171,8 +171,8 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
-  }
-    
+	}
+
 	if config.Metrics.MetricsCollected.JMX != nil {
 		getReceiverServicePort(logger, "", JmxHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
@@ -239,8 +239,8 @@ func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig
 		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
 		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
-  }
-  
+	}
+
 	//JMX Container Insights
 	if config.Logs.LogMetricsCollected.Kubernetes != nil && config.Logs.LogMetricsCollected.Kubernetes.JMXContainerInsights {
 		if _, ok := servicePortsMap[receiverDefaultPortsMap[JmxHttp]]; ok {
