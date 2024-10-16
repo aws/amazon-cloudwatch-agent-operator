@@ -14,8 +14,8 @@ import (
 )
 
 func TestStatsDGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/statsDAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/statsDAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(8135), containerPorts[CWA+StatsD].ContainerPort)
 	assert.Equal(t, CWA+StatsD, containerPorts[CWA+StatsD].Name)
@@ -23,8 +23,8 @@ func TestStatsDGetContainerPorts(t *testing.T) {
 }
 
 func TestDefaultStatsDGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/statsDDefaultAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/statsDDefaultAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(8125), containerPorts[StatsD].ContainerPort)
 	assert.Equal(t, StatsD, containerPorts[StatsD].Name)
@@ -32,16 +32,16 @@ func TestDefaultStatsDGetContainerPorts(t *testing.T) {
 }
 
 func TestCollectDGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/collectDAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/collectDAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(25936), containerPorts[CWA+CollectD].ContainerPort)
 	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+CollectD].Protocol)
 }
 
 func TestDefaultCollectDGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/collectDDefaultAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/collectDDefaultAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(25826), containerPorts[CollectD].ContainerPort)
 	assert.Equal(t, CollectD, containerPorts[CollectD].Name)
@@ -49,8 +49,8 @@ func TestDefaultCollectDGetContainerPorts(t *testing.T) {
 }
 
 func TestApplicationSignals(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/application_signals.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/application_signals.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
 	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
@@ -61,8 +61,8 @@ func TestApplicationSignals(t *testing.T) {
 }
 
 func TestEMFGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/emfAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/emfAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(25888), containerPorts[EMFTcp].ContainerPort)
 	assert.Equal(t, EMFTcp, containerPorts[EMFTcp].Name)
@@ -72,8 +72,8 @@ func TestEMFGetContainerPorts(t *testing.T) {
 }
 
 func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/xrayAndOTLPAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/xrayAndOTLPAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(2000), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
@@ -86,8 +86,8 @@ func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
 }
 
 func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/xrayAndOTLPDefaultAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/xrayAndOTLPDefaultAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(2000), containerPorts[XrayTraces].ContainerPort)
 	assert.Equal(t, XrayTraces, containerPorts[XrayTraces].Name)
@@ -100,8 +100,8 @@ func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
 }
 
 func TestXRayGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/xrayAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/xrayAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
@@ -112,9 +112,9 @@ func TestXRayGetContainerPorts(t *testing.T) {
 }
 
 func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/xrayAgentConfig.json")
+	cfg := getStringFromFile("./test-resources/xrayAgentConfig.json")
 	strings.Replace(cfg, "2800", "2000", 1)
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
@@ -124,9 +124,9 @@ func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
 }
 
 func TestXRayWithTCPProxyBindAddressDefaultGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/xrayAgentConfig.json")
+	cfg := getStringFromFile("./test-resources/xrayAgentConfig.json")
 	strings.Replace(cfg, "2900", "2000", 1)
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
@@ -134,15 +134,15 @@ func TestXRayWithTCPProxyBindAddressDefaultGetContainerPorts(t *testing.T) {
 }
 
 func TestNilMetricsGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/nilMetrics.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	cfg := getStringFromFile("./test-resources/nilMetrics.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 0, len(containerPorts))
 }
 
 func TestMultipleReceiversGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/multipleReceiversAgentConfig.json")
+	cfg := getStringFromFile("./test-resources/multipleReceiversAgentConfig.json")
 	strings.Replace(cfg, "2900", "2000", 1)
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 11, len(containerPorts))
 	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
 	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
@@ -174,7 +174,7 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 }
 
 func TestSpecPortsOverrideGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/statsDAgentConfig.json")
+	cfg := getStringFromFile("./test-resources/statsDAgentConfig.json")
 	specPorts := []corev1.ServicePort{
 		{
 			Name: AppSignalsGrpc,
@@ -185,7 +185,7 @@ func TestSpecPortsOverrideGetContainerPorts(t *testing.T) {
 			Port: 12346,
 		},
 	}
-	containerPorts := getContainerPorts(logger, cfg, specPorts)
+	containerPorts := getContainerPorts(logger, cfg, "", specPorts)
 	assert.Equal(t, 3, len(containerPorts))
 	assert.Equal(t, int32(12345), containerPorts[AppSignalsGrpc].ContainerPort)
 	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
@@ -197,16 +197,119 @@ func TestSpecPortsOverrideGetContainerPorts(t *testing.T) {
 }
 
 func TestInvalidConfigGetContainerPorts(t *testing.T) {
-	cfg := getJSONStringFromFile("./test-resources/nilMetrics.json")
+	cfg := getStringFromFile("./test-resources/nilMetrics.json")
 	cfg = cfg + ","
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 0, len(containerPorts))
 
 }
 
+func TestValidOTLPMetricsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpMetricsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+
+}
+
+func TestValidOTLPLogsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpLogsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+}
+
+func TestValidOTLPLogsAndMetricsPort(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/otlpMetricsLogsAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(1234), containerPorts["cwa-otlp-grpc"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-grpc", containerPorts["cwa-otlp-grpc"].Name)
+	assert.Equal(t, int32(2345), containerPorts["cwa-otlp-http"].ContainerPort)
+	assert.Equal(t, "cwa-otlp-http", containerPorts["cwa-otlp-http"].Name)
+}
+
+func TestValidJSONAndValidOtelConfig(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/application_signals.json")
+	otelCfg := getStringFromFile("./test-resources/otelConfigs/otlpOtelConfig.yaml")
+	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
+	assert.Equal(t, 4, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, int32(4317), containerPorts[OtlpGrpc].ContainerPort)
+	assert.Equal(t, OtlpGrpc, containerPorts[OtlpGrpc].Name)
+}
+
+func TestValidJSONAndInvalidOtelConfig(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/application_signals.json")
+	otelCfg := getStringFromFile("./test-resources/otelConfigs/invalidOtlpConfig.yaml")
+	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+}
+
+func TestValidJSONAndConflictingOtelConfig(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/application_signals.json")
+	otelCfg := getStringFromFile("./test-resources/otelConfigs/conflictingPortOtlpConfig.yaml")
+	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+}
+
+func TestValidJSONAndConflictingOtelConfigForXray(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/application_signals_with_traces.json")
+	otelCfg := getStringFromFile("./test-resources/otelConfigs/xrayOtelConfig.yaml")
+	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
+	assert.Equal(t, 6, len(containerPorts))
+	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
+	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, int32(2000), containerPorts["awsxray"].ContainerPort)
+	assert.Equal(t, "awsxray", containerPorts["awsxray"].Name)
+	assert.Equal(t, int32(4317), containerPorts["otlp-grpc"].ContainerPort)
+	assert.Equal(t, "otlp-grpc", containerPorts["otlp-grpc"].Name)
+	assert.Equal(t, int32(4318), containerPorts["otlp-http"].ContainerPort)
+	assert.Equal(t, "otlp-http", containerPorts["otlp-http"].Name)
+}
+
+func TestIsDuplicatePort(t *testing.T) {
+	containerPorts := map[string]corev1.ContainerPort{
+		"cwa-appsig-grpc": {
+			Name:          "cwa-appsig-grpc",
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(4315),
+		},
+	}
+
+	assert.True(t, isDuplicatePort(containerPorts, corev1.ServicePort{Name: "same-port-same-protocol", Port: 4315, Protocol: corev1.ProtocolTCP}))
+}
+
 func TestJMXGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/jmxAgentConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
 	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
@@ -215,11 +318,19 @@ func TestJMXGetContainerPorts(t *testing.T) {
 
 func TestJMXContainerInsightsGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/jmxContainerInsightsConfig.json")
-	containerPorts := getContainerPorts(logger, cfg, []corev1.ServicePort{})
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
 	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
 	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
+func getStringFromFile(path string) string {
+	buf, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return string(buf)
 }
 
 func getJSONStringFromFile(path string) string {
