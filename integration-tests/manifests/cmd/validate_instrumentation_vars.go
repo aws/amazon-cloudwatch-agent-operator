@@ -100,6 +100,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	fmt.Println("JSON data:", jsonData)
 
 	if appSignals == "no_app_signals" {
+		fmt.Println("Checking if app signals environment variables exist")
 		for _, key := range appSignalsEnvVarKeys {
 			if _, exists := jsonData[key]; exists {
 				fmt.Printf("Error: Key '%s' should not exist in jsonData when app signals is not enabled\n", key)
