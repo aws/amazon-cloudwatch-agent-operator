@@ -1,9 +1,0 @@
-{
-  "metrics": {
-    "metrics_collected": {
-      "statsd": {
-        "service_address":":8125"
-      }
-    }
-  }
-}
