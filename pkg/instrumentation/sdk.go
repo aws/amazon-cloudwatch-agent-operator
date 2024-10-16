@@ -376,10 +376,10 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	if name := resources[string(semconv.K8SDaemonSetNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SPodNameKey)]; name != "" {
