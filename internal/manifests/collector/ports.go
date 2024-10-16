@@ -5,6 +5,7 @@ package collector
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -186,8 +187,12 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 			if _, ok := servicePortsMap[port]; ok {
 				logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", port))
 			} else {
+				name := CWA + receiverName
+				if receiverName == OtlpGrpc || receiverName == OtlpHttp {
+					name = fmt.Sprintf("%s-%d", receiverName, port)
+				}
 				sp := corev1.ServicePort{
-					Name:     CWA + receiverName,
+					Name:     name,
 					Port:     port,
 					Protocol: protocol,
 				}
