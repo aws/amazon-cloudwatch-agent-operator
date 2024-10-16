@@ -20,7 +20,7 @@ import (
 )
 
 func TestDesiredConfigMap(t *testing.T) {
-	expectedLables := map[string]string{
+	expectedLabels := map[string]string{
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   "default.test",
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
@@ -28,9 +28,9 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected cwagent config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
-		expectedLables["app.kubernetes.io/name"] = "test"
-		expectedLables["app.kubernetes.io/version"] = "0.0.0"
+		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
+		expectedLabels["app.kubernetes.io/name"] = "test"
+		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
 
 		expectedData := map[string]string{
 			"cwagentconfig.json": `{"logs":{"metrics_collected":{"application_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"application_signals":{}}}}`,
@@ -41,7 +41,7 @@ func TestDesiredConfigMap(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, "test", actual[0].Name)
-		assert.Equal(t, expectedLables, actual[0].Labels)
+		assert.Equal(t, expectedLabels, actual[0].Labels)
 		assert.Equal(t, expectedData, actual[0].Data)
 
 	})
@@ -276,5 +276,53 @@ target_allocator:
 		assert.Equal(t, expectedLabels, actual[1].Labels)
 		assert.Equal(t, expectedData, actual[1].Data)
 
+	})
+}
+
+func TestDesiredConfigMapWithOtelConfigSupplied(t *testing.T) {
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+		"app.kubernetes.io/instance":   "default.test",
+		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
+		"app.kubernetes.io/version":    "0.47.0",
+	}
+
+	t.Run("should return expected cwagent config map", func(t *testing.T) {
+		expectedLabels["app.kubernetes.io/component"] = "amazon-cloudwatch-agent"
+		expectedLabels["app.kubernetes.io/name"] = "test"
+		expectedLabels["app.kubernetes.io/version"] = "0.0.0"
+
+		expectedData := map[string]string{
+			"cwagentconfig.json": `{"logs":{"metrics_collected":{"application_signals":{},"kubernetes":{"enhanced_container_insights":true}}},"traces":{"traces_collected":{"application_signals":{}}}}`,
+			"cwagentotelconfig.yaml": `receivers:
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: otel-collector
+        scrape_interval: 10s
+        static_configs:
+          - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
+
+exporters:
+  debug:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus, jaeger]
+      exporters: [debug]`,
+		}
+
+		param := otelConfigParams()
+		actual, err := ConfigMaps(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "test", actual[0].Name)
+		assert.Equal(t, expectedLabels, actual[0].Labels)
+		assert.Equal(t, expectedData["cwagentconfig.json"], actual[0].Data["cwagentconfig.json"])
+		assert.YAMLEq(t, expectedData["cwagentotelconfig.yaml"], actual[0].Data["cwagentotelconfig.yaml"])
 	})
 }

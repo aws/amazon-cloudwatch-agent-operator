@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -27,7 +28,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		image = cfg.CollectorImage()
 	}
 
-	ports := getContainerPorts(logger, agent.Spec.Config, agent.Spec.Ports)
+	ports := getContainerPorts(logger, agent.Spec.Config, agent.Spec.OtelConfig, agent.Spec.Ports)
 
 	var volumeMounts []corev1.VolumeMount
 	argsMap := agent.Spec.Args
@@ -95,6 +96,19 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		logger.Error(err, "error parsing config")
 	}
 
+	var livenessProbe *corev1.Probe
+	if configFromString, err := adapters.ConfigFromString(agent.Spec.OtelConfig); err == nil {
+		if probe, err := getLivenessProbe(configFromString, agent.Spec.LivenessProbe); err == nil {
+			livenessProbe = probe
+		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+			logger.Info("extensions not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
+		} else {
+			logger.Error(err, "cannot create liveness probe.")
+		}
+	}
+
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
@@ -107,6 +121,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		Resources:       agent.Spec.Resources,
 		Ports:           portMapToContainerPortList(ports),
 		SecurityContext: agent.Spec.SecurityContext,
+		LivenessProbe:   livenessProbe,
 		Lifecycle:       agent.Spec.Lifecycle,
 	}
 }
@@ -152,4 +167,30 @@ func portMapToContainerPortList(portMap map[string]corev1.ContainerPort) []corev
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
+}
+
+func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
+	probe, err := adapters.ConfigToContainerProbe(config)
+	if err != nil {
+		return nil, err
+	}
+	if probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
+	return probe, nil
 }

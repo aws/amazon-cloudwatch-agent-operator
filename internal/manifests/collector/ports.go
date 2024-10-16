@@ -77,14 +77,27 @@ func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.S
 	return ports
 }
 
-func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
+func getContainerPorts(logger logr.Logger, cfg string, otelCfg string, specPorts []corev1.ServicePort) map[string]corev1.ContainerPort {
 	ports := map[string]corev1.ContainerPort{}
 	var servicePorts []corev1.ServicePort
 	config, err := adapters.ConfigStructFromJSONString(cfg)
 	if err != nil {
 		logger.Error(err, "error parsing cw agent config")
-	} else {
-		servicePorts = getServicePortsFromCWAgentConfig(logger, config)
+		return ports
+	}
+	servicePorts = getServicePortsFromCWAgentConfig(logger, config)
+
+	if otelCfg != "" {
+		otelConfig, err := adapters.ConfigFromString(otelCfg)
+		if err != nil {
+			logger.Error(err, "error parsing cw agent otel config")
+		} else {
+			otelPorts, otelPortsErr := adapters.GetServicePortsFromCWAgentOtelConfig(logger, otelConfig)
+			if otelPortsErr != nil {
+				logger.Error(otelPortsErr, "error parsing ports from cw agent otel config")
+			}
+			servicePorts = append(servicePorts, otelPorts...)
+		}
 	}
 
 	for _, p := range servicePorts {
@@ -100,6 +113,12 @@ func getContainerPorts(logger logr.Logger, cfg string, specPorts []corev1.Servic
 				zap.Strings("port.name.errs", nameErrs), zap.Strings("num.errs", numErrs))
 			continue
 		}
+		// remove duplicate ports
+		if isDuplicatePort(ports, p) {
+			logger.Info("dropping duplicate container port", zap.String("port.name", truncName), zap.Int32("port.num", p.Port))
+			continue
+		}
+
 		ports[truncName] = corev1.ContainerPort{
 			Name:          truncName,
 			ContainerPort: p.Port,
@@ -144,6 +163,15 @@ func getMetricsReceiversServicePorts(logger logr.Logger, config *adapters.CwaCon
 	if config.Metrics.MetricsCollected.CollectD != nil {
 		getReceiverServicePort(logger, config.Metrics.MetricsCollected.CollectD.ServiceAddress, CollectD, corev1.ProtocolUDP, servicePortsMap)
 	}
+
+	//OTLP
+	if config.Metrics.MetricsCollected.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Metrics.MetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+	}
+
 	if config.Metrics.MetricsCollected.JMX != nil {
 		getReceiverServicePort(logger, "", JmxHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
@@ -181,8 +209,12 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 }
 
 func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
+	if config.Logs == nil || config.Logs.LogMetricsCollected == nil {
+		return
+	}
+
 	//EMF - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Generation_CloudWatch_Agent.html
-	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.EMF != nil {
+	if config.Logs.LogMetricsCollected.EMF != nil {
 		if _, ok := servicePortsMap[receiverDefaultPortsMap[EMF]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[EMF]))
 		} else {
@@ -200,8 +232,16 @@ func getLogsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig
 		}
 	}
 
+	//OTLP
+	if config.Logs.LogMetricsCollected.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Logs.LogMetricsCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+	}
+
 	//JMX Container Insights
-	if config.Logs != nil && config.Logs.LogMetricsCollected != nil && config.Logs.LogMetricsCollected.Kubernetes != nil && config.Logs.LogMetricsCollected.Kubernetes.JMXContainerInsights {
+	if config.Logs.LogMetricsCollected.Kubernetes != nil && config.Logs.LogMetricsCollected.Kubernetes.JMXContainerInsights {
 		if _, ok := servicePortsMap[receiverDefaultPortsMap[JmxHttp]]; ok {
 			logger.Info("Duplicate port has been configured in Agent Config for port", zap.Int32("port", receiverDefaultPortsMap[JmxHttp]))
 		} else {
@@ -277,4 +317,13 @@ func portFromEndpoint(endpoint string) (int32, error) {
 	}
 
 	return int32(port), err
+}
+
+func isDuplicatePort(portsMap map[string]corev1.ContainerPort, servicePort corev1.ServicePort) bool {
+	for _, containerPort := range portsMap {
+		if containerPort.Protocol == servicePort.Protocol && containerPort.ContainerPort == servicePort.Port {
+			return true
+		}
+	}
+	return false
 }

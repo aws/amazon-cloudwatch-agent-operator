@@ -1,0 +1,7 @@
+receivers:
+  otlp:
+    protocols:
+      546547547567:
+        endpoint: 0.0.0.0:4317
+      httttttttttttp:
+        endpoint: 0.0.0.0:4318

@@ -1,0 +1,18 @@
+{
+  "metrics": {
+    "metrics_collected": {
+      "otlp": {
+        "grpc_endpoint": "0.0.0.0:4317",
+        "http_endpoint": "0.0.0.0:4318"
+      }
+    }
+  },
+    "logs": {
+      "metrics_collected": {
+        "otlp": {
+          "grpc_endpoint": "0.0.0.0:1234",
+          "http_endpoint": "0.0.0.0:2345"
+        }
+      }
+    }
+  }

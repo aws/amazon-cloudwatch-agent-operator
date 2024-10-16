@@ -58,6 +58,7 @@ type Traces struct {
 type MetricsCollected struct {
 	StatsD   *statsD   `json:"statsd,omitempty"`
 	CollectD *collectD `json:"collectd,omitempty"`
+	OTLP     *otlp     `json:"otlp,omitempty"`
 	JMX      *jmx      `json:"jmx,omitempty"`
 }
 
@@ -66,6 +67,7 @@ type LogMetricsCollected struct {
 	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
 	AppSignals         *AppSignals `json:"app_signals,omitempty"`
 	Kubernetes         *kubernetes `json:"kubernetes,omitempty"`
+	OTLP               *otlp       `json:"otlp,omitempty"`
 }
 
 type TracesCollected struct {
