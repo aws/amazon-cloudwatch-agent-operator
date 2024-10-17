@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.8.0 (2024-10-17)
+========================================================================
+Enhancements:
+* Support JMX annotations
+* Support supplemental OTEL YAML configuration
+* [ApplicationSignals] Support configurable resources for NodeJS
+* [ApplicationSignals] Only add Application Signals ports to service when enabled in agent configuration
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.7.0 (2024-09-03)
 ========================================================================
 Enhancements:
