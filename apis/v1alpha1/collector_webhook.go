@@ -171,7 +171,7 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 
 	// validate target allocation
 	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		warnings = append(warnings, fmt.Sprintf("The OpenTelemetry Collector mode is set to %s, we do not recommend enabling Target Allocator when not running as a StatefulSet", r.Spec.Mode))
+		warnings = append(warnings, fmt.Sprintf("The Amazon CloudWatch Agent mode is set to %s, we do not recommend enabling Target Allocator when not running as a StatefulSet", r.Spec.Mode))
 	}
 
 	// validate Prometheus config for target allocation
