@@ -20,6 +20,7 @@
   "DOTNET_ADDITIONAL_DEPS": "/otel-auto-instrumentation-dotnet/AdditionalDeps",
   "OTEL_DOTNET_AUTO_HOME": "/otel-auto-instrumentation-dotnet",
   "DOTNET_SHARED_STORE": "/otel-auto-instrumentation-dotnet/store",
-  "CORECLR_ENABLE_PROFILING": "1"
-
+  "CORECLR_ENABLE_PROFILING": "1",
+  "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
+  "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer"
 }
