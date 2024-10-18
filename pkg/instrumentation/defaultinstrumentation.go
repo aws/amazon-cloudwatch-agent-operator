@@ -146,6 +146,10 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 	}
 
 	if isAppSignalsEnabled {
+		isJavaRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_ENABLED")
+		if !ok {
+			isJavaRuntimeEnabled = "true";
+		}
 		appSignalsEnvs := []corev1.EnvVar{
 			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
@@ -154,6 +158,7 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 			{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isJavaRuntimeEnabled},
 		}
 		envs = append(envs, appSignalsEnvs...)
 	} else {
@@ -178,6 +183,10 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
 	var envs []corev1.EnvVar
 	if isAppSignalsEnabled {
+		isPythonRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_ENABLED")
+		if !ok {
+			isPythonRuntimeEnabled = "true";
+		}
 		envs = []corev1.EnvVar{
 			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
@@ -187,6 +196,7 @@ func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
 			{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isPythonRuntimeEnabled},
 			{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 			{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 			{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
