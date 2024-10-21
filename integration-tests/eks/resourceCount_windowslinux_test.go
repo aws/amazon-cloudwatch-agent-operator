@@ -9,7 +9,7 @@ package eks_addon
 const (
 	// Services count for CW agent on Linux and Windows
 	serviceCountLinux   = 6
-	serviceCountWindows = 6
+	serviceCountWindows = 4
 
 	// DaemonSet count for CW agent on Linux and Windows
 	daemonsetCountLinux   = 4
