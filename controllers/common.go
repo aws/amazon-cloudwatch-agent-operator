@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -31,6 +32,20 @@ const (
 	amazonCloudWatchAgentName = "cloudwatch-agent"
 )
 
+func extractUniqueKeys(fromMap, m map[types.UID]client.Object) map[types.UID]client.Object {
+	uniqueKeys := make(map[types.UID]client.Object)
+	for k, v := range fromMap {
+		if _, ok := m[k]; ok {
+			continue
+		}
+
+		// does not has the key
+		uniqueKeys[k] = v
+	}
+	fmt.Printf("Unique| %v - %v = %v \n", maps.Keys(fromMap), maps.Keys(m), maps.Keys(uniqueKeys))
+	return uniqueKeys
+}
+
 func isNamespaceScoped(obj client.Object) bool {
 	switch obj.(type) {
 	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
@@ -54,7 +69,78 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 		}
 		resources = append(resources, objs...)
 	}
+	fmt.Printf("resources: %v\n", resources)
+
 	return resources, nil
+}
+
+func reconcileDesiredObjectsWPrune(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner v1alpha1.AmazonCloudWatchAgent, scheme *runtime.Scheme,
+	desiredObjects []client.Object,
+	searchOwnedObjectsFunc func(ctx context.Context, owner v1alpha1.AmazonCloudWatchAgent) (map[types.UID]client.Object, error),
+) error {
+	var errs []error
+	existingObjectMap := make(map[types.UID]client.Object)
+	existingObjectList := []client.Object{}
+	previouslyOwnedObjects, err := searchOwnedObjectsFunc(ctx, owner)
+	if err != nil {
+		return err
+	}
+
+	for _, desired := range desiredObjects {
+		l := logger.WithValues(
+			"object_name", desired.GetName(),
+			"object_kind", desired.GetObjectKind(),
+		)
+		if isNamespaceScoped(desired) {
+			if setErr := ctrl.SetControllerReference(&owner, desired, scheme); setErr != nil {
+				l.Error(setErr, "failed to set controller owner reference to desired")
+				errs = append(errs, setErr)
+				continue
+			}
+		}
+
+		// existing is an object the controller runtime will hydrate for us
+		// we obtain the existing object by deep copying the desired object because it's the most convenient way
+		existing := desired.DeepCopyObject().(client.Object)
+		fmt.Printf("UID: %v | Existing is %v\n", existing.GetUID(), existing.GetName())
+		existingObjectList = append(existingObjectList, existing)
+
+		mutateFn := manifests.MutateFuncFor(existing, desired)
+		var op controllerutil.OperationResult
+		crudErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			result, createOrUpdateErr := ctrl.CreateOrUpdate(ctx, kubeClient, existing, mutateFn)
+			op = result
+			return createOrUpdateErr
+		})
+		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
+			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
+			delErr := kubeClient.Delete(ctx, existing)
+			if delErr != nil {
+				return delErr
+			}
+			continue
+		} else if crudErr != nil {
+			l.Error(crudErr, "failed to configure desired")
+			errs = append(errs, crudErr)
+			continue
+		}
+
+		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
+	}
+
+	for _, obj := range existingObjectList {
+		fmt.Printf("UID: %v | Existing is %v\n", obj.GetUID(), obj.GetName())
+		existingObjectMap[obj.GetUID()] = obj.DeepCopyObject().(client.Object)
+	}
+	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
+	err = pruneStaleObjects(ctx, kubeClient, logger, previouslyOwnedObjects, existingObjectMap)
+	if err != nil {
+		return fmt.Errorf("failed to prune objects for %s: %w", owner.GetName(), err)
+	}
+	return nil
 }
 
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
@@ -102,6 +188,29 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
 	}
 	return nil
+}
+
+func pruneStaleObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, previouslyOwnedMap, desiredMap map[types.UID]client.Object) error {
+	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
+	pruneErrs := []error{}
+	for uid, obj := range previouslyOwnedMap {
+		l := logger.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind().GroupVersionKind().Kind,
+		)
+		if _, found := desiredMap[uid]; found {
+			l.Info("uid found skipping")
+			continue
+		}
+
+		l.Info("pruning unmanaged resource")
+		err := kubeClient.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	return errors.Join(pruneErrs...)
 }
 
 func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger) bool {
