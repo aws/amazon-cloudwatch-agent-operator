@@ -56,5 +56,5 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: cwagent-operator-beta:latest
+          tags: 506463145083.dkr.ecr.us-west-2.amazonaws.com/cwagent-operator-beta:latest
           platforms: linux/amd64, linux/arm64
