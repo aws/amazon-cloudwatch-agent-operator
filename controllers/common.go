@@ -7,13 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"strings"
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,20 +31,6 @@ const (
 	amazonCloudWatchNamespace = "amazon-cloudwatch"
 	amazonCloudWatchAgentName = "cloudwatch-agent"
 )
-
-func extractUniqueKeys(fromMap, m map[types.UID]client.Object) map[types.UID]client.Object {
-	uniqueKeys := make(map[types.UID]client.Object)
-	for k, v := range fromMap {
-		if _, ok := m[k]; ok {
-			continue
-		}
-
-		// does not has the key
-		uniqueKeys[k] = v
-	}
-	fmt.Printf("Unique| %v - %v = %v \n", maps.Keys(fromMap), maps.Keys(m), maps.Keys(uniqueKeys))
-	return uniqueKeys
-}
 
 func isNamespaceScoped(obj client.Object) bool {
 	switch obj.(type) {
@@ -69,11 +55,10 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 		}
 		resources = append(resources, objs...)
 	}
-	fmt.Printf("resources: %v\n", resources)
-
 	return resources, nil
 }
 
+// @TODO: Later merge this in to reconcileDesiredObjects after implementing search functions for DCGM
 func reconcileDesiredObjectsWPrune(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner v1alpha1.AmazonCloudWatchAgent, scheme *runtime.Scheme,
 	desiredObjects []client.Object,
 	searchOwnedObjectsFunc func(ctx context.Context, owner v1alpha1.AmazonCloudWatchAgent) (map[types.UID]client.Object, error),
@@ -102,8 +87,7 @@ func reconcileDesiredObjectsWPrune(ctx context.Context, kubeClient client.Client
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
-		fmt.Printf("UID: %v | Existing is %v\n", existing.GetUID(), existing.GetName())
-		existingObjectList = append(existingObjectList, existing)
+		existingObjectList = append(existingObjectList, existing) //uid are not assigned yet
 
 		mutateFn := manifests.MutateFuncFor(existing, desired)
 		var op controllerutil.OperationResult
@@ -132,7 +116,6 @@ func reconcileDesiredObjectsWPrune(ctx context.Context, kubeClient client.Client
 	}
 
 	for _, obj := range existingObjectList {
-		fmt.Printf("UID: %v | Existing is %v\n", obj.GetUID(), obj.GetName())
 		existingObjectMap[obj.GetUID()] = obj.DeepCopyObject().(client.Object)
 	}
 	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
