@@ -8,6 +8,9 @@ env:
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "upload-beta-workflow"
 
 jobs:
   MakeBinary:
