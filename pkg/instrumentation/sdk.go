@@ -242,7 +242,6 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
 // and appIndex should represent the application being instrumented.
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, agentIndex int, appIndex int) corev1.Pod {
-	i.logger.Info("injectCommonSDKConfig is called for pod", "pod.Name", pod.Name)
 	container := &pod.Spec.Containers[agentIndex]
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
@@ -254,7 +253,6 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		})
 		serviceNameSource = constants.SourceK8sWorkload
 	}
-	i.logger.Info("Setting the service name source", "serviceNameSource", serviceNameSource, "pod.Name", pod.Name)
 	if otelinst.Spec.Exporter.Endpoint != "" {
 		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
 		if idx == -1 {
@@ -332,7 +330,6 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	resStr := resourceMapToStr(resourceMap)
 	if idx == -1 {
-		i.logger.Info("Setting the OTEL resource attributes", "resourceMapString", resStr, "pod.name", pod.Name)
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELResourceAttrs,
 			Value: resStr,
@@ -342,7 +339,6 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			resStr = "," + resStr
 		}
 		container.Env[idx].Value += resStr
-		i.logger.Info("updating the OTEL resource attributes", "container index value", container.Env[idx].Value, "pod.name", pod.Name, "resourceMapString", resStr)
 	}
 
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELPropagators)
