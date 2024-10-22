@@ -32,7 +32,7 @@ func main() {
 	args := os.Args
 	namespace := args[1]
 	jsonFilePath := args[2]
-	appSignals := args[3]
+	appSignals := args[3] == "app_signals"
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -61,7 +61,7 @@ func main() {
 	}
 }
 
-func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignals string) bool {
+func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignals bool) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app=nginx",
 		FieldSelector: "status.phase!=Terminating",
@@ -99,7 +99,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 	fmt.Println("JSON data:", jsonData)
 
-	if appSignals == "no_app_signals" {
+	if !appSignals {
 		fmt.Println("Checking if app signals environment variables exist")
 		for _, key := range appSignalsEnvVarKeys {
 			if _, exists := jsonData[key]; exists {

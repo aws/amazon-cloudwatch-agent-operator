@@ -1,4 +1,7 @@
 {
+  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+  "OTEL_METRICS_EXPORTER": "none",
+  "OTEL_LOGS_EXPORTER": "none",
   "OTEL_AWS_APP_SIGNALS_ENABLED": "true",
   "OTEL_AWS_APPLICATION_SIGNALS_ENABLED": "true",
   "OTEL_TRACES_SAMPLER_ARG": "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000",
