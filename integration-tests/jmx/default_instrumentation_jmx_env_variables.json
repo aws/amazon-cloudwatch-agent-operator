@@ -10,5 +10,6 @@
   "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
   "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
   "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
-  "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer"
+  "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer",
+  "JAVA_TOOL_OPTIONS": "-javaagent:/otel-auto-instrumentation-java/javaagent.jar"
 }
