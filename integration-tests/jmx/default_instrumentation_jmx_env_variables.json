@@ -6,8 +6,9 @@
   "OTEL_AWS_APPLICATION_SIGNALS_ENABLED": "true",
   "OTEL_TRACES_SAMPLER_ARG": "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000",
   "OTEL_TRACES_SAMPLER": "xray",
-  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
   "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces",
+  "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
+  "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics",
   "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics",
   "OTEL_JMX_TARGET_SYSTEM": "jvm,tomcat,kafka,kafka-consumer,kafka-producer"
 }
