@@ -17,6 +17,7 @@ import (
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+	"go.opentelemetry.io/collector/confmap"
 )
 
 type targetAllocator struct {
@@ -38,7 +39,26 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 		return "", err
 	}
 
-	out, err := json.Marshal(config)
+	conf := confmap.NewFromStringMap(config)
+
+	prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
+		"logs": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{
+				"prometheus": map[string]interface{}{
+					"prometheus_config_path": "/etc/prometheusconfig/prometheus.yaml",
+				},
+			},
+		},
+	})
+
+	err = conf.Merge(prometheusConfig)
+	if err != nil {
+		return "", err
+	}
+
+	finalConfig := conf.ToStringMap()
+
+	out, err := json.Marshal(finalConfig)
 	if err != nil {
 		return "", err
 	}

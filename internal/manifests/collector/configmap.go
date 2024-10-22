@@ -22,6 +22,7 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 	name := naming.ConfigMap(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
+	params.Log.V(2).Info("failed to update config: ")
 	replacedConf, err := ReplaceConfig(params.OtelCol)
 	if err != nil {
 		params.Log.V(2).Info("failed to update config: ", "err", err)

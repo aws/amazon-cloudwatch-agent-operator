@@ -14,8 +14,8 @@ TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-all
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
-ARCH ?= $(shell go env GOARCH)
+IMG ?= 506463145083.dkr.ecr.us-west-2.amazonaws.com/cloudwatch-agent-operator:latest
+ARCH ?= "amd64"
 
 TARGET_ALLOCATOR_IMG_REPO ?= target-allocator
 TARGET_ALLOCATOR_IMG ?=${IMG_PREFIX}/${TARGET_ALLOCATOR_IMG_REPO}:${TARGET_ALLOCATOR_VERSION}
