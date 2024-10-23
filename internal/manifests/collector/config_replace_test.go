@@ -4,6 +4,7 @@
 package collector
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -82,7 +83,7 @@ func TestPrometheusParser(t *testing.T) {
 		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
 			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://target-allocator-service:80/jobs/"+scrapeConfig.JobName+"/targets")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "https://target-allocator-service:80/jobs/"+scrapeConfig.JobName+"/targets")
 			expectedMap[scrapeConfig.JobName] = true
 		}
 		for k := range expectedMap {
@@ -106,7 +107,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint": "http://target-allocator-service:80",
+			"endpoint": "https://target-allocator-service:80",
 			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
@@ -160,7 +161,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint": "http://target-allocator-service:80",
+			"endpoint": "https://target-allocator-service:80",
 			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
@@ -305,7 +306,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
   scrape_configs:
   - honor_labels: true
     http_sd_configs:
-    - url: http://target-allocator-service:80/jobs/service-x/targets
+    - url: https://target-allocator-service:80/jobs/service-x/targets
     job_name: service-x
     metric_relabel_configs:
     - action: keep
@@ -358,7 +359,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
     scrape_interval: 1m
     scrape_timeout: 10s
 target_allocator:
-  endpoint: http://target-allocator-service:80
+  endpoint: https://target-allocator-service:80
   interval: 30s
 `
 
@@ -367,4 +368,94 @@ target_allocator:
 
 		assert.Equal(t, expectedConfig, actualConfig)
 	})
+}
+
+// TestReplaceConfig tests the ReplaceConfig function when the prometheus_config_path is set
+func TestReplaceConfig(t *testing.T) {
+	jsonConfig := `{
+		"logs": {
+			"metrics_collected": {
+				"prometheus": {
+					"prometheus_config_path": "/custom/path/prometheus.yaml"
+				}
+			}
+		}
+	}`
+
+	agent := v1alpha1.AmazonCloudWatchAgent{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AmazonCloudWatchAgent",
+			APIVersion: "v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-agent",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Config: jsonConfig,
+		},
+		Status: v1alpha1.AmazonCloudWatchAgentStatus{},
+	}
+
+	result, err := ReplaceConfig(agent)
+	assert.NoError(t, err, "Expected no error while replacing config")
+
+	expected := map[string]interface{}{
+		"logs": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{
+				"prometheus": map[string]interface{}{
+					"prometheus_config_path": "/custom/path/prometheus.yaml",
+				},
+			},
+		},
+	}
+
+	expectedJSON, err := json.Marshal(expected)
+	assert.NoError(t, err, "Expected no error while marshaling expected result")
+
+	assert.JSONEq(t, string(expectedJSON), result, "The resulting JSON should match the expected JSON")
+}
+
+// TestReplaceConfigWithDefaultPath tests the ReplaceConfig function when the prometheus_config_path is not set
+func TestReplaceConfigWithDefaultPath(t *testing.T) {
+	jsonConfig := `{
+		"logs": {
+			"metrics_collected": {
+				"prometheus": {}
+			}
+		}
+	}`
+
+	agent := v1alpha1.AmazonCloudWatchAgent{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AmazonCloudWatchAgent",
+			APIVersion: "v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-agent",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Config: jsonConfig,
+		},
+		Status: v1alpha1.AmazonCloudWatchAgentStatus{},
+	}
+
+	result, err := ReplaceConfig(agent)
+	assert.NoError(t, err, "Expected no error while replacing config")
+
+	expected := map[string]interface{}{
+		"logs": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{
+				"prometheus": map[string]interface{}{
+					"prometheus_config_path": "/etc/prometheusconfig/prometheus.yaml",
+				},
+			},
+		},
+	}
+
+	expectedJSON, err := json.Marshal(expected)
+	assert.NoError(t, err, "Expected no error while marshaling expected result")
+
+	assert.JSONEq(t, string(expectedJSON), result, "The resulting JSON should match the expected JSON")
 }

@@ -34,30 +34,37 @@ type Config struct {
 }
 
 func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
+	// Parse the original configuration from instance.Spec.Config
 	config, err := adapters.ConfigFromJSONString(instance.Spec.Config)
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("Original config:", config)
 
 	conf := confmap.NewFromStringMap(config)
+
+	prometheusFilePath := conf.Get("logs::metrics_collected::prometheus::prometheus_config_path")
+	if prometheusFilePath == nil {
+		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
+	}
 
 	prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
 		"logs": map[string]interface{}{
 			"metrics_collected": map[string]interface{}{
 				"prometheus": map[string]interface{}{
-					"prometheus_config_path": "/etc/prometheusconfig/prometheus.yaml",
+					"prometheus_config_path": prometheusFilePath,
 				},
 			},
 		},
 	})
 
+	// Merge the Prometheus configuration
 	err = conf.Merge(prometheusConfig)
 	if err != nil {
 		return "", err
 	}
 
 	finalConfig := conf.ToStringMap()
-
 	out, err := json.Marshal(finalConfig)
 	if err != nil {
 		return "", err
