@@ -370,13 +370,13 @@ target_allocator:
 	})
 }
 
-// TestReplaceConfig tests the ReplaceConfig function when the prometheus_config_path is set
-func TestReplaceConfig(t *testing.T) {
+// TestReplaceConfig tests the ReplaceConfig function when logs::metrics_collected::prometheus is present
+func TestReplaceConfigLogsPrometheus(t *testing.T) {
 	jsonConfig := `{
 		"logs": {
 			"metrics_collected": {
 				"prometheus": {
-					"prometheus_config_path": "/custom/path/prometheus.yaml"
+					"prometheus_config_path": "/custom/path/logs_prometheus.yaml"
 				}
 			}
 		}
@@ -404,7 +404,7 @@ func TestReplaceConfig(t *testing.T) {
 		"logs": map[string]interface{}{
 			"metrics_collected": map[string]interface{}{
 				"prometheus": map[string]interface{}{
-					"prometheus_config_path": "/custom/path/prometheus.yaml",
+					"prometheus_config_path": "/custom/path/logs_prometheus.yaml",
 				},
 			},
 		},
@@ -416,10 +416,63 @@ func TestReplaceConfig(t *testing.T) {
 	assert.JSONEq(t, string(expectedJSON), result, "The resulting JSON should match the expected JSON")
 }
 
-// TestReplaceConfigWithDefaultPath tests the ReplaceConfig function when the prometheus_config_path is not set
+// TestReplaceConfigMetricsPrometheus tests the ReplaceConfig function when metrics::metrics_collected::prometheus is present
+func TestReplaceConfigMetricsPrometheus(t *testing.T) {
+	jsonConfig := `{
+		"metrics": {
+			"metrics_collected": {
+				"prometheus": {
+					"prometheus_config_path": "/custom/path/metrics_prometheus.yaml"
+				}
+			}
+		}
+	}`
+
+	agent := v1alpha1.AmazonCloudWatchAgent{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AmazonCloudWatchAgent",
+			APIVersion: "v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-agent",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Config: jsonConfig,
+		},
+		Status: v1alpha1.AmazonCloudWatchAgentStatus{},
+	}
+
+	result, err := ReplaceConfig(agent)
+	assert.NoError(t, err, "Expected no error while replacing config")
+
+	expected := map[string]interface{}{
+		"metrics": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{
+				"prometheus": map[string]interface{}{
+					"prometheus_config_path": "/custom/path/metrics_prometheus.yaml",
+				},
+			},
+		},
+	}
+
+	// Marshal expected result to JSON
+	expectedJSON, err := json.Marshal(expected)
+	assert.NoError(t, err, "Expected no error while marshaling expected result")
+
+	// Assert the output of ReplaceConfig matches the expected JSON
+	assert.JSONEq(t, string(expectedJSON), result, "The resulting JSON should match the expected JSON")
+}
+
+// TestReplaceConfigWithDefaultPath tests the ReplaceConfig function when neither logs nor metrics prometheus path is set
 func TestReplaceConfigWithDefaultPath(t *testing.T) {
 	jsonConfig := `{
 		"logs": {
+			"metrics_collected": {
+				"prometheus": {}
+			}
+		},
+		"metrics": {
 			"metrics_collected": {
 				"prometheus": {}
 			}
@@ -451,6 +504,57 @@ func TestReplaceConfigWithDefaultPath(t *testing.T) {
 					"prometheus_config_path": "/etc/prometheusconfig/prometheus.yaml",
 				},
 			},
+		},
+		"metrics": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{
+				"prometheus": map[string]interface{}{
+					"prometheus_config_path": "/etc/prometheusconfig/prometheus.yaml",
+				},
+			},
+		},
+	}
+
+	expectedJSON, err := json.Marshal(expected)
+	assert.NoError(t, err, "Expected no error while marshaling expected result")
+
+	assert.JSONEq(t, string(expectedJSON), result, "The resulting JSON should match the expected JSON")
+}
+
+// TestReplaceConfigNoPrometheusSection tests the ReplaceConfig function when neither `logs` nor `metrics` sections have `prometheus` defined
+func TestReplaceConfigNoPrometheusSection(t *testing.T) {
+	jsonConfig := `{
+		"logs": {
+			"metrics_collected": {}
+		},
+		"metrics": {
+			"metrics_collected": {}
+		}
+	}`
+
+	agent := v1alpha1.AmazonCloudWatchAgent{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AmazonCloudWatchAgent",
+			APIVersion: "v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-agent",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			Config: jsonConfig,
+		},
+		Status: v1alpha1.AmazonCloudWatchAgentStatus{},
+	}
+
+	result, err := ReplaceConfig(agent)
+	assert.NoError(t, err, "Expected no error while replacing config")
+
+	expected := map[string]interface{}{
+		"logs": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{},
+		},
+		"metrics": map[string]interface{}{
+			"metrics_collected": map[string]interface{}{},
 		},
 	}
 

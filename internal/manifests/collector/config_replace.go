@@ -46,21 +46,41 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	if prometheusFilePath == nil {
 		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
 	}
-
-	prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
-		"logs": map[string]interface{}{
-			"metrics_collected": map[string]interface{}{
-				"prometheus": map[string]interface{}{
-					"prometheus_config_path": prometheusFilePath,
+	if conf.IsSet("logs::metrics_collected::prometheus") {
+		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
+			"logs": map[string]interface{}{
+				"metrics_collected": map[string]interface{}{
+					"prometheus": map[string]interface{}{
+						"prometheus_config_path": prometheusFilePath,
+					},
 				},
 			},
-		},
-	})
+		})
 
-	//Merge the Prometheus configuration
-	err = conf.Merge(prometheusConfig)
-	if err != nil {
-		return "", err
+		err = conf.Merge(prometheusConfig)
+		if err != nil {
+			return "", err
+		}
+	}
+	prometheusFilePath = conf.Get("metrics::metrics_collected::prometheus::prometheus_config_path")
+	if prometheusFilePath == nil {
+		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
+	}
+	if conf.IsSet("metrics::metrics_collected::prometheus") {
+		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
+			"metrics": map[string]interface{}{
+				"metrics_collected": map[string]interface{}{
+					"prometheus": map[string]interface{}{
+						"prometheus_config_path": prometheusFilePath,
+					},
+				},
+			},
+		})
+
+		err = conf.Merge(prometheusConfig)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	finalConfig := conf.ToStringMap()
