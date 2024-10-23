@@ -46,8 +46,7 @@ type Params struct {
 func (r *AmazonCloudWatchAgentReconciler) findCloudWatchAgentOwnedObjects(ctx context.Context, owner v1alpha1.AmazonCloudWatchAgent) (map[types.UID]client.Object, error) {
 	// Define a map to store the owned objects
 	ownedObjects := make(map[types.UID]client.Object)
-	selector := manifestutils.SelectorLabels(owner.ObjectMeta, "*")
-	delete(selector, "app.kubernetes.io/component") //ignore components
+	selector := manifestutils.SelectorLabelsForAllOperatorManaged(owner.ObjectMeta)
 	listOps := &client.ListOptions{
 		Namespace:     owner.Namespace,
 		LabelSelector: labels.SelectorFromSet(selector),
