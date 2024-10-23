@@ -1,6 +1,6 @@
 module github.com/aws/amazon-cloudwatch-agent-operator
 
-go 1.21.0
+go 1.21
 
 retract v1.51.0
 
