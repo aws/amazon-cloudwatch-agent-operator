@@ -46,7 +46,7 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	if prometheusFilePath == nil {
 		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
 	}
-	if conf.IsSet("logs::metrics_collected::prometheus") {
+	if conf.IsSet("logs::metrics_collected::prometheus") && !instance.Spec.Prometheus.IsEmpty() {
 		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
 			"logs": map[string]interface{}{
 				"metrics_collected": map[string]interface{}{
@@ -66,7 +66,7 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	if prometheusFilePath == nil {
 		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
 	}
-	if conf.IsSet("metrics::metrics_collected::prometheus") {
+	if conf.IsSet("metrics::metrics_collected::prometheus") && !instance.Spec.Prometheus.IsEmpty() {
 		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
 			"metrics": map[string]interface{}{
 				"metrics_collected": map[string]interface{}{
