@@ -160,7 +160,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			index := getContainerIndex(container, pod)
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
-			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			resMap, _ := i.createResourceMap(ctx, otelinst, ns, pod, index)
+			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, resMap)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentInitContainerName)
@@ -178,7 +179,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			index := getContainerIndex(container, pod)
 			// Nginx agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
-			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			resMap, _ := i.createResourceMap(ctx, otelinst, ns, pod, index)
+			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, index, otelinst.Spec.Endpoint, resMap)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
@@ -243,7 +245,7 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 // and appIndex should represent the application being instrumented.
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, agentIndex int, appIndex int) corev1.Pod {
 	container := &pod.Spec.Containers[agentIndex]
-	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
+	resourceMap, existingRes := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
 	serviceNameSource := constants.SourceInstrumentation
 	if idx == -1 {
@@ -264,7 +266,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	}
 
 	// Some attributes might be empty, we should get them via k8s downward API
-	if resourceMap[string(semconv.K8SPodNameKey)] == "" {
+	if !existingRes[string(semconv.K8SPodNameKey)] && resourceMap[string(semconv.K8SPodNameKey)] == "" {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name: constants.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
@@ -297,7 +299,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		}
 	}
 
-	if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
+	if !existingRes[string(semconv.K8SNodeNameKey)] && resourceMap[string(semconv.K8SNodeNameKey)] == "" {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name: constants.EnvNodeName,
 			ValueFrom: &corev1.EnvVarSource{
@@ -309,16 +311,19 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", constants.EnvNodeName)
 	}
 
+	if !existingRes[constants.ServiceNameSource] && resourceMap[constants.ServiceNameSource] == "" {
+		resourceMap[constants.ServiceNameSource] = serviceNameSource
+	}
+
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	resStr := resourceMapToStr(resourceMap)
-	resStr = resStr + "," + constants.ServiceNameSource + "=" + serviceNameSource
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELResourceAttrs,
 			Value: resStr,
 		})
 	} else {
-		if !strings.HasSuffix(container.Env[idx].Value, ",") {
+		if !strings.HasSuffix(container.Env[idx].Value, ",") && resStr != "" {
 			resStr = "," + resStr
 		}
 		container.Env[idx].Value += resStr
@@ -412,7 +417,7 @@ func createServiceInstanceId(namespaceName, podName, containerName string) strin
 
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
-func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
+func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) (map[string]string, map[string]bool) {
 	// get existing resources env var and parse it into a map
 	existingRes := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
@@ -448,7 +453,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			res[string(k)] = v
 		}
 	}
-	return res
+	return res, existingRes
 }
 
 func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[attribute.Key]string) {

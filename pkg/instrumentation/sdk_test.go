@@ -191,7 +191,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.app.application-name,service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.app.application-name,service.version=latest",
 								},
 							},
 						},
@@ -289,7 +289,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,com.amazonaws.cloudwatch.entity.internal.service.name.source=Instrumentation",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,com.amazonaws.cloudwatch.entity.internal.service.name.source=Instrumentation,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
 								},
 							},
 						},
@@ -359,7 +359,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.app.application-name,service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.app.application-name,service.version=latest",
 								},
 							},
 						},
@@ -407,7 +407,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 								},
 							},
 						},
@@ -455,7 +455,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -573,7 +573,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -677,7 +677,7 @@ func TestInjectNodeJS(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -796,7 +796,164 @@ func TestInjectPython(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
+
+func TestInjectJavaAndPython(t *testing.T) {
+	instJava := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Java: v1alpha1.Java{
+				Image:     "img:1",
+				Resources: testResourceRequirements,
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4317",
+			},
+		},
+	}
+	instPython := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Python: v1alpha1.Python{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+
+	insts := languageInstrumentations{
+		Java:   instrumentationWithContainers{Instrumentation: &instJava, Containers: ""},
+		Python: instrumentationWithContainers{Instrumentation: &instPython, Containers: ""},
+	}
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "app",
+						Image: "app:latest",
+					},
+				},
+			},
+		})
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: javaVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
+				{
+					Name: pythonVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    javaInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
+					}},
+					Resources: testResourceRequirements,
+				},
+				{
+					Name:    pythonInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
+						},
+						{
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "JAVA_TOOL_OPTIONS",
+							Value: javaJVMArgument,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4317",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -922,7 +1079,7 @@ func TestInjectDotNet(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -931,6 +1088,222 @@ func TestInjectDotNet(t *testing.T) {
 	}, pod)
 }
 
+func TestInjectJavaPythonAndDotNet(t *testing.T) {
+	instJava := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Java: v1alpha1.Java{
+				Image:     "img:1",
+				Resources: testResourceRequirements,
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4317",
+			},
+		},
+	}
+	instPython := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Python: v1alpha1.Python{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+
+	instDotNet := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			DotNet: v1alpha1.DotNet{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Java:   instrumentationWithContainers{Instrumentation: &instJava, Containers: ""},
+		Python: instrumentationWithContainers{Instrumentation: &instPython, Containers: ""},
+		DotNet: instrumentationWithContainers{Instrumentation: &instDotNet, Containers: ""},
+	}
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "app",
+						Image: "app:latest",
+					},
+				},
+			},
+		})
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: javaVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
+				{
+					Name: pythonVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
+				{
+					Name: dotnetVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    javaInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
+					}},
+					Resources: testResourceRequirements,
+				},
+				{
+					Name:    pythonInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
+					}},
+				},
+				{
+					Name:    dotnetInitContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      dotnetVolumeName,
+						MountPath: dotnetInstrMountPath,
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
+						},
+						{
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
+						},
+						{
+							Name:      dotnetVolumeName,
+							MountPath: dotnetInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "JAVA_TOOL_OPTIONS",
+							Value: javaJVMArgument,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4317",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  envDotNetCoreClrEnableProfiling,
+							Value: dotNetCoreClrEnableProfilingEnabled,
+						},
+						{
+							Name:  envDotNetCoreClrProfiler,
+							Value: dotNetCoreClrProfilerID,
+						},
+						{
+							Name:  envDotNetCoreClrProfilerPath,
+							Value: dotNetCoreClrProfilerGlibcPath,
+						},
+						{
+							Name:  envDotNetStartupHook,
+							Value: dotNetStartupHookPath,
+						},
+						{
+							Name:  envDotNetAdditionalDeps,
+							Value: dotNetAdditionalDepsPath,
+						},
+						{
+							Name:  envDotNetOTelAutoHome,
+							Value: dotNetOTelAutoHomePath,
+						},
+						{
+							Name:  envDotNetSharedStore,
+							Value: dotNetSharedStorePath,
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
 func TestInjectGo(t *testing.T) {
 	falsee := false
 	true := true
@@ -1083,7 +1456,7 @@ func TestInjectGo(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -1184,7 +1557,7 @@ func TestInjectGo(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -1351,7 +1724,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 								},
 							},
 						},
@@ -1514,7 +1887,7 @@ func TestInjectNginx(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+									Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd",
 								},
 							},
 						},
@@ -1594,7 +1967,7 @@ func TestInjectSdkOnly(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest,com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload",
+							Value: "com.amazonaws.cloudwatch.entity.internal.service.name.source=K8sWorkload,k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
