@@ -9,12 +9,16 @@ AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aws-otel-nodejs-instrumentation | awk -F= '{print $$2}')"
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
+TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-allocator |  awk -F= '{print $$2}')"
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
 IMG_REPO ?= cloudwatch-agent-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 ARCH ?= $(shell go env GOARCH)
+
+TARGET_ALLOCATOR_IMG_REPO ?= target-allocator
+TARGET_ALLOCATOR_IMG ?=${IMG_PREFIX}/${TARGET_ALLOCATOR_IMG_REPO}:${TARGET_ALLOCATOR_VERSION}
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -96,6 +100,10 @@ test: generate fmt vet envtest
 .PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
+# Build target allocator binary
+.PHONY: targetallocator
+targetallocator:
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -155,12 +163,25 @@ generate: controller-gen api-docs
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg DCGM_EXPORTER_VERSION=${DCGM_EXPORTER_VERSION} --build-arg NEURON_MONITOR_VERSION=${NEURON_MONITOR_VERSION} .
+	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg DCGM_EXPORTER_VERSION=${DCGM_EXPORTER_VERSION} --build-arg NEURON_MONITOR_VERSION=${NEURON_MONITOR_VERSION} --build-arg TARGET_ALLOCATOR_VERSION=${TARGET_ALLOCATOR_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
+
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGET_ALLOCATOR_IMG}
+
+.PHONY: container-target-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker buildx build --load --platform linux/${ARCH} -t ${TARGET_ALLOCATOR_IMG}  cmd/amazon-cloudwatch-agent-target-allocator
+
+.PHONY: ta-build-and-push
+ta-build-and-push: container-target-allocator
+ta-build-and-push: container-target-allocator-push
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
