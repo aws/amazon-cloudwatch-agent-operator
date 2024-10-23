@@ -39,7 +39,6 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("Original config:", config)
 
 	conf := confmap.NewFromStringMap(config)
 
@@ -58,7 +57,7 @@ func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
 		},
 	})
 
-	// Merge the Prometheus configuration
+	//Merge the Prometheus configuration
 	err = conf.Merge(prometheusConfig)
 	if err != nil {
 		return "", err
