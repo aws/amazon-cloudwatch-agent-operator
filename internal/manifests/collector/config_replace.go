@@ -17,6 +17,7 @@ import (
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
+	"go.opentelemetry.io/collector/confmap"
 )
 
 type targetAllocator struct {
@@ -33,12 +34,57 @@ type Config struct {
 }
 
 func ReplaceConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
+	// Parse the original configuration from instance.Spec.Config
 	config, err := adapters.ConfigFromJSONString(instance.Spec.Config)
 	if err != nil {
 		return "", err
 	}
 
-	out, err := json.Marshal(config)
+	conf := confmap.NewFromStringMap(config)
+
+	prometheusFilePath := conf.Get("logs::metrics_collected::prometheus::prometheus_config_path")
+	if prometheusFilePath == nil {
+		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
+	}
+	if conf.IsSet("logs::metrics_collected::prometheus") && !instance.Spec.Prometheus.IsEmpty() {
+		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
+			"logs": map[string]interface{}{
+				"metrics_collected": map[string]interface{}{
+					"prometheus": map[string]interface{}{
+						"prometheus_config_path": prometheusFilePath,
+					},
+				},
+			},
+		})
+
+		err = conf.Merge(prometheusConfig)
+		if err != nil {
+			return "", err
+		}
+	}
+	prometheusFilePath = conf.Get("metrics::metrics_collected::prometheus::prometheus_config_path")
+	if prometheusFilePath == nil {
+		prometheusFilePath = "/etc/prometheusconfig/prometheus.yaml"
+	}
+	if conf.IsSet("metrics::metrics_collected::prometheus") && !instance.Spec.Prometheus.IsEmpty() {
+		prometheusConfig := confmap.NewFromStringMap(map[string]interface{}{
+			"metrics": map[string]interface{}{
+				"metrics_collected": map[string]interface{}{
+					"prometheus": map[string]interface{}{
+						"prometheus_config_path": prometheusFilePath,
+					},
+				},
+			},
+		})
+
+		err = conf.Merge(prometheusConfig)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	finalConfig := conf.ToStringMap()
+	out, err := json.Marshal(finalConfig)
 	if err != nil {
 		return "", err
 	}
