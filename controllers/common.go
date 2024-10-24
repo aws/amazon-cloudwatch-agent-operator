@@ -107,7 +107,7 @@ func reconcileDesiredObjectUIDs(ctx context.Context, kubeClient client.Client, l
 		return nil, fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
 	}
 	for _, obj := range existingObjectList {
-		existingObjectMap[obj.GetUID()] = obj.DeepCopyObject().(client.Object)
+		existingObjectMap[obj.GetUID()] = obj
 	}
 	return existingObjectMap, nil
 }
