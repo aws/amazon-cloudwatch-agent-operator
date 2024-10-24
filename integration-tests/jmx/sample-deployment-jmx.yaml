@@ -11,10 +11,7 @@ spec:
       labels:
         app: nginx
       annotations:
-        instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
-        instrumentation.opentelemetry.io/inject-dotnet: "true"
-        instrumentation.opentelemetry.io/inject-nodejs: "true"
         cloudwatch.aws.amazon.com/inject-jmx-jvm: "true"
         cloudwatch.aws.amazon.com/inject-jmx-tomcat: "true"
         cloudwatch.aws.amazon.com/inject-jmx-kafka: "true"
