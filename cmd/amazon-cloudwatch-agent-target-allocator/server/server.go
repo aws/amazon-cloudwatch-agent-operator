@@ -9,9 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/pprof"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -90,7 +88,6 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.GET("/livez", s.LivenessProbeHandler)
 	router.GET("/readyz", s.ReadinessProbeHandler)
-	registerPprof(router.Group("/debug/pprof/"))
 }
 
 func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) *Server {
@@ -315,24 +312,4 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 		displayData[col.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name), Jobs: items}
 	}
 	return displayData
-}
-
-// registerPprof registers the pprof handlers and either serves the requested
-// specific profile or falls back to index handler.
-func registerPprof(g *gin.RouterGroup) {
-	g.GET("/*profile", func(c *gin.Context) {
-		path := c.Param("profile")
-		switch strings.TrimPrefix(path, "/") {
-		case "cmdline":
-			gin.WrapF(pprof.Cmdline)(c)
-		case "profile":
-			gin.WrapF(pprof.Profile)(c)
-		case "symbol":
-			gin.WrapF(pprof.Symbol)(c)
-		case "trace":
-			gin.WrapF(pprof.Trace)(c)
-		default:
-			gin.WrapF(pprof.Index)(c)
-		}
-	})
 }
