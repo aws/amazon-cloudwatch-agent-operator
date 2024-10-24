@@ -181,6 +181,7 @@ func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 }
 
 func TestAddTAConfigToPromConfig(t *testing.T) {
+	collectorName := "test-collector"
 	t.Run("should return expected prom config map with TA config", func(t *testing.T) {
 		cfg := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{
@@ -202,12 +203,12 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 		expectedResult := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{},
 			"target_allocator": map[interface{}]interface{}{
-				"endpoint": "https://target-allocator-service:80",
+				"endpoint": fmt.Sprintf("https://%s-target-allocator-service:80", collectorName),
 				"interval": "30s",
 			},
 		}
 
-		result, err := ta.AddTAConfigToPromConfig(cfg, naming.TAService())
+		result, err := ta.AddTAConfigToPromConfig(cfg, naming.TAService(collectorName))
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResult, result)
@@ -235,7 +236,7 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := ta.AddTAConfigToPromConfig(tc.cfg, naming.TAService())
+				_, err := ta.AddTAConfigToPromConfig(tc.cfg, naming.TAService(collectorName))
 
 				assert.Error(t, err)
 				assert.EqualError(t, err, tc.errText)

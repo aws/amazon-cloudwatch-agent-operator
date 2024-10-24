@@ -7,5 +7,5 @@ config:
       labels:
         my: label
 target_allocator:
-  endpoint: http://test-sd-target-allocator:80
+  endpoint: https://test-sd-target-allocator:80
   interval: 60s

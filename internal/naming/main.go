@@ -37,8 +37,6 @@ func TASecretVolume() string {
 	return "ta-secret"
 }
 
-
-
 // PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
 func PrometheusConfigMapVolume() string {
 	return "prometheus-config"
@@ -110,8 +108,9 @@ func Route(otelcol string, prefix string) string {
 }
 
 // TAService returns the name to use for the TargetAllocator service.
-func TAService() string {
-	return "target-allocator-service"
+func TAService(otelcol string) string {
+	return DNSName(Truncate("%s-target-allocator-service", 63, otelcol))
+
 }
 func TAPodDestination(otelcol string) string {
 	return DNSName(Truncate("%s-target-allocator", 63, otelcol))

@@ -4,5 +4,5 @@ config:
     scrape_interval: 1m
     scrape_timeout: 10s
 target_allocator:
-  endpoint: http://target-allocator-service:80
+  endpoint: https://test-target-allocator-service:80
   interval: 30s
