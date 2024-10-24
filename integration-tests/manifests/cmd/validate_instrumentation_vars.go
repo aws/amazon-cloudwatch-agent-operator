@@ -32,7 +32,7 @@ func main() {
 	args := os.Args
 	namespace := args[1]
 	jsonFilePath := args[2]
-	appSignals := args[3] == "app_signals"
+	appSignalsEnabled := args[3] == "app_signals"
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -52,7 +52,7 @@ func main() {
 		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
 
-	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath, appSignals)
+	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath, appSignalsEnabled)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -61,7 +61,7 @@ func main() {
 	}
 }
 
-func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignals bool) bool {
+func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignalsEnabled bool) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app=nginx",
 		FieldSelector: "status.phase!=Terminating",
@@ -99,7 +99,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 	fmt.Println("JSON data:", jsonData)
 
-	if !appSignals {
+	if !appSignalsEnabled {
 		fmt.Println("Checking if app signals environment variables exist")
 		for _, key := range appSignalsEnvVarKeys {
 			if _, exists := jsonData[key]; exists {
