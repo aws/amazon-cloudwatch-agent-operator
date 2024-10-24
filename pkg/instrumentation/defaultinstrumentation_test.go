@@ -38,6 +38,8 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_LIMIT", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_REQUEST", "50m")
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_ENABLED", "true")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_ENABLED", "true")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -69,6 +71,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -92,6 +95,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
@@ -190,6 +194,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -213,6 +218,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
@@ -361,6 +367,8 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_LIMIT", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_CPU_REQUEST", "50m")
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
+	os.Setenv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_METRICS", "true")
+	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_METRICS", "true")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -392,6 +400,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -415,6 +424,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
@@ -513,6 +523,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -536,6 +547,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
