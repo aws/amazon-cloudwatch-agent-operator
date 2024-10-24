@@ -17,11 +17,21 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var appSignalsEnvVarKeys = []string{
+	"OTEL_AWS_APP_SIGNALS_ENABLED",
+	"OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
+	"OTEL_TRACES_SAMPLER_ARG",
+	"OTEL_TRACES_SAMPLER",
+	"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+	"OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT",
+}
+
 func main() {
 
 	args := os.Args
 	namespace := args[1]
 	jsonFilePath := args[2]
+	appSignalsEnabled := args[3] == "app_signals"
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -41,7 +51,7 @@ func main() {
 		fmt.Printf("error getting kubernetes config: %v\n\n", err)
 	}
 
-	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath)
+	success := verifyInstrumentationEnvVariables(clientSet, namespace, jsonFilePath, appSignalsEnabled)
 	if !success {
 		fmt.Println("Instrumentation Annotation Injection Test: FAIL")
 		os.Exit(1)
@@ -50,7 +60,7 @@ func main() {
 	}
 }
 
-func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string) bool {
+func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespace, jsonPath string, appSignalsEnabled bool) bool {
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app=nginx",
 		FieldSelector: "status.phase!=Terminating",
@@ -87,6 +97,16 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 		return false
 	}
 	fmt.Println("JSON data:", jsonData)
+
+	if !appSignalsEnabled {
+		fmt.Println("Checking if app signals environment variables exist")
+		for _, key := range appSignalsEnvVarKeys {
+			if _, exists := jsonData[key]; exists {
+				fmt.Printf("Error: Key '%s' should not exist in jsonData when app signals is not enabled\n", key)
+				return false
+			}
+		}
+	}
 
 	for key, value := range jsonData {
 		if val, ok := envMap[key]; ok {
