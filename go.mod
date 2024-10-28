@@ -2,8 +2,6 @@ module github.com/aws/amazon-cloudwatch-agent-operator
 
 go 1.21.0
 
-toolchain go1.23.1
-
 retract v1.51.0
 
 // openshift removed all tags from their repo, use the pseudoversion from the release-3.9 branch HEAD
@@ -31,8 +29,8 @@ require (
 	github.com/prometheus/prometheus v0.48.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/confmap v0.103.0
-	go.opentelemetry.io/collector/featuregate v1.10.0
+	go.opentelemetry.io/collector/confmap v0.102.1
+	go.opentelemetry.io/collector/featuregate v0.77.0
 	go.opentelemetry.io/otel v1.21.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
