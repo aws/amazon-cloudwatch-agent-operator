@@ -37,8 +37,6 @@ func TASecretVolume() string {
 	return "ta-secret"
 }
 
-
-
 // PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
 func PrometheusConfigMapVolume() string {
 	return "prometheus-config"

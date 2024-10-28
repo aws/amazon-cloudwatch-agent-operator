@@ -80,7 +80,7 @@ func main() {
 	}
 
 	httpOptions := []server.Option{}
-	tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+	tlsConfig, confErr := cfg.HTTPS.NewTLSConfig(ctx)
 	if confErr != nil {
 		setupLog.Error(confErr, "Unable to initialize TLS configuration", "Config", cfg.HTTPS)
 		os.Exit(1)
