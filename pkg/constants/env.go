@@ -23,4 +23,9 @@ const (
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+
+	AWSEntityPrefix       = "com.amazonaws.cloudwatch.entity.internal."
+	ServiceNameSource     = AWSEntityPrefix + "service.name.source"
+	SourceInstrumentation = "Instrumentation"
+	SourceK8sWorkload     = "K8sWorkload"
 )
