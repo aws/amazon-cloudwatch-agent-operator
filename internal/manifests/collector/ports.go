@@ -22,23 +22,25 @@ import (
 )
 
 const (
-	StatsD            = "statsd"
-	CollectD          = "collectd"
-	XrayProxy         = "aws-proxy"
-	XrayTraces        = "aws-traces"
-	OtlpGrpc          = "otlp-grpc"
-	OtlpHttp          = "otlp-http"
-	AppSignalsGrpc    = "appsig-grpc"
-	AppSignalsHttp    = "appsig-http"
-	AppSignalsProxy   = "appsig-xray"
-	AppSignalsGrpcSA  = ":4315"
-	AppSignalsHttpSA  = ":4316"
-	AppSignalsProxySA = ":2000"
-	EMF               = "emf"
-	EMFTcp            = "emf-tcp"
-	EMFUdp            = "emf-udp"
-	CWA               = "cwa-"
-	JmxHttp           = "jmx-http"
+	StatsD             = "statsd"
+	CollectD           = "collectd"
+	XrayProxy          = "aws-proxy"
+	XrayTraces         = "aws-traces"
+	OtlpGrpc           = "otlp-grpc"
+	OtlpHttp           = "otlp-http"
+	AppSignalsGrpc     = "appsig-grpc"
+	AppSignalsHttp     = "appsig-http"
+	AppSignalsProxy    = "appsig-xray"
+	AppSignalsGrpcSA   = ":4315"
+	AppSignalsHttpSA   = ":4316"
+	AppSignalsProxySA  = ":2000"
+	AppSignalsServerSA = ":4311"
+	EMF                = "emf"
+	EMFTcp             = "emf-tcp"
+	EMFUdp             = "emf-udp"
+	CWA                = "cwa-"
+	JmxHttp            = "jmx-http"
+	Server             = "server"
 )
 
 var receiverDefaultPortsMap = map[string]int32{
@@ -286,14 +288,6 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 	return tracesPorts
 }
 
-func getAppSignalsServicePortsMap() map[int32][]corev1.ServicePort {
-	servicePortMap := make(map[int32][]corev1.ServicePort)
-	for k, v := range AppSignalsPortToServicePortMap {
-		servicePortMap[k] = v
-	}
-	return servicePortMap
-}
-
 func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
 	if !isAppSignalEnabled(config) {
 		return
@@ -302,6 +296,7 @@ func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adap
 	getReceiverServicePort(logger, AppSignalsGrpcSA, AppSignalsGrpc, corev1.ProtocolTCP, servicePortsMap)
 	getReceiverServicePort(logger, AppSignalsHttpSA, AppSignalsHttp, corev1.ProtocolTCP, servicePortsMap)
 	getReceiverServicePort(logger, AppSignalsProxySA, AppSignalsProxy, corev1.ProtocolTCP, servicePortsMap)
+	getReceiverServicePort(logger, AppSignalsServerSA, Server, corev1.ProtocolTCP, servicePortsMap)
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {
