@@ -81,7 +81,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService())
+		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
 		}
@@ -94,7 +94,7 @@ func ReplacePrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, e
 		return string(out), nil
 	}
 
-	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService())
+	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 	if err != nil {
 		return "", err
 	}

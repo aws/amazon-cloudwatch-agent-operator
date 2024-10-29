@@ -82,7 +82,7 @@ func TestPrometheusParser(t *testing.T) {
 		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
 			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://target-allocator-service:80/jobs/"+scrapeConfig.JobName+"/targets")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, fmt.Sprintf("https://%s-target-allocator-service:80/jobs/", param.OtelCol.Name)+scrapeConfig.JobName+"/targets")
 			expectedMap[scrapeConfig.JobName] = true
 		}
 		for k := range expectedMap {
@@ -106,7 +106,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint": "http://target-allocator-service:80",
+			"endpoint": fmt.Sprintf("https://%s-target-allocator-service:80", param.OtelCol.Name),
 			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
@@ -160,7 +160,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint": "http://target-allocator-service:80",
+			"endpoint": fmt.Sprintf("https://%s-target-allocator-service:80", param.OtelCol.Name),
 			"interval": "30s",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
@@ -305,7 +305,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
   scrape_configs:
   - honor_labels: true
     http_sd_configs:
-    - url: http://target-allocator-service:80/jobs/service-x/targets
+    - url: https://test-target-allocator-service:80/jobs/service-x/targets
     job_name: service-x
     metric_relabel_configs:
     - action: keep
@@ -358,7 +358,7 @@ func TestReplacePrometheusConfig(t *testing.T) {
     scrape_interval: 1m
     scrape_timeout: 10s
 target_allocator:
-  endpoint: http://target-allocator-service:80
+  endpoint: https://test-target-allocator-service:80
   interval: 30s
 `
 
