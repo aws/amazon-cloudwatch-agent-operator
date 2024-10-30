@@ -4,12 +4,14 @@
 package config
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -207,26 +209,31 @@ func Load() (*Config, string, error) {
 
 // ValidateConfig validates the cli and file configs together.
 func ValidateConfig(config *Config) error {
-	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
+	scrapeConfigsPresent := config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0
 	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	return nil
 }
 
-func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(c.TLSCertFilePath, c.TLSKeyFilePath)
+func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error) {
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS13,
+	}
+
+	certWatcher, err := certwatcher.New(c.TLSCertFilePath, c.TLSKeyFilePath)
 	if err != nil {
 		return nil, err
 	}
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.NoClientCert,
-		MinVersion:   tls.VersionTLS12,
-	}
+	tlsConfig.GetCertificate = certWatcher.GetCertificate
+	go func() {
+		_ = certWatcher.Start(ctx)
+	}()
+
 	if c.CAFilePath == "" {
 		return tlsConfig, nil
 	}
+
 	caCert, err := os.ReadFile(c.CAFilePath)
 	caCertPool := x509.NewCertPool()
 	if err != nil {
