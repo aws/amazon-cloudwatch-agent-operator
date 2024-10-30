@@ -73,6 +73,8 @@ func WithTLSConfig(tlsConfig *tls.Config, httpsListenAddr string) Option {
 		s.setRouter(httpsRouter)
 
 		s.httpsServer = &http.Server{Addr: httpsListenAddr, Handler: httpsRouter, ReadHeaderTimeout: 90 * time.Second, TLSConfig: tlsConfig}
+		s.server.Shutdown(context.Background())
+		s.server = s.httpsServer
 	}
 }
 
