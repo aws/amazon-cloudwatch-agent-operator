@@ -1,6 +1,6 @@
 module github.com/aws/amazon-cloudwatch-agent-operator
 
-go 1.21.0
+go 1.21
 
 retract v1.51.0
 
@@ -29,7 +29,7 @@ require (
 	github.com/prometheus/prometheus v0.48.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/confmap v0.102.1
+	go.opentelemetry.io/collector/confmap v0.101.0
 	go.opentelemetry.io/collector/featuregate v0.77.0
 	go.opentelemetry.io/otel v1.21.0
 	go.uber.org/zap v1.27.0
