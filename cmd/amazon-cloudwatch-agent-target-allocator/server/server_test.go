@@ -614,6 +614,7 @@ func TestServer_JobHandler(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_Readiness(t *testing.T) {
 	tests := []struct {
 		description   string
@@ -677,6 +678,7 @@ func TestServer_Readiness(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_ValidCAonTLS(t *testing.T) {
 	listenAddr := ":8443"
 	s, tlsConfig, err := createTestTLSServer(listenAddr)
@@ -725,10 +727,13 @@ func TestServer_ValidCAonTLS(t *testing.T) {
 			// Only check the status code if there was no error
 			if err == nil {
 				assert.Equal(t, tc.expectedCode, request.StatusCode)
+			} else {
+				t.Log(err)
 			}
 		})
 	}
 }
+
 func TestServer_MissingCAonTLS(t *testing.T) {
 	listenAddr := ":8443"
 	s, _, err := createTestTLSServer(listenAddr)
@@ -773,6 +778,7 @@ func TestServer_MissingCAonTLS(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_HTTPOnTLS(t *testing.T) {
 	listenAddr := ":8443"
 	s, _, err := createTestTLSServer(listenAddr)
@@ -818,6 +824,7 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 		})
 	}
 }
+
 func createTestTLSServer(listenAddr string) (*Server, *tls.Config, error) {
 	//testing using this function replicates customer environment
 	svrConfig := allocatorconfig.HTTPSServerConfig{}
@@ -839,8 +846,13 @@ func createTestTLSServer(listenAddr string) (*Server, *tls.Config, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return NewServer(logger, nil, listenAddr, httpOptions...), bundle, nil
+	allocator := &mockAllocator{targetItems: map[string]*target.Item{
+		"a": target.NewItem("job1", "", model.LabelSet{}, ""),
+	}}
+
+	return NewServer(logger, allocator, listenAddr, httpOptions...), bundle, nil
 }
+
 func newLink(jobName string) target.LinkJSON {
 	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }
@@ -864,6 +876,7 @@ func readCABundle(caBundlePath string) (*tls.Config, error) {
 	}
 	return tlsConfig, nil
 }
+
 func generateTestingCerts() (caBundlePath, caCertPath, caKeyPath string, err error) {
 	// Generate private key
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

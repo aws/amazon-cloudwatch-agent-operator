@@ -11,8 +11,9 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
