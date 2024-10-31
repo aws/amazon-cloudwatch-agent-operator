@@ -681,14 +681,14 @@ func TestServer_Readiness(t *testing.T) {
 
 func TestServer_ValidCAonTLS(t *testing.T) {
 	listenAddr := ":8443"
-	s, tlsConfig, err := createTestTLSServer(listenAddr)
+	server, clientTlsConfig, err := createTestTLSServer(listenAddr)
 	assert.NoError(t, err)
 	go func() {
-		assert.ErrorIs(t, s.StartHTTPS(), http.ErrServerClosed)
+		assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
 	}()
 	time.Sleep(100 * time.Millisecond) // wait for server to launch
 	defer func() {
-		err := s.ShutdownHTTPS(context.Background())
+		err := server.ShutdownHTTPS(context.Background())
 		if err != nil {
 			assert.NoError(t, err)
 		}
@@ -714,7 +714,7 @@ func TestServer_ValidCAonTLS(t *testing.T) {
 			// Create a custom HTTP client with TLS transport
 			client := &http.Client{
 				Transport: &http.Transport{
-					TLSClientConfig: tlsConfig,
+					TLSClientConfig: clientTlsConfig,
 				},
 			}
 
@@ -736,14 +736,14 @@ func TestServer_ValidCAonTLS(t *testing.T) {
 
 func TestServer_MissingCAonTLS(t *testing.T) {
 	listenAddr := ":8443"
-	s, _, err := createTestTLSServer(listenAddr)
+	server, _, err := createTestTLSServer(listenAddr)
 	assert.NoError(t, err)
 	go func() {
-		assert.ErrorIs(t, s.StartHTTPS(), http.ErrServerClosed)
+		assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
 	}()
 	time.Sleep(100 * time.Millisecond) // wait for server to launch
 	defer func() {
-		err := s.ShutdownHTTPS(context.Background())
+		err := server.ShutdownHTTPS(context.Background())
 		if err != nil {
 			assert.NoError(t, err)
 		}
@@ -781,10 +781,10 @@ func TestServer_MissingCAonTLS(t *testing.T) {
 
 func TestServer_HTTPOnTLS(t *testing.T) {
 	listenAddr := ":8443"
-	s, _, err := createTestTLSServer(listenAddr)
+	server, _, err := createTestTLSServer(listenAddr)
 	assert.NoError(t, err)
 	go func() {
-		assert.NoError(t, s.StartHTTPS())
+		assert.NoError(t, server.StartHTTPS())
 	}()
 	time.Sleep(100 * time.Millisecond) // wait for server to launch
 
@@ -793,7 +793,7 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 		if err != nil {
 			assert.NoError(t, err)
 		}
-	}(s, context.Background())
+	}(server, context.Background())
 	tests := []struct {
 		description  string
 		endpoint     string
@@ -813,9 +813,6 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			request, err := http.Get(fmt.Sprintf("http://localhost%s/%s", listenAddr, tc.endpoint))
-
-			// Verify if a certificate verification error occurred
-			//require.Error(t, err)
 
 			// Only check the status code if there was no error
 			if err == nil {
