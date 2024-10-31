@@ -1,12 +1,12 @@
 # Represents the latest stable release of the CloudWatch Agent
-cloudwatch-agent=1.300045.0b810
+cloudwatch-agent=1.300048.1b904
 
 # Represents the current release of the CloudWatch Agent Operator.
-operator=1.7.0
+operator=1.8.0
 
 # Represents the current release of ADOT language instrumentation.
-aws-otel-java-instrumentation=v1.32.2
-aws-otel-python-instrumentation=v0.2.0
+aws-otel-java-instrumentation=v1.32.4
+aws-otel-python-instrumentation=v0.6.0
 aws-otel-dotnet-instrumentation=1.6.0
 aws-otel-nodejs-instrumentation=0.52.1
 
