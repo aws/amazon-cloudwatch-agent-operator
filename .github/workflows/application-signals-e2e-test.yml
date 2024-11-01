@@ -67,3 +67,22 @@ jobs:
       aws-region: us-east-1
       caller-workflow-name: 'main-build'
       cw-agent-operator-tag: ${{ inputs.tag }}
+
+  node-eks-e2e-test:
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/node-eks-test.yml@main
+    # node e2e tests share the same cluster with java tests, we need to run the tests sequentially 
+    needs: [ java-metric-limiter-e2e-test ]
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      test-cluster-name: 'e2e-cw-agent-operator-test'
+      caller-workflow-name: 'main-build'
+      cw-agent-operator-tag: ${{ inputs.tag }}
+
+  node-k8s-e2e-test:
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/node-k8s-test.yml@main
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      caller-workflow-name: 'main-build'
+      cw-agent-operator-tag: ${{ inputs.tag }}
