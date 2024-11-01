@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry     = "cwagentconfig.json"
-	defaultOtelCollectorConfigMapEntry = "cwagentotelconfig.yaml"
+	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
+	defaultOtelCollectorConfigMapEntry   = "cwagentotelconfig.yaml"
 	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 	defaultPrometheusConfigMapEntry      = "prometheus.yaml"
 )
