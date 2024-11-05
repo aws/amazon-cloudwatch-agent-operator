@@ -58,6 +58,8 @@ type Traces struct {
 type MetricsCollected struct {
 	StatsD   *statsD   `json:"statsd,omitempty"`
 	CollectD *collectD `json:"collectd,omitempty"`
+	OTLP     *otlp     `json:"otlp,omitempty"`
+	JMX      *jmx      `json:"jmx,omitempty"`
 }
 
 type LogMetricsCollected struct {
@@ -65,6 +67,7 @@ type LogMetricsCollected struct {
 	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
 	AppSignals         *AppSignals `json:"app_signals,omitempty"`
 	Kubernetes         *kubernetes `json:"kubernetes,omitempty"`
+	OTLP               *otlp       `json:"otlp,omitempty"`
 }
 
 type TracesCollected struct {
@@ -86,9 +89,13 @@ type AppSignals struct {
 
 type emf struct {
 }
+
+type jmx struct{}
+
 type kubernetes struct {
 	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`
 	AcceleratedComputeMetrics bool `json:"accelerated_compute_metrics,omitempty"`
+	JMXContainerInsights      bool `json:"jmx_container_insights,omitempty"`
 }
 
 type xray struct {

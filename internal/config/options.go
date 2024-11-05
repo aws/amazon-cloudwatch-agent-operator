@@ -27,6 +27,7 @@ type options struct {
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	otelCollectorConfigMapEntry         string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
 	targetAllocatorImage                string
@@ -43,6 +44,11 @@ func WithCollectorImage(s string) Option {
 func WithCollectorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.collectorConfigMapEntry = s
+	}
+}
+func WithOtelCollectorConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.otelCollectorConfigMapEntry = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {

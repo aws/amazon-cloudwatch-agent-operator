@@ -14,6 +14,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/jmx"
 )
 
 const (
@@ -49,7 +50,7 @@ func getInstrumentationConfigForResource(langStr string, resourceStr string) cor
 	return instrumentationConfigForResource
 }
 
-func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs map[Type]map[string]string, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -76,9 +77,10 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 
 	// set protocol by checking cloudwatch agent config for tls setting
 	exporterPrefix := http
-	if agentConfig != nil {
-		appSignalsConfig := agentConfig.GetApplicationSignalsConfig()
-		if appSignalsConfig != nil && appSignalsConfig.TLS != nil {
+	isApplicationSignalsEnabled := agentConfig != nil && agentConfig.GetApplicationSignalsConfig() != nil
+
+	if isApplicationSignalsEnabled {
+		if agentConfig.GetApplicationSignalsConfig().TLS != nil {
 			exporterPrefix = https
 		}
 	}
@@ -102,18 +104,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-				},
+				Env:   getJavaEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeJava]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(java, limit),
 					Requests: getInstrumentationConfigForResource(java, request),
@@ -121,20 +112,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 			Python: v1alpha1.Python{
 				Image: pythonInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
-					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-				},
+				Env:   getPythonEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypePython]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(python, limit),
 					Requests: getInstrumentationConfigForResource(python, request),
@@ -142,20 +120,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 			DotNet: v1alpha1.DotNet{
 				Image: dotNetInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
-					{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
-				},
+				Env:   getDotNetEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(dotNet, limit),
 					Requests: getInstrumentationConfigForResource(dotNet, request),
@@ -163,16 +128,7 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 			NodeJS: v1alpha1.NodeJS{
 				Image: nodeJSInstrumentationImage,
-				Env: []corev1.EnvVar{
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
-					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
-					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
-					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
-				},
+				Env:   getNodeJSEnvs(isApplicationSignalsEnabled, cloudwatchAgentServiceEndpoint, exporterPrefix, additionalEnvs[TypeDotNet]),
 				Resources: corev1.ResourceRequirements{
 					Limits:   getInstrumentationConfigForResource(nodeJS, limit),
 					Requests: getInstrumentationConfigForResource(nodeJS, request),
@@ -180,4 +136,100 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, isWindowsPod boo
 			},
 		},
 	}, nil
+}
+
+func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
+	envs := []corev1.EnvVar{
+		{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+		{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+		{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+	}
+
+	if isAppSignalsEnabled {
+		appSignalsEnvs := []corev1.EnvVar{
+			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+		}
+		envs = append(envs, appSignalsEnvs...)
+	} else {
+		envs = append(envs, corev1.EnvVar{
+			Name: "OTEL_TRACES_EXPORTER", Value: "none",
+		})
+	}
+
+	var jmxEnvs []corev1.EnvVar
+	if targetSystems, ok := additionalEnvs[jmx.EnvTargetSystem]; ok {
+		jmxEnvs = []corev1.EnvVar{
+			{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: fmt.Sprintf("%s://%s:4314/v1/metrics", http, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_JMX_TARGET_SYSTEM", Value: targetSystems},
+		}
+	}
+	if len(jmxEnvs) != 0 {
+		envs = append(envs, jmxEnvs...)
+	}
+	return envs
+}
+
+func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
+	var envs []corev1.EnvVar
+	if isAppSignalsEnabled {
+		envs = []corev1.EnvVar{
+			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+			{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)}, //TODO: remove in favor of new name once safe
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+			{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
+			{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
+			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+		}
+	}
+	return envs
+}
+
+func getDotNetEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
+	var envs []corev1.EnvVar
+	if isAppSignalsEnabled {
+		envs = []corev1.EnvVar{
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+			{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+			{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+			{Name: "OTEL_DOTNET_DISTRO", Value: "aws_distro"},
+			{Name: "OTEL_DOTNET_CONFIGURATOR", Value: "aws_configurator"},
+			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+			{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
+		}
+	}
+	return envs
+}
+
+func getNodeJSEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
+	var envs []corev1.EnvVar
+	if isAppSignalsEnabled {
+		envs = []corev1.EnvVar{
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
+			{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+		}
+	}
+	return envs
 }

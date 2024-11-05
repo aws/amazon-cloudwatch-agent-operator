@@ -15,14 +15,16 @@ func TestNewConfig(t *testing.T) {
 	// prepare
 	cfg := config.New(
 		config.WithCollectorImage("some-image"),
-		config.WithCollectorConfigMapEntry("some-config.yaml"),
+		config.WithCollectorConfigMapEntry("some-config.json"),
+		config.WithOtelCollectorConfigMapEntry("some-otel-config.yaml"),
 		config.WithTargetAllocatorConfigMapEntry("some-ta-config.yaml"),
 		config.WithPrometheusConfigMapEntry("some-prom-config.yaml"),
 	)
 
 	// test
 	assert.Equal(t, "some-image", cfg.CollectorImage())
-	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
+	assert.Equal(t, "some-config.json", cfg.CollectorConfigMapEntry())
+	assert.Equal(t, "some-otel-config.yaml", cfg.OtelCollectorConfigMapEntry())
 	assert.Equal(t, "some-ta-config.yaml", cfg.TargetAllocatorConfigMapEntry())
 	assert.Equal(t, "some-prom-config.yaml", cfg.PrometheusConfigMapEntry())
 }
