@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v1.9.0 (2024-11-01)
+========================================================================
+Enhancements:
+* Open a port 4311 for agent server when appsignals is enabled
+* Attach service name source as resource attribute to operator
+* Use replicaset name as part of service name fallback
+* [ApplicationSignals] Support runtime metrics for Application Signals
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.8.0 (2024-10-17)
 ========================================================================
 Enhancements:
