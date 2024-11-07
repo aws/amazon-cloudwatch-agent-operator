@@ -6,7 +6,7 @@ env:
   # Use terraform assume role for uploading to ecr
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
-  ECR_OPERATOR_RELEASE_IMAGE: ${{ secrets.ECR_OPERATOR_RELEASE_IMAGE }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ vars.ECR_OPERATOR_RELEASE_IMAGE }}
 
 on:
   workflow_dispatch:
@@ -35,88 +35,6 @@ on:
         type: string
 
 jobs:
-  MakeBinary:
-    name: 'MakeContainerImage'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v4
-        with:
-          go-version: ~1.19.6
-          cache: false
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
-
-      - name: Login to ECR
-        if: steps.cached_binaries.outputs.cache-hit == false
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Set up Docker Buildx
-        if: steps.cached_binaries.outputs.cache-hit == false
-        uses: docker/setup-buildx-action@v1
-
-      - name: Set up QEMU
-        if: steps.cached_binaries.outputs.cache-hit == false
-        uses: docker/setup-qemu-action@v1
-
-      - name: Build Cloudwatch Agent Operator Image and push to ECR
-        uses: docker/build-push-action@v4
-        if: steps.cached_binaries.outputs.cache-hit == false
-        with:
-          file: ./Dockerfile
-          context: .
-          push: true
-          tags: ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
-          platforms: linux/amd64, linux/arm64
-
-  e2e-test:
-    name: "Application Signals E2E Test"
-    needs: MakeBinary
-    uses: ./.github/workflows/application-signals-e2e-test.yml
+  BuildAndUpload:
+    uses: ./.github/workflows/build-and-upload.yml
     secrets: inherit
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      tag: ${{ inputs.tag }}
-
-  push-release-ecr:
-    if: ${{ inputs.release }}
-    needs: e2e-test
-    permissions:
-      id-token: write
-      contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
-          aws-region: us-west-2 # Uploads only to us-west-2 for now
-
-      - name: Login ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Push image to release ECR
-        run: |
-          docker buildx imagetools create \
-          -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
-          ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
