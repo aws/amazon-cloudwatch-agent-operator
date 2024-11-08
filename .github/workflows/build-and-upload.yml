@@ -27,6 +27,10 @@ on:
       repository:
         default: ${{github.repository}}
         type: string
+      test-image-before-upload:
+        description: "Run Test on the new container image"
+        default: true
+        type: boolean
 
 jobs:
   MakeBinary:
@@ -79,6 +83,7 @@ jobs:
           platforms: linux/amd64, linux/arm64
 
   e2e-test:
+    if: ${{inputs.test-image-before-upload}}
     name: "Application Signals E2E Test"
     needs: MakeBinary
     uses: ./.github/workflows/application-signals-e2e-test.yml
