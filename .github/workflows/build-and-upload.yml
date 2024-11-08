@@ -22,10 +22,10 @@ on:
         default: 'integration'
         type: string
       target-branch:
-        default: ${{github.sha}}
+        default: ${{ github.sha }}
         type: string
       repository:
-        default: ${{github.repository}}
+        default: ${{ github.repository }}
         type: string
       test-image-before-upload:
         description: "Run Test on the new container image"
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{inputs.target-branch}}    
+          ref: ${{ inputs.target-branch }}    
           repository: ${{inputs.repository}}
 
 
