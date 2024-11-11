@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Build And Upload Artifact
+name: Build And Upload Artifact for Branch
 env:
   # Use terraform assume role for uploading to ecr
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
@@ -22,7 +22,7 @@ on:
         default: 'integration'
         type: string
       target-branch:
-        default: ${{ github.sha }}
+        default: ${{ github.ref_name }}
         type: string
       repository:
         default: ${{ github.repository }}
