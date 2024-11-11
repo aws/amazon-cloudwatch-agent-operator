@@ -21,8 +21,8 @@ on:
         required: false
         default: 'integration'
         type: string
-      target-branch:
-        default: ${{ github.ref_name }}
+      target-sha:
+        default: ${{ github.sha}}
         type: string
       repository:
         default: ${{ github.repository }}
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ inputs.target-branch }}    
+          ref: ${{ inputs.target-sha }}    
           repository: ${{inputs.repository}}
 
 
@@ -79,8 +79,11 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          tags: ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
+          tags: |
+           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+
 
   e2e-test:
     if: ${{inputs.test-image-before-upload}}
