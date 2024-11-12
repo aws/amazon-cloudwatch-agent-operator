@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry     		= "cwagentconfig.json"
-	defaultOtelCollectorConfigMapEntry 		= "cwagentotelconfig.yaml"
-	defaultTargetAllocatorConfigMapEntry 	= "targetallocator.yaml"
-	defaultPrometheusConfigMapEntry      	= "prometheus.yaml"
+	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
+	defaultOtelCollectorConfigMapEntry   = "cwagentotelconfig.yaml"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
+	defaultPrometheusConfigMapEntry      = "prometheus.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -43,12 +43,12 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		collectorConfigMapEntry:     	defaultCollectorConfigMapEntry,
-		otelCollectorConfigMapEntry: 	defaultOtelCollectorConfigMapEntry,
-		targetAllocatorConfigMapEntry: 	defaultTargetAllocatorConfigMapEntry,
-		prometheusConfigMapEntry:      	defaultPrometheusConfigMapEntry,
-		logger:                      	logf.Log.WithName("config"),
-		version:                     	version.Get(),
+		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
+		otelCollectorConfigMapEntry:   defaultOtelCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		prometheusConfigMapEntry:      defaultPrometheusConfigMapEntry,
+		logger:                        logf.Log.WithName("config"),
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)

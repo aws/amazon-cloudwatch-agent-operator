@@ -12,12 +12,13 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v2"
 
+	"go.opentelemetry.io/collector/confmap"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	ta "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
-	"go.opentelemetry.io/collector/confmap"
 )
 
 type targetAllocator struct {
