@@ -376,18 +376,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "does not support the attribute 'tolerations'",
 		},
 		{
-			name: "invalid mode with target allocator",
-			otelcol: AmazonCloudWatchAgent{
-				Spec: AmazonCloudWatchAgentSpec{
-					Mode: ModeDeployment,
-					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
-						Enabled: true,
-					},
-				},
-			},
-			expectedErr: "does not support the target allocation deployment",
-		},
-		{
 			name: "invalid target allocator config",
 			otelcol: AmazonCloudWatchAgent{
 				Spec: AmazonCloudWatchAgentSpec{
