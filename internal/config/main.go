@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
-	defaultOtelCollectorConfigMapEntry   = "cwagentotelconfig.yaml"
-	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
-	defaultPrometheusConfigMapEntry      = "prometheus.yaml"
+	defaultCollectorConfigMapEntry     		= "cwagentconfig.json"
+	defaultOtelCollectorConfigMapEntry 		= "cwagentotelconfig.yaml"
+	defaultTargetAllocatorConfigMapEntry 	= "targetallocator.yaml"
+	defaultPrometheusConfigMapEntry      	= "prometheus.yaml"
 )
 
 // Config holds the static configuration for this operator.
