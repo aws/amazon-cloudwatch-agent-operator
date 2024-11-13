@@ -784,7 +784,7 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 	server, _, err := createTestTLSServer(listenAddr)
 	assert.NoError(t, err)
 	go func() {
-		assert.NoError(t, server.StartHTTPS())
+		assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
 	}()
 	time.Sleep(100 * time.Millisecond) // wait for server to launch
 
@@ -835,14 +835,14 @@ func createTestTLSServer(listenAddr string) (*Server, *tls.Config, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	httpOptions := []Option{}
-	httpOptions = append(httpOptions, WithTLSConfig(tlsConfig, listenAddr))
-
 	//generate ca bundle
 	bundle, err := readCABundle(caBundle)
 	if err != nil {
 		return nil, nil, err
 	}
+	httpOptions := []Option{}
+	httpOptions = append(httpOptions, WithTLSConfig(tlsConfig, listenAddr))
+
 	allocator := &mockAllocator{targetItems: map[string]*target.Item{
 		"a": target.NewItem("job1", "", model.LabelSet{}, ""),
 	}}

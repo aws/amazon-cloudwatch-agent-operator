@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -73,7 +74,13 @@ func WithTLSConfig(tlsConfig *tls.Config, httpsListenAddr string) Option {
 		s.setRouter(httpsRouter)
 
 		s.httpsServer = &http.Server{Addr: httpsListenAddr, Handler: httpsRouter, ReadHeaderTimeout: 90 * time.Second, TLSConfig: tlsConfig}
-		s.server.Shutdown(context.Background())
+		err := s.server.Shutdown(context.Background())
+		if err != nil {
+			s.logger.Error(err, "Failed to shutdown http server")
+		}
+		if errors.Is(err, http.ErrServerClosed) {
+			s.logger.Info("Http server is already closed")
+		}
 		s.server = s.httpsServer
 	}
 }
