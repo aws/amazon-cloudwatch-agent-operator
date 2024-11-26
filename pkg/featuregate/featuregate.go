@@ -63,12 +63,12 @@ var (
 		featuregate.WithRegisterFromVersion("0.86.0"),
 		featuregate.WithRegisterDescription("controls whether the operator supports multi instrumentation"))
 
-	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
+	// EnableTargetAllocatorRewrite is the feature gate that controls whether the prometheus configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.rewritetargetallocator",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
+		featuregate.WithRegisterDescription("controls whether the operator should configure the prometheus targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
 	)
 

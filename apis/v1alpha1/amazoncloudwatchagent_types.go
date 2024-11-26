@@ -143,6 +143,9 @@ type AmazonCloudWatchAgentSpec struct {
 	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
+	// +optional
+	TargetAllocator AmazonCloudWatchAgentTargetAllocator `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
@@ -164,6 +167,9 @@ type AmazonCloudWatchAgentSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// Prometheus is the raw YAML to be used as the collector's prometheus configuration.
+	// +optional
+	Prometheus PrometheusConfig `json:"prometheus,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
@@ -274,6 +280,87 @@ type AmazonCloudWatchAgentSpec struct {
 	// This is only applicable to Daemonset mode.
 	// +optional
 	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
+}
+
+// AmazonCloudWatchAgentTargetAllocator defines the configurations for the Prometheus target allocator.
+type AmazonCloudWatchAgentTargetAllocator struct {
+	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
+	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
+	// that can be run in a high availability mode is consistent-hashing.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Resources to set on the OpenTelemetryTargetAllocator containers.
+	// +optional
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// AllocationStrategy determines which strategy the target allocator should use for allocation.
+	// The current option is consistent-hashing.
+	// +optional
+	AllocationStrategy AmazonCloudWatchAgentTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	// FilterStrategy determines how to filter targets before allocating them among the collectors.
+	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// Filtering is disabled by default.
+	// +optional
+	FilterStrategy string `json:"filterStrategy,omitempty"`
+	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// If specified, indicates the pod's scheduling constraints
+	// +optional
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+	// +optional
+	PrometheusCR AmazonCloudWatchAgentTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// SecurityContext configures the container security context for
+	// the target-allocator.
+	// +optional
+	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
+	// TopologySpreadConstraints embedded kubernetes pod configuration option,
+	// controls how pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains
+	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Toleration embedded kubernetes pod configuration option,
+	// controls how pods can be scheduled with matching taints
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
+	// consumed in the config file for the TargetAllocator.
+	// +optional
+	Env []v1.EnvVar `json:"env,omitempty"`
+}
+
+type AmazonCloudWatchAgentTargetAllocatorPrometheusCR struct {
+	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD.
+	//
+	// Default: "30s"
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// PodMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// PodMonitor's meta labels. The requirements are ANDed.
+	// +optional
+	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
+	// ServiceMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// +optional
+	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the AmazonCloudWatchAgent's

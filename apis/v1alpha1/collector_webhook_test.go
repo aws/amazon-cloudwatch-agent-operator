@@ -11,6 +11,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -273,6 +275,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()
@@ -282,6 +285,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 		})
 	}
 }
+
+var promCfgYaml = `config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+`
 
 // TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
 // deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
@@ -293,6 +302,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
+
+	promCfg := PrometheusConfig{}
+	err := yaml.Unmarshal([]byte(promCfgYaml), &promCfg)
+	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
 		name             string
@@ -313,21 +326,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Replicas:        &three,
 					MaxReplicas:     &five,
 					UpgradeStrategy: "adhoc",
-					Config: `receivers:
-  examplereceiver:
-    endpoint: "0.0.0.0:12345"
-  examplereceiver/settings:
-    endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: otel-collector
-          scrape_interval: 10s
-  jaeger/custom:
-    protocols:
-      thrift_http:
-        endpoint: 0.0.0.0:15268
-`,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+					Prometheus: promCfg,
 					Ports: []v1.ServicePort{
 						{
 							Name: "port1",
@@ -372,6 +374,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "does not support the attribute 'tolerations'",
+		},
+		{
+			name: "invalid target allocator config",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeStatefulSet,
+					TargetAllocator: AmazonCloudWatchAgentTargetAllocator{
+						Enabled: true,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec Prometheus configuration is incorrect",
 		},
 		{
 			name: "invalid port name",
@@ -755,6 +769,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				scheme: testScheme,
 				cfg: config.New(
 					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 			}
 			ctx := context.Background()

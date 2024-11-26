@@ -38,6 +38,23 @@ func Volumes(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) []corev1
 		},
 	}}
 
+	if !otelcol.Spec.Prometheus.IsEmpty() {
+		volumes = append(volumes, corev1.Volume{
+			Name: naming.PrometheusConfigMapVolume(),
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: naming.PrometheusConfigMap(otelcol.Name),
+					},
+					Items: []corev1.KeyToPath{{
+						Key:  cfg.PrometheusConfigMapEntry(),
+						Path: cfg.PrometheusConfigMapEntry(),
+					}},
+				},
+			},
+		})
+	}
+
 	if len(otelcol.Spec.Volumes) > 0 {
 		volumes = append(volumes, otelcol.Spec.Volumes...)
 	}
