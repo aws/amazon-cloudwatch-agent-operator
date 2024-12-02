@@ -73,9 +73,10 @@ jobs:
             cd integration-tests/terraform/eks
 
             terraform init
-            latest_version=$(aws eks describe-addon-versions --kubernetes-version=1.31 --addon-name=amazon-cloudwatch-observability --query='addons[].addonVersions[0].addonVersion' --region=us-west-2)
+            latest_version=$(aws eks describe-addon-versions --kubernetes-version=1.31 --addon-name=amazon-cloudwatch-observability \
+            --query='addons[].addonVersions[0].addonVersion' --region=us-west-2) | jq -r '.[0]'
             echo $latest_version
-            if terraform apply -var="addon_version=$latest_version" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+            if terraform apply -var="addon_version=${{ latest_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
               terraform destroy -auto-approve
             else
               terraform destroy -auto-approve && exit 1
