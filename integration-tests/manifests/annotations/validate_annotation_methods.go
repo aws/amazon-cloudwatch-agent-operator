@@ -186,7 +186,7 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 			}
 		}
 
-		if correct == true {
+		if correct {
 			fmt.Println("Namespace annotations are correct!")
 			return true
 		}
@@ -201,6 +201,10 @@ func updateOperator(t *testing.T, clientSet *kubernetes.Clientset, deployment *a
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 
 	deployment, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("Failed to get deployment: %v\n", err)
+		return false
+	}
 	deployment.Spec.Template.Spec.Containers[0].Args = args
 
 	_, err = clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
@@ -293,7 +297,6 @@ func updateAnnotationConfig(deployment *appsV1.Deployment, jsonStr string) *apps
 	indexOfAutoAnnotationConfigString := findIndexOfPrefix("--auto-annotation-config=", args)
 	if indexOfAutoAnnotationConfigString < 0 {
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--auto-annotation-config="+jsonStr)
-		indexOfAutoAnnotationConfigString = len(deployment.Spec.Template.Spec.Containers[0].Args) - 1
 	} else {
 		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = "--auto-annotation-config=" + jsonStr
 	}

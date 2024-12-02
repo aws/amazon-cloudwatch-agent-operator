@@ -122,6 +122,9 @@ func reconcileDesiredObjectsWPrune(ctx context.Context, kubeClient client.Client
 	}
 
 	desiredObjectMap, err := reconcileDesiredObjectUIDs(ctx, kubeClient, logger, &owner, scheme, desiredObjects...)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile desired objects: %w", err)
+	}
 
 	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
 	err = pruneStaleObjects(ctx, kubeClient, logger, previouslyOwnedObjects, desiredObjectMap)

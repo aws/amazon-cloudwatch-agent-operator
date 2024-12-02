@@ -286,7 +286,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 	for i, endp := range endps {
 		objKey := fmt.Sprintf("serviceMonitor/%s/%s/%d", smNamespace, smName, i)
 
-		if err = store.AddBearerToken(ctx, smNamespace, endp.BearerTokenSecret, objKey); err != nil {
+		if err = store.AddSafeAuthorizationCredentials(ctx, smNamespace, endp.Authorization, objKey); err != nil {
 			break
 		}
 
@@ -329,7 +329,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 	for i, endp := range podMetricsEndps {
 		objKey := fmt.Sprintf("podMonitor/%s/%s/%d", pmNamespace, pmName, i)
 
-		if err = store.AddBearerToken(ctx, pmNamespace, &endp.BearerTokenSecret, objKey); err != nil {
+		if err = store.AddSafeAuthorizationCredentials(ctx, pmNamespace, endp.Authorization, objKey); err != nil {
 			break
 		}
 
