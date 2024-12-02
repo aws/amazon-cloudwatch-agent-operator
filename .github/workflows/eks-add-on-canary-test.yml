@@ -5,7 +5,6 @@ name: EKS Add-on Canary Test
 env:
   TERRAFORM_AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
-
 on:
   workflow_dispatch:
 
