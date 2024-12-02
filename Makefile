@@ -205,7 +205,7 @@ impi:
 
 .PHONY: lint
 lint: golangci-lint simple-lint
-	$(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run --timeout 5m
 
 simple-lint: checklicense impi
 
@@ -242,7 +242,6 @@ golangci-lint: ## Download golangci-lint locally if necessary.
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	## Pin to release-0.18 since we are not yet on Go1.23
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.18
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
