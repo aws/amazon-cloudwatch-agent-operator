@@ -107,7 +107,7 @@ jobs:
           command: |
             addon_name="${{ github.event.inputs.addon_name || 'amazon-cloudwatch-observability' }}"
             addon_version="${{ github.event.inputs.addon_version || 'latest' }}"
-            run_in_beta="${{ github.event.inputs.run_in_beta || false }}"
+            run_in_beta="${{ github.event.inputs.run_in_beta }}"
             if [ "$run_in_beta" == "true" ]; then
               run_in_beta=1 
             else
@@ -137,7 +137,7 @@ jobs:
           timeout_minutes: 8
           retry_wait_seconds: 5
           command: |
-            run_in_beta="${{ github.event.inputs.run_in_beta || false }}"
+            run_in_beta="${{ github.event.inputs.run_in_beta }}"
             if [ "$run_in_beta" == "true" ]; then
               run_in_beta=1  # true
             else
