@@ -7,8 +7,6 @@ env:
 
 
 on:
-#  schedule:
-#    - cron: '0 0 * * *' # triggers the workflow every day
   workflow_dispatch:
 
 concurrency:
@@ -41,11 +39,6 @@ jobs:
         run: |
           echo "::set-output name=eks_addon_matrix::$(echo $(cat integration-tests/generator/k8s_versions_matrix.json))"
 
-#      - name: Echo test plan matrix
-#        run: |
-#          echo "eks_addon_matrix: ${{ steps.set-matrix.outputs.eks_addon_matrix }}"
-#          echo "Addon name ${{ github.event.inputs.addon_name }}, addon version  ${{ github.event.inputs.addon_version }} "
-
   EKSAddOnIntegrationTest:
     needs: [GenerateTestMatrix]
     name: EKSAddOnIntegrationTest
@@ -76,23 +69,4 @@ jobs:
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
-
             aws eks describe-addon-versions --kubernetes-version=1.31 --addon-name=amazon-cloudwatch-observability --query='addons[].addonVersions[0].addonVersion' --region=us-west-2
-#            terraform init
-#            if terraform apply -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-#              terraform destroy -auto-approve
-#            else
-#              terraform destroy -auto-approve && exit 1
-#            fi
-
-#      - name: Terraform destroy
-#        if: ${{ cancelled() || failure() }}
-#        uses: nick-fields/retry@v2
-#        with:
-#          max_attempts: 3
-#          timeout_minutes: 8
-#          retry_wait_seconds: 5
-#          command: |
-#            cd integration-tests/terraform/eks
-#
-#            terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" --auto-approve
