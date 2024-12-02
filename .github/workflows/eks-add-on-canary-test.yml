@@ -7,6 +7,9 @@ env:
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - canary
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
