@@ -54,9 +54,11 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 ADDLICENSE ?= $(LOCALBIN)/addlicense
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.14.0
+GOLANGCI_LINT_VERSION ?= v1.57.2
 ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 CW_AGENT_OPERATOR_IMPORT_PATH = "github.com/aws/amazon-cloudwatch-agent-operator"
 
@@ -202,8 +204,8 @@ impi:
 	@echo "Check import order/grouping finished"
 
 .PHONY: lint
-lint: simple-lint
-	$(LOCALBIN)/golangci-lint run ./... ||	(curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) v1.51.1)
+lint: golangci-lint simple-lint
+	$(GOLANGCI_LINT) run
 
 simple-lint: checklicense impi
 
@@ -233,6 +235,9 @@ checklicense: install-addlicense
     			echo "Check License finished successfully"; \
     		fi
 
+.PHONY: golangci-lint
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
