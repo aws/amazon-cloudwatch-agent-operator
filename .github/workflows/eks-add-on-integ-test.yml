@@ -11,18 +11,17 @@ on:
       addon_name:
         required: true
         type: string
-        default: "amazon-cloudwatch-observability"
         description: "EKS addon name"
       addon_version:
         required: true
         type: string
-        default: "v1.1.0-eksbuild.1"
         description: "EKS addon version"
       run_in_beta:
         required: true
         type: boolean
-        default: true
         description: "Run in EKS Addon Beta environment"
+  schedule:
+    - cron: '0 10 * * *' # triggers the workflow every day at 10:00 hours
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -105,14 +104,24 @@ jobs:
           max_attempts: 1
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
+          addon_name: ${{ github.event.inputs.addon_name || 'amazon-cloudwatch-observability' }}
+          addon_version: ${{ github.event.inputs.addon_version || '' }}
+          run_in_beta: ${{ github.event.inputs.run_in_beta || false }}
+
           command: |
             cd integration-tests/terraform/eks
 
             terraform init
-            if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
-              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve
+            
+            # Get the latest version of the EKS add-on in us-west-2
+            if ${{ addon_version }} == ''
+              addon_version=$(aws eks describe-addon-versions --addon-name=amazon-cloudwatch-observability --query='addons[].addonVersions[0].addonVersion' --region=us-west-2 | jq -r '.[0]') 
+            fi
+            
+            if terraform apply -var="beta=${{ run_in_beta }}" -var="addon_name=${{ addon_name }}" -var="addon_version=${{ addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
+              terraform destroy -var="beta=${{ run_in_beta }}" -auto-approve
             else
-              terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" -auto-approve && exit 1
+              terraform destroy -var="beta=${{ run_in_beta }}" -auto-approve && exit 1
             fi
 
       - name: Terraform destroy
@@ -122,7 +131,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 8
           retry_wait_seconds: 5
+          run_in_beta: ${{ github.event.inputs.run_in_beta || false }}
           command: |
             cd integration-tests/terraform/eks
 
-            terraform destroy -var="beta=${{ github.event.inputs.run_in_beta }}" --auto-approve
+            terraform destroy -var="beta=${{ run_in_beta }}" --auto-approve
