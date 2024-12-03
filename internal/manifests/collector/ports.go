@@ -70,9 +70,7 @@ var AppSignalsPortToServicePortMap = map[int32][]corev1.ServicePort{
 func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
 	ports := make([]corev1.ServicePort, 0, len(portMap))
 	for _, plist := range portMap {
-		for _, p := range plist {
-			ports = append(ports, p)
-		}
+		ports = append(ports, plist...)
 	}
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
