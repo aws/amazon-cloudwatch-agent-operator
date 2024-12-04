@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      bypass-e2e-test:
+        description: "Bypass E2E Test"
+        required: false
+        default: false
+        type: boolean
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -27,6 +32,11 @@ on:
     inputs:
       release:
         description: 'Release Artifact'
+        required: false
+        default: false
+        type: boolean
+      bypass-e2e-test:
+        description: "Bypass E2E Test"
         required: false
         default: false
         type: boolean
@@ -135,6 +145,7 @@ jobs:
           platforms: linux/amd64, linux/arm64
 
   e2e-test:
+    if: ${{ !inputs.bypass-e2e-test }}
     name: "Application Signals E2E Test"
     needs: [MakeBinary]
     uses: ./.github/workflows/application-signals-e2e-test.yml
@@ -147,7 +158,7 @@ jobs:
 
   push-release-ecr:
     if: ${{ inputs.release }}
-    needs: e2e-test
+    needs: [MakeTABinary, e2e-test]
     permissions:
       id-token: write
       contents: read
