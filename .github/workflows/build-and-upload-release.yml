@@ -134,6 +134,7 @@ jobs:
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 
+
       - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
         uses: docker/build-push-action@v4
         if: steps.cached_binaries.outputs.cache-hit == false
