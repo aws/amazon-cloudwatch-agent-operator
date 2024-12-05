@@ -38,3 +38,5 @@ jobs:
   BuildAndUpload:
     uses: ./.github/workflows/build-and-upload.yml
     secrets: inherit
+    with:
+      tag: ${{inputs.tag}}
