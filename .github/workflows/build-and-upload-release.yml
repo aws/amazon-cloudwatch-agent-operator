@@ -23,7 +23,7 @@ on:
         required: false
         type: string
       e2e-test-bypass-approver:
-        description: 'GitHub username of person who can 2PR bypassing the E2E test run'
+        description: 'GitHub username of person who can 2PR bypass for the E2E test run'
         required: false
         type: string
       tag:
@@ -43,7 +43,7 @@ on:
         required: false
         type: string
       e2e-test-bypass-approver:
-        description: 'GitHub username of person who can 2PR bypassing the E2E test run'
+        description: 'GitHub username of person who can 2PR bypass for the E2E test run'
         required: false
         type: string
       tag:
