@@ -18,6 +18,14 @@ on:
         required: false
         default: false
         type: boolean
+      e2e-test-bypass-link:
+        description: 'Failed E2E Test Run Link (for bypass)'
+        required: false
+        type: string
+      e2e-test-bypass-approver:
+        description: 'Approver GitHub Username (for bypass)'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -30,6 +38,14 @@ on:
         required: false
         default: false
         type: boolean
+      e2e-test-bypass-link:
+        description: 'Failed E2E Test Run Link (for bypass)'
+        required: false
+        type: string
+      e2e-test-bypass-approver:
+        description: 'Approver GitHub Username (for bypass)'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -124,6 +140,7 @@ jobs:
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 
+
       - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
         uses: docker/build-push-action@v4
         if: steps.cached_binaries.outputs.cache-hit == false
@@ -134,7 +151,18 @@ jobs:
           tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
 
+  bypass-info:
+    if: ${{ inputs.e2e-test-bypass-link != '' || inputs.e2e-test-bypass-approver != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo bypass information
+        run: |
+          echo "**E2E test bypass requested**" >> $GITHUB_STEP_SUMMARY
+          echo "**Failing Test**: ${{ inputs.e2e-test-bypass-link }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Approver**: ${{ inputs.e2e-test-bypass-approver }}" >> $GITHUB_STEP_SUMMARY
+
   e2e-test:
+    if: ${{ inputs.e2e-test-bypass-link == '' && inputs.e2e-test-bypass-approver == '' }}
     name: "Application Signals E2E Test"
     needs: [MakeBinary]
     uses: ./.github/workflows/application-signals-e2e-test.yml
@@ -147,7 +175,7 @@ jobs:
 
   push-release-ecr:
     if: ${{ inputs.release }}
-    needs: e2e-test
+    needs: [MakeTABinary, e2e-test]
     permissions:
       id-token: write
       contents: read
@@ -155,6 +183,7 @@ jobs:
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
