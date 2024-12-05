@@ -7,6 +7,8 @@ env:
   AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
   ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
   ECR_OPERATOR_RELEASE_IMAGE: ${{ vars.ECR_OPERATOR_RELEASE_IMAGE }}
+  ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO}}
+  ECR_TARGET_ALLOCATOR_RELEASE_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_RELEASE_REPO}}
 
 on:
   workflow_dispatch:
@@ -16,6 +18,14 @@ on:
         required: false
         default: false
         type: boolean
+      e2e-test-bypass-link:
+        description: 'Failed E2E Test Run Link (for bypass)'
+        required: false
+        type: string
+      e2e-test-bypass-approver:
+        description: 'Approver GitHub Username (for bypass)'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -28,6 +38,14 @@ on:
         required: false
         default: false
         type: boolean
+      e2e-test-bypass-link:
+        description: 'Failed E2E Test Run Link (for bypass)'
+        required: false
+        type: string
+      e2e-test-bypass-approver:
+        description: 'Approver GitHub Username (for bypass)'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -39,4 +57,7 @@ jobs:
     uses: ./.github/workflows/build-and-upload.yml
     secrets: inherit
     with:
+      release: ${{inputs.release}}
       tag: ${{inputs.tag}}
+      e2e-test-bypass-link: ${{inputs.e2e-test-bypass-link}}
+      e2e-test-bypass-approver: ${{inputs.e2e-test-bypass-approver}}

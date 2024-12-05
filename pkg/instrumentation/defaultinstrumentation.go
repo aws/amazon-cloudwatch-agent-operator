@@ -148,7 +148,7 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 	if isAppSignalsEnabled {
 		isJavaRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_ENABLED")
 		if !ok {
-			isJavaRuntimeEnabled = "true";
+			isJavaRuntimeEnabled = "true"
 		}
 		appSignalsEnvs := []corev1.EnvVar{
 			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe
@@ -185,7 +185,7 @@ func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 	if isAppSignalsEnabled {
 		isPythonRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_ENABLED")
 		if !ok {
-			isPythonRuntimeEnabled = "true";
+			isPythonRuntimeEnabled = "true"
 		}
 		envs = []corev1.EnvVar{
 			{Name: "OTEL_AWS_APP_SIGNALS_ENABLED", Value: "true"}, //TODO: remove in favor of new name once safe

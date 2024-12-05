@@ -32,7 +32,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
-		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.Factory(Service),
@@ -54,6 +53,13 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
+	}
+	configmaps, err := ConfigMaps(params)
+	if err != nil {
+		return nil, err
+	}
+	for _, configmap := range configmaps {
+		resourceManifests = append(resourceManifests, configmap)
 	}
 	routes, err := Routes(params)
 	if err != nil {

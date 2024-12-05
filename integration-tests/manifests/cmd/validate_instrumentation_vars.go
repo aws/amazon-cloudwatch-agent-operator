@@ -7,15 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
-
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var appSignalsEnvVarKeys = []string{
@@ -86,7 +84,7 @@ func verifyInstrumentationEnvVariables(clientset *kubernetes.Clientset, namespac
 	}
 	fmt.Println("Pod environment variables:", envMap)
 
-	fileData, err := ioutil.ReadFile(jsonPath)
+	fileData, err := os.ReadFile(jsonPath)
 	if err != nil {
 		fmt.Println("Error reading JSON file:", err)
 		return false

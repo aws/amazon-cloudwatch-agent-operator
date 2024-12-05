@@ -11,7 +11,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,6 +21,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	collectorStatus "github.com/aws/amazon-cloudwatch-agent-operator/internal/status/collector"
 )
 
@@ -40,6 +43,79 @@ type Params struct {
 	Config   config.Config
 }
 
+func (r *AmazonCloudWatchAgentReconciler) findCloudWatchAgentOwnedObjects(ctx context.Context, owner v1alpha1.AmazonCloudWatchAgent) (map[types.UID]client.Object, error) {
+	// Define a map to store the owned objects
+	ownedObjects := make(map[types.UID]client.Object)
+	selector := manifestutils.SelectorLabelsForAllOperatorManaged(owner.ObjectMeta)
+	listOps := &client.ListOptions{
+		Namespace:     owner.Namespace,
+		LabelSelector: labels.SelectorFromSet(selector),
+	}
+	// Define lists for different Kubernetes resources
+	configMapList := &corev1.ConfigMapList{}
+	serviceList := &corev1.ServiceList{}
+	serviceAccountList := &corev1.ServiceAccountList{}
+	deploymentList := &appsv1.DeploymentList{}
+	statefulSetList := &appsv1.StatefulSetList{}
+	daemonSetList := &appsv1.DaemonSetList{}
+	var err error
+
+	// List ConfigMaps
+	err = r.List(ctx, configMapList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range configMapList.Items {
+		ownedObjects[configMapList.Items[i].GetUID()] = &configMapList.Items[i]
+	}
+
+	// List Services
+	err = r.List(ctx, serviceList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range serviceList.Items {
+		ownedObjects[serviceList.Items[i].GetUID()] = &serviceList.Items[i]
+	}
+	// List ServiceAccounts
+	err = r.List(ctx, serviceAccountList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range serviceAccountList.Items {
+		ownedObjects[serviceAccountList.Items[i].GetUID()] = &serviceAccountList.Items[i]
+	}
+
+	// List Deployments
+	err = r.List(ctx, deploymentList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range deploymentList.Items {
+		ownedObjects[deploymentList.Items[i].GetUID()] = &deploymentList.Items[i]
+	}
+
+	// List StatefulSets
+	err = r.List(ctx, statefulSetList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range statefulSetList.Items {
+		ownedObjects[statefulSetList.Items[i].GetUID()] = &statefulSetList.Items[i]
+	}
+
+	// List DaemonSets
+	err = r.List(ctx, daemonSetList, listOps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range daemonSetList.Items {
+		ownedObjects[daemonSetList.Items[i].GetUID()] = &daemonSetList.Items[i]
+	}
+
+	return ownedObjects, nil
+
+}
 func (r *AmazonCloudWatchAgentReconciler) getParams(instance v1alpha1.AmazonCloudWatchAgent) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
@@ -108,7 +184,8 @@ func (r *AmazonCloudWatchAgentReconciler) Reconcile(ctx context.Context, req ctr
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
+
+	err := reconcileDesiredObjectsWPrune(ctx, r.Client, log, params.OtelCol, params.Scheme, desiredObjects, r.findCloudWatchAgentOwnedObjects)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 

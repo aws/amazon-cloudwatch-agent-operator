@@ -267,7 +267,6 @@ func TestAnnotationsOnMultipleResources(t *testing.T) {
 }
 
 func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
-	startTime := time.Now()
 	clientSet, uniqueNamespace := setupFunction(t, "manual-annotation-removal", []string{sampleDeploymentYamlNameRelPath})
 	annotationConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
@@ -279,7 +278,7 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	if err != nil {
 		t.Error("Error:", err)
 	}
-	startTime = time.Now()
+	startTime := time.Now()
 	updateTheOperator(t, clientSet, string(jsonStr))
 	if err != nil {
 		t.Errorf("Failed to get deployment app: %s", err.Error())
@@ -308,6 +307,9 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 		time.Sleep(5 * time.Second)
 	}
 	deployment, err := clientSet.AppsV1().Deployments(uniqueNamespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("Error getting deployment: %v\n", err)
+	}
 
 	//Removing all annotations
 	deployment.ObjectMeta.Annotations = nil

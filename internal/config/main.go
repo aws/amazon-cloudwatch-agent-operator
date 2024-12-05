@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	defaultCollectorConfigMapEntry     = "cwagentconfig.json"
-	defaultOtelCollectorConfigMapEntry = "cwagentotelconfig.yaml"
+	defaultCollectorConfigMapEntry       = "cwagentconfig.json"
+	defaultOtelCollectorConfigMapEntry   = "cwagentotelconfig.yaml"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
+	defaultPrometheusConfigMapEntry      = "prometheus.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -31,6 +33,9 @@ type Config struct {
 	autoInstrumentationJavaImage        string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	targetAllocatorImage                string
+	targetAllocatorConfigMapEntry       string
+	prometheusConfigMapEntry            string
 	labelsFilter                        []string
 }
 
@@ -38,10 +43,12 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		collectorConfigMapEntry:     defaultCollectorConfigMapEntry,
-		otelCollectorConfigMapEntry: defaultOtelCollectorConfigMapEntry,
-		logger:                      logf.Log.WithName("config"),
-		version:                     version.Get(),
+		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
+		otelCollectorConfigMapEntry:   defaultOtelCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		prometheusConfigMapEntry:      defaultPrometheusConfigMapEntry,
+		logger:                        logf.Log.WithName("config"),
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -61,6 +68,9 @@ func New(opts ...Option) Config {
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		dcgmExporterImage:                   o.dcgmExporterImage,
 		neuronMonitorImage:                  o.neuronMonitorImage,
+		targetAllocatorImage:                o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		prometheusConfigMapEntry:            o.prometheusConfigMapEntry,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -124,6 +134,19 @@ func (c *Config) DcgmExporterImage() string {
 func (c *Config) NeuronMonitorImage() string {
 	return c.neuronMonitorImage
 }
+
+// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+func (c *Config) TargetAllocatorImage() string {
+	return c.targetAllocatorImage
+}
+
+// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+func (c *Config) TargetAllocatorConfigMapEntry() string {
+	return c.targetAllocatorConfigMapEntry
+}
+
+// PrometheusConfigMapEntry represents the configuration file name for Prometheus.
+func (c *Config) PrometheusConfigMapEntry() string { return c.prometheusConfigMapEntry }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {

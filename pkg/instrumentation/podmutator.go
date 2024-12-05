@@ -29,7 +29,6 @@ const (
 
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
 )
 
 type instPodMutator struct {

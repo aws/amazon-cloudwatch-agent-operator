@@ -125,10 +125,10 @@ func TestXRayGetContainerPorts(t *testing.T) {
 
 func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/xrayAgentConfig.json")
-	strings.Replace(cfg, "2800", "2000", 1)
+	cfg = strings.Replace(cfg, "2800", "2000", 1) // set Xray trace port to 2000
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
-	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
+	assert.Equal(t, int32(2000), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
 	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
 	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
@@ -137,11 +137,13 @@ func TestXRayWithBindAddressDefaultGetContainerPorts(t *testing.T) {
 
 func TestXRayWithTCPProxyBindAddressDefaultGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/xrayAgentConfig.json")
-	strings.Replace(cfg, "2900", "2000", 1)
+	cfg = strings.Replace(cfg, "2900", "2000", 1) // set Xray proxy port to 2000
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 2, len(containerPorts))
 	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
 	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, int32(2000), containerPorts[CWA+XrayProxy].ContainerPort)
+	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
 	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
 }
 
@@ -153,7 +155,7 @@ func TestNilMetricsGetContainerPorts(t *testing.T) {
 
 func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/multipleReceiversAgentConfig.json")
-	strings.Replace(cfg, "2900", "2000", 1)
+	cfg = strings.Replace(cfg, "2900", "2000", 1) // set Xray proxy to port 2000
 	wantPorts := []corev1.ContainerPort{
 		{
 			Name:          CWA + Server,
@@ -199,11 +201,6 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 			Name:          CWA + XrayTraces,
 			Protocol:      corev1.ProtocolUDP,
 			ContainerPort: int32(2800),
-		},
-		{
-			Name:          CWA + XrayProxy,
-			Protocol:      corev1.ProtocolTCP,
-			ContainerPort: int32(2900),
 		},
 		{
 			Name:          OtlpGrpc + "-4327",

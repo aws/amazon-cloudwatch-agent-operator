@@ -36,3 +36,33 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
+
+  lint:
+    name: Code standards (linting)
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "~1.22.4"
+
+    - name: Cache tools
+      uses: actions/cache@v4
+      id: setup-go
+      with:
+        path: bin
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+
+    - uses: actions/cache@v4
+      with:
+        path: |
+          /home/runner/.cache/golangci-lint
+        key: golangcilint-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          golangcilint-
+
+    - name: Lint
+      run: make lint

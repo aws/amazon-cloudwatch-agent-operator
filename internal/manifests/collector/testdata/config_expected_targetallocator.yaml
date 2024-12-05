@@ -1,0 +1,8 @@
+config:
+  global:
+    evaluation_interval: 1m
+    scrape_interval: 1m
+    scrape_timeout: 10s
+target_allocator:
+  endpoint: https://test-target-allocator-service:80
+  interval: 30s

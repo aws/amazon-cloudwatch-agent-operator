@@ -13,12 +13,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -71,9 +70,7 @@ var AppSignalsPortToServicePortMap = map[int32][]corev1.ServicePort{
 func PortMapToServicePortList(portMap map[int32][]corev1.ServicePort) []corev1.ServicePort {
 	ports := make([]corev1.ServicePort, 0, len(portMap))
 	for _, plist := range portMap {
-		for _, p := range plist {
-			ports = append(ports, p)
-		}
+		ports = append(ports, plist...)
 	}
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
