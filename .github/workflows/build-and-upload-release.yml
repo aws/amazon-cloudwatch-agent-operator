@@ -18,11 +18,14 @@ on:
         required: false
         default: false
         type: boolean
-      bypass-e2e-test:
-        description: "Bypass E2E Test"
+      e2e-test-bypass-link:
+        description: 'Link to failed E2E test run (for bypass)'
         required: false
-        default: false
-        type: boolean
+        type: string
+      e2e-test-bypass-approver:
+        description: 'GitHub username of person who can 2PR bypassing the E2E test run'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -35,11 +38,14 @@ on:
         required: false
         default: false
         type: boolean
-      bypass-e2e-test:
-        description: "Bypass E2E Test"
+      e2e-test-bypass-link:
+        description: 'Link to failed E2E test run (for bypass)'
         required: false
-        default: false
-        type: boolean
+        type: string
+      e2e-test-bypass-approver:
+        description: 'GitHub username of person who can 2PR bypassing the E2E test run'
+        required: false
+        type: string
       tag:
         description: 'Staging Artifact Tag'
         required: false
@@ -146,7 +152,7 @@ jobs:
           platforms: linux/amd64, linux/arm64
 
   e2e-test:
-    if: ${{ !inputs.bypass-e2e-test }}
+    if: ${{ inputs.e2e-test-bypass-link == '' && inputs.e2e-test-bypass-approver == '' }}
     name: "Application Signals E2E Test"
     needs: [MakeBinary]
     uses: ./.github/workflows/application-signals-e2e-test.yml
@@ -164,9 +170,11 @@ jobs:
       id-token: write
       contents: read
     runs-on: ubuntu-latest
+    environment: 'production' # Adding this makes job require reviewer: https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/reviewing-deployments.
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
