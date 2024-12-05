@@ -151,6 +151,16 @@ jobs:
           tags: ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
           platforms: linux/amd64, linux/arm64
 
+  bypass-info:
+    if: ${{ inputs.e2e-test-bypass-link != '' || inputs.e2e-test-bypass-approver != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo bypass information
+        run: |
+          echo "E2E test bypass requested" >> $GITHUB_STEP_SUMMARY
+          echo "Link: ${{ inputs.e2e-test-bypass-link }}" >> $GITHUB_STEP_SUMMARY
+          echo "Approver: ${{ inputs.e2e-test-bypass-approver }}" >> $GITHUB_STEP_SUMMARY
+
   e2e-test:
     if: ${{ inputs.e2e-test-bypass-link == '' && inputs.e2e-test-bypass-approver == '' }}
     name: "Application Signals E2E Test"
