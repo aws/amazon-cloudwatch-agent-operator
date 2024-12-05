@@ -163,13 +163,6 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
 
-  test-production-env:
-    runs-on: ubuntu-latest
-    environment: 'production'
-    steps:
-      - name: Test Production Environment
-        run: echo "Successfully accessed production environment."
-
   push-release-ecr:
     if: ${{ inputs.release }}
     needs: [MakeTABinary, e2e-test]
