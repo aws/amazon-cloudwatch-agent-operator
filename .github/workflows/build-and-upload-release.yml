@@ -159,7 +159,7 @@ jobs:
         run: |
           echo "**E2E test bypass requested**" >> $GITHUB_STEP_SUMMARY
           echo "**Failing Test**: ${{ inputs.e2e-test-bypass-link }}" >> $GITHUB_STEP_SUMMARY
-          echo "**2PR: ${{ inputs.e2e-test-bypass-approver }}" >> $GITHUB_STEP_SUMMARY
+          echo "**2PR**: ${{ inputs.e2e-test-bypass-approver }}" >> $GITHUB_STEP_SUMMARY
 
   e2e-test:
     if: ${{ inputs.e2e-test-bypass-link == '' && inputs.e2e-test-bypass-approver == '' }}
