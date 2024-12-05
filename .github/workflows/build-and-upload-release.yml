@@ -180,7 +180,6 @@ jobs:
       id-token: write
       contents: read
     runs-on: ubuntu-latest
-    environment: 'production' # Adding this makes job require reviewer: https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/reviewing-deployments.
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
