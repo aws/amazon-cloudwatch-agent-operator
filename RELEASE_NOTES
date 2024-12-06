@@ -1,4 +1,15 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v2.0.0 (2024-12-09)
+========================================================================
+Enhancements:
+* [Prometheus] Implement Target Allocator to distribute prometheus targets among CloudWatch Agent instances
+* [Prometheus] Create Prometheus and Target Allocator resources 
+* Implementing daily Canary Test for EKS add-on
+* Add linter
+* Implement Bypass Test Mechanism for Emergent Release
+
+
+========================================================================
 Amazon CloudWatch Agent Operator v1.9.0 (2024-11-01)
 ========================================================================
 Enhancements:
