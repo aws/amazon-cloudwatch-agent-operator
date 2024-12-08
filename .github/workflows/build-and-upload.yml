@@ -172,7 +172,7 @@ jobs:
 
   push-release-ecr:
     if: ${{ inputs.release }}
-    needs: e2e-test
+    needs: [MakeTABinary, e2e-test]
     permissions:
       id-token: write
       contents: read
