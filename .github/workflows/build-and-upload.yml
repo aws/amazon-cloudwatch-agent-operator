@@ -119,7 +119,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
-          aws-region: us-west-2
+          aws-region: ${{inputs.region}}
 
       - name: Login to ECR
         if: steps.cached_binaries.outputs.cache-hit == false
