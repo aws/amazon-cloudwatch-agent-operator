@@ -61,3 +61,4 @@ jobs:
       tag: ${{inputs.tag}}
       e2e-test-bypass-link: ${{inputs.e2e-test-bypass-link}}
       e2e-test-bypass-approver: ${{inputs.e2e-test-bypass-approver}}
+      test-image-before-upload: ${{ inputs.e2e-test-bypass-link == '' && inputs.e2e-test-bypass-approver == '' }}
