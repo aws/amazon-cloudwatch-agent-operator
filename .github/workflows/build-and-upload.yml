@@ -1,0 +1,206 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build And Upload Artifact for Branch
+env:
+  # Use terraform assume role for uploading to ecr
+  AWS_ASSUME_ROLE: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+  ECR_OPERATOR_STAGING_REPO: ${{ vars.ECR_OPERATOR_STAGING_REPO }}
+  ECR_OPERATOR_RELEASE_IMAGE: ${{ vars.ECR_OPERATOR_RELEASE_IMAGE }}
+  ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO }}
+  ECR_TARGET_ALLOCATOR_RELEASE_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_RELEASE_REPO }}
+  
+on:
+  workflow_call:
+    inputs:
+      release:
+        description: 'Release Artifact'
+        required: false
+        default: false
+        type: boolean
+      e2e-test-bypass-link:
+        description: 'Failed E2E Test Run Link (for bypass)'
+        required: false
+        type: string
+      e2e-test-bypass-approver:
+        description: 'Approver GitHub Username (for bypass)'
+        required: false
+        type: string
+      tag:
+        description: 'Staging Artifact Tag'
+        required: false
+        default: 'integration'
+        type: string
+      target-sha:
+        default: ${{ github.sha}}
+        type: string
+      repository:
+        default: ${{ github.repository }}
+        type: string
+      test-image-before-upload:
+        description: "Run Test on the new container image"
+        default: true
+        type: boolean
+      region: 
+        description: "AWS Region to run the build/test on"
+        default: "us-west-2"
+        type: string
+
+
+jobs:
+  MakeBinary:
+    name: 'MakeContainerImage'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target-sha }}    
+          repository: ${{inputs.repository}}
+
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v4
+        with:
+          go-version: ~1.19.6
+          cache: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: ${{inputs.region}}
+
+      - name: Login to ECR
+        if: steps.cached_binaries.outputs.cache-hit == false
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Docker Buildx
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up QEMU
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-qemu-action@v1
+
+      - name: Build Cloudwatch Agent Operator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./Dockerfile
+          context: .
+          push: true
+          platforms: linux/amd64, linux/arm64
+          tags: |
+           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+  MakeTABinary:
+    name: 'MakeTargetAllocatorImage'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target-sha }}
+          repository: ${{inputs.repository}}
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>1.22'
+          cache: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: ${{inputs.region}}
+
+      - name: Login to ECR
+        if: steps.cached_binaries.outputs.cache-hit == false
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Docker Buildx
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up QEMU
+        if: steps.cached_binaries.outputs.cache-hit == false
+        uses: docker/setup-qemu-action@v1
+
+      - name: Build Binaries
+        run: |
+          go mod download
+          export GOARCH=arm64 && make targetallocator 
+          export GOARCH=amd64 && make targetallocator 
+
+      - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
+        uses: docker/build-push-action@v4
+        if: steps.cached_binaries.outputs.cache-hit == false
+        with:
+          file: ./cmd/amazon-cloudwatch-agent-target-allocator/Dockerfile
+          context: ./cmd/amazon-cloudwatch-agent-target-allocator
+          push: true
+          tags: |
+           ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
+           ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+          platforms: linux/amd64, linux/arm64
+
+  bypass-info:
+    if: ${{ inputs.e2e-test-bypass-link != '' || inputs.e2e-test-bypass-approver != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo bypass information
+        run: |
+          echo "**E2E test bypass requested**" >> $GITHUB_STEP_SUMMARY
+          echo "**Failing Test**: ${{ inputs.e2e-test-bypass-link }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Approver**: ${{ inputs.e2e-test-bypass-approver }}" >> $GITHUB_STEP_SUMMARY
+
+  e2e-test:
+    if: ${{inputs.test-image-before-upload}}
+    name: "Application Signals E2E Test"
+    needs: MakeBinary
+    uses: ./.github/workflows/application-signals-e2e-test.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      tag: ${{ inputs.tag }}
+
+  push-release-ecr:
+    if: ${{ inputs.release }}
+    needs: [MakeTABinary, e2e-test]
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: ${{inputs.region}} 
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push image to release ECR
+        run: |
+          docker buildx imagetools create \
+          -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
+          ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
