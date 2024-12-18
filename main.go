@@ -52,7 +52,7 @@ const (
 	autoInstrumentationNodeJSImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
-	targetAllocatorImageRepository           = "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator"
+	targetAllocatorImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent-target-allocator"
 )
 
 var (
