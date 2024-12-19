@@ -209,8 +209,13 @@ func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 func getDotNetEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
 	var envs []corev1.EnvVar
 	if isAppSignalsEnabled {
+		isDotNetRuntimeEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_DOTNET_RUNTIME_ENABLED")
+		if !ok {
+			isDotNetRuntimeEnabled = "true"
+		}
 		envs = []corev1.EnvVar{
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+			{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isDotNetRuntimeEnabled},
 			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
 			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 			{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
