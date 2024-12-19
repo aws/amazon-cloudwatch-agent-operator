@@ -40,6 +40,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_ENABLED", "true")
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_ENABLED", "true")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_RUNTIME_ENABLED", "true")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -116,6 +117,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
@@ -239,6 +241,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
@@ -369,6 +372,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	os.Setenv("AUTO_INSTRUMENTATION_NODEJS_MEM_REQUEST", "128Mi")
 	os.Setenv("AUTO_INSTRUMENTATION_JAVA_RUNTIME_METRICS", "true")
 	os.Setenv("AUTO_INSTRUMENTATION_PYTHON_RUNTIME_METRICS", "true")
+	os.Setenv("AUTO_INSTRUMENTATION_DOTNET_RUNTIME_METRICS", "true")
 
 	httpInst := &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
@@ -445,6 +449,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
@@ -568,6 +573,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Image: defaultDotNetInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
 					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
