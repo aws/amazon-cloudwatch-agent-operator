@@ -132,6 +132,18 @@ func TestApplicationSignalsXRayTracesCustom(t *testing.T) {
 	assert.Equal(t, corev1.ProtocolTCP, containerPorts[AppSignalsProxy].Protocol)
 }
 
+func TestXRayCustomUDP(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/xRayCustomUDP.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
+	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
+	assert.Equal(t, int32(2000), containerPorts[XrayProxy].ContainerPort)
+	assert.Equal(t, XrayProxy, containerPorts[XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[XrayProxy].Protocol)
+}
+
 func TestEMFGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/emfAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
