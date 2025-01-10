@@ -48,19 +48,100 @@ func TestDefaultCollectDGetContainerPorts(t *testing.T) {
 	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CollectD].Protocol)
 }
 
-func TestApplicationSignals(t *testing.T) {
-	cfg := getStringFromFile("./test-resources/application_signals.json")
+func TestApplicationSignalsMetrics(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/applicationSignals.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[Server].Protocol)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+}
+
+func TestApplicationSignalsTraces(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/applicationSignalsOnlyTraces.json")
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 4, len(containerPorts))
-	assert.Equal(t, int32(4311), containerPorts[CWA+Server].ContainerPort)
-	assert.Equal(t, CWA+Server, containerPorts[CWA+Server].Name)
-	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+Server].Protocol)
-	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[Server].Protocol)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+}
+
+func TestApplicationSignalsMetricsAndTraces(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/applicationSignalsWithTraces.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 4, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[Server].Protocol)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+}
+
+func TestApplicationSignalsXRayTraces(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/applicationSignalsXRayTraces.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 5, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[Server].Protocol)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[XrayTraces].ContainerPort)
+	assert.Equal(t, XrayTraces, containerPorts[XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[XrayTraces].Protocol)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[AppSignalsProxy].Protocol)
+}
+
+func TestApplicationSignalsXRayTracesCustom(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/applicationSignalsXRayTracesCustom.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 6, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[Server].Protocol)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
+	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
+	assert.Equal(t, int32(2900), containerPorts[CWA+XrayProxy].ContainerPort)
+	assert.Equal(t, CWA+XrayProxy, containerPorts[CWA+XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[CWA+XrayProxy].Protocol)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[AppSignalsProxy].Protocol)
+}
+
+func TestXRayCustomUDP(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/xRayCustomUDP.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 2, len(containerPorts))
+	assert.Equal(t, int32(2800), containerPorts[CWA+XrayTraces].ContainerPort)
+	assert.Equal(t, CWA+XrayTraces, containerPorts[CWA+XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[CWA+XrayTraces].Protocol)
+	assert.Equal(t, int32(2000), containerPorts[XrayProxy].ContainerPort)
+	assert.Equal(t, XrayProxy, containerPorts[XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[XrayProxy].Protocol)
 }
 
 func TestEMFGetContainerPorts(t *testing.T) {
@@ -83,6 +164,11 @@ func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
 			ContainerPort: int32(2000),
 		},
 		{
+			Name:          CWA + XrayProxy,
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(2000),
+		},
+		{
 			Name:          OtlpGrpc + "-4327",
 			Protocol:      corev1.ProtocolTCP,
 			ContainerPort: int32(4327),
@@ -100,9 +186,13 @@ func TestXrayAndOTLPGetContainerPorts(t *testing.T) {
 func TestDefaultXRayAndOTLPGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/xrayAndOTLPDefaultAgentConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
-	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, 4, len(containerPorts))
 	assert.Equal(t, int32(2000), containerPorts[XrayTraces].ContainerPort)
 	assert.Equal(t, XrayTraces, containerPorts[XrayTraces].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts[XrayTraces].Protocol)
+	assert.Equal(t, int32(2000), containerPorts[XrayTraces].ContainerPort)
+	assert.Equal(t, XrayProxy, containerPorts[XrayProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[XrayProxy].Protocol)
 	assert.Equal(t, int32(4317), containerPorts[OtlpGrpc].ContainerPort)
 	assert.Equal(t, OtlpGrpc, containerPorts[OtlpGrpc].Name)
 	assert.Equal(t, corev1.ProtocolTCP, containerPorts[OtlpGrpc].Protocol)
@@ -158,24 +248,19 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 	cfg = strings.Replace(cfg, "2900", "2000", 1) // set Xray proxy to port 2000
 	wantPorts := []corev1.ContainerPort{
 		{
-			Name:          CWA + Server,
+			Name:          Server,
 			Protocol:      corev1.ProtocolTCP,
 			ContainerPort: int32(4311),
 		},
 		{
-			Name:          CWA + AppSignalsGrpc,
+			Name:          AppSignalsGrpc,
 			Protocol:      corev1.ProtocolTCP,
 			ContainerPort: int32(4315),
 		},
 		{
-			Name:          CWA + AppSignalsHttp,
+			Name:          AppSignalsHttp,
 			Protocol:      corev1.ProtocolTCP,
 			ContainerPort: int32(4316),
-		},
-		{
-			Name:          CWA + AppSignalsProxy,
-			Protocol:      corev1.ProtocolTCP,
-			ContainerPort: int32(2000),
 		},
 		{
 			Name:          CWA + StatsD,
@@ -201,6 +286,11 @@ func TestMultipleReceiversGetContainerPorts(t *testing.T) {
 			Name:          CWA + XrayTraces,
 			Protocol:      corev1.ProtocolUDP,
 			ContainerPort: int32(2800),
+		},
+		{
+			Name:          CWA + XrayProxy,
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(2000),
 		},
 		{
 			Name:          OtlpGrpc + "-4327",
@@ -312,67 +402,63 @@ func TestValidOTLPLogsAndMetricsPort(t *testing.T) {
 }
 
 func TestValidJSONAndValidOtelConfig(t *testing.T) {
-	cfg := getStringFromFile("./test-resources/application_signals.json")
+	cfg := getStringFromFile("./test-resources/applicationSignals.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/otlpOtelConfig.yaml")
 	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
-	assert.Equal(t, 5, len(containerPorts))
-	assert.Equal(t, int32(4311), containerPorts[CWA+Server].ContainerPort)
-	assert.Equal(t, CWA+Server, containerPorts[CWA+Server].Name)
-	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, 4, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
 	assert.Equal(t, int32(4317), containerPorts[OtlpGrpc].ContainerPort)
 	assert.Equal(t, OtlpGrpc, containerPorts[OtlpGrpc].Name)
 }
 
 func TestValidJSONAndInvalidOtelConfig(t *testing.T) {
-	cfg := getStringFromFile("./test-resources/application_signals.json")
+	cfg := getStringFromFile("./test-resources/applicationSignals.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/invalidOtlpConfig.yaml")
 	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
-	assert.Equal(t, 4, len(containerPorts))
-	assert.Equal(t, int32(4311), containerPorts[CWA+Server].ContainerPort)
-	assert.Equal(t, CWA+Server, containerPorts[CWA+Server].Name)
-	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
 }
 
 func TestValidJSONAndConflictingOtelConfig(t *testing.T) {
-	cfg := getStringFromFile("./test-resources/application_signals.json")
+	cfg := getStringFromFile("./test-resources/applicationSignals.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/conflictingPortOtlpConfig.yaml")
 	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
-	assert.Equal(t, 4, len(containerPorts))
-	assert.Equal(t, int32(4311), containerPorts[CWA+Server].ContainerPort)
-	assert.Equal(t, CWA+Server, containerPorts[CWA+Server].Name)
-	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, 3, len(containerPorts))
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
 }
 
 func TestValidJSONAndConflictingOtelConfigForXray(t *testing.T) {
-	cfg := getStringFromFile("./test-resources/application_signals_with_traces.json")
+	cfg := getStringFromFile("./test-resources/applicationSignalsWithTraces.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/xrayOtelConfig.yaml")
 	containerPorts := getContainerPorts(logger, cfg, otelCfg, []corev1.ServicePort{})
 	assert.Equal(t, 7, len(containerPorts))
-	assert.Equal(t, int32(4311), containerPorts[CWA+Server].ContainerPort)
-	assert.Equal(t, CWA+Server, containerPorts[CWA+Server].Name)
-	assert.Equal(t, int32(4315), containerPorts[CWA+AppSignalsGrpc].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsGrpc, containerPorts[CWA+AppSignalsGrpc].Name)
-	assert.Equal(t, int32(4316), containerPorts[CWA+AppSignalsHttp].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsHttp, containerPorts[CWA+AppSignalsHttp].Name)
-	assert.Equal(t, int32(2000), containerPorts[CWA+AppSignalsProxy].ContainerPort)
-	assert.Equal(t, CWA+AppSignalsProxy, containerPorts[CWA+AppSignalsProxy].Name)
+	assert.Equal(t, int32(4311), containerPorts[Server].ContainerPort)
+	assert.Equal(t, Server, containerPorts[Server].Name)
+	assert.Equal(t, int32(4315), containerPorts[AppSignalsGrpc].ContainerPort)
+	assert.Equal(t, AppSignalsGrpc, containerPorts[AppSignalsGrpc].Name)
+	assert.Equal(t, int32(4316), containerPorts[AppSignalsHttp].ContainerPort)
+	assert.Equal(t, AppSignalsHttp, containerPorts[AppSignalsHttp].Name)
+	assert.Equal(t, int32(2000), containerPorts[AppSignalsProxy].ContainerPort)
+	assert.Equal(t, AppSignalsProxy, containerPorts[AppSignalsProxy].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[AppSignalsProxy].Protocol)
 	assert.Equal(t, int32(2000), containerPorts["awsxray"].ContainerPort)
 	assert.Equal(t, "awsxray", containerPorts["awsxray"].Name)
+	assert.Equal(t, corev1.ProtocolUDP, containerPorts["awsxray"].Protocol)
 	assert.Equal(t, int32(4317), containerPorts["otlp-grpc"].ContainerPort)
 	assert.Equal(t, "otlp-grpc", containerPorts["otlp-grpc"].Name)
 	assert.Equal(t, int32(4318), containerPorts["otlp-http"].ContainerPort)

@@ -71,8 +71,10 @@ type LogMetricsCollected struct {
 }
 
 type TracesCollected struct {
-	XRay *xray `json:"xray,omitempty"`
-	OTLP *otlp `json:"otlp,omitempty"`
+	XRay               *xray       `json:"xray,omitempty"`
+	OTLP               *otlp       `json:"otlp,omitempty"`
+	ApplicationSignals *AppSignals `json:"application_signals,omitempty"`
+	AppSignals         *AppSignals `json:"app_signals,omitempty"`
 }
 
 type statsD struct {
@@ -126,7 +128,7 @@ func ConfigStructFromJSONString(configStr string) (*CwaConfig, error) {
 	return config, nil
 }
 
-func (c *CwaConfig) GetApplicationSignalsConfig() *AppSignals {
+func (c *CwaConfig) GetApplicationSignalsMetricsConfig() *AppSignals {
 	if c.Logs == nil {
 		return nil
 	}
@@ -138,6 +140,22 @@ func (c *CwaConfig) GetApplicationSignalsConfig() *AppSignals {
 	}
 	if c.Logs.LogMetricsCollected.AppSignals != nil {
 		return c.Logs.LogMetricsCollected.AppSignals
+	}
+	return nil
+}
+
+func (c *CwaConfig) GetApplicationSignalsTracesConfig() *AppSignals {
+	if c.Traces == nil {
+		return nil
+	}
+	if c.Traces.TracesCollected == nil {
+		return nil
+	}
+	if c.Traces.TracesCollected.ApplicationSignals != nil {
+		return c.Traces.TracesCollected.ApplicationSignals
+	}
+	if c.Traces.TracesCollected.AppSignals != nil {
+		return c.Traces.TracesCollected.AppSignals
 	}
 	return nil
 }
