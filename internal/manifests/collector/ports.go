@@ -181,28 +181,17 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 						return
 					}
 				}
-				name := CWA + receiverName
-				if receiverName == OtlpGrpc || receiverName == OtlpHttp {
-					name = fmt.Sprintf("%s-%d", receiverName, port)
-				}
-				sp := corev1.ServicePort{
-					Name:     name,
-					Port:     port,
-					Protocol: protocol,
-				}
-				servicePortsMap[port] = append(servicePortsMap[port], sp)
-			} else {
-				name := CWA + receiverName
-				if receiverName == OtlpGrpc || receiverName == OtlpHttp {
-					name = fmt.Sprintf("%s-%d", receiverName, port)
-				}
-				sp := corev1.ServicePort{
-					Name:     name,
-					Port:     port,
-					Protocol: protocol,
-				}
-				servicePortsMap[port] = []corev1.ServicePort{sp}
 			}
+			name := CWA + receiverName
+			if receiverName == OtlpGrpc || receiverName == OtlpHttp {
+				name = fmt.Sprintf("%s-%d", receiverName, port)
+			}
+			sp := corev1.ServicePort{
+				Name:     name,
+				Port:     port,
+				Protocol: protocol,
+			}
+			servicePortsMap[port] = append(servicePortsMap[port], sp)
 		}
 	} else {
 		defaultPort := receiverDefaultPortsMap[receiverName]
@@ -213,20 +202,13 @@ func getReceiverServicePort(logger logr.Logger, serviceAddress string, receiverN
 					return
 				}
 			}
-			sp := corev1.ServicePort{
-				Name:     receiverName,
-				Port:     defaultPort,
-				Protocol: protocol,
-			}
-			servicePortsMap[defaultPort] = append(servicePortsMap[defaultPort], sp)
-		} else {
-			sp := corev1.ServicePort{
-				Name:     receiverName,
-				Port:     defaultPort,
-				Protocol: protocol,
-			}
-			servicePortsMap[defaultPort] = []corev1.ServicePort{sp}
 		}
+		sp := corev1.ServicePort{
+			Name:     receiverName,
+			Port:     defaultPort,
+			Protocol: protocol,
+		}
+		servicePortsMap[defaultPort] = append(servicePortsMap[defaultPort], sp)
 	}
 }
 
