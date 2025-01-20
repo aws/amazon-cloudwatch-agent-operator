@@ -6,7 +6,6 @@ package config
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -24,23 +23,22 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	tamanifest "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
-	DefaultListenAddr                        = ":8443"
-	DefaultCertMountPath                     = tamanifest.TACertMountPath
-	DefaultTLSKeyPath                        = DefaultCertMountPath + "/server.key"
-	DefaultTLSCertPath                       = DefaultCertMountPath + "/server.crt"
-	DefaultCABundlePath                      = ""
+	DefaultResyncTime                         = 5 * time.Minute
+	DefaultConfigFilePath      string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval    model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                 = "consistent-hashing"
+	DefaultListenAddr                         = ":8443"
+	DefaultCertMountPath                      = tamanifest.TACertMountPath
+	DefaultClientCertMountPath                = tamanifest.ClientCertMountPath
+	DefaultTLSKeyPath                         = DefaultCertMountPath + "/server.key"
+	DefaultTLSCertPath                        = DefaultCertMountPath + "/server.crt"
+	DefaultCABundlePath                       = DefaultClientCertMountPath + "/tls-ca.crt"
 )
 
 type Config struct {
@@ -66,7 +64,6 @@ type PrometheusCRConfig struct {
 }
 
 type HTTPSServerConfig struct {
-	Enabled         bool   `yaml:"enabled,omitempty"`
 	ListenAddr      string `yaml:"listen_addr,omitempty"`
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
@@ -121,11 +118,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
-	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
-	if err != nil {
-		return err
-	}
-
 	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
 	if err != nil {
 		return err
@@ -150,7 +142,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 }
 
 func unmarshal(cfg *Config, configFile string) error {
-
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
@@ -169,7 +160,6 @@ func CreateDefaultConfig() Config {
 		},
 		AllocationStrategy: &allocation_strategy,
 		HTTPS: HTTPSServerConfig{
-			Enabled:         true,
 			ListenAddr:      DefaultListenAddr,
 			CAFilePath:      DefaultCABundlePath,
 			TLSCertFilePath: DefaultTLSCertPath,
@@ -221,27 +211,29 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 		MinVersion: tls.VersionTLS13,
 	}
 
-	certWatcher, err := certwatcher.New(c.TLSCertFilePath, c.TLSKeyFilePath)
+	certWatcher, err := NewCertAndCAWatcher(c.TLSCertFilePath, c.TLSKeyFilePath, c.CAFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating certwatcher: %w", err)
 	}
-	tlsConfig.GetCertificate = certWatcher.GetCertificate
+
 	go func() {
 		_ = certWatcher.Start(ctx)
 	}()
 
-	if c.CAFilePath == "" {
-		return tlsConfig, nil
-	}
+	// triggers for every client hello
+	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
+		newTLSConfig := tlsConfig.Clone()
 
-	caCert, err := os.ReadFile(c.CAFilePath)
-	caCertPool := x509.NewCertPool()
-	if err != nil {
-		return nil, err
+		cert, err := certWatcher.GetCertificate(clientHello)
+		if err != nil {
+			return nil, fmt.Errorf("error getting certificate: %w", err)
+		}
+
+		newTLSConfig.Certificates = []tls.Certificate{*cert}
+		newTLSConfig.ClientCAs = certWatcher.GetCAPool()
+		newTLSConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		return newTLSConfig, nil
 	}
-	caCertPool.AppendCertsFromPEM(caCert)
-	tlsConfig.ClientCAs = caCertPool
-	tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 
 	return tlsConfig, nil
 }

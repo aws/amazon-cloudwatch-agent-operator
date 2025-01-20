@@ -42,7 +42,6 @@ func TestLoad(t *testing.T) {
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
 				HTTPS: HTTPSServerConfig{
-					Enabled:         true,
 					ListenAddr:      DefaultListenAddr,
 					CAFilePath:      "/path/to/ca.pem",
 					TLSCertFilePath: "/path/to/cert.pem",
@@ -114,7 +113,6 @@ func TestLoad(t *testing.T) {
 					ScrapeInterval: DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
-					Enabled:         true,
 					ListenAddr:      DefaultListenAddr,
 					CAFilePath:      DefaultCABundlePath,
 					TLSCertFilePath: DefaultTLSCertPath,

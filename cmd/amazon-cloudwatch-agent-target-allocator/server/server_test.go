@@ -825,18 +825,19 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 func createTestTLSServer(listenAddr string) (*Server, *tls.Config, error) {
 	//testing using this function replicates customer environment
 	svrConfig := allocatorconfig.HTTPSServerConfig{}
-	caBundle, caCert, caKey, err := generateTestingCerts()
+	caBundle, caCert, caKey, clientCert, clientKey, err := generateTestingCerts()
 	if err != nil {
 		return nil, nil, err
 	}
 	svrConfig.TLSKeyFilePath = caKey
 	svrConfig.TLSCertFilePath = caCert
+	svrConfig.CAFilePath = caBundle
 	tlsConfig, err := svrConfig.NewTLSConfig(context.TODO())
 	if err != nil {
 		return nil, nil, err
 	}
 	//generate ca bundle
-	bundle, err := readCABundle(caBundle)
+	bundle, err := readClient(caBundle, clientCert, clientKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -854,7 +855,7 @@ func newLink(jobName string) target.LinkJSON {
 	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }
 
-func readCABundle(caBundlePath string) (*tls.Config, error) {
+func readClient(caBundlePath, clientCertPath, clientKeyPath string) (*tls.Config, error) {
 	// Load the CA bundle
 	caCert, err := os.ReadFile(caBundlePath)
 	if err != nil {
@@ -867,81 +868,171 @@ func readCABundle(caBundlePath string) (*tls.Config, error) {
 		return nil, fmt.Errorf("failed to add CA certificates to pool")
 	}
 
+	clientCert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load client certificate: %w", err)
+	}
+
 	// Set up TLS configuration with the CA pool
 	tlsConfig := &tls.Config{
-		RootCAs: caCertPool,
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{clientCert},
 	}
 	return tlsConfig, nil
 }
 
-func generateTestingCerts() (caBundlePath, caCertPath, caKeyPath string, err error) {
-	// Generate private key
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func generateTestingCerts() (caBundlePath, caCertPath, caKeyPath, clientCertPath, clientKeyPath string, err error) {
+	// Generate CA private key
+	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return "", "", "", fmt.Errorf("error generating private key: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error generating CA private key: %w", err)
 	}
 
-	// Set up certificate template
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName: "localhost",
-		},
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(365 * 24 * time.Hour), // 1 year validity
-		KeyUsage:  x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageServerAuth,
-		},
-		DNSNames: []string{"localhost"},
+	// Create CA certificate template
+	caTemplate := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "Test CA"},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
 	}
 
-	// Self-sign the certificate
-	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	// Self-sign the CA certificate
+	caCertBytes, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
-		return "", "", "", fmt.Errorf("error creating certificate: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error creating CA certificate: %w", err)
 	}
 
-	// Create temporary files
+	// Marshal the CA private key
+	caKeyBytes, err := x509.MarshalECPrivateKey(caPrivateKey)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error marshaling CA private key: %w", err)
+	}
+
+	// Generate server private key
+	serverPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error generating server private key: %w", err)
+	}
+
+	// Create server certificate template
+	serverTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject:      pkix.Name{CommonName: "localhost"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:     []string{"localhost"},
+	}
+
+	// Sign the server certificate with the CA
+	serverCertBytes, err := x509.CreateCertificate(rand.Reader, &serverTemplate, &caTemplate, &serverPrivateKey.PublicKey, caPrivateKey)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error creating server certificate: %w", err)
+	}
+
+	// Marshal the server private key
+	serverKeyBytes, err := x509.MarshalECPrivateKey(serverPrivateKey)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error marshaling server private key: %w", err)
+	}
+
+	// Generate client private key
+	clientPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error generating client private key: %w", err)
+	}
+
+	// Create client certificate template
+	clientTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(3),
+		Subject:      pkix.Name{CommonName: "Test Client"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+
+	// Sign the client certificate with the CA
+	clientCertBytes, err := x509.CreateCertificate(rand.Reader, &clientTemplate, &caTemplate, &clientPrivateKey.PublicKey, caPrivateKey)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error creating client certificate: %w", err)
+	}
+
+	// Marshal the client private key
+	clientKeyBytes, err := x509.MarshalECPrivateKey(clientPrivateKey)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error marshaling client private key: %w", err)
+	}
+
+	// Create temporary files for CA, server, and client certificates and keys
 	tempDir := os.TempDir()
 
 	caCertFile, err := os.CreateTemp(tempDir, "ca-cert-*.crt")
 	if err != nil {
-		return "", "", "", fmt.Errorf("error creating temp CA cert file: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error creating temp CA cert file: %w", err)
 	}
 	defer caCertFile.Close()
 
 	caKeyFile, err := os.CreateTemp(tempDir, "ca-key-*.key")
 	if err != nil {
-		return "", "", "", fmt.Errorf("error creating temp CA key file: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error creating temp CA key file: %w", err)
 	}
 	defer caKeyFile.Close()
 
-	caBundleFile, err := os.CreateTemp(tempDir, "ca-bundle-*.crt")
+	serverCertFile, err := os.CreateTemp(tempDir, "server-cert-*.crt")
 	if err != nil {
-		return "", "", "", fmt.Errorf("error creating temp CA bundle file: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error creating temp server cert file: %w", err)
 	}
-	defer caBundleFile.Close()
+	defer serverCertFile.Close()
 
-	// Write the private key to the key file
-	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	serverKeyFile, err := os.CreateTemp(tempDir, "server-key-*.key")
 	if err != nil {
-		return "", "", "", fmt.Errorf("error writing private key: %w", err)
+		return "", "", "", "", "", fmt.Errorf("error creating temp server key file: %w", err)
 	}
-	err = pem.Encode(caKeyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
-	if err != nil {
-		return "", "", "", fmt.Errorf("error writing private key: %w", err)
-	}
+	defer serverKeyFile.Close()
 
-	// Write the certificate to the certificate and bundle files
-	certPEM := &pem.Block{Type: "CERTIFICATE", Bytes: certBytes}
-	if err = pem.Encode(caCertFile, certPEM); err != nil {
-		return "", "", "", fmt.Errorf("error writing certificate: %w", err)
+	clientCertFile, err := os.CreateTemp(tempDir, "client-cert-*.crt")
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error creating temp client cert file: %w", err)
 	}
-	if err = pem.Encode(caBundleFile, certPEM); err != nil {
-		return "", "", "", fmt.Errorf("error writing bundle certificate: %w", err)
+	defer clientCertFile.Close()
+
+	clientKeyFile, err := os.CreateTemp(tempDir, "client-key-*.key")
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("error creating temp client key file: %w", err)
+	}
+	defer clientKeyFile.Close()
+
+	// Write the CA, server, and client certificates and keys to their respective files
+	caCertPEMBlock := &pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes}
+	if err := pem.Encode(caCertFile, caCertPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing CA certificate: %w", err)
+	}
+	caKeyPEMBlock := &pem.Block{Type: "EC PRIVATE KEY", Bytes: caKeyBytes}
+	if err := pem.Encode(caKeyFile, caKeyPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing CA key: %w", err)
+	}
+	serverCertPEMBlock := &pem.Block{Type: "CERTIFICATE", Bytes: serverCertBytes}
+	if err := pem.Encode(serverCertFile, serverCertPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing server certificate: %w", err)
+	}
+	serverKeyPEMBlock := &pem.Block{Type: "EC PRIVATE KEY", Bytes: serverKeyBytes}
+	if err := pem.Encode(serverKeyFile, serverKeyPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing server key: %w", err)
+	}
+	clientCertPEMBlock := &pem.Block{Type: "CERTIFICATE", Bytes: clientCertBytes}
+	if err := pem.Encode(clientCertFile, clientCertPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing client certificate: %w", err)
+	}
+	clientKeyPEMBlock := &pem.Block{Type: "EC PRIVATE KEY", Bytes: clientKeyBytes}
+	if err := pem.Encode(clientKeyFile, clientKeyPEMBlock); err != nil {
+		return "", "", "", "", "", fmt.Errorf("error writing client key: %w", err)
 	}
 
 	// Return the file paths
-	return caBundleFile.Name(), caCertFile.Name(), caKeyFile.Name(), nil
+	return caCertFile.Name(), serverCertFile.Name(), serverKeyFile.Name(), clientCertFile.Name(), clientKeyFile.Name(), nil
 }

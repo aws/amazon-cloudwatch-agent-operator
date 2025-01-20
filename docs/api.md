@@ -328,6 +328,13 @@ default.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspecprometheus">prometheus</a></b></td>
+        <td>object</td>
+        <td>
+          Prometheus is the raw YAML to be used as the collector's prometheus configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
@@ -366,6 +373,13 @@ injected sidecar container.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount for the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocator">targetAllocator</a></b></td>
+        <td>object</td>
+        <td>
+          TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9960,6 +9974,68 @@ More info: https://kubernetes.io/docs/concepts/services-networking/service/#defi
 </table>
 
 
+### AmazonCloudWatchAgent.spec.prometheus
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspec)</sup></sup>
+
+
+
+Prometheus is the raw YAML to be used as the collector's prometheus configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>config</b></td>
+        <td>object</td>
+        <td>
+          AnyConfig represent parts of the config.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>report_extra_scrape_metrics</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>start_time_metric_regex</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>target_allocator</b></td>
+        <td>object</td>
+        <td>
+          AnyConfig represent parts of the config.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>trim_metric_suffixes</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>use_start_time_metric</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### AmazonCloudWatchAgent.spec.resources
 <sup><sup>[↩ Parent](#amazoncloudwatchagentspec)</sup></sup>
 
@@ -10380,6 +10456,2831 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspec)</sup></sup>
+
+
+
+TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinity">affinity</a></b></td>
+        <td>object</td>
+        <td>
+          If specified, indicates the pod's scheduling constraints<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>allocationStrategy</b></td>
+        <td>enum</td>
+        <td>
+          AllocationStrategy determines which strategy the target allocator should use for allocation.
+The current option is consistent-hashing.<br/>
+          <br/>
+            <i>Enum</i>: consistent-hashing<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
+consumed in the config file for the TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>filterStrategy</b></td>
+        <td>string</td>
+        <td>
+          FilterStrategy determines how to filter targets before allocating them among the collectors.
+The only current option is relabel-config (drops targets based on prom relabel_config).
+Filtering is disabled by default.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image indicates the container image to use for the OpenTelemetry TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          NodeSelector to schedule OpenTelemetry TargetAllocator pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorprometheuscr">prometheusCR</a></b></td>
+        <td>object</td>
+        <td>
+          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
+other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
+that can be run in a high availability mode is consistent-hashing.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorsecuritycontext">securityContext</a></b></td>
+        <td>object</td>
+        <td>
+          SecurityContext configures the container security context for
+the target-allocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceAccount</b></td>
+        <td>string</td>
+        <td>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatortolerationsindex">tolerations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Toleration embedded kubernetes pod configuration option,
+controls how pods can be scheduled with matching taints<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatortopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
+        <td>[]object</td>
+        <td>
+          TopologySpreadConstraints embedded kubernetes pod configuration option,
+controls how pods are spread across your cluster among failure-domains
+such as regions, zones, nodes, and other user-defined topology domains
+https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+If specified, indicates the pod's scheduling constraints
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinity">nodeAffinity</a></b></td>
+        <td>object</td>
+        <td>
+          Describes node affinity scheduling rules for the pod.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinity">podAffinity</a></b></td>
+        <td>object</td>
+        <td>
+          Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, zone, etc. as some other pod(s)).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinity">podAntiAffinity</a></b></td>
+        <td>object</td>
+        <td>
+          Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinity)</sup></sup>
+
+
+
+Describes node affinity scheduling rules for the pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>[]object</td>
+        <td>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node matches the corresponding matchExpressions; the
+node(s) with the highest sum are the most preferred.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecution">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>object</td>
+        <td>
+          If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinity)</sup></sup>
+
+
+
+An empty preferred scheduling term matches all objects with implicit weight 0
+(i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindexpreference">preference</a></b></td>
+        <td>object</td>
+        <td>
+          A node selector term, associated with the corresponding weight.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>weight</b></td>
+        <td>integer</td>
+        <td>
+          Weight associated with matching the corresponding nodeSelectorTerm, in the range 1-100.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].preference
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+A node selector term, associated with the corresponding weight.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindexpreferencematchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of node selector requirements by node's labels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindexpreferencematchfieldsindex">matchFields</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of node selector requirements by node's fields.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].preference.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindexpreference)</sup></sup>
+
+
+
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].preference.matchFields[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindexpreference)</sup></sup>
+
+
+
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinity)</sup></sup>
+
+
+
+If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecutionnodeselectortermsindex">nodeSelectorTerms</a></b></td>
+        <td>[]object</td>
+        <td>
+          Required. A list of node selector terms. The terms are ORed.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecution)</sup></sup>
+
+
+
+A null or empty node selector term matches no objects. The requirements of
+them are ANDed.
+The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecutionnodeselectortermsindexmatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of node selector requirements by node's labels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecutionnodeselectortermsindexmatchfieldsindex">matchFields</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of node selector requirements by node's fields.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[index].matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecutionnodeselectortermsindex)</sup></sup>
+
+
+
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[index].matchFields[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitynodeaffinityrequiredduringschedulingignoredduringexecutionnodeselectortermsindex)</sup></sup>
+
+
+
+A node selector requirement is a selector that contains values, a key, and an operator
+that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          An array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinity)</sup></sup>
+
+
+
+Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, zone, etc. as some other pod(s)).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>[]object</td>
+        <td>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>[]object</td>
+        <td>
+          If the affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinity)</sup></sup>
+
+
+
+The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm">podAffinityTerm</a></b></td>
+        <td>object</td>
+        <td>
+          Required. A pod affinity term, associated with the corresponding weight.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>weight</b></td>
+        <td>integer</td>
+        <td>
+          weight associated with matching the corresponding podAffinityTerm,
+in the range 1-100.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+Required. A pod affinity term, associated with the corresponding weight.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespaces</b></td>
+        <td>[]string</td>
+        <td>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.labelSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm)</sup></sup>
+
+
+
+A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.namespaceSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm)</sup></sup>
+
+
+
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.namespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinity)</sup></sup>
+
+
+
+Defines a set of pods (namely those matching the labelSelector
+relative to the given namespace(s)) that this pod should be
+co-located (affinity) or not co-located (anti-affinity) with,
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespaces</b></td>
+        <td>[]string</td>
+        <td>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].labelSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].namespaceSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].namespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinity)</sup></sup>
+
+
+
+Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>[]object</td>
+        <td>
+          The scheduler will prefer to schedule pods to nodes that satisfy
+the anti-affinity expressions specified by this field, but it may choose
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling anti-affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
+        <td>[]object</td>
+        <td>
+          If the anti-affinity requirements specified by this field are not met at
+scheduling time, the pod will not be scheduled onto the node.
+If the anti-affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinity)</sup></sup>
+
+
+
+The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm">podAffinityTerm</a></b></td>
+        <td>object</td>
+        <td>
+          Required. A pod affinity term, associated with the corresponding weight.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>weight</b></td>
+        <td>integer</td>
+        <td>
+          weight associated with matching the corresponding podAffinityTerm,
+in the range 1-100.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+Required. A pod affinity term, associated with the corresponding weight.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespaces</b></td>
+        <td>[]string</td>
+        <td>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.labelSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm)</sup></sup>
+
+
+
+A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.namespaceSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinityterm)</sup></sup>
+
+
+
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[index].podAffinityTerm.namespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinity)</sup></sup>
+
+
+
+Defines a set of pods (namely those matching the labelSelector
+relative to the given namespace(s)) that this pod should be
+co-located (affinity) or not co-located (anti-affinity) with,
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
+the labelSelector in the specified namespaces, where co-located is defined as running on a node
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespaces</b></td>
+        <td>[]string</td>
+        <td>
+          namespaces specifies a static list of namespace names that the term applies to.
+The term is applied to the union of the namespaces listed in this field
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].labelSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+A label query over a set of resources, in this case pods.
+If it's null, this PodAffinityTerm matches with no Pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].namespaceSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindex)</sup></sup>
+
+
+
+A label query over the set of namespaces that the term applies to.
+The term is applied to the union of the namespaces selected by this field
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution[index].namespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatoraffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index].valueFrom
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.prometheusCR
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>podMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          PodMonitors to be selected for target discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+PodMonitor's meta labels. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeInterval</b></td>
+        <td>string</td>
+        <td>
+          Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD.
+
+
+Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          ServiceMonitors to be selected for target discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+ServiceMonitor's meta labels. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.resources
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+Resources to set on the OpenTelemetryTargetAllocator containers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+
+This is an alpha field and requires enabling the
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.resources.claims[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.securityContext
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+SecurityContext configures the container security context for
+the target-allocator.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fsGroup</b></td>
+        <td>integer</td>
+        <td>
+          A special supplemental group that applies to all containers in a pod.
+Some volume types allow the Kubelet to change the ownership of that volume
+to be owned by the pod:
+
+
+1. The owning GID will be the FSGroup
+2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+3. The permission bits are OR'd with rw-rw----
+
+
+If unset, the Kubelet will not modify the ownership and permissions of any volume.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>fsGroupChangePolicy</b></td>
+        <td>string</td>
+        <td>
+          fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
+before being exposed inside Pod. This field will only apply to
+volume types which support fsGroup based ownership(and permissions).
+It will have no effect on ephemeral volume types such as: secret, configmaps
+and emptydir.
+Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsGroup</b></td>
+        <td>integer</td>
+        <td>
+          The GID to run the entrypoint of the container process.
+Uses runtime default if unset.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsNonRoot</b></td>
+        <td>boolean</td>
+        <td>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUser</b></td>
+        <td>integer</td>
+        <td>
+          The UID to run the entrypoint of the container process.
+Defaults to user specified in image metadata if unspecified.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The SELinux context to be applied to all containers.
+If unspecified, the container runtime will allocate a random SELinux context for each
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorsecuritycontextseccompprofile">seccompProfile</a></b></td>
+        <td>object</td>
+        <td>
+          The seccomp options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>supplementalGroups</b></td>
+        <td>[]integer</td>
+        <td>
+          A list of groups applied to the first process run in each container, in addition
+to the container's primary GID, the fsGroup (if specified), and group memberships
+defined in the container image for the uid of the container process. If unspecified,
+no additional groups are added to any container. Note that group memberships
+defined in the container image for the uid of the container process are still effective,
+even if they are not included in this list.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorsecuritycontextsysctlsindex">sysctls</a></b></td>
+        <td>[]object</td>
+        <td>
+          Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
+sysctls (by the container runtime) might fail to launch.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorsecuritycontextwindowsoptions">windowsOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The Windows specific settings applied to all containers.
+If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.securityContext.seLinuxOptions
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+The SELinux context to be applied to all containers.
+If unspecified, the container runtime will allocate a random SELinux context for each
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>level</b></td>
+        <td>string</td>
+        <td>
+          Level is SELinux level label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>role</b></td>
+        <td>string</td>
+        <td>
+          Role is a SELinux role label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is a SELinux type label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>string</td>
+        <td>
+          User is a SELinux user label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.securityContext.seccompProfile
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+The seccomp options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of seccomp profile will be applied.
+Valid options are:
+
+
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile defined in a file on the node should be used.
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.securityContext.sysctls[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+Sysctl defines a kernel parameter to be set
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of a property to set<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value of a property to set<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.securityContext.windowsOptions
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+The Windows specific settings applied to all containers.
+If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>gmsaCredentialSpec</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpec is where the GMSA admission webhook
+(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+GMSA credential spec named by the GMSACredentialSpecName field.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>gmsaCredentialSpecName</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpecName is the name of the GMSA credential spec to use.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostProcess</b></td>
+        <td>boolean</td>
+        <td>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUserName</b></td>
+        <td>string</td>
+        <td>
+          The UserName in Windows to run the entrypoint of the container process.
+Defaults to the user specified in image metadata if unspecified.
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.tolerations[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+The pod this Toleration is attached to tolerates any taint that matches
+the triple <key,value,effect> using the matching operator <operator>.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effect</b></td>
+        <td>string</td>
+        <td>
+          Effect indicates the taint effect to match. Empty means match all taint effects.
+When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the taint key that the toleration applies to. Empty means match all taint keys.
+If the key is empty, operator must be Exists; this combination means to match all values and all keys.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Operator represents a key's relationship to the value.
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tolerationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TolerationSeconds represents the period of time the toleration (which must be
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the taint value the toleration matches to.
+If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.topologySpreadConstraints[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocator)</sup></sup>
+
+
+
+TopologySpreadConstraint specifies how to spread matching pods among the given topology.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSkew</b></td>
+        <td>integer</td>
+        <td>
+          MaxSkew describes the degree to which pods may be unevenly distributed.
+When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+between the number of matching pods in the target topology and the global minimum.
+The global minimum is the minimum number of matching pods in an eligible domain
+or zero if the number of eligible domains is less than MinDomains.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 2/2/1:
+In this case, the global minimum is 1.
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |   P   |
+- if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2;
+scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2)
+violate MaxSkew(1).
+- if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+to topologies that satisfy it.
+It's a required field. Default value is 1 and 0 is not allowed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          TopologyKey is the key of node labels. Nodes that have a label with this key
+and identical values are considered to be in the same topology.
+We consider each <key, value> as a "bucket", and try to put balanced number
+of pods into each bucket.
+We define a domain as a particular instance of a topology.
+Also, we define an eligible domain as a domain whose nodes meet the requirements of
+nodeAffinityPolicy and nodeTaintsPolicy.
+e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology.
+And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology.
+It's a required field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>whenUnsatisfiable</b></td>
+        <td>string</td>
+        <td>
+          WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
+the spread constraint.
+- DoNotSchedule (default) tells the scheduler not to schedule it.
+- ScheduleAnyway tells the scheduler to schedule the pod in any location,
+  but giving higher precedence to topologies that would help reduce the
+  skew.
+A constraint is considered "Unsatisfiable" for an incoming pod
+if and only if every possible node assignment for that pod would violate
+"MaxSkew" on some topology.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 3/1/1:
+| zone1 | zone2 | zone3 |
+| P P P |   P   |   P   |
+If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+won't make it *more* imbalanced.
+It's a required field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatortopologyspreadconstraintsindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          LabelSelector is used to find matching pods.
+Pods that match this label selector are counted to determine the number of pods
+in their corresponding topology domain.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select the pods over which
+spreading will be calculated. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are ANDed with labelSelector
+to select the group of existing pods over which spreading will be calculated
+for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+MatchLabelKeys cannot be set when LabelSelector isn't set.
+Keys that don't exist in the incoming pod labels will
+be ignored. A null or empty list means only match against labelSelector.
+
+
+This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minDomains</b></td>
+        <td>integer</td>
+        <td>
+          MinDomains indicates a minimum number of eligible domains.
+When the number of eligible domains with matching topology keys is less than minDomains,
+Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
+And when the number of eligible domains with matching topology keys equals or greater than minDomains,
+this value has no effect on scheduling.
+As a result, when the number of eligible domains is less than minDomains,
+scheduler won't schedule more than maxSkew Pods to those domains.
+If value is nil, the constraint behaves as if MinDomains is equal to 1.
+Valid values are integers greater than 0.
+When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
+
+
+For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
+labelSelector spread as 2/2/2:
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |  P P  |
+The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0.
+In this situation, new pod with the same labelSelector cannot be scheduled,
+because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
+it will violate MaxSkew.
+
+
+This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeAffinityPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
+when calculating pod topology spread skew. Options are:
+- Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
+- Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+
+
+If this value is nil, the behavior is equivalent to the Honor policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeTaintsPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeTaintsPolicy indicates how we will treat node taints when calculating
+pod topology spread skew. Options are:
+- Honor: nodes without taints, along with tainted nodes for which the incoming pod
+has a toleration, are included.
+- Ignore: node taints are ignored. All nodes are included.
+
+
+If this value is nil, the behavior is equivalent to the Ignore policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.topologySpreadConstraints[index].labelSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatortopologyspreadconstraintsindex)</sup></sup>
+
+
+
+LabelSelector is used to find matching pods.
+Pods that match this label selector are counted to determine the number of pods
+in their corresponding topology domain.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatortopologyspreadconstraintsindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.topologySpreadConstraints[index].labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatortopologyspreadconstraintsindexlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
