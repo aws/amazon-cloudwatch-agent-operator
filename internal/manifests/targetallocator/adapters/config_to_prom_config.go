@@ -80,6 +80,12 @@ func GetPromConfig(cfg string) (map[interface{}]interface{}, error) {
 			return nil, errorNotAMapAtIndex("scrape_config", i)
 		}
 
+		scrapeConfig["tls_config"] = map[string]interface{}{
+			"ca_file":   "/etc/amazon-cloudwatch-observability-agent-cert/tls-ca.crt",
+			"cert_file": "/etc/amazon-cloudwatch-observability-agent-outbound-cert/client.crt",
+			"key_file":  "/etc/amazon-cloudwatch-observability-agent-outbound-cert/client.key",
+		}
+
 		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
 		if !ok {
 			continue
