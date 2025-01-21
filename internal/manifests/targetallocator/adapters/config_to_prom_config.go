@@ -230,12 +230,6 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 	targetAllocatorCfg["endpoint"] = fmt.Sprintf("https://%s:%d", taServiceName, naming.TargetAllocatorServicePort)
 	targetAllocatorCfg["interval"] = "30s"
 
-	targetAllocatorCfg["tls"] = map[string]interface{}{
-		"ca_file":   "/etc/amazon-cloudwatch-observability-agent-cert/tls-ca.crt",
-		"cert_file": "/etc/amazon-cloudwatch-observability-agent-outbound-cert/client.crt",
-		"key_file":  "/etc/amazon-cloudwatch-observability-agent-outbound-cert/client.key",
-	}
-
 	// Remove the scrape_configs key from the map
 	delete(prometheusCfg, "scrape_configs")
 
