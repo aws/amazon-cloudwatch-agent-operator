@@ -130,12 +130,6 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) StartHTTPS() error {
-	// Debug log to inspect certificates
-	if len(s.httpsServer.TLSConfig.Certificates) == 0 {
-		s.logger.Error(fmt.Errorf("no certificates"), "No certificates in TLSConfig.Certificates")
-	}
-
-	// Start the HTTPS server
 	s.logger.Info("Starting HTTPS server...")
 	return s.httpsServer.ListenAndServeTLS("", "")
 }
