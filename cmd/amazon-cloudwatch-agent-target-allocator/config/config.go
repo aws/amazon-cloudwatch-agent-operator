@@ -220,7 +220,7 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 		_ = certWatcher.Start(ctx)
 	}()
 
-	cert, err := tls.LoadX509KeyPair(c.TLSCertFilePath, c.TLSKeyFilePath)
+	cert, err := certWatcher.GetCertificate(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error loading initial certificate: %w", err)
 	}
