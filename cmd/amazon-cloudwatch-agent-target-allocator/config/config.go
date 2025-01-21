@@ -228,7 +228,7 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
 		newTLSConfig := tlsConfig.Clone()
 		newTLSConfig.ClientCAs = certWatcher.GetCAPool()
-		return tlsConfig, nil
+		return newTLSConfig, nil
 	}
 
 	return tlsConfig, nil
