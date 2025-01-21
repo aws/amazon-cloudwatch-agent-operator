@@ -11,7 +11,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-// This has to be a constant so that TA container code can access it as well
+// These have to be constants so that TA container code can access it as well
 const (
 	TACertMountPath     = "/etc/amazon-cloudwatch-target-allocator-cert"
 	ClientCertMountPath = "/etc/amazon-cloudwatch-observability-agent-outbound-cert"

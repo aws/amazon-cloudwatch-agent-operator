@@ -226,6 +226,8 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 
 	// Dynamically update the CA pool if needed
 	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
+		newTLSConfig := tlsConfig.Clone()
+		newTLSConfig.ClientCAs = certWatcher.GetCAPool()
 		return tlsConfig, nil
 	}
 
