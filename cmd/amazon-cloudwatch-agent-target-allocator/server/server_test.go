@@ -822,6 +822,75 @@ func TestServer_HTTPOnTLS(t *testing.T) {
 	}
 }
 
+func TestServer_EnforceMTLS(t *testing.T) {
+	t.Run("success with correct client cert", func(t *testing.T) {
+		listenAddr := ":8443"
+		// Create server + TLS config
+		server, validClientTLS, err := createTestTLSServer(listenAddr)
+		assert.NoError(t, err)
+
+		// Start HTTPS server
+		go func() {
+			assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
+		}()
+		time.Sleep(100 * time.Millisecond)
+		defer func() {
+			_ = server.ShutdownHTTPS(context.Background())
+		}()
+
+		// Attempt HTTPS GET with valid client cert
+		client := &http.Client{Transport: &http.Transport{TLSClientConfig: validClientTLS}}
+		resp, err := client.Get(fmt.Sprintf("https://localhost%s/scrape_configs", listenAddr))
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("fail with no client cert", func(t *testing.T) {
+		listenAddr := ":8444"
+		server, validClientTLS, err := createTestTLSServer(listenAddr)
+		assert.NoError(t, err)
+
+		// Start HTTPS server
+		go func() {
+			assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
+		}()
+		time.Sleep(100 * time.Millisecond)
+		defer func() {
+			_ = server.ShutdownHTTPS(context.Background())
+		}()
+
+		// Attempt HTTPS GET with no client certificate
+		noCertTLS := validClientTLS.Clone()
+		noCertTLS.Certificates = nil
+
+		client := &http.Client{Transport: &http.Transport{TLSClientConfig: noCertTLS}}
+		_, err = client.Get(fmt.Sprintf("https://localhost%s/jobs", listenAddr))
+		assert.Error(t, err, "expected error due to missing client certificate")
+	})
+
+	t.Run("fail with invalid client cert", func(t *testing.T) {
+		listenAddr := ":8445"
+		server, _, err := createTestTLSServer(listenAddr)
+		assert.NoError(t, err)
+
+		go func() {
+			assert.ErrorIs(t, server.StartHTTPS(), http.ErrServerClosed)
+		}()
+		time.Sleep(100 * time.Millisecond)
+		defer func() {
+			_ = server.ShutdownHTTPS(context.Background())
+		}()
+
+		// Attempt HTTPS GET with different client certificate
+		_, invalidClientTLS, err := createMismatchedClientCert()
+		assert.NoError(t, err, "failed to create mismatched client cert")
+
+		client := &http.Client{Transport: &http.Transport{TLSClientConfig: invalidClientTLS}}
+		_, err = client.Get(fmt.Sprintf("https://localhost%s/scrape_configs", listenAddr))
+		assert.Error(t, err, "expected TLS error due to invalid client certificate")
+	})
+}
+
 func createTestTLSServer(listenAddr string) (*Server, *tls.Config, error) {
 	//testing using this function replicates customer environment
 	svrConfig := allocatorconfig.HTTPSServerConfig{}
@@ -1035,4 +1104,102 @@ func generateTestingCerts() (caBundlePath, caCertPath, caKeyPath, clientCertPath
 
 	// Return the file paths
 	return caCertFile.Name(), serverCertFile.Name(), serverKeyFile.Name(), clientCertFile.Name(), clientKeyFile.Name(), nil
+}
+
+func createMismatchedClientCert() (caPath string, tlsConfig *tls.Config, err error) {
+	tempDir := os.TempDir()
+
+	// Create new CA key
+	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", nil, err
+	}
+
+	caCertTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(9999),
+		Subject:      pkix.Name{CommonName: "Mismatched CA"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+		IsCA:         true,
+	}
+	caBytes, err := x509.CreateCertificate(rand.Reader, &caCertTemplate, &caCertTemplate, &caKey.PublicKey, caKey)
+	if err != nil {
+		return "", nil, err
+	}
+
+	clientKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", nil, err
+	}
+	clientTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(9998),
+		Subject:      pkix.Name{CommonName: "Mismatched Client"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	clientCertBytes, err := x509.CreateCertificate(rand.Reader, &clientTemplate, &caCertTemplate, &clientKey.PublicKey, caKey)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Write CA cert
+	caFile, err := os.CreateTemp(tempDir, "mismatch-ca-*.crt")
+	if err != nil {
+		return "", nil, err
+	}
+	defer caFile.Close()
+	err = pem.Encode(caFile, &pem.Block{Type: "CERTIFICATE", Bytes: caBytes})
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Write client cert
+	clientCertFile, err := os.CreateTemp(tempDir, "mismatch-client-*.crt")
+	if err != nil {
+		return "", nil, err
+	}
+	defer clientCertFile.Close()
+	err = pem.Encode(clientCertFile, &pem.Block{Type: "CERTIFICATE", Bytes: clientCertBytes})
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Write client key
+	clientKeyFile, err := os.CreateTemp(tempDir, "mismatch-client-*.key")
+	if err != nil {
+		return "", nil, err
+	}
+	defer clientKeyFile.Close()
+	clientKeyBytes, err := x509.MarshalECPrivateKey(clientKey)
+	if err != nil {
+		return "", nil, err
+	}
+	err = pem.Encode(clientKeyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: clientKeyBytes})
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Build a TLS config with rootCAs (mismatch)
+	caData, err := os.ReadFile(caFile.Name())
+	if err != nil {
+		return "", nil, err
+	}
+	caPool := x509.NewCertPool()
+	if !caPool.AppendCertsFromPEM(caData) {
+		return "", nil, fmt.Errorf("failed to append mismatch CA")
+	}
+
+	cert, err := tls.LoadX509KeyPair(clientCertFile.Name(), clientKeyFile.Name())
+	if err != nil {
+		return "", nil, err
+	}
+
+	tlsConfig = &tls.Config{
+		RootCAs:      caPool,
+		Certificates: []tls.Certificate{cert},
+	}
+	return caFile.Name(), tlsConfig, nil
 }
