@@ -220,6 +220,15 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 		_ = certWatcher.Start(ctx)
 	}()
 
+	cert, err := certWatcher.GetCertificate(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error loading initial certificate: %w", err)
+	}
+
+	tlsConfig.Certificates = []tls.Certificate{*cert}
+	tlsConfig.ClientCAs = certWatcher.GetCAPool()
+	tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+
 	// triggers for every client hello
 	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
 		newTLSConfig := tlsConfig.Clone()
