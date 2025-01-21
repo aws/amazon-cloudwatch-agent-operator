@@ -207,10 +207,6 @@ func ValidateConfig(config *Config) error {
 }
 
 func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error) {
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS13,
-	}
-
 	certWatcher, err := NewCertAndCAWatcher(c.TLSCertFilePath, c.TLSKeyFilePath, c.CAFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error creating certwatcher: %w", err)
@@ -220,28 +216,17 @@ func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error
 		_ = certWatcher.Start(ctx)
 	}()
 
-	cert, err := certWatcher.GetCertificate(nil)
-	if err != nil {
-		return nil, fmt.Errorf("error loading initial certificate: %w", err)
+	// Create the TLS config
+	tlsConfig := &tls.Config{
+		MinVersion:     tls.VersionTLS13,
+		GetCertificate: certWatcher.GetCertificate,
+		ClientCAs:      certWatcher.GetCAPool(),
+		ClientAuth:     tls.RequireAndVerifyClientCert,
 	}
 
-	tlsConfig.Certificates = []tls.Certificate{*cert}
-	tlsConfig.ClientCAs = certWatcher.GetCAPool()
-	tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
-
-	// triggers for every client hello
+	// Dynamically update the CA pool if needed
 	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
-		newTLSConfig := tlsConfig.Clone()
-
-		cert, err := certWatcher.GetCertificate(clientHello)
-		if err != nil {
-			return nil, fmt.Errorf("error getting certificate: %w", err)
-		}
-
-		newTLSConfig.Certificates = []tls.Certificate{*cert}
-		newTLSConfig.ClientCAs = certWatcher.GetCAPool()
-		newTLSConfig.ClientAuth = tls.RequireAndVerifyClientCert
-		return newTLSConfig, nil
+		return tlsConfig, nil
 	}
 
 	return tlsConfig, nil
