@@ -1,7 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// certwatcher_test.go
 package config
 
 import (
@@ -39,10 +38,10 @@ func generateSelfSignedCertAndKey(commonName string) (certPEM, keyPEM []byte, er
 			CommonName: commonName,
 		},
 		NotBefore: time.Now().Add(-time.Hour),
-		NotAfter:  time.Now().Add(time.Hour), // short validity is fine for tests
+		NotAfter:  time.Now().Add(time.Hour),
 
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
-		IsCA:                  true, // mark true so it can be used as a CA
+		IsCA:                  true,
 		BasicConstraintsValid: true,
 	}
 
@@ -54,8 +53,14 @@ func generateSelfSignedCertAndKey(commonName string) (certPEM, keyPEM []byte, er
 
 	// Encode cert + key to PEM
 	var certBuf, keyBuf bytes.Buffer
-	pem.Encode(&certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: der})
-	pem.Encode(&keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	err = pem.Encode(&certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: der})
+	if err != nil {
+		return nil, nil, err
+	}
+	err = pem.Encode(&keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return certBuf.Bytes(), keyBuf.Bytes(), nil
 }
