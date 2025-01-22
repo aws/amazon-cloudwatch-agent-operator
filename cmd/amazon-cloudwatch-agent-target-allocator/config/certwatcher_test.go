@@ -18,7 +18,6 @@ import (
 	"time"
 )
 
-// generateSelfSignedCertAndKey returns PEM-encoded cert and key suitable for testing.
 func generateSelfSignedCertAndKey(commonName string) (certPEM, keyPEM []byte, err error) {
 	// Generate RSA key
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
