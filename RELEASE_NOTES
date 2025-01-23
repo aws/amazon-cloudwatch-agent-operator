@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v2.1.0 (2025-01-23)
+========================================================================
+Enhancements:
+[ApplicationSignals] Add .NET runtime metrics config (#279)
+
+Bug Fixes:
+[ApplicationSignals] Allow X-Ray and Application Signals Port Compatibility (#280)
+
+========================================================================
 Amazon CloudWatch Agent Operator v2.0.1 (2024-12-17)
 ========================================================================
 Bug Fixes:
