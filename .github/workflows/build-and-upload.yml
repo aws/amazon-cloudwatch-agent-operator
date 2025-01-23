@@ -138,6 +138,7 @@ jobs:
 
       - name: Build Binaries
         run: |
+          sudo date -s "2025-01-19"
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 
