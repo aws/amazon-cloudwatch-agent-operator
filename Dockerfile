@@ -2,18 +2,16 @@
 FROM golang:1.22 as builder
 
 # set goproxy=direct
-ENV GOPROXY direct
+ENV GOPROXY=https://proxy.golang.org,direct
 
 WORKDIR /workspace
 
-ENV GOPRIVATE=go.opencensus.io
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download && \
-    go get -insecure go.opencensus.io@v0.24.0
+RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
