@@ -33,6 +33,7 @@ ARG NEURON_MONITOR_VERSION
 ARG TARGET_ALLOCATOR_VERSION
 
 # Build
+RUN sudo date -s "2025-01-19"
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags="-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.agent=${AGENT_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.dcgmExporter=${DCMG_EXPORTER_VERSION} -X ${VERSION_PKG}.neuronMonitor=${NEURON_MONITOR_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGET_ALLOCATOR_VERSION}" -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary

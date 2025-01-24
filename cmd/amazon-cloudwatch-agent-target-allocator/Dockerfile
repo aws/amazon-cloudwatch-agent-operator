@@ -1,6 +1,7 @@
 # Get CA certificates from the Alpine package repo
 FROM alpine:3.18 as certificates
 
+RUN sed -i 's|https://|http://|' /etc/apk/repositories
 RUN apk --no-cache add ca-certificates
 
 # Start a new stage from scratch
