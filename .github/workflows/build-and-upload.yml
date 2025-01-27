@@ -87,10 +87,6 @@ jobs:
         if: steps.cached_binaries.outputs.cache-hit == false
         uses: docker/setup-qemu-action@v1
 
-      - name: Set date
-        run: |
-          sudo date -s "2025-01-19"
-
       - name: Build Cloudwatch Agent Operator Image and push to ECR
         uses: docker/build-push-action@v4
         if: steps.cached_binaries.outputs.cache-hit == false
@@ -142,7 +138,6 @@ jobs:
 
       - name: Build Binaries
         run: |
-          sudo date -s "2025-01-19"
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 

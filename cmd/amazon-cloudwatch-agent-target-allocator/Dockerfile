@@ -1,10 +1,12 @@
-# Get CA certificates from the Alpine package repo
-FROM alpine:3.18 as certificates
+# Get CA certificates from the latest Ubuntu
+ARG CERT_IMAGE=ubuntu:latest
 
-# Fix apk repo using https https://github.com/alpinelinux/docker-alpine/issues/98#issuecomment-2572849159
-RUN sed -i 's|https://|http://|' /etc/apk/repositories
+# Install cert and binaries
+FROM $CERT_IMAGE as cert
 
-RUN apk --no-cache add ca-certificates
+RUN apt-get update &&  \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Start a new stage from scratch
 FROM scratch
@@ -14,7 +16,7 @@ ARG TARGETARCH
 WORKDIR /root/
 
 # Copy the certs
-COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=cert /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
 COPY bin/targetallocator_${TARGETARCH} ./main
