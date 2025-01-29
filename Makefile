@@ -10,6 +10,7 @@ AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
 TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-allocator |  awk -F= '{print $$2}')"
+OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.agent=${AGENT_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.dcgmExporter=${DCMG_EXPORTER_VERSION} -X ${VERSION_PKG}.neuronMonitor=${NEURON_MONITOR_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGET_ALLOCATOR_VERSION}
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
@@ -101,7 +102,7 @@ test: generate fmt vet envtest
 # Build manager binary
 .PHONY: manager
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux GO111MODULE=on GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${OPERATOR_LDFLAGS}" -a main.go
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
