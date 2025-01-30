@@ -1,4 +1,4 @@
-# Get CA certificates from the latest Ubuntu
+# Get CA certificates from alpine package repo
 FROM alpine:3.21 as certificates
 
 RUN apk --no-cache add ca-certificates
