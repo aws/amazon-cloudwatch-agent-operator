@@ -61,7 +61,6 @@ jobs:
           ref: ${{ inputs.target-sha }}    
           repository: ${{inputs.repository}}
 
-
       - name: Set up Go 1.x
         uses: actions/setup-go@v4
         with:

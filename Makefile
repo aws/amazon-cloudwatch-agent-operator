@@ -102,11 +102,11 @@ test: generate fmt vet envtest
 # Build manager binary
 .PHONY: manager
 manager: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GO111MODULE=on GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${OPERATOR_LDFLAGS}" -a main.go
+	CGO_ENABLED=0 GOOS=linux GO111MODULE=on GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${OPERATOR_LDFLAGS}" main.go
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -193,7 +193,7 @@ kustomize: ## Download kustomize locally if necessary.
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	$(call go-get-tool,$(CONTROLLER_GEN), sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 .PHONY: goimports
 goimports:
