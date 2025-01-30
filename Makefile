@@ -213,7 +213,7 @@ simple-lint: checklicense impi
 install-addlicense:
 	# Using 04bfe4e to get SPDX template changes that are not present in the most recent tag v1.0.0
 	# This is required to be able to easily omit the year in our license header.
-	GOBIN=$(LOCALBIN) go install github.com/google/addlicense@04bfe4e
+	unset GOBIN && go install github.com/google/addlicense@04bfe4e
 
 addlicense: install-addlicense
 	@ADDLICENSEOUT=`$(ADDLICENSE) -y="" -s=only -l="Apache-2.0" -c="Amazon.com, Inc. or its affiliates. All Rights Reserved." $(ALL_SRC) 2>&1`; \
