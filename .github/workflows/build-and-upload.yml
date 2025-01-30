@@ -89,6 +89,8 @@ jobs:
 
       - name: Build Binaries
         run: |
+          export GOPROXY=direct 
+          go mod download
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
             arch=${platform#*/}
             echo "Building operator for $arch"
@@ -146,6 +148,7 @@ jobs:
 
       - name: Build Binaries
         run: |
+          export GOPROXY=direct 
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 
