@@ -9,6 +9,7 @@ env:
   ECR_OPERATOR_RELEASE_IMAGE: ${{ vars.ECR_OPERATOR_RELEASE_IMAGE }}
   ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO }}
   ECR_TARGET_ALLOCATOR_RELEASE_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_RELEASE_REPO }}
+  PLATFORMS: linux/amd64,linux/arm64
   
 on:
   workflow_call:
@@ -88,9 +89,11 @@ jobs:
 
       - name: Build Binaries
         run: |
-          go mod download
-          export GOARCH=arm64 && make manager 
-          export GOARCH=amd64 && make manager 
+          for platform in $(echo $PLATFORMS | tr "," "\n"); do
+            arch=${platform#*/}
+            echo "Building operator for $arch"
+            make manager ARCH=$arch
+          done 
 
       - name: Build Cloudwatch Agent Operator Image and push to ECR
         uses: docker/build-push-action@v4
@@ -99,7 +102,7 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          platforms: linux/amd64, linux/arm64
+          platforms: ${{ env.PLATFORMS }}
           tags: |
            ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
            ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.target-sha }}
@@ -157,7 +160,7 @@ jobs:
           tags: |
            ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
            ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.target-sha }}
-          platforms: linux/amd64, linux/arm64
+          platforms: ${{ env.PLATFORMS }}
 
   bypass-info:
     if: ${{ inputs.e2e-test-bypass-link != '' || inputs.e2e-test-bypass-approver != '' }}
