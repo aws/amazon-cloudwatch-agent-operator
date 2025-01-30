@@ -1,12 +1,10 @@
 # Get CA certificates from the latest Ubuntu
-ARG CERT_IMAGE=ubuntu:latest
+FROM alpine:3.21 as certificates
 
 # Install cert and binaries
-FROM $CERT_IMAGE as cert
+FROM $CERT_IMAGE as certificates
 
-RUN apt-get update &&  \
-    apt-get install -y ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk --no-cache add ca-certificates
 
 # Start a new stage from scratch
 FROM scratch
@@ -16,9 +14,11 @@ ARG TARGETARCH
 WORKDIR /root/
 
 # Copy the certs
-COPY --from=cert /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
 COPY bin/targetallocator_${TARGETARCH} ./main
+
+USER 65532:65532
 
 ENTRYPOINT ["./main"]
