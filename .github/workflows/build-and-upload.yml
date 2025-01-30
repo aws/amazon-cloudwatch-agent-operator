@@ -10,6 +10,7 @@ env:
   ECR_TARGET_ALLOCATOR_STAGING_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_STAGING_REPO }}
   ECR_TARGET_ALLOCATOR_RELEASE_REPO: ${{ vars.ECR_TARGET_ALLOCATOR_RELEASE_REPO }}
   PLATFORMS: linux/amd64,linux/arm64
+  GOPROXY: direct
   
 on:
   workflow_call:
@@ -89,7 +90,6 @@ jobs:
 
       - name: Build Binaries
         run: |
-          export GOPROXY=direct 
           go mod download
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
             arch=${platform#*/}
@@ -148,7 +148,6 @@ jobs:
 
       - name: Build Binaries
         run: |
-          export GOPROXY=direct 
           go mod download
           export GOARCH=arm64 && make targetallocator 
           export GOARCH=amd64 && make targetallocator 
