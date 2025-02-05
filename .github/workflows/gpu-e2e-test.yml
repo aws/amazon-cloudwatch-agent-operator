@@ -96,6 +96,11 @@ jobs:
           echo "please run go get -u && go mod tidy"
           exit 1; 
           fi
+          
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.1.7"
 
       - name: Verify Terraform version
         run: terraform --version
