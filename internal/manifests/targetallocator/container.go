@@ -14,7 +14,7 @@ import (
 // These have to be constants so that TA container code can access it as well
 const (
 	TACertMountPath     = "/etc/amazon-cloudwatch-target-allocator-cert"
-	ClientCertMountPath = "/etc/amazon-cloudwatch-observability-agent-outbound-cert"
+	ClientCertMountPath = "/etc/amazon-cloudwatch-observability-agent-ta-client-cert"
 )
 
 // Container builds a container for the given TargetAllocator.
