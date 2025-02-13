@@ -1,5 +1,5 @@
-# Get CA certificates from the Alpine package repo
-FROM alpine:3.18 as certificates
+# Get CA certificates from alpine package repo
+FROM alpine:3.21 as certificates
 
 RUN apk --no-cache add ca-certificates
 
@@ -15,5 +15,7 @@ COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-ce
 
 # Copy binary built on the host
 COPY bin/targetallocator_${TARGETARCH} ./main
+
+USER 65532:65532
 
 ENTRYPOINT ["./main"]

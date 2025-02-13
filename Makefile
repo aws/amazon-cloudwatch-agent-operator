@@ -10,6 +10,7 @@ AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 DCGM_EXPORTER_VERSION ?= "$(shell grep -v '\#' versions.txt | grep dcgm-exporter | awk -F= '{print $$2}')"
 NEURON_MONITOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep neuron-monitor | awk -F= '{print $$2}')"
 TARGET_ALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep target-allocator |  awk -F= '{print $$2}')"
+OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.agent=${AGENT_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.dcgmExporter=${DCMG_EXPORTER_VERSION} -X ${VERSION_PKG}.neuronMonitor=${NEURON_MONITOR_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGET_ALLOCATOR_VERSION}
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= aws
@@ -101,11 +102,11 @@ test: generate fmt vet envtest
 # Build manager binary
 .PHONY: manager
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux GO111MODULE=on GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${OPERATOR_LDFLAGS}" main.go
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build  -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
+	cd cmd/amazon-cloudwatch-agent-target-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${LDFLAGS}"  .
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -164,7 +165,7 @@ generate: controller-gen api-docs
 # Build the container image, used only for local dev purposes
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
-container:
+container: manager
 	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg AGENT_VERSION=${AGENT_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg DCGM_EXPORTER_VERSION=${DCGM_EXPORTER_VERSION} --build-arg NEURON_MONITOR_VERSION=${NEURON_MONITOR_VERSION} --build-arg TARGET_ALLOCATOR_VERSION=${TARGET_ALLOCATOR_VERSION} .
 
 # Push the container image, used only for local dev purposes
@@ -192,7 +193,7 @@ kustomize: ## Download kustomize locally if necessary.
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	GOBIN=$(LOCALBIN) $(call go-get-tool,$(CONTROLLER_GEN), sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 .PHONY: goimports
 goimports:
