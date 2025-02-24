@@ -3,7 +3,6 @@ FROM golang:1.22 as builder
 
 # set goproxy=direct
 ENV GOPROXY direct
-ENV GOINSECURE go.opencensus.io
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
