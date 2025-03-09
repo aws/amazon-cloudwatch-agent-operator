@@ -1,4 +1,11 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v2.2.0 (2025-03-07)
+========================================================================
+Enhancements:
+* Grant CloudWatchAgent ClusterRole permissions to invoke EndpointSlices API
+* Go.mod dependency upgrades
+
+========================================================================
 Amazon CloudWatch Agent Operator v2.1.0 (2025-01-23)
 ========================================================================
 Enhancements:
