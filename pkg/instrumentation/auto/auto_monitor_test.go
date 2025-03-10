@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
@@ -23,7 +24,7 @@ func TestMonitor_Selected(t *testing.T) {
 	tests := []struct {
 		name        string
 		service     corev1.Service
-		workload    metav1.Object
+		workload    client.Object
 		config      MonitorConfig
 		shouldMatch bool
 	}{

@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/strings/slices"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
@@ -43,7 +44,7 @@ func NewMonitor(ctx context.Context, logger logr.Logger, config MonitorConfig, k
 }
 
 // ShouldBeMonitored returns whether obj is selected by either custom selector or auto monitor
-func (m Monitor) ShouldBeMonitored(obj metav1.Object) bool {
+func (m Monitor) ShouldBeMonitored(obj client.Object) bool {
 	m.logger.Info("AutoMonitor shouldBeMonitored")
 	// TODO: check if in custom selector
 	// note: custom selector does not respect MonitorAllServices
@@ -82,13 +83,13 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 	// Check if the object implements the type assertion for PodTemplateSpec
 	switch t := obj.(type) {
 	case *appsv1.Deployment:
-		return labels.Set(t.Spec.Template.Labels)
+		return t.Spec.Template.Labels
 	case *appsv1.StatefulSet:
-		return labels.Set(t.Spec.Template.Labels)
+		return t.Spec.Template.Labels
 	case *appsv1.DaemonSet:
-		return labels.Set(t.Spec.Template.Labels)
+		return t.Spec.Template.Labels
 	case *appsv1.ReplicaSet:
-		return labels.Set(t.Spec.Template.Labels)
+		return t.Spec.Template.Labels
 	default:
 		// Return empty labels.Set if the object type is not supported
 		return labels.Set{}

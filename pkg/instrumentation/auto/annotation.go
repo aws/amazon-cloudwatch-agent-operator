@@ -70,13 +70,13 @@ func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
 func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) {
 	switch o := obj.(type) {
 	case *corev1.Namespace:
-		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta())
+		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta(), obj)
 	case *appsv1.Deployment:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.deploymentMutators, o.Spec.Template.GetObjectMeta())
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.deploymentMutators, o.Spec.Template.GetObjectMeta(), obj)
 	case *appsv1.DaemonSet:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.daemonSetMutators, o.Spec.Template.GetObjectMeta())
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.daemonSetMutators, o.Spec.Template.GetObjectMeta(), obj)
 	case *appsv1.StatefulSet:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta())
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta(), obj)
 	default:
 		return nil, false
 	}
@@ -109,12 +109,14 @@ func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.Ob
 	}
 }
 
-func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
+func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]instrumentation.AnnotationMutator, podObj metav1.Object, workloadNamespaceObj client.Object) (map[string]string, bool) {
 	// does autoAnnotateAutoInstrumentation or customSelector specify the namespaced name of the k8s object to annotate?
 	var mutator instrumentation.ObjectAnnotationMutator
+	m.logger.Info("Trying mutate")
 	mutator, specificMutatorExists := mutators[namespacedName]
 	if !specificMutatorExists {
-		if m.monitor != nil && isWorkload(obj) && m.monitor.ShouldBeMonitored(obj) {
+		m.logger.Info(fmt.Sprintf("Annotation mutator '%s' does not exist", namespacedName))
+		if m.monitor != nil && isWorkload(workloadNamespaceObj) && m.monitor.ShouldBeMonitored(workloadNamespaceObj) {
 			// Is the object is a workload and does a service selects the workload?
 			mutator = m.monitor
 		} else {
@@ -122,11 +124,11 @@ func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]i
 		}
 	}
 
-	mutatedAnnotations := mutator.Mutate(obj)
+	mutatedAnnotations := mutator.Mutate(podObj)
 	return mutatedAnnotations, len(mutatedAnnotations) != 0
 }
 
-func isWorkload(obj metav1.Object) bool {
+func isWorkload(obj client.Object) bool {
 	switch obj.(type) {
 	case *appsv1.Deployment, *appsv1.DaemonSet, *appsv1.StatefulSet:
 		return true
