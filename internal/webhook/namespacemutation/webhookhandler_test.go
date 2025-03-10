@@ -39,6 +39,7 @@ func TestHandle(t *testing.T) {
 		logr.Logger{},
 		autoAnnotationConfig,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
+		nil,
 	)
 	h := NewWebhookHandler(decoder, mutators)
 	for _, testCase := range []struct {

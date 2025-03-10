@@ -29,6 +29,7 @@ const (
 // AnnotationMutators contains functions that can be used to mutate annotations
 // on all supported objects based on the configured mutators.
 type AnnotationMutators struct {
+	monitor             *Monitor
 	clientWriter        client.Writer
 	clientReader        client.Reader
 	logger              logr.Logger
@@ -108,13 +109,30 @@ func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.Ob
 	}
 }
 
-func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
-	mutator, ok := mutators[name]
-	if !ok {
-		mutator = m.defaultMutator
+func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
+	// does autoAnnotateAutoInstrumentation or customSelector specify the namespaced name of the k8s object to annotate?
+	var mutator instrumentation.ObjectAnnotationMutator
+	mutator, specificMutatorExists := mutators[namespacedName]
+
+	if !specificMutatorExists {
+		if m.monitor != nil && isWorkload(obj) && m.monitor.ShouldBeMonitored(obj) {
+			// Is the object is a workload and does a service selects the workload?
+			mutator = m.monitor
+		} else {
+			mutator = &m.defaultMutator
+		}
 	}
+
 	mutatedAnnotations := mutator.Mutate(obj)
 	return mutatedAnnotations, len(mutatedAnnotations) != 0
+}
+
+func isWorkload(obj metav1.Object) bool {
+	switch obj.(type) {
+	case *appsv1.Deployment, *appsv1.DaemonSet, *appsv1.StatefulSet:
+		return true
+	}
+	return false
 }
 
 func namespacedName(obj metav1.Object) string {
@@ -130,12 +148,14 @@ func NewAnnotationMutators(
 	logger logr.Logger,
 	cfg AnnotationConfig,
 	typeSet instrumentation.TypeSet,
+	monitor *Monitor,
 ) *AnnotationMutators {
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		clientWriter:        clientWriter,
 		clientReader:        clientReader,
 		logger:              logger,
+		monitor:             monitor,
 		namespaceMutators:   builder.buildMutators(getResources(cfg, typeSet, getNamespaces)),
 		deploymentMutators:  builder.buildMutators(getResources(cfg, typeSet, getDeployments)),
 		daemonSetMutators:   builder.buildMutators(getResources(cfg, typeSet, getDaemonSets)),

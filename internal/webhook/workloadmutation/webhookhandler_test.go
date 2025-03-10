@@ -6,10 +6,11 @@ package workloadmutation
 import (
 	"context"
 	"encoding/json"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/go-logr/logr"
 	"net/http"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admv1 "k8s.io/api/admission/v1"
@@ -21,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
@@ -128,6 +128,7 @@ func TestHandle(t *testing.T) {
 				logr.Logger{},
 				autoAnnotationConfig,
 				instrumentation.NewTypeSet(instrumentation.TypeJava),
+				nil,
 			)
 			injector := NewWebhookHandler(decoder, mutators)
 

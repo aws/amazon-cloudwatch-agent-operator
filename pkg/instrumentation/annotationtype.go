@@ -26,6 +26,10 @@ const (
 	TypeGo     Type = "go"
 )
 
+func AllTypes() []Type {
+	return []Type{TypeJava, TypeNodeJS, TypePython, TypeDotNet, TypeGo}
+}
+
 // InjectAnnotationKey maps the instrumentation type to the inject annotation.
 func InjectAnnotationKey(instType Type) string {
 	switch instType {

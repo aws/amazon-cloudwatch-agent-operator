@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"os"
 	"runtime"
 	"strings"
@@ -292,23 +294,43 @@ func main() {
 		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
+			// TODO marshal/unmarshal monitor config
+			monitorConfig := auto.MonitorConfig{}
+
+			supportedLanguages := instrumentation.NewTypeSet(
+				instrumentation.TypeJava,
+				instrumentation.TypePython,
+				instrumentation.TypeDotNet,
+				instrumentation.TypeNodeJS,
+			)
+			if monitorConfig.Languages == nil {
+				monitorConfig.Languages = supportedLanguages
+			}
+			k8sConfig, err := rest.InClusterConfig()
+			if err != nil {
+				panic("TODO: Implement handling for failed clientset creation")
+			}
+
+			clientSet, err := kubernetes.NewForConfig(k8sConfig)
+			if err != nil {
+				// TODO
+				panic("TODO: Implement handling for failed clientset creation")
+			}
+			monitor := auto.NewMonitor(ctx, logger, monitorConfig, clientSet)
 			autoAnnotationMutators := auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,
 				autoAnnotationConfig,
-				instrumentation.NewTypeSet(
-					instrumentation.TypeJava,
-					instrumentation.TypePython,
-					instrumentation.TypeDotNet,
-					instrumentation.TypeNodeJS,
-				),
+				supportedLanguages,
+				monitor,
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
 				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators)})
 			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
 				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators),
 			})
+
 			setupLog.Info("Auto-annotation is enabled")
 			go waitForWebhookServerStart(
 				ctx,
