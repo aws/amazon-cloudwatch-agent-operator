@@ -113,7 +113,6 @@ func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]i
 	// does autoAnnotateAutoInstrumentation or customSelector specify the namespaced name of the k8s object to annotate?
 	var mutator instrumentation.ObjectAnnotationMutator
 	mutator, specificMutatorExists := mutators[namespacedName]
-
 	if !specificMutatorExists {
 		if m.monitor != nil && isWorkload(obj) && m.monitor.ShouldBeMonitored(obj) {
 			// Is the object is a workload and does a service selects the workload?

@@ -295,7 +295,11 @@ func main() {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
 			// TODO marshal/unmarshal monitor config
-			monitorConfig := auto.MonitorConfig{}
+			setupLog.Info("Test!")
+			monitorConfig := auto.MonitorConfig{
+				// TODO: remove
+				MonitorAllServices: true,
+			}
 
 			supportedLanguages := instrumentation.NewTypeSet(
 				instrumentation.TypeJava,
@@ -316,7 +320,7 @@ func main() {
 				// TODO
 				panic("TODO: Implement handling for failed clientset creation")
 			}
-			monitor := auto.NewMonitor(ctx, logger, monitorConfig, clientSet)
+			monitor := auto.NewMonitor(ctx, setupLog, monitorConfig, clientSet)
 			autoAnnotationMutators := auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),

@@ -25,6 +25,7 @@ type Monitor struct {
 }
 
 func NewMonitor(ctx context.Context, logger logr.Logger, config MonitorConfig, k8sInterface kubernetes.Interface) *Monitor {
+	logger.Info("AutoMonitor starting...")
 
 	factory := informers.NewSharedInformerFactory(k8sInterface, 10*time.Minute)
 
@@ -37,12 +38,13 @@ func NewMonitor(ctx context.Context, logger logr.Logger, config MonitorConfig, k
 			panic("TODO: handle bad cache sync")
 		}
 	}
-
+	logger.Info("AutoMonitor enabled!")
 	return &Monitor{serviceInformer: serviceInformer, ctx: ctx, logger: logger, config: config}
 }
 
 // ShouldBeMonitored returns whether obj is selected by either custom selector or auto monitor
 func (m Monitor) ShouldBeMonitored(obj metav1.Object) bool {
+	m.logger.Info("AutoMonitor shouldBeMonitored")
 	// TODO: check if in custom selector
 	// note: custom selector does not respect MonitorAllServices
 	if m.customSelected(obj) {
@@ -53,8 +55,11 @@ func (m Monitor) ShouldBeMonitored(obj metav1.Object) bool {
 		return false
 	}
 
-	objectLabels := labels.Set(obj.GetLabels())
+	objectLabels := getTemplateSpecLabels(obj)
 	// if object is not workload, return err
+	m.logger.Info(fmt.Sprintf("AutoMonitor labels: %v", objectLabels))
+	m.logger.Info(fmt.Sprintf("AutoMonitor ListKeys: %v", m.serviceInformer.GetStore().ListKeys()))
+	m.logger.Info(fmt.Sprintf("AutoMonitor List: %v", m.serviceInformer.GetStore().List()))
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
 		service := informerObj.(*corev1.Service)
 		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
@@ -71,6 +76,23 @@ func (m Monitor) ShouldBeMonitored(obj metav1.Object) bool {
 		// remove if none matched, not in custom selector
 	}
 	return false
+}
+
+func getTemplateSpecLabels(obj metav1.Object) labels.Set {
+	// Check if the object implements the type assertion for PodTemplateSpec
+	switch t := obj.(type) {
+	case *appsv1.Deployment:
+		return labels.Set(t.Spec.Template.Labels)
+	case *appsv1.StatefulSet:
+		return labels.Set(t.Spec.Template.Labels)
+	case *appsv1.DaemonSet:
+		return labels.Set(t.Spec.Template.Labels)
+	case *appsv1.ReplicaSet:
+		return labels.Set(t.Spec.Template.Labels)
+	default:
+		// Return empty labels.Set if the object type is not supported
+		return labels.Set{}
+	}
 }
 
 // Mutate adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
