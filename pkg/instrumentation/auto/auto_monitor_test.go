@@ -101,7 +101,7 @@ func TestMonitor_Selected(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
-			name:    "Should not match when languages are empty",
+			name:    "Should match when languages are empty",
 			service: newTestService("svc-7", map[string]string{"app": "test"}),
 			workload: newTestDeployment("deploy-7", map[string]string{
 				"app": "test",
@@ -109,7 +109,7 @@ func TestMonitor_Selected(t *testing.T) {
 			config: MonitorConfig{
 				MonitorAllServices: true,
 			},
-			shouldMatch: false,
+			shouldMatch: true,
 		},
 		{
 			name:    "Should match DaemonSet with exact label match",

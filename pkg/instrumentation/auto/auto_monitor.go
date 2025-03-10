@@ -57,6 +57,9 @@ func (m Monitor) ShouldBeMonitored(obj metav1.Object) bool {
 	// if object is not workload, return err
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
 		service := informerObj.(*corev1.Service)
+		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
+			continue
+		}
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 
 		m.logger.V(2).Info("AutoMonitor: testing serviceSelector", "serviceSelector", serviceSelector.String(), "objectLabels", objectLabels.String())
