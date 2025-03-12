@@ -41,7 +41,7 @@ func TestHandle(t *testing.T) {
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
 		nil,
 	)
-	h := NewWebhookHandler(decoder, mutators)
+	h := NewWebhookHandler(decoder, mutators, nil)
 	for _, testCase := range []struct {
 		req      admission.Request
 		name     string

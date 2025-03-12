@@ -29,7 +29,6 @@ const (
 // AnnotationMutators contains functions that can be used to mutate annotations
 // on all supported objects based on the configured mutators.
 type AnnotationMutators struct {
-	monitor             *Monitor
 	clientWriter        client.Writer
 	clientReader        client.Reader
 	logger              logr.Logger
@@ -39,6 +38,13 @@ type AnnotationMutators struct {
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
 	injectAnnotations   map[string]struct{}
+	monitor             *Monitor
+	cfg                 *AnnotationConfig
+}
+
+// IsMutated returns if obj is specified in the config
+func (m *AnnotationMutators) IsMutated(obj client.Object) bool {
+	return len(m.cfg.GetObjectLanguagesToAnnotate(obj)) > 0
 }
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
@@ -70,13 +76,13 @@ func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
 func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) {
 	switch o := obj.(type) {
 	case *corev1.Namespace:
-		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta(), obj)
+		return m.mutate(o.GetName(), m.namespaceMutators, o.GetObjectMeta())
 	case *appsv1.Deployment:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.deploymentMutators, o.Spec.Template.GetObjectMeta(), obj)
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.deploymentMutators, o.Spec.Template.GetObjectMeta())
 	case *appsv1.DaemonSet:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.daemonSetMutators, o.Spec.Template.GetObjectMeta(), obj)
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.daemonSetMutators, o.Spec.Template.GetObjectMeta())
 	case *appsv1.StatefulSet:
-		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta(), obj)
+		return m.mutate(namespacedName(o.GetObjectMeta()), m.statefulSetMutators, o.Spec.Template.GetObjectMeta())
 	default:
 		return nil, false
 	}
@@ -109,31 +115,13 @@ func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.Ob
 	}
 }
 
-func (m *AnnotationMutators) mutate(namespacedName string, mutators map[string]instrumentation.AnnotationMutator, podObj metav1.Object, workloadNamespaceObj client.Object) (map[string]string, bool) {
-	// does autoAnnotateAutoInstrumentation or customSelector specify the namespaced name of the k8s object to annotate?
-	var mutator instrumentation.ObjectAnnotationMutator
-	m.logger.Info("Trying mutate")
-	mutator, specificMutatorExists := mutators[namespacedName]
-	if !specificMutatorExists {
-		m.logger.Info(fmt.Sprintf("Annotation mutator '%s' does not exist", namespacedName))
-		if m.monitor != nil && isWorkload(workloadNamespaceObj) && m.monitor.ShouldBeMonitored(workloadNamespaceObj) {
-			// Is the object is a workload and does a service selects the workload?
-			mutator = m.monitor
-		} else {
-			mutator = &m.defaultMutator
-		}
+func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumentation.AnnotationMutator, obj metav1.Object) (map[string]string, bool) {
+	mutator, ok := mutators[name]
+	if !ok {
+		mutator = m.defaultMutator
 	}
-
-	mutatedAnnotations := mutator.Mutate(podObj)
+	mutatedAnnotations := mutator.Mutate(obj)
 	return mutatedAnnotations, len(mutatedAnnotations) != 0
-}
-
-func isWorkload(obj client.Object) bool {
-	switch obj.(type) {
-	case *appsv1.Deployment, *appsv1.DaemonSet, *appsv1.StatefulSet:
-		return true
-	}
-	return false
 }
 
 func namespacedName(obj metav1.Object) string {
@@ -149,20 +137,19 @@ func NewAnnotationMutators(
 	logger logr.Logger,
 	cfg AnnotationConfig,
 	typeSet instrumentation.TypeSet,
-	monitor *Monitor,
 ) *AnnotationMutators {
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		clientWriter:        clientWriter,
 		clientReader:        clientReader,
 		logger:              logger,
-		monitor:             monitor,
 		namespaceMutators:   builder.buildMutators(getResources(cfg, typeSet, getNamespaces)),
 		deploymentMutators:  builder.buildMutators(getResources(cfg, typeSet, getDeployments)),
 		daemonSetMutators:   builder.buildMutators(getResources(cfg, typeSet, getDaemonSets)),
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
 		injectAnnotations:   buildInjectAnnotations(typeSet),
+		cfg:                 &cfg,
 	}
 }
 

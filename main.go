@@ -130,6 +130,7 @@ func main() {
 		autoInstrumentationDotNet    string
 		autoInstrumentationNodeJS    string
 		autoAnnotationConfigStr      string
+		autoMonitorConfigStr         string
 		autoInstrumentationConfigStr string
 		webhookPort                  int
 		tlsOpt                       tlsConfig
@@ -147,6 +148,7 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("%s:%s", autoInstrumentationNodeJSImageRepository, v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
+	pflag.StringVar(&autoMonitorConfigStr, "auto-monitor-config", "", "The configuration for auto-monitor.")
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
@@ -290,49 +292,33 @@ func main() {
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
 		setupLog.Info("Auto-annotation is disabled")
 	} else {
+
+		supportedLanguages := instrumentation.NewTypeSet(
+			instrumentation.TypeJava,
+			instrumentation.TypePython,
+			instrumentation.TypeDotNet,
+			instrumentation.TypeNodeJS,
+		)
+
 		var autoAnnotationConfig auto.AnnotationConfig
 		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
 			// TODO marshal/unmarshal monitor config
 			setupLog.Info("Test!")
-			monitorConfig := auto.MonitorConfig{
-				// TODO: remove
-				MonitorAllServices: true,
-			}
+			monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx)
 
-			supportedLanguages := instrumentation.NewTypeSet(
-				instrumentation.TypeJava,
-				instrumentation.TypePython,
-				instrumentation.TypeDotNet,
-				instrumentation.TypeNodeJS,
-			)
-			if monitorConfig.Languages == nil {
-				monitorConfig.Languages = supportedLanguages
-			}
-			k8sConfig, err := rest.InClusterConfig()
-			if err != nil {
-				panic("TODO: Implement handling for failed clientset creation")
-			}
-
-			clientSet, err := kubernetes.NewForConfig(k8sConfig)
-			if err != nil {
-				// TODO
-				panic("TODO: Implement handling for failed clientset creation")
-			}
-			monitor := auto.NewMonitor(ctx, setupLog, monitorConfig, clientSet)
 			autoAnnotationMutators := auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,
 				autoAnnotationConfig,
 				supportedLanguages,
-				monitor,
 			)
 			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators)})
+				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators, monitor)})
 			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
-				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators),
+				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators, monitor),
 			})
 
 			setupLog.Info("Auto-annotation is enabled")
@@ -382,6 +368,29 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) *auto.Monitor {
+	var monitorConfig *auto.MonitorConfig
+	var monitor *auto.Monitor
+	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
+		setupLog.Error(err, "Unable to unmarshal auto-monitor config")
+	} else {
+		if monitorConfig.Languages == nil || len(monitorConfig.Languages) == 0 {
+			monitorConfig.Languages = instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
+		}
+		k8sConfig, err := rest.InClusterConfig()
+		if err != nil {
+			panic("TODO: Implement handling for failed clientset creation")
+		}
+
+		clientSet, err := kubernetes.NewForConfig(k8sConfig)
+		if err != nil {
+			panic("TODO: Implement handling for failed clientset creation")
+		}
+		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet)
+	}
+	return monitor
 }
 
 func waitForWebhookServerStart(ctx context.Context, checker healthz.Checker, callback func(context.Context)) {

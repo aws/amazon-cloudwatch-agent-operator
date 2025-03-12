@@ -3,11 +3,24 @@
 
 package instrumentation
 
+import (
+	"encoding/json"
+)
+
 // Type is an enum for instrumentation types.
 type Type string
 
 // TypeSet is a map with Type keys.
 type TypeSet map[Type]any
+
+func (s *TypeSet) UnmarshalJSON(data []byte) error {
+	var types []Type
+	if err := json.Unmarshal(data, &types); err != nil {
+		return err
+	}
+	*s = NewTypeSet(types...)
+	return nil
+}
 
 // NewTypeSet creates a new set of Type.
 func NewTypeSet(types ...Type) TypeSet {
@@ -26,8 +39,8 @@ const (
 	TypeGo     Type = "go"
 )
 
-func AllTypes() []Type {
-	return []Type{TypeJava, TypeNodeJS, TypePython, TypeDotNet, TypeGo}
+func SupportedTypes() []Type {
+	return []Type{TypeJava, TypeNodeJS, TypePython, TypeDotNet}
 }
 
 // InjectAnnotationKey maps the instrumentation type to the inject annotation.

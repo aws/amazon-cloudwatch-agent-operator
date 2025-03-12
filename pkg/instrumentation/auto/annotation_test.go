@@ -116,7 +116,6 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
-				nil,
 			)
 			mutators.MutateAndPatchAll(ctx)
 			gotNamespaces := &corev1.NamespaceList{}
@@ -201,7 +200,6 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 		logr.Logger{},
 		cfg,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
-		nil,
 	)
 	mutators.MutateAndPatchAll(context.Background())
 	ctx := context.Background()
@@ -293,7 +291,6 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
-				nil,
 			)
 			mutators.MutateAndPatchAll(ctx)
 			gotDeployments := &appsv1.DeploymentList{}
@@ -362,7 +359,6 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
-				nil,
 			)
 			mutators.MutateAndPatchAll(ctx)
 			gotDaemonSets := &appsv1.DaemonSetList{}
@@ -431,7 +427,6 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 				logr.Logger{},
 				testCase.cfg,
 				testCase.typeSet,
-				nil,
 			)
 			mutators.MutateAndPatchAll(ctx)
 			gotStatefulSets := &appsv1.StatefulSetList{}
@@ -498,7 +493,6 @@ func TestAnnotationMutators_ClientErrors(t *testing.T) {
 		logr.Logger{},
 		cfg,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
-		nil,
 	)
 	mutators.MutateAndPatchAll(context.Background())
 	errClient.AssertCalled(t, "List", mock.Anything, mock.Anything, mock.Anything)

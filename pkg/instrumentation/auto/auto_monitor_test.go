@@ -20,10 +20,11 @@ var logger = logf.Log.WithName("auto_monitor_tests")
 func TestMonitor_Selected(t *testing.T) {
 	logger.Info("Starting testmonitor tests")
 
-	allTypes := instrumentation.NewTypeSet(instrumentation.AllTypes()...)
+	allTypes := instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
 	tests := []struct {
 		name        string
 		service     corev1.Service
+		oldWorkload client.Object
 		workload    client.Object
 		config      MonitorConfig
 		shouldMatch bool
@@ -282,11 +283,11 @@ func TestMonitor_Selected(t *testing.T) {
 			err = createWorkload(ctx, clientSet, tt.workload)
 			require.NoError(t, err)
 
-			m := NewMonitor(ctx, logger, tt.config, clientSet)
-			matched := m.ShouldBeMonitored(tt.workload)
+			m := NewMonitor(ctx, tt.config, clientSet)
+			mutatedAnnotations := m.MutateObject(tt.workload, tt.workload)
 
-			assert.Equal(t, tt.shouldMatch, matched,
-				"Expected workload matching to be %v but got %v", tt.shouldMatch, matched)
+			assert.Equal(t, tt.shouldMatch, mutatedAnnotations,
+				"Expected workload matching to be %v but got %v", tt.shouldMatch, mutatedAnnotations)
 		})
 	}
 }
@@ -366,4 +367,12 @@ func createWorkload(ctx context.Context, clientSet *fake.Clientset, workload met
 	default:
 		return fmt.Errorf("unsupported workload type: %T", workload)
 	}
+}
+
+func TestUnmarshal(t *testing.T) {
+	j := []byte(`["java", "nodejs", "python"]`)
+	set := instrumentation.TypeSet{}
+	err := set.UnmarshalJSON(j)
+	assert.NoError(t, err)
+	assert.Equal(t, instrumentation.TypeSet{instrumentation.TypeNodeJS: nil, instrumentation.TypeJava: nil, instrumentation.TypePython: nil}, set)
 }

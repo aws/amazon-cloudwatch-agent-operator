@@ -6,9 +6,8 @@ package namespacemutation
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
 	corev1 "k8s.io/api/core/v1"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
@@ -21,12 +20,14 @@ var _ admission.Handler = (*handler)(nil)
 type handler struct {
 	decoder            *admission.Decoder
 	annotationMutators *auto.AnnotationMutators
+	monitor            *auto.Monitor
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) admission.Handler {
+func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor *auto.Monitor) admission.Handler {
 	return &handler{
 		decoder:            decoder,
 		annotationMutators: annotationMutators,
+		monitor:            monitor,
 	}
 }
 
@@ -36,7 +37,13 @@ func (h *handler) Handle(_ context.Context, req admission.Request) admission.Res
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	h.annotationMutators.MutateObject(namespace)
+
+	if h.annotationMutators.IsMutated(namespace) && !h.monitor.AnyCustomSelectorDefined() {
+		h.annotationMutators.MutateObject(namespace)
+	} else {
+		// do not need to pass in oldObj because it's only used to check for workload pod template diff
+		h.monitor.MutateObject(nil, namespace)
+	}
 	marshaledNamespace, err := json.Marshal(namespace)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

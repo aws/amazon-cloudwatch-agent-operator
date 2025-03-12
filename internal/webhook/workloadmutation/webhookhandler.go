@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-
+	v1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	"net/http"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -21,6 +22,7 @@ import (
 // +kubebuilder:rbac:groups="apps",resources=daemonsets;deployments;statefulsets,verbs=get;list;watch
 
 var _ WebhookHandler = (*workloadMutationWebhook)(nil)
+var logger = ctrl.Log.WithName("workload_webhook")
 
 // WebhookHandler is a webhook handler that analyzes new daemon-sets and injects appropriate annotations into it.
 type WebhookHandler interface {
@@ -31,24 +33,29 @@ type WebhookHandler interface {
 type workloadMutationWebhook struct {
 	decoder            *admission.Decoder
 	annotationMutators *auto.AnnotationMutators
+	monitor            *auto.Monitor
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor *auto.Monitor) WebhookHandler {
 	return &workloadMutationWebhook{
 		decoder:            decoder,
 		annotationMutators: annotationMutators,
+		monitor:            monitor,
 	}
 }
 
 func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Request) admission.Response {
-	var obj client.Object
+	var oldObj, obj client.Object
 	switch objectKind := req.Kind.Kind; objectKind {
 	case "DaemonSet":
+		oldObj = &appsv1.DaemonSet{}
 		obj = &appsv1.DaemonSet{}
 	case "Deployment":
+		oldObj = &appsv1.Deployment{}
 		obj = &appsv1.Deployment{}
 	case "StatefulSet":
+		oldObj = &appsv1.StatefulSet{}
 		obj = &appsv1.StatefulSet{}
 	default:
 		return admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal request object"))
@@ -58,7 +65,21 @@ func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Reques
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	p.annotationMutators.MutateObject(obj)
+	// populate old object
+	if req.Operation == v1.Update {
+		if err := p.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
+			logger.Error(err, "failed to unmarshal old object")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	}
+
+	// preserve backwards compatability.
+	if p.annotationMutators.IsMutated(obj) && !p.monitor.AnyCustomSelectorDefined() {
+		p.annotationMutators.MutateObject(obj)
+	} else {
+		p.monitor.MutateObject(oldObj, obj)
+	}
+
 	marshaledObject, err := json.Marshal(obj)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

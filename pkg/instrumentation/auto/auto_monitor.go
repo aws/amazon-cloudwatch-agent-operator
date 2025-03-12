@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,23 +13,53 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/strings/slices"
 	"os"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 )
+
+var logger = logf.Log.WithName("auto_monitor")
 
 type Monitor struct {
 	serviceInformer cache.SharedIndexInformer
 	ctx             context.Context
-	logger          logr.Logger
 	config          MonitorConfig
 }
 
-func NewMonitor(ctx context.Context, logger logr.Logger, config MonitorConfig, k8sInterface kubernetes.Interface) *Monitor {
+func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface) *Monitor {
 	logger.Info("AutoMonitor starting...")
 
 	factory := informers.NewSharedInformerFactory(k8sInterface, 10*time.Minute)
 
 	serviceInformer := factory.Core().V1().Services().Informer()
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config}
+
+	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{AddFunc: func(obj interface{}) {
+		if config.AutoRestart {
+			list, err := k8sInterface.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				logger.Error(err, "failed to list namespaces")
+			}
+
+			// TODO: optimize this by trying to resolve workloads via endpoint slices
+			for _, namespace := range list.Items {
+				for _, deployment := range listAllDeployments(k8sInterface, namespace, ctx).Items {
+					m.MutateObject(nil, &deployment)
+				}
+				for _, deployment := range listAllStatefulSets(k8sInterface, namespace, ctx).Items {
+					m.MutateObject(nil, &deployment)
+				}
+				for _, deployment := range listAllDaemonSets(k8sInterface, namespace, ctx).Items {
+					m.MutateObject(nil, &deployment)
+				}
+				m.MutateObject(nil, &namespace)
+			}
+		}
+	}})
+	if err != nil {
+		return nil
+	}
 	factory.Start(ctx.Done()) // runs in background
 	synced := factory.WaitForCacheSync(ctx.Done())
 	for v, ok := range synced {
@@ -40,43 +69,32 @@ func NewMonitor(ctx context.Context, logger logr.Logger, config MonitorConfig, k
 		}
 	}
 	logger.Info("AutoMonitor enabled!")
-	return &Monitor{serviceInformer: serviceInformer, ctx: ctx, logger: logger, config: config}
+
+	return m
 }
 
-// ShouldBeMonitored returns whether obj is selected by either custom selector or auto monitor
-func (m Monitor) ShouldBeMonitored(obj client.Object) bool {
-	m.logger.Info("AutoMonitor shouldBeMonitored")
-	// TODO: check if in custom selector
-	// note: custom selector does not respect MonitorAllServices
-	if m.customSelected(obj) {
-		return true
+func listAllDeployments(k8sInterface kubernetes.Interface, namespace corev1.Namespace, ctx context.Context) *appsv1.DeploymentList {
+	list, err := k8sInterface.AppsV1().Deployments(namespace.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		logger.Error(err, "AutoMonitor failed to list deployments")
 	}
+	return list
+}
 
-	if !m.config.MonitorAllServices {
-		return false
+func listAllStatefulSets(k8sInterface kubernetes.Interface, namespace corev1.Namespace, ctx context.Context) *appsv1.StatefulSetList {
+	list, err := k8sInterface.AppsV1().StatefulSets(namespace.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		logger.Error(err, "AutoMonitor failed to list statefulsets")
 	}
+	return list
+}
 
-	objectLabels := getTemplateSpecLabels(obj)
-	// if object is not workload, return err
-	m.logger.Info(fmt.Sprintf("AutoMonitor labels: %v", objectLabels))
-	m.logger.Info(fmt.Sprintf("AutoMonitor ListKeys: %v", m.serviceInformer.GetStore().ListKeys()))
-	m.logger.Info(fmt.Sprintf("AutoMonitor List: %v", m.serviceInformer.GetStore().List()))
-	for _, informerObj := range m.serviceInformer.GetStore().List() {
-		service := informerObj.(*corev1.Service)
-		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
-			continue
-		}
-		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
-
-		m.logger.V(2).Info("AutoMonitor: testing serviceSelector", "serviceSelector", serviceSelector.String(), "objectLabels", objectLabels.String())
-		if serviceSelector.Matches(objectLabels) {
-			m.logger.V(2).Info("AutoMonitor: matched!", "service", service, "object", obj.GetName())
-			return true
-		}
-
-		// remove if none matched, not in custom selector
+func listAllDaemonSets(k8sInterface kubernetes.Interface, namespace corev1.Namespace, ctx context.Context) *appsv1.DaemonSetList {
+	list, err := k8sInterface.AppsV1().DaemonSets(namespace.Name).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		logger.Error(err, "AutoMonitor failed to list DaemonSets")
 	}
-	return false
+	return list
 }
 
 func getTemplateSpecLabels(obj metav1.Object) labels.Set {
@@ -96,15 +114,62 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 	}
 }
 
-// Mutate adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
-func (m Monitor) Mutate(obj metav1.Object) map[string]string {
-	// TODO: only create if automonitor enabled
-	annotations := obj.GetAnnotations()
+// MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
+func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[string]string {
+	// todo: handle edge case where a workload is annotated because a service exposed it, and the service is removed. aka add to Service OnDelete
+	// continue only if restart is enabled or if workload pod template has been mutated
+	if !m.config.AutoRestart && isWorkload(obj) && !isWorkloadPodTemplateMutated(oldObj, obj) {
+		return nil
+	}
+	// custom selector takes precedence over service selector
+	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
+		logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
+		return mutate(obj, customSelectLanguages)
+	}
+
+	if !m.config.MonitorAllServices {
+		return nil
+	}
+
+	if m.excluded(obj) {
+		return nil
+	}
+
+	objectLabels := getTemplateSpecLabels(obj)
+	// if object is not workload, return err
+	for _, informerObj := range m.serviceInformer.GetStore().List() {
+		service := informerObj.(*corev1.Service)
+		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
+			continue
+		}
+		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
+
+		if serviceSelector.Matches(objectLabels) {
+			logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
+			return mutate(obj, m.config.Languages)
+		}
+	}
+	return nil
+}
+
+func mutate(obj client.Object, languagesToMonitor instrumentation.TypeSet) map[string]string {
+	podTemplate := getPodTemplate(obj)
+	var annotations map[string]string
+
+	if podTemplate == nil {
+		annotations = obj.GetAnnotations()
+	} else {
+		annotations = podTemplate.GetAnnotations()
+	}
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	allMutatedAnnotations := make(map[string]string)
-	for _, language := range instrumentation.AllTypes() {
+	for _, language := range instrumentation.SupportedTypes() {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
-		if _, ok := m.config.Languages[language]; ok {
+		if _, ok := languagesToMonitor[language]; ok {
 			mutatedAnnotations = insertMutation.Mutate(annotations)
 
 		} else {
@@ -118,24 +183,68 @@ func (m Monitor) Mutate(obj metav1.Object) map[string]string {
 	return allMutatedAnnotations
 }
 
-func (m Monitor) customSelected(obj metav1.Object) bool {
-	objName := namespacedName(obj)
-	var resourceList []string
+func (m Monitor) CustomSelected(obj client.Object) (instrumentation.TypeSet, bool) {
+	languages := m.config.CustomSelector.GetObjectLanguagesToAnnotate(obj)
+	return languages, len(languages) > 0
+}
 
-	switch obj.(type) {
-	case *appsv1.Deployment:
-		for _, t := range instrumentation.AllTypes() {
-			resourceList = append(resourceList, m.config.CustomSelector.getResources(t).Deployments...)
+// excluded returns whether a Namespace or a Service is excluded from AutoMonitor.
+func (m Monitor) excluded(obj client.Object) bool {
+	switch obj.GetObjectKind().GroupVersionKind().Kind {
+	case "Namespace":
+		return slices.Contains(m.config.Exclude.Namespaces, obj.GetName())
+	case "Service":
+		return slices.Contains(m.config.Exclude.Services, namespacedName(obj))
+	}
+	return false
+}
+
+func (m Monitor) Enabled() bool {
+	return m.config.MonitorAllServices
+}
+
+func (m Monitor) AnyCustomSelectorDefined() bool {
+	for _, t := range instrumentation.SupportedTypes() {
+		resources := m.config.CustomSelector.getResources(t)
+		if len(resources.DaemonSets) > 0 {
+			return true
 		}
-	case *appsv1.StatefulSet:
-		for _, t := range instrumentation.AllTypes() {
-			resourceList = append(resourceList, m.config.CustomSelector.getResources(t).StatefulSets...)
+		if len(resources.StatefulSets) > 0 {
+			return true
 		}
-	case *appsv1.DaemonSet:
-		for _, t := range instrumentation.AllTypes() {
-			resourceList = append(resourceList, m.config.CustomSelector.getResources(t).DaemonSets...)
+		if len(resources.Deployments) > 0 {
+			return true
+		}
+		if len(resources.Namespaces) > 0 {
+			return true
 		}
 	}
+	return false
+}
 
-	return slices.Contains(resourceList, objName)
+func isWorkload(obj client.Object) bool {
+	kind := obj.GetObjectKind().GroupVersionKind().Kind
+	return kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet"
+}
+
+// isWorkloadPodTemplateMutated
+func isWorkloadPodTemplateMutated(oldObject client.Object, object client.Object) bool {
+	oldTemplate, newTemplate := getPodTemplate(oldObject), getPodTemplate(object)
+	if oldTemplate == nil || newTemplate == nil {
+		return true
+	}
+	return !reflect.DeepEqual(oldTemplate, newTemplate)
+}
+
+func getPodTemplate(obj client.Object) *corev1.PodTemplateSpec {
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		return &o.Spec.Template
+	case *appsv1.StatefulSet:
+		return &o.Spec.Template
+	case *appsv1.DaemonSet:
+		return &o.Spec.Template
+	default:
+		return nil
+	}
 }
