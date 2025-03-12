@@ -289,6 +289,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
+	// TODO handle case where auto monitor is enabled but auto annotation config is not specified
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
 		setupLog.Info("Auto-annotation is disabled")
 	} else {
@@ -304,7 +305,7 @@ func main() {
 		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
-			// TODO marshal/unmarshal monitor config
+			// TODO handle case where auto monitor is enabled but auto annotation config is not specified
 			setupLog.Info("Test!")
 			monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx)
 
@@ -370,7 +371,7 @@ func main() {
 	}
 }
 
-func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) *auto.Monitor {
+func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) auto.MonitorInterface {
 	var monitorConfig *auto.MonitorConfig
 	var monitor *auto.Monitor
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
@@ -381,12 +382,14 @@ func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) *
 		}
 		k8sConfig, err := rest.InClusterConfig()
 		if err != nil {
-			panic("TODO: Implement handling for failed clientset creation")
+			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
+			return auto.NoopMonitor{}
 		}
 
 		clientSet, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
-			panic("TODO: Implement handling for failed clientset creation")
+			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
+			return auto.NoopMonitor{}
 		}
 		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet)
 	}

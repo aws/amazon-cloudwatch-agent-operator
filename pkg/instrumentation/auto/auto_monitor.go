@@ -21,10 +21,25 @@ import (
 
 var logger = logf.Log.WithName("auto_monitor")
 
+type MonitorInterface interface {
+	MutateObject(oldObj client.Object, obj client.Object) map[string]string
+	AnyCustomSelectorDefined() bool
+}
+
 type Monitor struct {
 	serviceInformer cache.SharedIndexInformer
 	ctx             context.Context
 	config          MonitorConfig
+}
+
+type NoopMonitor struct{}
+
+func (n NoopMonitor) MutateObject(oldObj client.Object, obj client.Object) map[string]string {
+	return map[string]string{}
+}
+
+func (n NoopMonitor) AnyCustomSelectorDefined() bool {
+	return false
 }
 
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface) *Monitor {
@@ -60,11 +75,12 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	if err != nil {
 		return nil
 	}
-	factory.Start(ctx.Done()) // runs in background
+	factory.Start(ctx.Done())
 	synced := factory.WaitForCacheSync(ctx.Done())
 	for v, ok := range synced {
 		if !ok {
 			_, _ = fmt.Fprintf(os.Stderr, "caches failed to sync: %v", v)
+			// TODO: handle bad cache sync
 			panic("TODO: handle bad cache sync")
 		}
 	}
@@ -124,7 +140,7 @@ func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[strin
 	// custom selector takes precedence over service selector
 	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
 		logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
-		return mutate(obj, customSelectLanguages)
+		mutate(obj, customSelectLanguages)
 	}
 
 	if !m.config.MonitorAllServices {
@@ -136,7 +152,6 @@ func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[strin
 	}
 
 	objectLabels := getTemplateSpecLabels(obj)
-	// if object is not workload, return err
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
 		service := informerObj.(*corev1.Service)
 		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
@@ -152,15 +167,17 @@ func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[strin
 	return nil
 }
 
-func mutate(obj client.Object, languagesToMonitor instrumentation.TypeSet) map[string]string {
-	podTemplate := getPodTemplate(obj)
-	var annotations map[string]string
-
-	if podTemplate == nil {
-		annotations = obj.GetAnnotations()
+// mutate obj. If object is a workload, mutate the pod template. otherwise, mutate the object's annotations itself.
+func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) map[string]string {
+	var obj metav1.Object
+	podTemplate := getPodTemplate(object)
+	if podTemplate != nil {
+		obj = podTemplate
 	} else {
-		annotations = podTemplate.GetAnnotations()
+		obj = object
 	}
+
+	annotations := obj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -197,10 +214,6 @@ func (m Monitor) excluded(obj client.Object) bool {
 		return slices.Contains(m.config.Exclude.Services, namespacedName(obj))
 	}
 	return false
-}
-
-func (m Monitor) Enabled() bool {
-	return m.config.MonitorAllServices
 }
 
 func (m Monitor) AnyCustomSelectorDefined() bool {

@@ -11,11 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
-
-var logger = logf.Log.WithName("auto_monitor_tests")
 
 func TestMonitor_Selected(t *testing.T) {
 	logger.Info("Starting testmonitor tests")
@@ -375,4 +372,151 @@ func TestUnmarshal(t *testing.T) {
 	err := set.UnmarshalJSON(j)
 	assert.NoError(t, err)
 	assert.Equal(t, instrumentation.TypeSet{instrumentation.TypeNodeJS: nil, instrumentation.TypeJava: nil, instrumentation.TypePython: nil}, set)
+}
+
+func Test_isWorkloadPodTemplateMutated(t *testing.T) {
+	deploy := &appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Image: "nginx:1.14.2"}},
+				},
+			},
+		},
+	}
+	tests := []struct {
+		name      string
+		oldObject client.Object
+		object    client.Object
+		want      bool
+	}{
+		{"nil objects", nil, nil, true},
+		{"identical deployments", deploy.DeepCopy(), deploy.DeepCopy(), false},
+		{"changed pod template", deploy.DeepCopy(), &appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Image: "nginx:1.15.0"}},
+					},
+				},
+			},
+		}, true},
+		{"non-workload", &corev1.ConfigMap{}, &corev1.ConfigMap{}, true},
+		{"create (oldObject nil)", nil, deploy.DeepCopy(), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isWorkloadPodTemplateMutated(tt.oldObject, tt.object))
+		})
+	}
+}
+
+func Test_getPodTemplate(t *testing.T) {
+	template := corev1.PodTemplateSpec{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{Image: "nginx"}},
+		},
+	}
+
+	tests := []struct {
+		name string
+		obj  client.Object
+		want *corev1.PodTemplateSpec
+	}{
+		{"deployment", &appsv1.Deployment{Spec: appsv1.DeploymentSpec{Template: template}}, &template},
+		{"statefulset", &appsv1.StatefulSet{Spec: appsv1.StatefulSetSpec{Template: template}}, &template},
+		{"daemonset", &appsv1.DaemonSet{Spec: appsv1.DaemonSetSpec{Template: template}}, &template},
+		{"other", &corev1.Pod{}, nil},
+		{"nil", nil, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, getPodTemplate(tt.obj))
+		})
+	}
+}
+
+func Test_mutate(t *testing.T) {
+	tests := []struct {
+		name               string
+		obj                client.Object
+		languagesToMonitor instrumentation.TypeSet
+		wantObjAnnotations map[string]string
+		wantMutated        map[string]string
+	}{
+		{
+			name: "deployment - java only",
+			obj: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{},
+				},
+			},
+			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
+			wantObjAnnotations: buildAnnotations("java"),
+			wantMutated:        buildAnnotations("java"),
+		},
+		{
+			name: "deployment - java and python",
+			obj: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{},
+				},
+			},
+			languagesToMonitor: instrumentation.TypeSet{
+				"java":   struct{}{},
+				"python": struct{}{},
+			},
+			wantObjAnnotations: mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
+			wantMutated:        mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
+		},
+		{
+			name: "remove python instrumentation",
+			obj: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: buildAnnotations("python"),
+						},
+					},
+				},
+			},
+			languagesToMonitor: instrumentation.TypeSet{},
+			wantObjAnnotations: map[string]string{},
+			wantMutated:        buildAnnotations("python"),
+		},
+		{
+			name: "remove one of two languages",
+			obj: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: mergeMaps(buildAnnotations("python"), buildAnnotations("java")),
+						},
+					},
+				},
+			},
+			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
+			wantObjAnnotations: buildAnnotations("java"),
+			wantMutated:        buildAnnotations("python"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMutated := mutate(tt.obj, tt.languagesToMonitor)
+			assert.Equal(t, tt.wantObjAnnotations, tt.obj.GetAnnotations())
+			assert.Equal(t, tt.wantMutated, gotMutated)
+		})
+	}
+}
+func mergeMaps(maps ...map[string]string) map[string]string {
+	result := make(map[string]string)
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
 }

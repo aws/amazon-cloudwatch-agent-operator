@@ -39,9 +39,8 @@ func TestHandle(t *testing.T) {
 		logr.Logger{},
 		autoAnnotationConfig,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
-		nil,
 	)
-	h := NewWebhookHandler(decoder, mutators, nil)
+	h := NewWebhookHandler(decoder, mutators, auto.NoopMonitor{})
 	for _, testCase := range []struct {
 		req      admission.Request
 		name     string
@@ -76,6 +75,7 @@ func TestHandle(t *testing.T) {
 			expected: http.StatusOK,
 			allowed:  true,
 		},
+		{},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			// test

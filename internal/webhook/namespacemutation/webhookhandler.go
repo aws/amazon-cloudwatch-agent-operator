@@ -20,10 +20,10 @@ var _ admission.Handler = (*handler)(nil)
 type handler struct {
 	decoder            *admission.Decoder
 	annotationMutators *auto.AnnotationMutators
-	monitor            *auto.Monitor
+	monitor            auto.MonitorInterface
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor *auto.Monitor) admission.Handler {
+func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor auto.MonitorInterface) admission.Handler {
 	return &handler{
 		decoder:            decoder,
 		annotationMutators: annotationMutators,
@@ -38,7 +38,7 @@ func (h *handler) Handle(_ context.Context, req admission.Request) admission.Res
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if h.annotationMutators.IsMutated(namespace) && !h.monitor.AnyCustomSelectorDefined() {
+	if h.annotationMutators.IsManaged(namespace) && !h.monitor.AnyCustomSelectorDefined() {
 		h.annotationMutators.MutateObject(namespace)
 	} else {
 		// do not need to pass in oldObj because it's only used to check for workload pod template diff

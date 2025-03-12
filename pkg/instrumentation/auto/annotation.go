@@ -42,8 +42,8 @@ type AnnotationMutators struct {
 	cfg                 *AnnotationConfig
 }
 
-// IsMutated returns if obj is specified in the config
-func (m *AnnotationMutators) IsMutated(obj client.Object) bool {
+// IsManaged returns if AnnotationMutators would ever mutate the object.
+func (m *AnnotationMutators) IsManaged(obj client.Object) bool {
 	return len(m.cfg.GetObjectLanguagesToAnnotate(obj)) > 0
 }
 
