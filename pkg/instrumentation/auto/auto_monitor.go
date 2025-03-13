@@ -34,7 +34,7 @@ type Monitor struct {
 
 type NoopMonitor struct{}
 
-func (n NoopMonitor) MutateObject(oldObj client.Object, obj client.Object) map[string]string {
+func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]string {
 	return map[string]string{}
 }
 
@@ -52,23 +52,51 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{AddFunc: func(obj interface{}) {
 		if config.AutoRestart {
-			list, err := k8sInterface.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+			namespaces, err := k8sInterface.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 			if err != nil {
-				logger.Error(err, "failed to list namespaces")
+				logger.Error(err, "failed to namespaces namespaces")
 			}
 
 			// TODO: optimize this by trying to resolve workloads via endpoint slices
-			for _, namespace := range list.Items {
-				for _, deployment := range listAllDeployments(k8sInterface, namespace, ctx).Items {
-					m.MutateObject(nil, &deployment)
+			for _, namespace := range namespaces.Items {
+				for _, resource := range listAllDeployments(k8sInterface, namespace, ctx).Items {
+					mutatedAnnotations := m.MutateObject(nil, &resource)
+					if len(mutatedAnnotations) == 0 {
+						continue
+					}
+					_, err := k8sInterface.AppsV1().Deployments(namespace.Name).Update(ctx, &resource, metav1.UpdateOptions{})
+					if err != nil {
+						logger.Error(err, "failed to update deployment")
+					}
 				}
-				for _, deployment := range listAllStatefulSets(k8sInterface, namespace, ctx).Items {
-					m.MutateObject(nil, &deployment)
+				for _, resource := range listAllStatefulSets(k8sInterface, namespace, ctx).Items {
+					mutatedAnnotations := m.MutateObject(nil, &resource)
+					if len(mutatedAnnotations) == 0 {
+						continue
+					}
+					_, err := k8sInterface.AppsV1().StatefulSets(namespace.Name).Update(ctx, &resource, metav1.UpdateOptions{})
+					if err != nil {
+						logger.Error(err, "failed to update statefulset")
+					}
 				}
-				for _, deployment := range listAllDaemonSets(k8sInterface, namespace, ctx).Items {
-					m.MutateObject(nil, &deployment)
+				for _, resource := range listAllDaemonSets(k8sInterface, namespace, ctx).Items {
+					mutatedAnnotations := m.MutateObject(nil, &resource)
+					if len(mutatedAnnotations) == 0 {
+						continue
+					}
+					_, err := k8sInterface.AppsV1().DaemonSets(namespace.Name).Update(ctx, &resource, metav1.UpdateOptions{})
+					if err != nil {
+						logger.Error(err, "failed to update daemonset")
+					}
 				}
-				m.MutateObject(nil, &namespace)
+				mutatedAnnotations := m.MutateObject(nil, &namespace)
+				if len(mutatedAnnotations) == 0 {
+					continue
+				}
+				_, err := k8sInterface.CoreV1().Namespaces().Update(ctx, &namespace, metav1.UpdateOptions{})
+				if err != nil {
+					logger.Error(err, "failed to update namespace")
+				}
 			}
 		}
 	}})
@@ -133,28 +161,29 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 // MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
 func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[string]string {
 	// todo: handle edge case where a workload is annotated because a service exposed it, and the service is removed. aka add to Service OnDelete
-	// continue only if restart is enabled or if workload pod template has been mutated
-	if !m.config.AutoRestart && isWorkload(obj) && !isWorkloadPodTemplateMutated(oldObj, obj) {
-		return nil
-	}
 	// custom selector takes precedence over service selector
 	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
 		logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
-		mutate(obj, customSelectLanguages)
+		return mutate(obj, customSelectLanguages)
+	}
+
+	// continue only if restart is enabled or if workload pod template has been mutated
+	if isWorkload(obj) && !isWorkloadPodTemplateMutated(oldObj, obj) {
+		return map[string]string{}
 	}
 
 	if !m.config.MonitorAllServices {
-		return nil
+		return map[string]string{}
 	}
 
 	if m.excluded(obj) {
-		return nil
+		return map[string]string{}
 	}
 
 	objectLabels := getTemplateSpecLabels(obj)
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
 		service := informerObj.(*corev1.Service)
-		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
+		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 || service.GetNamespace() != obj.GetNamespace() {
 			continue
 		}
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
@@ -164,7 +193,7 @@ func (m Monitor) MutateObject(oldObj client.Object, obj client.Object) map[strin
 			return mutate(obj, m.config.Languages)
 		}
 	}
-	return nil
+	return map[string]string{}
 }
 
 // mutate obj. If object is a workload, mutate the pod template. otherwise, mutate the object's annotations itself.
@@ -243,9 +272,6 @@ func isWorkload(obj client.Object) bool {
 // isWorkloadPodTemplateMutated
 func isWorkloadPodTemplateMutated(oldObject client.Object, object client.Object) bool {
 	oldTemplate, newTemplate := getPodTemplate(oldObject), getPodTemplate(object)
-	if oldTemplate == nil || newTemplate == nil {
-		return true
-	}
 	return !reflect.DeepEqual(oldTemplate, newTemplate)
 }
 

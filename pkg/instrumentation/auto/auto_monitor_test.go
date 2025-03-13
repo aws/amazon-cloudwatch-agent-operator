@@ -2,6 +2,7 @@ package auto
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/stretchr/testify/assert"
@@ -372,6 +373,25 @@ func TestUnmarshal(t *testing.T) {
 	err := set.UnmarshalJSON(j)
 	assert.NoError(t, err)
 	assert.Equal(t, instrumentation.TypeSet{instrumentation.TypeNodeJS: nil, instrumentation.TypeJava: nil, instrumentation.TypePython: nil}, set)
+}
+
+func TestMarshal(t *testing.T) {
+	types := instrumentation.TypeSet{instrumentation.TypeNodeJS: nil, instrumentation.TypePython: nil}
+	res, err := types.MarshalJSON()
+	assert.NoError(t, err)
+	AssertJsonEqual(t, []byte(`["nodejs","python"]`), res)
+}
+
+func AssertJsonEqual(t *testing.T, expectedJson []byte, actualJson []byte) {
+	var obj1, obj2 interface{}
+
+	err := json.Unmarshal(expectedJson, &obj1)
+	assert.NoError(t, err)
+
+	err = json.Unmarshal(actualJson, &obj2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, obj1, obj2)
 }
 
 func Test_isWorkloadPodTemplateMutated(t *testing.T) {

@@ -240,7 +240,6 @@ func checkIfAnnotationExists(clientset *kubernetes.Clientset, pods *v1.PodList, 
 
 		//check if all pods are in the Running phase
 		if !util.CheckIfPodsAreRunning(currentPods) {
-
 			continue
 		}
 

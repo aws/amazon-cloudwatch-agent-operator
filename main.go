@@ -373,7 +373,7 @@ func main() {
 
 func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) auto.MonitorInterface {
 	var monitorConfig *auto.MonitorConfig
-	var monitor *auto.Monitor
+	var monitor auto.MonitorInterface = auto.NoopMonitor{}
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-monitor config")
 	} else {

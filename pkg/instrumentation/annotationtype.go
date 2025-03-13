@@ -22,6 +22,14 @@ func (s *TypeSet) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (s TypeSet) MarshalJSON() ([]byte, error) {
+	var types []Type
+	for t := range s {
+		types = append(types, t)
+	}
+	return json.Marshal(types)
+}
+
 // NewTypeSet creates a new set of Type.
 func NewTypeSet(types ...Type) TypeSet {
 	s := make(TypeSet, len(types))
