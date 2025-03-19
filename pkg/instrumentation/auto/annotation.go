@@ -38,7 +38,6 @@ type AnnotationMutators struct {
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
 	injectAnnotations   map[string]struct{}
-	monitor             *Monitor
 	cfg                 *AnnotationConfig
 }
 

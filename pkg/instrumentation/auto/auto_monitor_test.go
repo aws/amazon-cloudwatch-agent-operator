@@ -4,14 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fake2 "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
+	"time"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -26,6 +30,7 @@ func TestMarshal(t *testing.T) {
 	types := instrumentation.TypeSet{instrumentation.TypeNodeJS: nil, instrumentation.TypePython: nil}
 	res, err := types.MarshalJSON()
 	assert.NoError(t, err)
+	// todo test irregardless of order
 	assertJsonEqual(t, []byte(`["nodejs","python"]`), res)
 }
 
@@ -169,44 +174,44 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Test each workload type
-			workloadTypes := []struct {
-				name   string
-				create func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error)
-			}{
-				{
-					name: "Deployment",
-					create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-						deployment := newTestDeployment("workload-16", ns, selector)
-						return clientset.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{})
-					},
-				},
-				{
-					name: "StatefulSet",
-					create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-						statefulset := newTestStatefulSet("workload-16", ns, selector)
-						return clientset.AppsV1().StatefulSets(ns).Create(ctx, statefulset, metav1.CreateOptions{})
-					},
-				},
-				{
-					name: "DaemonSet",
-					create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-						daemonset := newTestDaemonSet("workload-16", ns, selector)
-						return clientset.AppsV1().DaemonSets(ns).Create(ctx, daemonset, metav1.CreateOptions{})
-					},
-				},
-			}
+	workloadTypes := []struct {
+		name   string
+		create func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error)
+	}{
+		{
+			name: "Deployment",
+			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
+				deployment := newTestDeployment("workload-16", ns, selector)
+				return clientset.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{})
+			},
+		},
+		{
+			name: "StatefulSet",
+			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
+				statefulset := newTestStatefulSet("workload-16", ns, selector)
+				return clientset.AppsV1().StatefulSets(ns).Create(ctx, statefulset, metav1.CreateOptions{})
+			},
+		},
+		{
+			name: "DaemonSet",
+			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
+				daemonset := newTestDaemonSet("workload-16", ns, selector)
+				return clientset.AppsV1().DaemonSets(ns).Create(ctx, daemonset, metav1.CreateOptions{})
+			},
+		},
+	}
 
-			for _, workload := range workloadTypes {
-				t.Run(workload.name, func(t *testing.T) {
+	for _, workload := range workloadTypes {
+		t.Run(workload.name, func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
 					// Setup fresh clients for each workload test
 					fakeClient := fake2.NewFakeClient()
 					clientset := fake.NewSimpleClientset()
 					ctx := context.TODO()
 
-					monitor := NewMonitor(ctx, tt.config, clientset, fakeClient, fakeClient)
+					logger := testr.New(t)
+					monitor := NewMonitor(ctx, tt.config, clientset, fakeClient, fakeClient, logger)
 
 					// Create service
 					service := newTestService("svc-16", tt.serviceNs, tt.serviceSelector)
@@ -224,6 +229,11 @@ func TestMonitor_MutateObject(t *testing.T) {
 					// Create workload
 					workloadObj, err := workload.create(clientset, ctx, tt.deploymentNs, tt.deploymentSelector)
 					assert.NoError(t, err)
+					// need to wait until service informer is updated
+					err = wait.PollImmediate(1*time.Millisecond, 5*time.Millisecond, func() (bool, error) {
+						return len(monitor.serviceInformer.GetStore().ListKeys()) > 0, nil
+					})
+					assert.NoError(t, err)
 
 					// Test
 					mutatedAnnotations := monitor.MutateObject(nil, workloadObj)
@@ -237,29 +247,21 @@ func TestMonitor_MutateObject(t *testing.T) {
 func Test_mutate(t *testing.T) {
 	tests := []struct {
 		name               string
-		obj                client.Object
+		podAnnotations     map[string]string
 		languagesToMonitor instrumentation.TypeSet
 		wantObjAnnotations map[string]string
 		wantMutated        map[string]string
 	}{
 		{
-			name: "deployment - java only",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{},
-				},
-			},
+			name:               "java only",
+			podAnnotations:     nil,
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("java"),
 		},
 		{
-			name: "deployment - java and python",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{},
-				},
-			},
+			name:           "java and python",
+			podAnnotations: nil,
 			languagesToMonitor: instrumentation.TypeSet{
 				"java":   struct{}{},
 				"python": struct{}{},
@@ -268,90 +270,140 @@ func Test_mutate(t *testing.T) {
 			wantMutated:        mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
 		},
 		{
-			name: "remove python instrumentation",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: buildAnnotations("python"),
-						},
-					},
-				},
-			},
+			name:               "remove python instrumentation",
+			podAnnotations:     buildAnnotations("python"),
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("python"),
 		},
 		{
-			name: "remove one of two languages",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: mergeMaps(buildAnnotations("python"), buildAnnotations("java")),
-						},
-					},
-				},
-			},
+			name:               "remove one of two languages",
+			podAnnotations:     mergeMaps(buildAnnotations("python"), buildAnnotations("java")),
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("python"),
 		},
 		{
-			name: "manually specified annotation is not touched",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: map[string]string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue},
-						},
-					},
-				},
-			},
+			name:               "manually specified annotation is not touched",
+			podAnnotations:     map[string]string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue},
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue},
 			wantMutated:        map[string]string{},
 		},
 		{
-			name: "remove all",
-			obj: &appsv1.Deployment{
-				Spec: appsv1.DeploymentSpec{
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: buildAnnotations("java"),
-						},
-					},
-				},
-			},
+			name:               "remove all",
+			podAnnotations:     buildAnnotations("java"),
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("java"),
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotMutated := mutate(tt.obj, tt.languagesToMonitor)
-			switch tt.obj.(type) {
-			case *appsv1.Deployment, *appsv1.DaemonSet, *appsv1.StatefulSet:
-				assert.Equal(t, tt.wantObjAnnotations, getPodTemplate(tt.obj).GetAnnotations())
-			default:
-				assert.Equal(t, tt.wantObjAnnotations, tt.obj.GetAnnotations())
+	workloadTypes := []struct {
+		name   string
+		create func(annotations map[string]string) client.Object
+	}{
+		{
+			name: "Deployment",
+			create: func(annotations map[string]string) client.Object {
+				return &appsv1.Deployment{
+					Spec: appsv1.DeploymentSpec{
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Annotations: annotations,
+							},
+						},
+					},
+				}
+			},
+		},
+		{
+			name: "StatefulSet",
+			create: func(annotations map[string]string) client.Object {
+				return &appsv1.StatefulSet{
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Annotations: annotations,
+							},
+						},
+					},
+				}
+			},
+		},
+		{
+			name: "DaemonSet",
+			create: func(annotations map[string]string) client.Object {
+				return &appsv1.DaemonSet{
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Annotations: annotations,
+							},
+						},
+					},
+				}
+			},
+		},
+	}
+
+	for _, workload := range workloadTypes {
+		t.Run(workload.name, func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					obj := workload.create(tt.podAnnotations).DeepCopyObject().(client.Object)
+					gotMutated := mutate(obj, tt.languagesToMonitor)
+					assert.Equal(t, tt.wantObjAnnotations, getPodTemplate(obj).GetAnnotations())
+					assert.Equal(t, tt.wantMutated, gotMutated)
+				})
 			}
-			assert.Equal(t, tt.wantMutated, gotMutated)
 		})
 	}
 }
 
-func Test_StartupMutateObject(t *testing.T) {
+func Test_StartupAutoRestart(t *testing.T) {
+	service := newTestService("service-1", "default", map[string]string{"test": "test"})
+	matchingDeployment := newTestDeployment("deployment-1", "default", map[string]string{"test": "test"})
+	nonMatchingDeployment := newTestDeployment("deployment-2", "default", map[string]string{})
+	customSelectedDeployment := newTestDeployment("deployment-3", "default", map[string]string{})
+	config := MonitorConfig{
+		MonitorAllServices: true,
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+		AutoRestart:        true,
+		CustomSelector: AnnotationConfig{
+			AnnotationResources{}, AnnotationResources{Deployments: []string{namespacedName(customSelectedDeployment)}},
+			AnnotationResources{}, AnnotationResources{},
+		},
+	}
+	objs := []runtime.Object{service, matchingDeployment, nonMatchingDeployment, customSelectedDeployment}
+	clientset := fake.NewSimpleClientset(objs...)
+	fakeClient := fake2.NewFakeClient(objs...)
+	m := NewMonitor(context.TODO(), config, clientset, fakeClient, fakeClient, testr.New(t))
+
+	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments("default").Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), updatedMatchingDeployment.Spec.Template.GetAnnotations())
+	updatedNonMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments("default").Get(context.TODO(), nonMatchingDeployment.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Empty(t, updatedNonMatchingDeployment.Spec.Template.GetAnnotations())
+	err = fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(customSelectedDeployment), customSelectedDeployment)
+	assert.NoError(t, err)
+	assert.Equal(t, buildAnnotations(instrumentation.TypePython), customSelectedDeployment.Spec.Template.GetAnnotations())
+}
+
+func Test_listServiceDeployments(t *testing.T) {
 	testService := newTestService("service-1", "default", map[string]string{"test": "test"})
 	testDeployment := newTestDeployment("deployment-1", "default", map[string]string{"test": "test"})
 	notMatchingService := newTestService("service-2", "default", map[string]string{"test2": "test2"})
-	config := createConfig(true, nil, nil, true)
 	clientset := fake.NewSimpleClientset(testService, testDeployment, notMatchingService)
-	_ = NewMonitor(context.TODO(), config, clientset, fake2.NewFakeClient(), fake2.NewFakeClient())
-	// todo finish
+	m := Monitor{k8sInterface: clientset, logger: testr.New(t)}
+	matchingServiceDeployments := m.listServiceDeployments(testService, context.TODO())
+	assert.Len(t, matchingServiceDeployments, 1)
+	notMatchingServiceDeployments := m.listServiceDeployments(notMatchingService, context.TODO())
+	assert.Len(t, notMatchingServiceDeployments, 0)
 }
+
+// Helper functions
 
 func assertJsonEqual(t *testing.T, expectedJson []byte, actualJson []byte) {
 	var obj1, obj2 interface{}
@@ -366,7 +418,8 @@ func assertJsonEqual(t *testing.T, expectedJson []byte, actualJson []byte) {
 }
 
 func createNamespace(t *testing.T, clientset *fake.Clientset, ctx context.Context, namespaceName string) *corev1.Namespace {
-	serviceNamespace, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}, metav1.CreateOptions{})
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}
+	serviceNamespace, err := clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
 	assert.NoError(t, err)
 	return serviceNamespace
 }
@@ -385,7 +438,7 @@ func newTestService(name string, namespace string, selector map[string]string) *
 }
 
 func newTestDeployment(name string, namespace string, labels map[string]string) *appsv1.Deployment {
-	return &appsv1.Deployment{
+	deployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -401,10 +454,11 @@ func newTestDeployment(name string, namespace string, labels map[string]string) 
 			},
 		},
 	}
+	return deployment.DeepCopy()
 }
 
 func newTestStatefulSet(name, namespace string, selector map[string]string) *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
+	statefulSet := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -420,10 +474,11 @@ func newTestStatefulSet(name, namespace string, selector map[string]string) *app
 			},
 		},
 	}
+	return statefulSet.DeepCopy()
 }
 
 func newTestDaemonSet(name, namespace string, selector map[string]string) *appsv1.DaemonSet {
-	return &appsv1.DaemonSet{
+	daemonSet := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -439,6 +494,7 @@ func newTestDaemonSet(name, namespace string, selector map[string]string) *appsv
 			},
 		},
 	}
+	return daemonSet.DeepCopy()
 }
 
 func mergeMaps(maps ...map[string]string) map[string]string {

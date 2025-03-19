@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,16 +12,13 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/strings/slices"
 	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"slices"
 	"strings"
 	"time"
 )
-
-var logger = logf.Log.WithName("auto_monitor")
 
 type MonitorInterface interface {
 	MutateObject(oldObj client.Object, obj client.Object) map[string]string
@@ -33,6 +31,7 @@ type Monitor struct {
 	config          MonitorConfig
 	k8sInterface    kubernetes.Interface
 	customSelectors *AnnotationMutators
+	logger          logr.Logger
 }
 
 type NoopMonitor struct{}
@@ -45,17 +44,22 @@ func (n NoopMonitor) AnyCustomSelectorDefined() bool {
 	return false
 }
 
-func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, c client.Client, r client.Reader) *Monitor {
+func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, c client.Client, r client.Reader, logger logr.Logger) *Monitor {
 	logger.Info("AutoMonitor starting...")
 	// todo, throw warning if exclude config service is not namespaced (doesn't contain `/`)
 	// todo: informers.WithTransform() as option to only store what parts of service are needed
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute)
 	serviceInformer := factory.Core().V1().Services().Informer()
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: NewAnnotationMutators(c, r, logger, config.CustomSelector, config.Languages)}
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: NewAnnotationMutators(c, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...))}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{AddFunc: func(obj interface{}) {
 		if serviceInformer.HasSynced() {
-			m.onServiceAdd(obj)
+			service, ok := obj.(*corev1.Service)
+			if !ok {
+				logger.Error(nil, "Service informer is unable to cast obj to (*corev1.Service)")
+				panic("AHHHHH!!!!")
+			}
+			m.onServiceAdd(service)
 		} else {
 			logger.Info(fmt.Sprintf("Service %v has not synced yet, this is first sync. skipping annotation", obj))
 		}
@@ -84,9 +88,8 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 		if err != nil {
 			return nil
 		}
-
 		for _, service := range list.Items {
-			m.onServiceAdd(service)
+			m.onServiceAdd(&service)
 		}
 	} else {
 		logger.Info("Auto restart disabled. To instrument workloads, restart the workloads exposed by a service.")
@@ -95,8 +98,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	return m
 }
 
-func (m *Monitor) onServiceAdd(obj interface{}) {
-	service := obj.(*corev1.Service)
+func (m *Monitor) onServiceAdd(service *corev1.Service) {
 	if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 {
 		return
 	}
@@ -106,66 +108,69 @@ func (m *Monitor) onServiceAdd(obj interface{}) {
 		return
 	}
 	namespace := service.GetNamespace()
-	for _, resource := range listServiceDeployments(m.k8sInterface, service, m.ctx).Items {
+	for _, resource := range m.listServiceDeployments(service, m.ctx) {
 		mutatedAnnotations := m.MutateServiceWorkload(&resource, service)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().Deployments(namespace).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			logger.Error(err, "failed to update deployment")
+			m.logger.Error(err, "failed to update deployment")
 		}
 	}
-	for _, resource := range listServiceStatefulSets(m.k8sInterface, service, m.ctx).Items {
+	for _, resource := range m.listServiceStatefulSets(service, m.ctx) {
 		mutatedAnnotations := m.MutateServiceWorkload(&resource, service)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().StatefulSets(namespace).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			logger.Error(err, "failed to update statefulset")
+			m.logger.Error(err, "failed to update statefulset")
 		}
 	}
-	for _, resource := range listServiceDaemonSets(m.k8sInterface, service, m.ctx).Items {
+	for _, resource := range m.listServiceDaemonSets(service, m.ctx) {
 		mutatedAnnotations := m.MutateServiceWorkload(&resource, service)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().DaemonSets(namespace).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			logger.Error(err, "failed to update daemonset")
+			m.logger.Error(err, "failed to update daemonset")
 		}
 	}
 }
 
-func listServiceDeployments(k8sInterface kubernetes.Interface, service *corev1.Service, ctx context.Context) *appsv1.DeploymentList {
-	list, err := k8sInterface.AppsV1().Deployments(service.GetNamespace()).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.FormatLabels(service.Spec.Selector),
-	})
+func (m *Monitor) listServiceDeployments(service *corev1.Service, ctx context.Context) []appsv1.Deployment {
+	list, err := m.k8sInterface.AppsV1().Deployments(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logger.Error(err, "AutoMonitor failed to list deployments")
+		m.logger.Error(err, "AutoMonitor failed to list deployments")
 	}
-	return list
+	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
+	return slices.DeleteFunc(list.Items, func(deployment appsv1.Deployment) bool {
+		return !serviceSelector.Matches(getTemplateSpecLabels(&deployment))
+	})
 }
 
-func listServiceStatefulSets(k8sInterface kubernetes.Interface, service *corev1.Service, ctx context.Context) *appsv1.StatefulSetList {
-	list, err := k8sInterface.AppsV1().StatefulSets(service.GetNamespace()).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.FormatLabels(service.Spec.Selector),
-	})
+func (m *Monitor) listServiceStatefulSets(service *corev1.Service, ctx context.Context) []appsv1.StatefulSet {
+	list, err := m.k8sInterface.AppsV1().StatefulSets(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logger.Error(err, "AutoMonitor failed to list statefulsets")
+		m.logger.Error(err, "AutoMonitor failed to list statefulsets")
 	}
-	return list
+	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
+	return slices.DeleteFunc(list.Items, func(daemonSet appsv1.StatefulSet) bool {
+		return !serviceSelector.Matches(getTemplateSpecLabels(&daemonSet))
+	})
 }
 
-func listServiceDaemonSets(k8sInterface kubernetes.Interface, service *corev1.Service, ctx context.Context) *appsv1.DaemonSetList {
-	list, err := k8sInterface.AppsV1().DaemonSets(service.GetNamespace()).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.FormatLabels(service.Spec.Selector),
-	})
+func (m *Monitor) listServiceDaemonSets(service *corev1.Service, ctx context.Context) []appsv1.DaemonSet {
+	list, err := m.k8sInterface.AppsV1().DaemonSets(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logger.Error(err, "AutoMonitor failed to list DaemonSets")
+		m.logger.Error(err, "AutoMonitor failed to list DaemonSets")
 	}
-	return list
+	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
+	return slices.DeleteFunc(list.Items, func(daemonSet appsv1.DaemonSet) bool {
+		return !serviceSelector.Matches(getTemplateSpecLabels(&daemonSet))
+	})
 }
 
 func getTemplateSpecLabels(obj metav1.Object) labels.Set {
@@ -189,7 +194,7 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 // TODO: remove?
 func (m *Monitor) MutateServiceWorkload(obj client.Object, service *corev1.Service) map[string]string {
 	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
-		logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
+		m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
 		return mutate(obj, customSelectLanguages)
 	}
 
@@ -204,7 +209,7 @@ func (m *Monitor) MutateServiceWorkload(obj client.Object, service *corev1.Servi
 		return map[string]string{}
 	}
 
-	logger.Info(fmt.Sprintf("start up: setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
+	m.logger.Info(fmt.Sprintf("start up: setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
 	return mutate(obj, m.config.Languages)
 }
 
@@ -213,7 +218,7 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) map[stri
 	// todo: handle edge case where a workload is annotated because a service exposed it, and the service is removed. aka add to Service OnDelete
 	// custom selector takes precedence over service selector
 	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
-		logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
+		m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
 		return mutate(obj, customSelectLanguages)
 	}
 
@@ -241,7 +246,7 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) map[stri
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 
 		if serviceSelector.Matches(objectLabels) {
-			logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
+			m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
 			return mutate(obj, m.config.Languages)
 		}
 	}
@@ -260,10 +265,10 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) ma
 
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
-		annotations = make(map[string]string)
+		annotations = map[string]string{}
 	}
 
-	allMutatedAnnotations := make(map[string]string)
+	allMutatedAnnotations := map[string]string{}
 	for _, language := range instrumentation.SupportedTypes() {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
@@ -289,7 +294,7 @@ func (m *Monitor) CustomSelected(obj client.Object) (instrumentation.TypeSet, bo
 // excludedService returns whether a Namespace or a Service is excludedService from AutoMonitor.
 func (m *Monitor) excludedService(obj client.Object) bool {
 	excluded := slices.Contains(m.config.Exclude.Services, namespacedName(obj)) || m.excludedNamespace(obj.GetNamespace())
-	logger.Info(fmt.Sprintf("%s excluded? %v", namespacedName(obj), excluded))
+	m.logger.Info(fmt.Sprintf("%s excluded? %v", namespacedName(obj), excluded))
 	return excluded
 }
 

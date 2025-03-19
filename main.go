@@ -392,7 +392,7 @@ func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, c
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
 			return auto.NoopMonitor{}
 		}
-		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader)
+		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, setupLog)
 	}
 	return monitor
 }
