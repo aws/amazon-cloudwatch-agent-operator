@@ -53,16 +53,8 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 
 	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: NewAnnotationMutators(c, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...))}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{AddFunc: func(obj interface{}) {
-		if serviceInformer.HasSynced() {
-			service, ok := obj.(*corev1.Service)
-			if !ok {
-				logger.Error(nil, "Service informer is unable to cast obj to (*corev1.Service)")
-				panic("AHHHHH!!!!")
-			}
-			m.onServiceAdd(service)
-		} else {
-			logger.Info(fmt.Sprintf("Service %v has not synced yet, this is first sync. skipping annotation", obj))
-		}
+		m.onServiceAdd(obj.(*corev1.Service))
+
 	}})
 	if err != nil {
 		logger.Error(err, "failed to start auto monitor")
@@ -143,7 +135,7 @@ func (m *Monitor) onServiceAdd(service *corev1.Service) {
 func (m *Monitor) listServiceDeployments(service *corev1.Service, ctx context.Context) []appsv1.Deployment {
 	list, err := m.k8sInterface.AppsV1().Deployments(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		m.logger.Error(err, "AutoMonitor failed to list deployments")
+		m.logger.Error(err, "failed to list deployments")
 	}
 	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 	return slices.DeleteFunc(list.Items, func(deployment appsv1.Deployment) bool {
@@ -154,7 +146,7 @@ func (m *Monitor) listServiceDeployments(service *corev1.Service, ctx context.Co
 func (m *Monitor) listServiceStatefulSets(service *corev1.Service, ctx context.Context) []appsv1.StatefulSet {
 	list, err := m.k8sInterface.AppsV1().StatefulSets(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		m.logger.Error(err, "AutoMonitor failed to list statefulsets")
+		m.logger.Error(err, "failed to list statefulsets")
 	}
 	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 	return slices.DeleteFunc(list.Items, func(daemonSet appsv1.StatefulSet) bool {
@@ -165,7 +157,7 @@ func (m *Monitor) listServiceStatefulSets(service *corev1.Service, ctx context.C
 func (m *Monitor) listServiceDaemonSets(service *corev1.Service, ctx context.Context) []appsv1.DaemonSet {
 	list, err := m.k8sInterface.AppsV1().DaemonSets(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		m.logger.Error(err, "AutoMonitor failed to list DaemonSets")
+		m.logger.Error(err, "failed to list DaemonSets")
 	}
 	serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 	return slices.DeleteFunc(list.Items, func(daemonSet appsv1.DaemonSet) bool {
@@ -181,8 +173,6 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 	case *appsv1.StatefulSet:
 		return t.Spec.Template.Labels
 	case *appsv1.DaemonSet:
-		return t.Spec.Template.Labels
-	case *appsv1.ReplicaSet:
 		return t.Spec.Template.Labels
 	default:
 		// Return empty labels.Set if the object type is not supported
