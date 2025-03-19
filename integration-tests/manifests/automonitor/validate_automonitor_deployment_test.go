@@ -104,197 +104,139 @@ func TestDeploymentThenServiceAutoRestartEnabled(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-//func TestAllLanguagesDeployment(t *testing.T) {
-//
-//	clientSet := setupTest(t)
-//	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-//	if err != nil {
-//		panic(err)
-//	}
-//	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-//	uniqueNamespace := fmt.Sprintf("deployment-namespace-all-languages-%d", randomNumber)
-//	annotationConfig := auto.AnnotationConfig{
-//		Java: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//		Python: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//		DotNet: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//		NodeJS: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//	}
-//	jsonStr, err := json.Marshal(annotationConfig)
-//	assert.Nil(t, err)
-//
-//	startTime := time.Now()
-//	updateOperatorConfig(t, clientSet, string(jsonStr))
-//
-//	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation, injectPythonAnnotation, autoAnnotatePythonAnnotation, injectDotNetAnnotation, autoAnnotateDotNetAnnotation, injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
-//		t.Fatalf("Failed annotation check: %s", err.Error())
-//	}
-//
-//}
-//
-//func TestJavaOnlyDeployment(t *testing.T) {
-//
-//	clientSet := setupTest(t)
-//	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-//	if err != nil {
-//		panic(err)
-//	}
-//	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-//	uniqueNamespace := fmt.Sprintf("deployment-namespace-java-only-%d", randomNumber)
-//
-//	annotationConfig := auto.AnnotationConfig{
-//		Java: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//		Python: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{""},
-//			StatefulSets: []string{""},
-//		},
-//	}
-//	jsonStr, err := json.Marshal(annotationConfig)
-//	if err != nil {
-//		t.Errorf("Failed to marshal: %v\n", err)
-//	}
-//	startTime := time.Now()
-//	updateOperatorConfig(t, clientSet, string(jsonStr))
-//
-//	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectJavaAnnotation, autoAnnotateJavaAnnotation}, false); err != nil {
-//		t.Fatalf("Failed annotation check: %s", err.Error())
-//	}
-//}
-//
-//func TestPythonOnlyDeployment(t *testing.T) {
-//
-//	clientSet := setupTest(t)
-//	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-//	if err != nil {
-//		panic(err)
-//	}
-//	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-//	uniqueNamespace := fmt.Sprintf("deployment-namespace-python-only-%d", randomNumber)
-//
-//	annotationConfig := auto.AnnotationConfig{
-//		Java: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{""},
-//			StatefulSets: []string{""},
-//		},
-//		Python: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//	}
-//	jsonStr, err := json.Marshal(annotationConfig)
-//	if err != nil {
-//		t.Error("Error:", err)
-//	}
-//
-//	startTime := time.Now()
-//	updateOperatorConfig(t, clientSet, string(jsonStr))
-//	if err != nil {
-//		t.Errorf("Failed to get deployment app: %s", err.Error())
-//	}
-//
-//	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation}, false); err != nil {
-//		t.Fatalf("Failed annotation check: %s", err.Error())
-//	}
-//
-//}
-//func TestDotNetOnlyDeployment(t *testing.T) {
-//
-//	clientSet := setupTest(t)
-//	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-//	if err != nil {
-//		panic(err)
-//	}
-//	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-//	uniqueNamespace := fmt.Sprintf("deployment-namespace-dotnet-only-%d", randomNumber)
-//
-//	annotationConfig := auto.AnnotationConfig{
-//		DotNet: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//	}
-//	jsonStr, err := json.Marshal(annotationConfig)
-//	if err != nil {
-//		t.Error("Error:", err)
-//	}
-//
-//	startTime := time.Now()
-//	updateOperatorConfig(t, clientSet, string(jsonStr))
-//	if err != nil {
-//		t.Errorf("Failed to get deployment app: %s", err.Error())
-//	}
-//
-//	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectDotNetAnnotation, autoAnnotateDotNetAnnotation}, false); err != nil {
-//		t.Fatalf("Failed annotation check: %s", err.Error())
-//	}
-//
-//}
-//
-//func TestNodeJSOnlyDeployment(t *testing.T) {
-//
-//	clientSet := setupTest(t)
-//	randomNumber, err := rand.Int(rand.Reader, big.NewInt(9000))
-//	if err != nil {
-//		panic(err)
-//	}
-//	randomNumber.Add(randomNumber, big.NewInt(1000)) //adding a hash to namespace
-//	uniqueNamespace := fmt.Sprintf("deployment-namespace-nodejs-only-%d", randomNumber)
-//
-//	annotationConfig := auto.AnnotationConfig{
-//		NodeJS: auto.AnnotationResources{
-//			Namespaces:   []string{""},
-//			DaemonSets:   []string{""},
-//			Deployments:  []string{filepath.Join(uniqueNamespace, deploymentName)},
-//			StatefulSets: []string{""},
-//		},
-//	}
-//	jsonStr, err := json.Marshal(annotationConfig)
-//	if err != nil {
-//		t.Error("Error:", err)
-//		t.Error("Error:", err)
-//
-//	}
-//
-//	startTime := time.Now()
-//	updateOperatorConfig(t, clientSet, string(jsonStr))
-//	if err != nil {
-//		t.Errorf("Failed to get deployment app: %s", err.Error())
-//	}
-//
-//	if err := checkResourceAnnotations(t, clientSet, "deployment", uniqueNamespace, deploymentName, sampleDeploymentYamlNameRelPath, startTime, []string{injectNodeJSAnnotation, autoAnnotateNodeJSAnnotation}, false); err != nil {
-//		t.Fatalf("Failed annotation check: %s", err.Error())
-//	}
-//
-//}
+func TestDeploymentWithCustomSelector(t *testing.T) {
+	helper := NewTestHelper(t, true)
+
+	namespace := helper.Initialize("test-namespace", []string{})
+
+	// Set up custom selector config
+	customSelectorConfig := auto.AnnotationConfig{
+		Java: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+		Python: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+	}
+
+	// Update operator with auto monitor disabled and custom selector
+	helper.UpdateMonitorConfig(auto.MonitorConfig{
+		MonitorAllServices: false,
+		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		AutoRestart:        false,
+		CustomSelector:     customSelectorConfig,
+	})
+
+	// Create deployment
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	assert.NoError(t, err)
+
+	// Validate annotations are present
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation},
+		[]string{autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	assert.NoError(t, err)
+}
+
+func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
+	helper := NewTestHelper(t, true)
+
+	namespace := helper.Initialize("test-namespace", []string{})
+
+	// Update operator with auto monitor disabled
+	helper.UpdateMonitorConfig(auto.MonitorConfig{
+		MonitorAllServices: false,
+		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		AutoRestart:        false,
+	})
+
+	// Create deployment
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	assert.NoError(t, err)
+
+	// Validate no annotations present
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		none,
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	assert.NoError(t, err)
+
+	// Update operator with custom selector
+	customSelectorConfig := auto.AnnotationConfig{
+		Java: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+		Python: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+		DotNet: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+		NodeJS: auto.AnnotationResources{
+			Deployments: []string{"sample-deployment"},
+		},
+	}
+
+	helper.UpdateMonitorConfig(auto.MonitorConfig{
+		MonitorAllServices: false,
+		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		AutoRestart:        false,
+		CustomSelector:     customSelectorConfig,
+	})
+
+	// Validate annotations are present
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation},
+		none)
+	assert.NoError(t, err)
+}
+
+func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
+	helper := NewTestHelper(t, true)
+
+	namespace := helper.Initialize("test-namespace", []string{})
+
+	// Set up config with service exclusion
+	monitorConfig := auto.MonitorConfig{
+		MonitorAllServices: true,
+		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Exclude: struct {
+			Namespaces []string `json:"namespaces"`
+			Services   []string `json:"services"`
+		}{
+			Services: []string{namespace + "/sample-deployment-service"}, // assuming this is the service name in sampleDeploymentServiceYaml
+		},
+	}
+
+	// Update operator config
+	helper.UpdateAnnotationConfig(defaultAnnotationConfig)
+	helper.UpdateMonitorConfig(monitorConfig)
+
+	// Create service first
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentServiceYaml})
+	assert.NoError(t, err)
+
+	// Create deployment
+	err = helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	assert.NoError(t, err)
+
+	fmt.Println("Sleeping!")
+	time.Sleep(1 * time.Minute)
+	// Validate that deployment has no annotations
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		none,
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	assert.NoError(t, err)
+
+	// Update config to remove exclusion
+	monitorConfig.Exclude.Services = []string{}
+	helper.UpdateMonitorConfig(monitorConfig)
+	err = helper.RestartDeployment(namespace, "sample-deployment")
+	if err != nil {
+		return
+	}
+	// Validate that deployment now has annotations
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation},
+		none)
+	assert.NoError(t, err)
+}

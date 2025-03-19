@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 	"os"
 	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 
@@ -307,7 +308,7 @@ func main() {
 		} else {
 			// TODO handle case where auto monitor is enabled but auto annotation config is not specified
 			setupLog.Info("Test!")
-			monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx)
+			monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
 
 			autoAnnotationMutators := auto.NewAnnotationMutators(
 				mgr.GetClient(),
@@ -371,7 +372,7 @@ func main() {
 	}
 }
 
-func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) auto.MonitorInterface {
+func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader) auto.MonitorInterface {
 	var monitorConfig *auto.MonitorConfig
 	var monitor auto.MonitorInterface = auto.NoopMonitor{}
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
@@ -391,7 +392,7 @@ func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context) a
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
 			return auto.NoopMonitor{}
 		}
-		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet)
+		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader)
 	}
 	return monitor
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -228,26 +230,36 @@ func (h *TestHelper) CheckNameSpaceAnnotations(expectedAnnotations []string, uni
 func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	now := time.Now()
-	deployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
-	if err != nil {
-		h.t.Errorf("Failed to get deployment: %v\n", err)
+
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Get the latest version of the deployment
+		currentDeployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		// Apply your changes to the latest version
+		currentDeployment.Spec.Template.Spec.Containers[0].Args = args
+		forceRestart(currentDeployment)
+
+		// Try to update
+		_, updateErr := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), currentDeployment, metav1.UpdateOptions{})
+		return updateErr
+	})
+
+	if retryErr != nil {
+		h.t.Errorf("Failed to update deployment after retries: %v\n", retryErr)
 		return false
 	}
-	deployment.Spec.Template.Spec.Containers[0].Args = args
-	forceRestart(deployment)
 
-	_, err = h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
-	if err != nil {
-		h.t.Errorf("Failed to update deployment: %v\n", err)
-		return false
-	}
-
-	err = util.WaitForNewPodCreation(h.clientSet, deployment, now)
+	err := util.WaitForNewPodCreation(h.clientSet, deployment, now)
 	if err != nil {
 		fmt.Println("There was an error trying to wait for deployment available", err)
 		return false
 	}
+
 	fmt.Println("Operator updated successfully!")
+	fmt.Println(args)
 	return true
 }
 
@@ -327,18 +339,20 @@ func (h *TestHelper) findIndexOfPrefix(str string, strs []string) int {
 	return -1
 }
 
-func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) time.Time {
+func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
 
-	startTime := time.Now()
+	fmt.Println("Setting monitor config to:")
+	util.PrettyPrint(config)
 	h.updateOperatorConfig(string(jsonStr), "--auto-monitor-config=")
-	return startTime
 }
 
 func (h *TestHelper) UpdateAnnotationConfig(config auto.AnnotationConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
+	fmt.Println("Setting annotation config to:")
+	util.PrettyPrint(config)
 	h.updateOperatorConfig(string(jsonStr), "--auto-annotation-config=")
 }
 
@@ -359,6 +373,7 @@ func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
 	if !h.UpdateOperator(deployment) {
 		h.t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
+	time.Sleep(5 * time.Second)
 }
 
 func (h *TestHelper) ValidateWorkloadAnnotations(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
@@ -447,4 +462,57 @@ func (h *TestHelper) WaitYamlWithKubectl(filename string, namespace string) erro
 	cmd := exec.Command("kubectl", "wait", "--for=create", "-f", filename, "-n", namespace)
 	fmt.Printf("Waiting YAML with kubectl %s\n", cmd)
 	return cmd.Run()
+}
+
+func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) error {
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Get the latest version of the deployment
+		deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get deployment: %v", err)
+		}
+
+		// Add or update restart annotation
+		if deployment.Spec.Template.Annotations == nil {
+			deployment.Spec.Template.Annotations = make(map[string]string)
+		}
+		deployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+
+		// Update the deployment
+		_, updateErr := h.clientSet.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+		return updateErr
+	})
+
+	if retryErr != nil {
+		return fmt.Errorf("failed to restart deployment %s: %v", deploymentName, retryErr)
+	}
+
+	// Wait for rollout to complete
+	err := h.WaitForDeploymentRollout(namespace, deploymentName)
+	if err != nil {
+		return fmt.Errorf("failed to wait for deployment rollout: %v", err)
+	}
+
+	fmt.Printf("Successfully restarted deployment %s in namespace %s\n", deploymentName, namespace)
+	return nil
+}
+
+// WaitForDeploymentRollout waits for the deployment to complete its rollout
+func (h *TestHelper) WaitForDeploymentRollout(namespace string, deploymentName string) error {
+	return wait.PollImmediate(time.Second*2, time.Minute*5, func() (bool, error) {
+		deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		// Check if the rollout is complete
+		if deployment.Generation <= deployment.Status.ObservedGeneration &&
+			deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas &&
+			deployment.Status.Replicas == *deployment.Spec.Replicas &&
+			deployment.Status.AvailableReplicas == *deployment.Spec.Replicas {
+			return true, nil
+		}
+
+		return false, nil
+	})
 }

@@ -5,6 +5,7 @@ package util
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
@@ -56,7 +57,7 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 
 		// 4. Check for pod readiness, not just running
 		for _, pod := range newPods.Items {
-			fmt.Println("Pod Name: ", pod.Name, ", pod.Creation: ", pod.CreationTimestamp)
+			//fmt.Println("Pod Name: ", pod.Name, ", pod.Creation: ", pod.CreationTimestamp)
 			if pod.CreationTimestamp.Time.After(startTime.Add(-time.Second)) {
 				if pod.Status.Phase == v1.PodRunning {
 					// 5. Check if pod is ready
@@ -65,10 +66,10 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 						fmt.Printf("pod %s created after start time and is ready\n", pod.Name)
 						return true, nil
 					}
-					fmt.Printf("pod %s is running but not ready\n", pod.Name)
+					//fmt.Printf("pod %s is running but not ready\n", pod.Name)
 				} else {
-					fmt.Printf("pod %s created after start time but is in %s state\n",
-						pod.Name, pod.Status.Phase)
+					//fmt.Printf("pod %s created after start time but is in %s state\n",
+					//	pod.Name, pod.Status.Phase)
 				}
 			}
 		}
@@ -100,4 +101,9 @@ func CheckIfPodsAreRunning(pods *v1.PodList) bool {
 	}
 	fmt.Println("All pods are in the Running phase")
 	return true
+}
+
+func PrettyPrint(data interface{}) {
+	b, _ := json.MarshalIndent(data, "", "  ")
+	fmt.Println(string(b))
 }
