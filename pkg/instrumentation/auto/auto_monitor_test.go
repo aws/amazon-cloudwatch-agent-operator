@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+const defaultNs = "default"
+
 func TestUnmarshal(t *testing.T) {
 	j := []byte(`["java", "nodejs", "python"]`)
 	set := instrumentation.TypeSet{}
@@ -31,7 +33,11 @@ func TestMarshal(t *testing.T) {
 	res, err := types.MarshalJSON()
 	assert.NoError(t, err)
 	// todo test irregardless of order
-	assertJsonEqual(t, []byte(`["nodejs","python"]`), res)
+	var s []string
+	err = json.Unmarshal(res, &s)
+	assert.NoError(t, err)
+
+	assert.ElementsMatch(t, []string{"nodejs", "python"}, s)
 }
 
 func Test_allowedToMutate(t *testing.T) {
@@ -77,7 +83,7 @@ func Test_allowedToMutate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, allowedToMutate(tt.oldObject, tt.object, tt.autoRestart))
+			assert.Equal(t, tt.want, safeToMutate(tt.oldObject, tt.object, tt.autoRestart))
 		})
 	}
 }
@@ -156,7 +162,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, same selector, monitorallservices true, excluded namespace",
-			config:                      createConfig(false, []string{"namespace-1"}, nil, false),
+			config:                      createConfig(true, []string{"namespace-1"}, nil, false),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -165,7 +171,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, same selector, monitorallservices true, excluded service",
-			config:                      createConfig(false, nil, []string{"namespace-1/svc-16"}, false),
+			config:                      createConfig(true, nil, []string{"namespace-1/svc-16"}, false),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -181,7 +187,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		{
 			name: "Deployment",
 			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-				deployment := newTestDeployment("workload-16", ns, selector)
+				deployment := newTestDeployment("workload-16", ns, selector, nil)
 				return clientset.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{})
 			},
 		},
@@ -205,6 +211,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		t.Run(workload.name, func(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
+					t.Parallel()
 					// Setup fresh clients for each workload test
 					fakeClient := fake2.NewFakeClient()
 					clientset := fake.NewSimpleClientset()
@@ -223,16 +230,14 @@ func TestMonitor_MutateObject(t *testing.T) {
 					}
 
 					// Create service
-					_, err := clientset.CoreV1().Services(service.Namespace).Create(ctx, service, metav1.CreateOptions{})
+					_, err := monitor.k8sInterface.CoreV1().Services(service.Namespace).Create(ctx, service, metav1.CreateOptions{})
 					assert.NoError(t, err)
 
 					// Create workload
 					workloadObj, err := workload.create(clientset, ctx, tt.deploymentNs, tt.deploymentSelector)
 					assert.NoError(t, err)
 					// need to wait until service informer is updated
-					err = wait.PollImmediate(1*time.Millisecond, 5*time.Millisecond, func() (bool, error) {
-						return len(monitor.serviceInformer.GetStore().ListKeys()) > 0, nil
-					})
+					err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys > 0 })
 					assert.NoError(t, err)
 
 					// Test
@@ -242,6 +247,90 @@ func TestMonitor_MutateObject(t *testing.T) {
 			}
 		})
 	}
+}
+
+func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
+	return wait.PollImmediate(1*time.Millisecond, 5*time.Millisecond, func() (bool, error) {
+		return isValid(len(monitor.serviceInformer.GetStore().ListKeys())), nil
+	})
+}
+
+func Test_OptOutByRemovingService(t *testing.T) {
+	t.Run("auto restart true, delete and then restart operator", func(t *testing.T) {
+		userAnnotations := map[string]string{"test": "blah"}
+		annotations := mergeMaps(buildAnnotations(instrumentation.TypeJava), userAnnotations)
+		deployment := newTestDeployment("deployment", defaultNs, nil, annotations)
+		objs := []runtime.Object{
+			deployment,
+		}
+
+		clientset := fake.NewSimpleClientset(objs...)
+		c := fake2.NewFakeClient(objs...)
+		NewMonitor(context.TODO(), createConfig(true, nil, nil, true), clientset, c, c, testr.New(t))
+		err := c.Get(context.TODO(), client.ObjectKeyFromObject(deployment), deployment)
+		assert.NoError(t, err)
+		assert.Equal(t, userAnnotations, deployment.Spec.Template.Annotations)
+	})
+
+	t.Run("auto restart true, delete while operator running", func(t *testing.T) {
+		userAnnotations := map[string]string{"test": "blah"}
+		annotations := mergeMaps(buildAnnotations(instrumentation.TypeJava), userAnnotations)
+		labels := map[string]string{"app": "test"}
+		service := newTestService("service", defaultNs, labels)
+		deployment := newTestDeployment("deployment", defaultNs, labels, annotations)
+		objs := []runtime.Object{
+			service,
+			deployment,
+		}
+		clientset := fake.NewSimpleClientset(objs...)
+		c := fake2.NewFakeClient(objs...)
+		monitor := NewMonitor(context.TODO(), createConfig(true, nil, nil, true), clientset, c, c, testr.New(t))
+		err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
+		assert.NoError(t, err)
+		err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
+		assert.NoError(t, err)
+		updatedDeployment, err := clientset.AppsV1().Deployments(defaultNs).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
+		assert.NoError(t, err)
+		assert.Equal(t, userAnnotations, updatedDeployment.Spec.Template.Annotations)
+	})
+
+	t.Run("auto restart false, delete and then restart operator", func(t *testing.T) {
+		userAnnotations := map[string]string{"test": "blah"}
+		originalAnnotations := mergeMaps(buildAnnotations(instrumentation.TypeJava), userAnnotations)
+		deployment := newTestDeployment("deployment", defaultNs, nil, originalAnnotations)
+		objs := []runtime.Object{
+			deployment,
+		}
+
+		clientset := fake.NewSimpleClientset(objs...)
+		c := fake2.NewFakeClient(objs...)
+		NewMonitor(context.TODO(), createConfig(true, nil, nil, false), clientset, c, c, testr.New(t))
+		err := c.Get(context.TODO(), client.ObjectKeyFromObject(deployment), deployment)
+		assert.NoError(t, err)
+		assert.Equal(t, originalAnnotations, deployment.Spec.Template.Annotations)
+	})
+
+	t.Run("auto restart false, delete while operator running", func(t *testing.T) {
+		userAnnotations := map[string]string{"test": "blah"}
+		originalAnnotations := mergeMaps(buildAnnotations(instrumentation.TypeJava), userAnnotations)
+		labels := map[string]string{"app": "test"}
+		service := newTestService("service", defaultNs, labels)
+		deployment := newTestDeployment("deployment", defaultNs, labels, originalAnnotations)
+		objs := []runtime.Object{
+			service,
+			deployment,
+		}
+		clientset := fake.NewSimpleClientset(objs...)
+		c := fake2.NewFakeClient(objs...)
+		monitor := NewMonitor(context.TODO(), createConfig(true, nil, nil, false), clientset, c, c, testr.New(t))
+		err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
+		assert.NoError(t, err)
+		err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
+		assert.NoError(t, err)
+		updatedDeployment, err := clientset.AppsV1().Deployments(defaultNs).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
+		assert.NoError(t, err)
+		assert.Equal(t, originalAnnotations, updatedDeployment.Spec.Template.Annotations)
+	})
 }
 
 func Test_mutate(t *testing.T) {
@@ -295,6 +384,13 @@ func Test_mutate(t *testing.T) {
 			podAnnotations:     buildAnnotations("java"),
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
+			wantMutated:        buildAnnotations("java"),
+		},
+		{
+			name:               "remove only language annotations",
+			podAnnotations:     mergeAnnotations(buildAnnotations("java"), map[string]string{"test": "test"}),
+			languagesToMonitor: instrumentation.TypeSet{},
+			wantObjAnnotations: map[string]string{"test": "test"},
 			wantMutated:        buildAnnotations("java"),
 		},
 	}
@@ -352,7 +448,8 @@ func Test_mutate(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
 					obj := workload.create(tt.podAnnotations).DeepCopyObject().(client.Object)
-					gotMutated := mutate(obj, tt.languagesToMonitor)
+					// TODO test different shouldInsert values
+					gotMutated := mutate(obj, tt.languagesToMonitor, true)
 					assert.Equal(t, tt.wantObjAnnotations, getPodTemplate(obj).GetAnnotations())
 					assert.Equal(t, tt.wantMutated, gotMutated)
 				})
@@ -362,10 +459,10 @@ func Test_mutate(t *testing.T) {
 }
 
 func Test_StartupAutoRestart(t *testing.T) {
-	service := newTestService("service-1", "default", map[string]string{"test": "test"})
-	matchingDeployment := newTestDeployment("deployment-1", "default", map[string]string{"test": "test"})
-	nonMatchingDeployment := newTestDeployment("deployment-2", "default", map[string]string{})
-	customSelectedDeployment := newTestDeployment("deployment-3", "default", map[string]string{})
+	service := newTestService("service-1", defaultNs, map[string]string{"test": "test"})
+	matchingDeployment := newTestDeployment("deployment-1", defaultNs, map[string]string{"test": "test"}, nil)
+	nonMatchingDeployment := newTestDeployment("deployment-2", defaultNs, map[string]string{}, nil)
+	customSelectedDeployment := newTestDeployment("deployment-3", defaultNs, map[string]string{}, nil)
 	config := MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
@@ -380,10 +477,10 @@ func Test_StartupAutoRestart(t *testing.T) {
 	fakeClient := fake2.NewFakeClient(objs...)
 	m := NewMonitor(context.TODO(), config, clientset, fakeClient, fakeClient, testr.New(t))
 
-	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments("default").Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
+	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), updatedMatchingDeployment.Spec.Template.GetAnnotations())
-	updatedNonMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments("default").Get(context.TODO(), nonMatchingDeployment.Name, metav1.GetOptions{})
+	updatedNonMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), nonMatchingDeployment.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Empty(t, updatedNonMatchingDeployment.Spec.Template.GetAnnotations())
 	err = fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(customSelectedDeployment), customSelectedDeployment)
@@ -392,14 +489,14 @@ func Test_StartupAutoRestart(t *testing.T) {
 }
 
 func Test_listServiceDeployments(t *testing.T) {
-	testService := newTestService("service-1", "default", map[string]string{"test": "test"})
-	testDeployment := newTestDeployment("deployment-1", "default", map[string]string{"test": "test"})
-	notMatchingService := newTestService("service-2", "default", map[string]string{"test2": "test2"})
+	testService := newTestService("service-1", defaultNs, map[string]string{"test": "test"})
+	testDeployment := newTestDeployment("deployment-1", defaultNs, map[string]string{"test": "test"}, nil)
+	notMatchingService := newTestService("service-2", defaultNs, map[string]string{"test2": "test2"})
 	clientset := fake.NewSimpleClientset(testService, testDeployment, notMatchingService)
 	m := Monitor{k8sInterface: clientset, logger: testr.New(t)}
-	matchingServiceDeployments := m.listServiceDeployments(testService, context.TODO())
+	matchingServiceDeployments := m.listServiceDeployments(context.TODO(), testService)
 	assert.Len(t, matchingServiceDeployments, 1)
-	notMatchingServiceDeployments := m.listServiceDeployments(notMatchingService, context.TODO())
+	notMatchingServiceDeployments := m.listServiceDeployments(context.TODO(), notMatchingService)
 	assert.Len(t, notMatchingServiceDeployments, 0)
 }
 
@@ -437,7 +534,7 @@ func newTestService(name string, namespace string, selector map[string]string) *
 	return service.DeepCopy()
 }
 
-func newTestDeployment(name string, namespace string, labels map[string]string) *appsv1.Deployment {
+func newTestDeployment(name string, namespace string, labels map[string]string, annotations map[string]string) *appsv1.Deployment {
 	deployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -449,7 +546,8 @@ func newTestDeployment(name string, namespace string, labels map[string]string) 
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels:      labels,
+					Annotations: annotations,
 				},
 			},
 		},
