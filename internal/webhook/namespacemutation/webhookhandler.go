@@ -19,10 +19,10 @@ var _ admission.Handler = (*handler)(nil)
 
 type handler struct {
 	decoder *admission.Decoder
-	monitor auto.MonitorInterface
+	monitor auto.InstrumentationAnnotator
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, monitor auto.MonitorInterface) admission.Handler {
+func NewWebhookHandler(decoder *admission.Decoder, monitor auto.InstrumentationAnnotator) admission.Handler {
 	return &handler{
 		decoder: decoder,
 		monitor: monitor,

@@ -312,7 +312,7 @@ func main() {
 		}
 	}
 
-	monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), autoAnnotationMutators)
+	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), autoAnnotationMutators)
 
 	if monitor != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
@@ -371,16 +371,13 @@ func main() {
 	}
 }
 
-func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader, autoAnnotationMutators *auto.AnnotationMutators) auto.MonitorInterface {
+func createInstrumentationAnnotator(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader, autoAnnotationMutators *auto.AnnotationMutators) auto.InstrumentationAnnotator {
 	var monitorConfig *auto.MonitorConfig
-	var monitor auto.MonitorInterface = autoAnnotationMutators
+	var monitor auto.InstrumentationAnnotator = autoAnnotationMutators
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
 		return monitor
 	} else {
-		if monitorConfig.Languages == nil || len(monitorConfig.Languages) == 0 {
-			monitorConfig.Languages = instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
-		}
 		k8sConfig, err := rest.InClusterConfig()
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
@@ -392,8 +389,9 @@ func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, c
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
 			return monitor
 		}
-		if autoAnnotationMutators != nil {
-			monitor = auto.NewMonitorWithExistingAnnotationMutator(ctx, *monitorConfig, clientSet, client, reader, setupLog, autoAnnotationMutators)
+
+		if monitorConfig.CustomSelector.Empty() && !autoAnnotationMutators.Empty() {
+			monitor = auto.NewMonitorWithLegacyMutator(ctx, *monitorConfig, clientSet, client, reader, setupLog, autoAnnotationMutators)
 		} else {
 			monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, setupLog)
 		}

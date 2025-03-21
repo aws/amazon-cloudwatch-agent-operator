@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -91,7 +92,7 @@ func TestMarshal(t *testing.T) {
 	assert.ElementsMatch(t, []string{"nodejs", "python"}, s)
 }
 
-func Test_allowedToMutate(t *testing.T) {
+func Test_safeToMutate(t *testing.T) {
 	deploy := &appsv1.Deployment{
 		Spec: appsv1.DeploymentSpec{
 			Template: corev1.PodTemplateSpec{
@@ -116,25 +117,27 @@ func Test_allowedToMutate(t *testing.T) {
 		},
 	}
 	tests := []struct {
-		name        string
-		oldObject   client.Object
-		object      client.Object
-		autoRestart bool
-		want        bool
+		name                       string
+		oldObject                  client.Object
+		object                     client.Object
+		autoRestart                bool
+		autoRestartCustomSelectors bool
+		want                       bool
 	}{
-		{"identical deployments", deploy.DeepCopy(), deploy.DeepCopy(), false, false},
-		{"identical deployments, auto restart", deploy.DeepCopy(), deploy.DeepCopy(), true, true}, //should try and mutate in case deployment should no longer have annotations and mutators need to run to remove annotations
-		{"changed pod template", deploy.DeepCopy(), &mutatedDeploy, false, true},
-		{"non-workload", &corev1.ConfigMap{}, &corev1.ConfigMap{}, false, false},
-		{"non-workload, auto restart", &corev1.ConfigMap{}, &corev1.ConfigMap{Data: map[string]string{"test": "test"}}, true, false},
-		{"create (oldObject nil)", nil, deploy.DeepCopy(), false, true},
-		{"namespace, auto restart false", nil, &namespace, false, true},
-		{"namespace, auto restart true", nil, &namespace, true, true},
+		{"identical deployments", deploy.DeepCopy(), deploy.DeepCopy(), false, false, false},
+		{"identical deployments, auto restart", deploy.DeepCopy(), deploy.DeepCopy(), true, false, true}, //should try and mutate in case deployment should no longer have annotations and mutators need to run to remove annotations
+		{"changed pod template", deploy.DeepCopy(), &mutatedDeploy, false, false, true},
+		{"non-workload", &corev1.ConfigMap{}, &corev1.ConfigMap{}, false, false, false},
+		{"non-workload, auto restart", &corev1.ConfigMap{}, &corev1.ConfigMap{Data: map[string]string{"test": "test"}}, true, false, false},
+		{"create (oldObject nil)", nil, deploy.DeepCopy(), false, false, true},
+		{"namespace, auto restart false", nil, &namespace, false, false, true},
+		{"namespace, auto restart true", nil, &namespace, true, false, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, safeToMutate(tt.oldObject, tt.object, tt.autoRestart))
+			//noinspection GoDeprecation
+			assert.Equal(t, tt.want, safeToMutate(tt.oldObject, tt.object, tt.autoRestart, tt.autoRestartCustomSelectors))
 		})
 	}
 }
@@ -262,7 +265,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		t.Run(workload.name, func(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					t.Parallel()
+					//t.Parallel()
 					// Setup fresh clients for each workload test
 					fakeClient := fake2.NewFakeClient()
 					clientset := fake.NewSimpleClientset()
@@ -316,7 +319,11 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				NewMonitor(context.TODO(), createConfig(true, nil, nil, true), clientset, c, c, testr.New(t))
+				var config MonitorConfig = createConfig(true, nil, nil, true)
+				var k8sInterface kubernetes.Interface = clientset
+				var logger logr.Logger = testr.New(t)
+				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+				MutateAndPatchAll(monitor, context.TODO())
 				updatedWorkload, err := wt.getWithClient(c, defaultNs, workload.GetName())
 				assert.NoError(t, err)
 				assert.Equal(t, userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
@@ -331,7 +338,11 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				monitor := NewMonitor(context.TODO(), createConfig(true, nil, nil, true), clientset, c, c, testr.New(t))
+				var config MonitorConfig = createConfig(true, nil, nil, true)
+				var k8sInterface kubernetes.Interface = clientset
+				var logger logr.Logger = testr.New(t)
+				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+				MutateAndPatchAll(monitor, context.TODO())
 
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
@@ -350,7 +361,11 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				NewMonitor(context.TODO(), createConfig(true, nil, nil, false), clientset, c, c, testr.New(t))
+				var config MonitorConfig = createConfig(true, nil, nil, false)
+				var k8sInterface kubernetes.Interface = clientset
+				var logger logr.Logger = testr.New(t)
+				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+				MutateAndPatchAll(monitor, context.TODO())
 
 				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
 				assert.NoError(t, err)
@@ -366,7 +381,11 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				monitor := NewMonitor(context.TODO(), createConfig(true, nil, nil, false), clientset, c, c, testr.New(t))
+				var config MonitorConfig = createConfig(true, nil, nil, false)
+				var k8sInterface kubernetes.Interface = clientset
+				var logger logr.Logger = testr.New(t)
+				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+				MutateAndPatchAll(monitor, context.TODO())
 
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
@@ -393,7 +412,11 @@ func Test_OptOutByDisablingMonitorAllServices(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				NewMonitor(context.TODO(), createConfig(false, nil, nil, true), clientset, c, c, testr.New(t))
+				var config MonitorConfig = createConfig(false, nil, nil, true)
+				var k8sInterface kubernetes.Interface = clientset
+				var logger logr.Logger = testr.New(t)
+				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+				MutateAndPatchAll(monitor, context.TODO())
 
 				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
 				assert.NoError(t, err)
@@ -411,6 +434,7 @@ func Test_mutate(t *testing.T) {
 		languagesToMonitor instrumentation.TypeSet
 		wantObjAnnotations map[string]string
 		wantMutated        map[string]string
+		shouldInsert       bool
 	}{
 		{
 			name:               "java only",
@@ -418,6 +442,7 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("java"),
+			shouldInsert:       true,
 		},
 		{
 			name:           "java and python",
@@ -428,6 +453,7 @@ func Test_mutate(t *testing.T) {
 			},
 			wantObjAnnotations: mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
 			wantMutated:        mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
+			shouldInsert:       true,
 		},
 		{
 			name:               "remove python instrumentation",
@@ -435,6 +461,7 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("python"),
+			shouldInsert:       true,
 		},
 		{
 			name:               "remove one of two languages",
@@ -442,6 +469,7 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("python"),
+			shouldInsert:       true,
 		},
 		{
 			name:               "manually specified annotation is not touched",
@@ -449,6 +477,7 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue},
 			wantMutated:        map[string]string{},
+			shouldInsert:       true,
 		},
 		{
 			name:               "remove all",
@@ -456,6 +485,7 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("java"),
+			shouldInsert:       true,
 		},
 		{
 			name:               "remove only language annotations",
@@ -463,54 +493,15 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{"test": "test"},
 			wantMutated:        buildAnnotations("java"),
-		},
-	}
-
-	workloadTypes := []struct {
-		name   string
-		create func(annotations map[string]string) client.Object
-	}{
-		{
-			name: "Deployment",
-			create: func(annotations map[string]string) client.Object {
-				return &appsv1.Deployment{
-					Spec: appsv1.DeploymentSpec{
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Annotations: annotations,
-							},
-						},
-					},
-				}
-			},
+			shouldInsert:       true,
 		},
 		{
-			name: "StatefulSet",
-			create: func(annotations map[string]string) client.Object {
-				return &appsv1.StatefulSet{
-					Spec: appsv1.StatefulSetSpec{
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Annotations: annotations,
-							},
-						},
-					},
-				}
-			},
-		},
-		{
-			name: "DaemonSet",
-			create: func(annotations map[string]string) client.Object {
-				return &appsv1.DaemonSet{
-					Spec: appsv1.DaemonSetSpec{
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Annotations: annotations,
-							},
-						},
-					},
-				}
-			},
+			name:               "respects isWorkloadAutoMonitored",
+			podAnnotations:     mergeAnnotations(buildAnnotations("python"), map[string]string{"test": "test"}),
+			languagesToMonitor: instrumentation.TypeSet{"python": struct{}{}, "java": struct{}{}},
+			wantObjAnnotations: map[string]string{"test": "test"},
+			wantMutated:        buildAnnotations("python"),
+			shouldInsert:       false,
 		},
 	}
 
@@ -518,9 +509,9 @@ func Test_mutate(t *testing.T) {
 		t.Run(workload.name, func(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					obj := workload.create(tt.podAnnotations).DeepCopyObject().(client.Object)
-					// TODO test different shouldInsert values
-					gotMutated := mutate(obj, tt.languagesToMonitor, true)
+					obj := workload.create("workload", "default", nil, tt.podAnnotations).DeepCopyObject().(client.Object)
+					// TODO test different isWorkloadAutoMonitored values
+					gotMutated := mutate(obj, tt.languagesToMonitor, tt.shouldInsert)
 					assert.Equal(t, tt.wantObjAnnotations, getPodTemplate(obj).GetAnnotations())
 					assert.Equal(t, tt.wantMutated, gotMutated)
 				})
@@ -546,8 +537,10 @@ func Test_StartupAutoRestart(t *testing.T) {
 	objs := []runtime.Object{service, matchingDeployment, nonMatchingDeployment, customSelectedDeployment}
 	clientset := fake.NewSimpleClientset(objs...)
 	fakeClient := fake2.NewFakeClient(objs...)
-	m := NewMonitor(context.TODO(), config, clientset, fakeClient, fakeClient, testr.New(t))
-
+	var k8sInterface kubernetes.Interface = clientset
+	var logger logr.Logger = testr.New(t)
+	m := NewMonitor(context.TODO(), config, k8sInterface, fakeClient, fakeClient, logger)
+	MutateAndPatchAll(m, context.TODO())
 	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), updatedMatchingDeployment.Spec.Template.GetAnnotations())

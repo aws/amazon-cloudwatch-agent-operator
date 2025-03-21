@@ -38,7 +38,7 @@ type AnnotationMutators struct {
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
 	injectAnnotations   map[string]struct{}
-	cfg                 *AnnotationConfig
+	cfg                 AnnotationConfig
 }
 
 func (m *AnnotationMutators) GetAnnotationMutators() *AnnotationMutators {
@@ -55,11 +55,6 @@ func (m *AnnotationMutators) GetReader() client.Reader {
 
 func (m *AnnotationMutators) GetWriter() client.Writer {
 	return m.clientWriter
-}
-
-// IsManaged returns if AnnotationMutators would ever mutate the object.
-func (m *AnnotationMutators) IsManaged(obj client.Object) bool {
-	return len(m.cfg.GetObjectLanguagesToAnnotate(obj)) > 0
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
@@ -88,7 +83,7 @@ func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) 
 	}
 }
 
-func rangeObjectList(m MonitorInterface, ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
+func rangeObjectList(m InstrumentationAnnotator, ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
 	if err := m.GetReader().List(ctx, list, option); err != nil {
 		m.GetLogger().Error(err, "Unable to list objects",
 			"kind", fmt.Sprintf("%T", list),
@@ -124,6 +119,10 @@ func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumenta
 	return mutatedAnnotations, len(mutatedAnnotations) != 0
 }
 
+func (m *AnnotationMutators) Empty() bool {
+	return m.cfg.Empty()
+}
+
 func namespacedName(obj metav1.Object) string {
 	return fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName())
 }
@@ -149,7 +148,7 @@ func NewAnnotationMutators(
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
 		injectAnnotations:   buildInjectAnnotations(typeSet),
-		cfg:                 &cfg,
+		cfg:                 cfg,
 	}
 }
 

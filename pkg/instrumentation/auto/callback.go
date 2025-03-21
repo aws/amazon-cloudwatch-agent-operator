@@ -66,7 +66,7 @@ func createPatch(obj client.Object) (client.Patch, error) {
 	return &basicPatch{originalJSON: originalJSON}, nil
 }
 
-func patchFunc(m MonitorInterface, ctx context.Context, callback objectCallbackFunc) objectCallbackFunc {
+func patchFunc(m InstrumentationAnnotator, ctx context.Context, callback objectCallbackFunc) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
 		patch, err := createPatch(obj)
 		if err != nil {
@@ -93,7 +93,7 @@ func patchFunc(m MonitorInterface, ctx context.Context, callback objectCallbackF
 	}
 }
 
-func restartNamespaceFunc(m MonitorInterface, ctx context.Context) objectCallbackFunc {
+func restartNamespaceFunc(m InstrumentationAnnotator, ctx context.Context) objectCallbackFunc {
 	return func(obj client.Object, previousResult any) (any, bool) {
 		mutatedAnnotations, ok := previousResult.(map[string]string)
 		if !ok {
@@ -109,7 +109,7 @@ func restartNamespaceFunc(m MonitorInterface, ctx context.Context) objectCallbac
 }
 
 // shouldRestartFunc returns a func that determines if a resource should be restarted
-func shouldRestartFunc(m MonitorInterface, namespaceMutatedAnnotations map[string]string) objectCallbackFunc {
+func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations map[string]string) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
 		switch o := obj.(type) {
 		case *appsv1.Deployment:
@@ -125,7 +125,7 @@ func shouldRestartFunc(m MonitorInterface, namespaceMutatedAnnotations map[strin
 }
 
 // shouldRestartResource returns true if a resource requires a restart corresponding to the mutated annotations on its namespace
-func shouldRestartResource(m MonitorInterface, namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
+func shouldRestartResource(m InstrumentationAnnotator, namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
 	var shouldRestart bool
 
 	if resourceAnnotations := obj.GetAnnotations(); resourceAnnotations != nil {
@@ -154,7 +154,7 @@ func shouldRestartResource(m MonitorInterface, namespaceMutatedAnnotations map[s
 }
 
 // RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
-func RestartNamespace(m MonitorInterface, ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
+func RestartNamespace(m InstrumentationAnnotator, ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
 	callbackFunc := patchFunc(m, ctx, setRestartAnnotation)
 	rangeObjectList(m, ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
 	rangeObjectList(m, ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
@@ -162,7 +162,7 @@ func RestartNamespace(m MonitorInterface, ctx context.Context, namespace *corev1
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
-func MutateAndPatchAll(m MonitorInterface, ctx context.Context) {
+func MutateAndPatchAll(m InstrumentationAnnotator, ctx context.Context) {
 	f := getMutateObjectFunc(m)
 	callbackFunc := patchFunc(m, ctx, f)
 	rangeObjectList(m, ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, callbackFunc)
@@ -171,7 +171,7 @@ func MutateAndPatchAll(m MonitorInterface, ctx context.Context) {
 	rangeObjectList(m, ctx, &corev1.NamespaceList{}, &client.ListOptions{}, chainCallbacks(callbackFunc, restartNamespaceFunc(m, ctx)))
 }
 
-func getMutateObjectFunc(m MonitorInterface) objectCallbackFunc {
+func getMutateObjectFunc(m InstrumentationAnnotator) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
 		return m.MutateObject(nil, obj), true
 	}

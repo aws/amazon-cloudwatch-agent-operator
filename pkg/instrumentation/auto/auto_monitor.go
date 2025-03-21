@@ -20,7 +20,8 @@ import (
 	"time"
 )
 
-type MonitorInterface interface {
+// InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation
+type InstrumentationAnnotator interface {
 	MutateObject(oldObj client.Object, obj client.Object) map[string]string
 	GetAnnotationMutators() *AnnotationMutators
 	GetLogger() logr.Logger
@@ -29,14 +30,15 @@ type MonitorInterface interface {
 }
 
 type Monitor struct {
-	serviceInformer cache.SharedIndexInformer
-	ctx             context.Context
-	config          MonitorConfig
-	k8sInterface    kubernetes.Interface
-	clientReader    client.Reader
-	clientWriter    client.Writer
-	customSelectors *AnnotationMutators
-	logger          logr.Logger
+	serviceInformer            cache.SharedIndexInformer
+	ctx                        context.Context
+	config                     MonitorConfig
+	k8sInterface               kubernetes.Interface
+	clientReader               client.Reader
+	clientWriter               client.Writer
+	customSelectors            *AnnotationMutators
+	logger                     logr.Logger
+	autoRestartCustomSelectors bool // Deprecated, do not use.
 }
 
 func (m *Monitor) GetAnnotationMutators() *AnnotationMutators {
@@ -67,14 +69,27 @@ func (n NoopMonitor) AnyCustomSelectorDefined() bool {
 	return false
 }
 
-func NewMonitorWithExistingAnnotationMutator(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger, mutators *AnnotationMutators) *Monitor {
+// NewMonitorWithLegacyMutator is used to create an InstrumentationMutator that supports AutoMonitor and the legacy autoAnnotateAutoInstrumentation
+//
+// *Deprecated, do not use directly.*
+func NewMonitorWithLegacyMutator(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger, legacyMutator *AnnotationMutators) *Monitor {
 	logger.Info("AutoMonitor starting...")
 	// todo, throw warning if exclude config service is not namespaced (doesn't contain `/`)
 	// todo: informers.WithTransform() as option to only store what parts of service are needed
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute)
 	serviceInformer := factory.Core().V1().Services().Informer()
+	legacy := legacyMutator != nil
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutators, clientReader: r, clientWriter: w}
+	var mutator *AnnotationMutators
+	if legacy {
+		// TODO: Add link to migration guide
+		logger.Error(nil, "Warning: Please switch from autoAnnotateAutoConfiguration to customSelector syntax. autoAnnotateAutoConfiguration is deprecated, and will be removed. For more info, visit here: ")
+		mutator = legacyMutator
+	} else {
+		mutator = NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...))
+	}
+
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w, autoRestartCustomSelectors: legacy}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			m.onServiceEvent(nil, obj.(*corev1.Service))
@@ -99,19 +114,14 @@ func NewMonitorWithExistingAnnotationMutator(ctx context.Context, config Monitor
 			panic("TODO: handle bad cache sync")
 		}
 	}
-	logger.Info("Enabled!")
 
-	if m.config.AutoRestart {
-		MutateAndPatchAll(m, ctx)
-	} else {
-		logger.Info("Auto restart disabled. To instrument workloads, restart the workloads exposed by a service.")
-	}
 	logger.Info("Initialization complete!")
 	return m
 }
 
+// NewMonitor is used to create an InstrumentationMutator that supports AutoMonitor.
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
-	return NewMonitorWithExistingAnnotationMutator(ctx, config, k8sInterface, w, r, logger, NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)))
+	return NewMonitorWithLegacyMutator(ctx, config, k8sInterface, w, r, logger, nil)
 }
 
 func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Service) {
@@ -224,21 +234,25 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 
 // MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
 func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
-	if !safeToMutate(oldObj, obj, m.config.AutoRestart) {
+	if !safeToMutate(oldObj, obj, m.config.AutoRestart, m.autoRestartCustomSelectors) {
 		return map[string]string{}
 	}
 
-	// todo: handle edge case where a workload is annotated because a service exposed it, and the service is removed. aka add to Service OnDelete
-	// custom selector takes precedence over service selector
-	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
-		m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
-		return mutate(obj, customSelectLanguages, true)
+	// custom selectors override default mutate logic
+	customSelectedLanguages := m.customSelectors.cfg.LanguagesOf(obj)
+	if len(customSelectedLanguages) > 0 {
+		return mutate(obj, customSelectedLanguages, true)
 	}
 
-	return mutate(obj, m.config.Languages, m.shouldInsert(obj))
+	return mutate(obj, m.config.Languages, m.isWorkloadAutoMonitored(obj))
 }
 
-func (m *Monitor) shouldInsert(obj client.Object) bool {
+// returns if workload is auto monitored
+func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
+	if isNamespace(obj) {
+		return false
+	}
+
 	if !m.config.MonitorAllServices {
 		return false
 	}
@@ -267,8 +281,8 @@ func (m *Monitor) shouldInsert(obj client.Object) bool {
 	return false
 }
 
-// mutate obj. If object is a workload, mutate the pod template. otherwise, mutate the object's annotations itself.
-func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet, shouldInsert bool) map[string]string {
+// mutate if object is a workload, mutate the pod template. otherwise, mutate the object's annotations itself. It will add annotations if needsInstrumentation is true. Otherwise, it will remove instrumentation annotations.
+func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet, needsInstrumentation bool) map[string]string {
 	var obj metav1.Object
 	podTemplate := getPodTemplate(object)
 	if podTemplate != nil {
@@ -286,9 +300,8 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet, sh
 	for _, language := range instrumentation.SupportedTypes() {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
-		if _, ok := languagesToMonitor[language]; ok && shouldInsert {
+		if _, ok := languagesToMonitor[language]; ok && needsInstrumentation {
 			mutatedAnnotations = insertMutation.Mutate(annotations)
-
 		} else {
 			mutatedAnnotations = removeMutation.Mutate(annotations)
 		}
@@ -298,11 +311,6 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet, sh
 	}
 	obj.SetAnnotations(annotations)
 	return allMutatedAnnotations
-}
-
-func (m *Monitor) CustomSelected(obj client.Object) (instrumentation.TypeSet, bool) {
-	languages := m.config.CustomSelector.GetObjectLanguagesToAnnotate(obj)
-	return languages, len(languages) > 0
 }
 
 // excludedService returns whether a Namespace or a Service is excludedService from AutoMonitor.
@@ -322,26 +330,39 @@ func (m *Monitor) excludedNamespace(namespace string) bool {
 	return slices.Contains(m.config.Exclude.Namespaces, namespace)
 }
 
-func (m *Monitor) AnyCustomSelectorDefined() bool {
-	for _, t := range instrumentation.SupportedTypes() {
-		resources := m.config.CustomSelector.getResources(t)
-		if len(resources.DaemonSets) > 0 {
-			return true
-		}
-		if len(resources.StatefulSets) > 0 {
-			return true
-		}
-		if len(resources.Deployments) > 0 {
-			return true
-		}
-		if len(resources.Namespaces) > 0 {
-			return true
-		}
+// safeToMutate returns whether the customer consents to the operator updating their workload's pods. The user consents if any of the following conditions are true:
+//
+// 1. Auto restart enabled.
+//
+//  2. preserve existing autoAnnotateAutoConfiguration behavior by mutating if no custom selectors are defined in the MonitorConfig, AND customSelectors mutates the provided workload
+//
+// 3. MonitorAllServices is enabled AND the workload is already going to restart (aka, the pod template is already modified)
+func safeToMutate(oldWorkload client.Object, workload client.Object, autoRestart bool, autoRestartCustomSelectors bool) bool {
+	// always ok to mutate namespace
+	if isNamespace(workload) {
+		return true
 	}
-	return false
+	// should only mutate workloads or namespaces
+	if !isMutableType(workload) {
+		return false
+	}
+
+	if autoRestart {
+		return true
+	}
+
+	if autoRestartCustomSelectors {
+		return true
+	}
+
+	oldTemplate, newTemplate := getPodTemplate(oldWorkload), getPodTemplate(workload)
+	return !reflect.DeepEqual(oldTemplate, newTemplate)
 }
 
-func isWorkload(obj client.Object) bool {
+func isMutableType(obj client.Object) bool {
+	if isNamespace(obj) {
+		return true
+	}
 	switch obj.(type) {
 	case *appsv1.Deployment:
 		return true
@@ -354,26 +375,8 @@ func isWorkload(obj client.Object) bool {
 	}
 }
 
-// safeToMutate returns if object is already being mutated or if auto restart is enabled. does not guarantee that the object will be mutated.
-func safeToMutate(oldObject client.Object, object client.Object, autoRestart bool) bool {
-	// mutating a namespace is always safe
-	if isNamespace(object) {
-		return true
-	}
-	// should only mutate workloads or namespaces
-	if !isWorkload(object) {
-		return false
-	}
-
-	if autoRestart {
-		return true
-	}
-	oldTemplate, newTemplate := getPodTemplate(oldObject), getPodTemplate(object)
-	return !reflect.DeepEqual(oldTemplate, newTemplate)
-}
-
-func isNamespace(object client.Object) bool {
-	switch object.(type) {
+func isNamespace(obj client.Object) bool {
+	switch obj.(type) {
 	case *corev1.Namespace:
 		return true
 	}

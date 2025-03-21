@@ -32,11 +32,11 @@ type WebhookHandler interface {
 // the implementation.
 type workloadMutationWebhook struct {
 	decoder *admission.Decoder
-	monitor auto.MonitorInterface
+	monitor auto.InstrumentationAnnotator
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, monitor auto.MonitorInterface) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, monitor auto.InstrumentationAnnotator) WebhookHandler {
 	return &workloadMutationWebhook{
 		decoder: decoder,
 		monitor: monitor,

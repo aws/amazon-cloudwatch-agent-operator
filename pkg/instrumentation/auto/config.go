@@ -35,8 +35,8 @@ func (c AnnotationConfig) getResources(instType instrumentation.Type) Annotation
 	}
 }
 
-// GetObjectLanguagesToAnnotate get languages to annotate for an object
-func (c AnnotationConfig) GetObjectLanguagesToAnnotate(obj client.Object) instrumentation.TypeSet {
+// LanguagesOf get languages to annotate for an object
+func (c AnnotationConfig) LanguagesOf(obj client.Object) instrumentation.TypeSet {
 	objName := namespacedName(obj)
 	typesSelected := instrumentation.TypeSet{}
 
@@ -70,6 +70,25 @@ func (c AnnotationConfig) GetObjectLanguagesToAnnotate(obj client.Object) instru
 	}
 
 	return typesSelected
+}
+
+func (c AnnotationConfig) Empty() bool {
+	for _, t := range instrumentation.SupportedTypes() {
+		resources := c.getResources(t)
+		if len(resources.DaemonSets) > 0 {
+			return false
+		}
+		if len(resources.StatefulSets) > 0 {
+			return false
+		}
+		if len(resources.Deployments) > 0 {
+			return false
+		}
+		if len(resources.Namespaces) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // AnnotationResources contains slices of resource names for each
