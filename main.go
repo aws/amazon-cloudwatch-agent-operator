@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
@@ -37,9 +39,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
@@ -291,48 +291,47 @@ func main() {
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	// TODO handle case where auto monitor is enabled but auto annotation config is not specified
+	var autoAnnotationConfig auto.AnnotationConfig
+	var autoAnnotationMutators *auto.AnnotationMutators
+	supportedLanguages := instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
+
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
 		setupLog.Info("Auto-annotation is disabled")
 	} else {
-
-		supportedLanguages := instrumentation.NewTypeSet(
-			instrumentation.TypeJava,
-			instrumentation.TypePython,
-			instrumentation.TypeDotNet,
-			instrumentation.TypeNodeJS,
-		)
-
-		var autoAnnotationConfig auto.AnnotationConfig
 		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
-			// TODO handle case where auto monitor is enabled but auto annotation config is not specified
-			setupLog.Info("Test!")
-			monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
-
-			autoAnnotationMutators := auto.NewAnnotationMutators(
+			// TODO: detect empty
+			autoAnnotationMutators = auto.NewAnnotationMutators(
 				mgr.GetClient(),
 				mgr.GetAPIReader(),
 				logger,
 				autoAnnotationConfig,
 				supportedLanguages,
 			)
-			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators, monitor)})
-			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
-				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators, monitor),
-			})
-
-			setupLog.Info("Auto-annotation is enabled")
-			go waitForWebhookServerStart(
-				ctx,
-				mgr.GetWebhookServer().StartedChecker(),
-				func(ctx context.Context) {
-					setupLog.Info("Applying auto-annotation")
-					autoAnnotationMutators.MutateAndPatchAll(ctx)
-				},
-			)
 		}
+	}
+
+	monitor := createMonitorFromConfig(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), autoAnnotationMutators)
+
+	if monitor != nil {
+		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
+			Handler: workloadmutation.NewWebhookHandler(decoder, monitor)})
+		mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
+			Handler: namespacemutation.NewWebhookHandler(decoder, monitor),
+		})
+
+		setupLog.Info("Auto-annotation is enabled")
+		go waitForWebhookServerStart(
+			ctx,
+			mgr.GetWebhookServer().StartedChecker(),
+			func(ctx context.Context) {
+				setupLog.Info("Applying auto-annotation")
+				auto.MutateAndPatchAll(monitor, ctx)
+			},
+		)
+	} else {
+		setupLog.Info("Auto-annotation and Auto Monitor is disabled")
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
@@ -372,11 +371,12 @@ func main() {
 	}
 }
 
-func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader) auto.MonitorInterface {
+func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader, autoAnnotationMutators *auto.AnnotationMutators) auto.MonitorInterface {
 	var monitorConfig *auto.MonitorConfig
-	var monitor auto.MonitorInterface = auto.NoopMonitor{}
+	var monitor auto.MonitorInterface = autoAnnotationMutators
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
-		setupLog.Error(err, "Unable to unmarshal auto-monitor config")
+		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
+		return monitor
 	} else {
 		if monitorConfig.Languages == nil || len(monitorConfig.Languages) == 0 {
 			monitorConfig.Languages = instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
@@ -384,15 +384,19 @@ func createMonitorFromConfig(autoMonitorConfigStr string, ctx context.Context, c
 		k8sConfig, err := rest.InClusterConfig()
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return auto.NoopMonitor{}
+			return monitor
 		}
 
 		clientSet, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return auto.NoopMonitor{}
+			return monitor
 		}
-		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, setupLog)
+		if autoAnnotationMutators != nil {
+			monitor = auto.NewMonitorWithExistingAnnotationMutator(ctx, *monitorConfig, clientSet, client, reader, setupLog, autoAnnotationMutators)
+		} else {
+			monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, setupLog)
+		}
 	}
 	return monitor
 }

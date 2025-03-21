@@ -129,7 +129,7 @@ func TestHandle(t *testing.T) {
 				autoAnnotationConfig,
 				instrumentation.NewTypeSet(instrumentation.TypeJava),
 			)
-			injector := NewWebhookHandler(decoder, mutators, auto.NoopMonitor{})
+			injector := NewWebhookHandler(decoder, mutators)
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)

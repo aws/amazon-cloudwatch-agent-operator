@@ -18,16 +18,14 @@ import (
 var _ admission.Handler = (*handler)(nil)
 
 type handler struct {
-	decoder            *admission.Decoder
-	annotationMutators *auto.AnnotationMutators
-	monitor            auto.MonitorInterface
+	decoder *admission.Decoder
+	monitor auto.MonitorInterface
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor auto.MonitorInterface) admission.Handler {
+func NewWebhookHandler(decoder *admission.Decoder, monitor auto.MonitorInterface) admission.Handler {
 	return &handler{
-		decoder:            decoder,
-		annotationMutators: annotationMutators,
-		monitor:            monitor,
+		decoder: decoder,
+		monitor: monitor,
 	}
 }
 
@@ -38,12 +36,9 @@ func (h *handler) Handle(_ context.Context, req admission.Request) admission.Res
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if h.annotationMutators.IsManaged(namespace) && !h.monitor.AnyCustomSelectorDefined() {
-		h.annotationMutators.MutateObject(namespace)
-	} else {
-		// do not need to pass in oldObj because it's only used to check for workload pod template diff
-		h.monitor.MutateObject(nil, namespace)
-	}
+	// do not need to pass in oldObj because it's only used to check for workload pod template diff
+	h.monitor.MutateObject(nil, namespace)
+
 	marshaledNamespace, err := json.Marshal(namespace)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

@@ -31,17 +31,15 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	decoder            *admission.Decoder
-	annotationMutators *auto.AnnotationMutators
-	monitor            auto.MonitorInterface
+	decoder *admission.Decoder
+	monitor auto.MonitorInterface
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators, monitor auto.MonitorInterface) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, monitor auto.MonitorInterface) WebhookHandler {
 	return &workloadMutationWebhook{
-		decoder:            decoder,
-		annotationMutators: annotationMutators,
-		monitor:            monitor,
+		decoder: decoder,
+		monitor: monitor,
 	}
 }
 
@@ -73,12 +71,7 @@ func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Reques
 		}
 	}
 
-	// preserve backwards compatability.
-	if p.annotationMutators.IsManaged(obj) && !p.monitor.AnyCustomSelectorDefined() {
-		p.annotationMutators.MutateObject(obj)
-	} else {
-		p.monitor.MutateObject(oldObj, obj)
-	}
+	p.monitor.MutateObject(oldObj, obj)
 
 	marshaledObject, err := json.Marshal(obj)
 	if err != nil {

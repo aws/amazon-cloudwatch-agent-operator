@@ -22,7 +22,10 @@ import (
 
 type MonitorInterface interface {
 	MutateObject(oldObj client.Object, obj client.Object) map[string]string
-	AnyCustomSelectorDefined() bool
+	GetAnnotationMutators() *AnnotationMutators
+	GetLogger() logr.Logger
+	GetReader() client.Reader
+	GetWriter() client.Writer
 }
 
 type Monitor struct {
@@ -30,11 +33,31 @@ type Monitor struct {
 	ctx             context.Context
 	config          MonitorConfig
 	k8sInterface    kubernetes.Interface
+	clientReader    client.Reader
+	clientWriter    client.Writer
 	customSelectors *AnnotationMutators
 	logger          logr.Logger
 }
 
-type NoopMonitor struct{}
+func (m *Monitor) GetAnnotationMutators() *AnnotationMutators {
+	return m.customSelectors
+}
+
+func (m *Monitor) GetLogger() logr.Logger {
+	return m.logger
+}
+
+func (m *Monitor) GetReader() client.Reader {
+	return m.clientReader
+}
+
+func (m *Monitor) GetWriter() client.Writer {
+	return m.clientWriter
+}
+
+type NoopMonitor struct {
+	customSelectors *AnnotationMutators
+}
 
 func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]string {
 	return map[string]string{}
@@ -44,14 +67,14 @@ func (n NoopMonitor) AnyCustomSelectorDefined() bool {
 	return false
 }
 
-func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, c client.Client, r client.Reader, logger logr.Logger) *Monitor {
+func NewMonitorWithExistingAnnotationMutator(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger, mutators *AnnotationMutators) *Monitor {
 	logger.Info("AutoMonitor starting...")
 	// todo, throw warning if exclude config service is not namespaced (doesn't contain `/`)
 	// todo: informers.WithTransform() as option to only store what parts of service are needed
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute)
 	serviceInformer := factory.Core().V1().Services().Informer()
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: NewAnnotationMutators(c, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...))}
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutators, clientReader: r, clientWriter: w}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			m.onServiceEvent(nil, obj.(*corev1.Service))
@@ -79,22 +102,16 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	logger.Info("Enabled!")
 
 	if m.config.AutoRestart {
-		logger.Info("Auto restarting custom selector resources")
-		m.customSelectors.MutateAndPatchAll(ctx)
-		// update all existing services
-		logger.Info("Auto restarting service resources, except for excludedServices or services in excludedNamespaces", "excludedServices", m.config.Exclude.Services, "excludedNamespaces", m.config.Exclude.Namespaces)
-		list, err := k8sInterface.CoreV1().Services("").List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return nil
-		}
-		for _, service := range list.Items {
-			m.onServiceEvent(nil, &service)
-		}
+		MutateAndPatchAll(m, ctx)
 	} else {
 		logger.Info("Auto restart disabled. To instrument workloads, restart the workloads exposed by a service.")
 	}
 	logger.Info("Initialization complete!")
 	return m
+}
+
+func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
+	return NewMonitorWithExistingAnnotationMutator(ctx, config, k8sInterface, w, r, logger, NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)))
 }
 
 func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Service) {
@@ -207,15 +224,15 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 
 // MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
 func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
+	if !safeToMutate(oldObj, obj, m.config.AutoRestart) {
+		return map[string]string{}
+	}
+
 	// todo: handle edge case where a workload is annotated because a service exposed it, and the service is removed. aka add to Service OnDelete
 	// custom selector takes precedence over service selector
 	if customSelectLanguages, selected := m.CustomSelected(obj); selected {
 		m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is specified in custom selector", obj.GetName(), customSelectLanguages))
 		return mutate(obj, customSelectLanguages, true)
-	}
-
-	if !safeToMutate(oldObj, obj, m.config.AutoRestart) {
-		return map[string]string{}
 	}
 
 	return mutate(obj, m.config.Languages, m.shouldInsert(obj))

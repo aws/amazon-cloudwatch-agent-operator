@@ -41,34 +41,35 @@ type AnnotationMutators struct {
 	cfg                 *AnnotationConfig
 }
 
+func (m *AnnotationMutators) GetAnnotationMutators() *AnnotationMutators {
+	return m
+}
+
+func (m *AnnotationMutators) GetLogger() logr.Logger {
+	return m.logger
+}
+
+func (m *AnnotationMutators) GetReader() client.Reader {
+	return m.clientReader
+}
+
+func (m *AnnotationMutators) GetWriter() client.Writer {
+	return m.clientWriter
+}
+
 // IsManaged returns if AnnotationMutators would ever mutate the object.
 func (m *AnnotationMutators) IsManaged(obj client.Object) bool {
 	return len(m.cfg.GetObjectLanguagesToAnnotate(obj)) > 0
 }
 
-// RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
-func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
-}
-
-// MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
-func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(m.patchFunc(ctx, m.mutateObject), m.restartNamespaceFunc(ctx)),
-	)
-}
-
 // MutateObject modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
-	return m.mutateObject(obj, nil)
+func (m *AnnotationMutators) MutateObject(_ client.Object, obj client.Object) map[string]string {
+	mutatedAnnotations, _ := m.mutateObject(obj, nil)
+	annotations, ok := mutatedAnnotations.(map[string]string)
+	if !ok {
+		m.logger.Error(nil, "could not cast annotations to map")
+	}
+	return annotations
 }
 
 // mutateObject modifies annotations for a single object using the configured mutators.
@@ -87,9 +88,9 @@ func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) 
 	}
 }
 
-func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
-	if err := m.clientReader.List(ctx, list, option); err != nil {
-		m.logger.Error(err, "Unable to list objects",
+func rangeObjectList(m MonitorInterface, ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
+	if err := m.GetReader().List(ctx, list, option); err != nil {
+		m.GetLogger().Error(err, "Unable to list objects",
 			"kind", fmt.Sprintf("%T", list),
 		)
 		return
