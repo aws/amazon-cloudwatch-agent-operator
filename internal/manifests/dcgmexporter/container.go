@@ -75,12 +75,13 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 	})
 
 	return corev1.Container{
-		Name:         ComponentDcgmExporter,
-		Image:        image,
-		Args:         args,
-		Resources:    exporter.Spec.Resources,
-		Env:          envVars,
-		Ports:        ports,
-		VolumeMounts: volumeMounts,
+		Name:            ComponentDcgmExporter,
+		Image:           image,
+		Args:            args,
+		Resources:       exporter.Spec.Resources,
+		Env:             envVars,
+		Ports:           ports,
+		VolumeMounts:    volumeMounts,
+		SecurityContext: exporter.Spec.SecurityContext,
 	}
 }
