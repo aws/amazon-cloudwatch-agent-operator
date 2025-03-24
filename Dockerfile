@@ -11,6 +11,7 @@ COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Copy the go source
 COPY main.go main.go
@@ -37,9 +38,11 @@ RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags="-X ${VERSION_PKG}
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+#FROM gcr.io/distroless/static:nonroot
+FROM ubuntu:latest
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY --from=builder /go/bin/dlv .
 USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "exec", "/manager"]

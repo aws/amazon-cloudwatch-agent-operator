@@ -11,7 +11,6 @@ import (
 	v1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	"net/http"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -22,7 +21,6 @@ import (
 // +kubebuilder:rbac:groups="apps",resources=daemonsets;deployments;statefulsets,verbs=get;list;watch
 
 var _ WebhookHandler = (*workloadMutationWebhook)(nil)
-var logger = ctrl.Log.WithName("workload_webhook")
 
 // WebhookHandler is a webhook handler that analyzes new daemon-sets and injects appropriate annotations into it.
 type WebhookHandler interface {
@@ -66,7 +64,7 @@ func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Reques
 	// populate old object
 	if req.Operation == v1.Update {
 		if err := p.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
-			logger.Error(err, "failed to unmarshal old object")
+			p.monitor.GetLogger().WithName("workload_webhook").Error(err, "failed to unmarshal old object")
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 	}

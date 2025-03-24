@@ -47,8 +47,8 @@ const (
 	TypeGo     Type = "go"
 )
 
-func SupportedTypes() []Type {
-	return []Type{TypeJava, TypeNodeJS, TypePython, TypeDotNet}
+func SupportedTypes() TypeSet {
+	return NewTypeSet(TypeJava, TypeNodeJS, TypePython, TypeDotNet)
 }
 
 // InjectAnnotationKey maps the instrumentation type to the inject annotation.

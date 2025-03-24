@@ -34,7 +34,7 @@ func TestServiceThenDeployment(t *testing.T) {
 
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 	})
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
@@ -55,7 +55,7 @@ func TestDeploymentThenServiceAutoRestartDisabled(t *testing.T) {
 
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 	})
 
@@ -84,7 +84,7 @@ func TestDeploymentThenServiceAutoRestartEnabled(t *testing.T) {
 
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        true,
 	})
 
@@ -122,7 +122,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	// Update operator with auto monitor disabled and custom selector
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 		CustomSelector:     customSelectorConfig,
 	})
@@ -146,7 +146,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	// Update operator with auto monitor disabled
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 	})
 
@@ -178,7 +178,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 		CustomSelector:     customSelectorConfig,
 	})
@@ -198,7 +198,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	// Set up config with service exclusion
 	monitorConfig := auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.SupportedTypes()...),
+		Languages:          instrumentation.SupportedTypes(),
 		Exclude: struct {
 			Namespaces []string `json:"namespaces"`
 			Services   []string `json:"services"`

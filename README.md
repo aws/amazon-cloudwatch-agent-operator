@@ -38,7 +38,7 @@ kubectl get all
 
 ```
 kubectl logs amazon-cloudwatch-agent-operator-controller-manager-66f67f47f78
-```k
+```
 
 You should see logs that look similar to below
 

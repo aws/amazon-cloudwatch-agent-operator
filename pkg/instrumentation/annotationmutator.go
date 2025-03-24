@@ -77,7 +77,7 @@ func NewAnnotationMutator(mutations []AnnotationMutation) AnnotationMutator {
 }
 
 // Mutate modifies the object's annotations based on the mutator's mutations. Returns all the mutated annotations.
-func (m AnnotationMutator) Mutate(obj metav1.Object) map[string]string {
+func (m *AnnotationMutator) Mutate(obj metav1.Object) map[string]string {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
@@ -91,9 +91,4 @@ func (m AnnotationMutator) Mutate(obj metav1.Object) map[string]string {
 	}
 	obj.SetAnnotations(annotations)
 	return allMutatedAnnotations
-}
-
-// ObjectAnnotationMutator responsible for getting, mutating, and setting the object's annotations map. Returns all the mutated annotations.
-type ObjectAnnotationMutator interface {
-	Mutate(obj metav1.Object) map[string]string
 }

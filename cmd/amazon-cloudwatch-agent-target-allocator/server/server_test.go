@@ -81,7 +81,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 		want want
 	}{
 		{
-			name: "AnyResourcesConfigured target map",
+			name: "Empty target map",
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",

@@ -44,25 +44,25 @@ func (c AnnotationConfig) LanguagesOf(obj client.Object) instrumentation.TypeSet
 
 	switch obj.(type) {
 	case *appsv1.Deployment:
-		for _, t := range types {
+		for t := range types {
 			if slices.Contains(c.getResources(t).Deployments, objName) {
 				typesSelected[t] = nil
 			}
 		}
 	case *appsv1.StatefulSet:
-		for _, t := range types {
+		for t := range types {
 			if slices.Contains(c.getResources(t).StatefulSets, objName) {
 				typesSelected[t] = nil
 			}
 		}
 	case *appsv1.DaemonSet:
-		for _, t := range types {
+		for t := range types {
 			if slices.Contains(c.getResources(t).DaemonSets, objName) {
 				typesSelected[t] = nil
 			}
 		}
 	case *corev1.Namespace:
-		for _, t := range types {
+		for t := range types {
 			if slices.Contains(c.getResources(t).Namespaces, objName) {
 				typesSelected[t] = nil
 			}
@@ -73,7 +73,7 @@ func (c AnnotationConfig) LanguagesOf(obj client.Object) instrumentation.TypeSet
 }
 
 func (c AnnotationConfig) Empty() bool {
-	for _, t := range instrumentation.SupportedTypes() {
+	for t := range instrumentation.SupportedTypes() {
 		resources := c.getResources(t)
 		if len(resources.DaemonSets) > 0 {
 			return false

@@ -293,7 +293,7 @@ func main() {
 	// TODO handle case where auto monitor is enabled but auto annotation config is not specified
 	var autoAnnotationConfig auto.AnnotationConfig
 	var autoAnnotationMutators *auto.AnnotationMutators
-	supportedLanguages := instrumentation.NewTypeSet(instrumentation.SupportedTypes()...)
+	supportedLanguages := instrumentation.SupportedTypes()
 
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
 		setupLog.Info("Auto-annotation is disabled")
@@ -316,7 +316,8 @@ func main() {
 
 	if monitor != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-			Handler: workloadmutation.NewWebhookHandler(decoder, monitor)})
+			Handler: workloadmutation.NewWebhookHandler(decoder, monitor),
+		})
 		mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
 			Handler: namespacemutation.NewWebhookHandler(decoder, monitor),
 		})
@@ -389,11 +390,11 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, ctx context.Con
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
 			return monitor
 		}
-
+		logger := ctrl.Log.WithName("auto_monitor")
 		if monitorConfig.CustomSelector.Empty() && !autoAnnotationMutators.Empty() {
-			monitor = auto.NewMonitorWithLegacyMutator(ctx, *monitorConfig, clientSet, client, reader, setupLog, autoAnnotationMutators)
+			monitor = auto.NewMonitorWithLegacyMutator(ctx, *monitorConfig, clientSet, client, reader, logger, autoAnnotationMutators)
 		} else {
-			monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, setupLog)
+			monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
 		}
 	}
 	return monitor

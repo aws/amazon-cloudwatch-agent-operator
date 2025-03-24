@@ -86,7 +86,7 @@ func NewMonitorWithLegacyMutator(ctx context.Context, config MonitorConfig, k8sI
 		logger.Error(nil, "Warning: Please switch from autoAnnotateAutoConfiguration to customSelector syntax. autoAnnotateAutoConfiguration is deprecated, and will be removed. For more info, visit here: ")
 		mutator = legacyMutator
 	} else {
-		mutator = NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.NewTypeSet(instrumentation.SupportedTypes()...))
+		mutator = NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.SupportedTypes())
 	}
 
 	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w, autoRestartCustomSelectors: legacy}
@@ -297,7 +297,7 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet, ne
 	}
 
 	allMutatedAnnotations := map[string]string{}
-	for _, language := range instrumentation.SupportedTypes() {
+	for language := range instrumentation.SupportedTypes() {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
 		if _, ok := languagesToMonitor[language]; ok && needsInstrumentation {
