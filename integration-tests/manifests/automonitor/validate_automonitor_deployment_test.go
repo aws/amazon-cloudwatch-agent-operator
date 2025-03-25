@@ -3,7 +3,6 @@
 package annotations
 
 import (
-	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +36,7 @@ func TestServiceThenDeployment(t *testing.T) {
 		Languages:          instrumentation.SupportedTypes(),
 		AutoRestart:        false,
 	})
-	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}, none)
@@ -59,10 +58,7 @@ func TestDeploymentThenServiceAutoRestartDisabled(t *testing.T) {
 		AutoRestart:        false,
 	})
 
-	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
-
-	// Check annotations
-	fmt.Println("Checking if sample-deployment exists")
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
@@ -88,18 +84,16 @@ func TestDeploymentThenServiceAutoRestartEnabled(t *testing.T) {
 		AutoRestart:        true,
 	})
 
-	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
-	// Check annotations
-	fmt.Println("Checking if sample-deployment exists")
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
 
 	helper.startTime = time.Now()
 	err = helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentServiceYaml})
 	assert.NoError(t, err)
-
+	time.Sleep(1 * time.Second)
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}, none)
 	assert.NoError(t, err)
 }
@@ -112,10 +106,10 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	// Set up custom selector config
 	customSelectorConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespace + "/sample-deployment"},
 		},
 		Python: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespace + "/sample-deployment"},
 		},
 	}
 
@@ -128,7 +122,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	})
 
 	// Create deployment
-	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
 	// Validate annotations are present
@@ -151,7 +145,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	})
 
 	// Create deployment
-	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
 	// Validate no annotations present
@@ -161,18 +155,19 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update operator with custom selector
+	namespacedDeployment := namespace + "sample-deployment"
 	customSelectorConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespacedDeployment},
 		},
 		Python: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespacedDeployment},
 		},
 		DotNet: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespacedDeployment},
 		},
 		NodeJS: auto.AnnotationResources{
-			Deployments: []string{"sample-deployment"},
+			Deployments: []string{namespacedDeployment},
 		},
 	}
 
@@ -183,10 +178,16 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 		CustomSelector:     customSelectorConfig,
 	})
 
-	// Validate annotations are present
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation},
-		none)
+	// Validate annotations are not present
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none,
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	assert.NoError(t, err)
+
+	err = helper.RestartDeployment(namespace, "sample-deployment")
+	assert.NoError(t, err)
+
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none,
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
 }
 
@@ -216,11 +217,9 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create deployment
-	err = helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYamlNameRelPath})
+	err = helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
-	fmt.Println("Sleeping!")
-	time.Sleep(1 * time.Minute)
 	// Validate that deployment has no annotations
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
 		none,

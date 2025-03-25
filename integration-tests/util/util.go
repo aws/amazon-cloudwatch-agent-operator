@@ -17,13 +17,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const TimoutDuration = 2 * time.Minute
+const TimoutDuration = 1 * time.Minute
 const TimeBetweenRetries = 2 * time.Second
 
 func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time) error {
-	// 1. Use wait.PollImmediate instead of manual polling
-	// 2. Move type switch outside the polling loop
-	fmt.Println("start time: ", startTime)
 	namespace := ""
 	labelSelector := ""
 	switch r := resource.(type) {
@@ -39,41 +36,23 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 	default:
 		return fmt.Errorf("unsupported resource type")
 	}
-	return wait.PollImmediate(TimeBetweenRetries, TimoutDuration, func() (bool, error) {
-		// 3. Handle list error
+	return wait.PollUntilContextTimeout(context.TODO(), TimeBetweenRetries, TimoutDuration, true, func(ctx context.Context) (bool, error) {
 		newPods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
-		// get list of pod names
-		//podNames := make([]string, 0)
-		//for _, pod := range newPods.Items {
-		//	podNames = append(podNames, pod.Name)
-		//}
-		//
-		//fmt.Println(podNames)
 		if err != nil {
 			return false, fmt.Errorf("failed to list pods: %v", err)
 		}
-
-		// 4. Check for pod readiness, not just running
 		for _, pod := range newPods.Items {
-			//fmt.Println("Pod Name: ", pod.Name, ", pod.Creation: ", pod.CreationTimestamp)
 			if pod.CreationTimestamp.Time.After(startTime.Add(-time.Second)) {
 				if pod.Status.Phase == v1.PodRunning {
-					// 5. Check if pod is ready
 					isReady := isPodReady(&pod)
 					if isReady {
-						fmt.Printf("pod %s created after start time and is ready\n", pod.Name)
 						return true, nil
 					}
-					//fmt.Printf("pod %s is running but not ready\n", pod.Name)
-				} else {
-					//fmt.Printf("pod %s created after start time but is in %s state\n",
-					//	pod.Name, pod.Status.Phase)
 				}
 			}
 		}
-
 		return false, nil
 	})
 }

@@ -168,28 +168,33 @@ func Test_getPodTemplate(t *testing.T) {
 	}
 }
 
+type MutateObjectTest struct {
+	name                        string
+	config                      MonitorConfig
+	deploymentNs                string
+	serviceNs                   string
+	deploymentSelector          map[string]string
+	serviceSelector             map[string]string
+	expectedWorkloadAnnotations map[string]string
+}
+
+var none = AnnotationConfig{}
+
 func TestMonitor_MutateObject(t *testing.T) {
-	tests := []struct {
-		name                        string
-		config                      MonitorConfig
-		deploymentNs                string
-		serviceNs                   string
-		deploymentSelector          map[string]string
-		serviceSelector             map[string]string
-		expectedWorkloadAnnotations map[string]string
-	}{
+	annotated := buildAnnotations(instrumentation.TypeJava)
+	tests := []MutateObjectTest{
 		{
 			name:                        "same namespace, same selector, monitorallservices true, not excluded",
-			config:                      createConfig(true, nil, nil, false),
+			config:                      simpleConfig(true, nil, nil, false, none),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "same"},
 			serviceSelector:             map[string]string{"app": "same"},
-			expectedWorkloadAnnotations: buildAnnotations(instrumentation.TypeJava),
+			expectedWorkloadAnnotations: annotated,
 		},
 		{
 			name:                        "different namespace, same selector, monitorallservices true, not excluded",
-			config:                      createConfig(true, nil, nil, false),
+			config:                      simpleConfig(true, nil, nil, false, none),
 			deploymentNs:                "namespace-2",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "same"},
@@ -198,7 +203,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, different selector, monitorallservices true, not excluded",
-			config:                      createConfig(true, nil, nil, false),
+			config:                      simpleConfig(true, nil, nil, false, none),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -207,7 +212,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, same selector, monitorallservices false, not excluded",
-			config:                      createConfig(false, nil, nil, false),
+			config:                      simpleConfig(false, nil, nil, false, none),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -216,7 +221,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, same selector, monitorallservices true, excluded namespace",
-			config:                      createConfig(true, []string{"namespace-1"}, nil, false),
+			config:                      simpleConfig(true, []string{"namespace-1"}, nil, false, none),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -225,12 +230,54 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name:                        "same namespace, same selector, monitorallservices true, excluded service",
-			config:                      createConfig(true, nil, []string{"namespace-1/svc-16"}, false),
+			config:                      simpleConfig(true, nil, []string{"namespace-1/svc"}, false, none),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
 			serviceSelector:             map[string]string{"app": "different-1"},
 			expectedWorkloadAnnotations: map[string]string{},
+		},
+		{
+			name: "different namespace, different selector, monitorallservices false, custom selected workload",
+			config: simpleConfig(true, nil, nil, false, AnnotationConfig{Java: AnnotationResources{
+				Namespaces:   nil,
+				Deployments:  []string{"namespace-1/workload"},
+				DaemonSets:   []string{"namespace-1/workload"},
+				StatefulSets: []string{"namespace-1/workload"},
+			}}),
+			deploymentNs:                "namespace-1",
+			serviceNs:                   "namespace-2",
+			deploymentSelector:          map[string]string{"app": "different-1"},
+			serviceSelector:             map[string]string{"app": "different-2"},
+			expectedWorkloadAnnotations: annotated,
+		},
+		{
+			name: "different namespace, different selector, monitorallservices false, custom selected namespace of workload",
+			config: simpleConfig(true, nil, nil, false, AnnotationConfig{Java: AnnotationResources{
+				Namespaces:   []string{"namespace-1"},
+				Deployments:  nil,
+				DaemonSets:   nil,
+				StatefulSets: nil,
+			}}),
+			deploymentNs:                "namespace-1",
+			serviceNs:                   "namespace-2",
+			deploymentSelector:          map[string]string{"app": "different-1"},
+			serviceSelector:             map[string]string{"app": "different-2"},
+			expectedWorkloadAnnotations: map[string]string{}, // empty because even though it should be custom selected, it is modified on the pod level for namespaces, so the pod template is not updated
+		},
+		{
+			name: "different namespace, different selector, monitorallservices false, custom selected namespace of service, not workload",
+			config: simpleConfig(true, nil, nil, false, AnnotationConfig{Java: AnnotationResources{
+				Namespaces:   []string{"namespace-2"},
+				Deployments:  nil,
+				DaemonSets:   nil,
+				StatefulSets: nil,
+			}}),
+			deploymentNs:                "namespace-1",
+			serviceNs:                   "namespace-2",
+			deploymentSelector:          map[string]string{"app": "different-1"},
+			serviceSelector:             map[string]string{"app": "different-2"},
+			expectedWorkloadAnnotations: map[string]string{}, // empty because even though it should be custom selected, it is modified on the pod level for namespaces, so the pod template is not updated
 		},
 	}
 
@@ -241,21 +288,21 @@ func TestMonitor_MutateObject(t *testing.T) {
 		{
 			name: "Deployment",
 			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-				deployment := newTestDeployment("workload-16", ns, selector, nil)
+				deployment := newTestDeployment("workload", ns, selector, nil)
 				return clientset.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{})
 			},
 		},
 		{
 			name: "StatefulSet",
 			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-				statefulset := newTestStatefulSet("workload-16", ns, selector, nil)
+				statefulset := newTestStatefulSet("workload", ns, selector, nil)
 				return clientset.AppsV1().StatefulSets(ns).Create(ctx, statefulset, metav1.CreateOptions{})
 			},
 		},
 		{
 			name: "DaemonSet",
 			create: func(clientset *fake.Clientset, ctx context.Context, ns string, selector map[string]string) (client.Object, error) {
-				daemonset := newTestDaemonSet("workload-16", ns, selector, nil)
+				daemonset := newTestDaemonSet("workload", ns, selector, nil)
 				return clientset.AppsV1().DaemonSets(ns).Create(ctx, daemonset, metav1.CreateOptions{})
 			},
 		},
@@ -275,7 +322,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 					monitor := NewMonitor(ctx, tt.config, clientset, fakeClient, fakeClient, logger)
 
 					// Create service
-					service := newTestService("svc-16", tt.serviceNs, tt.serviceSelector)
+					service := newTestService("svc", tt.serviceNs, tt.serviceSelector)
 
 					// Setup test environment
 					serviceNamespace := createNamespace(t, clientset, ctx, service.Namespace)
@@ -319,7 +366,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				var config MonitorConfig = createConfig(true, nil, nil, true)
+				var config MonitorConfig = simpleConfig(true, nil, nil, true, none)
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
@@ -338,7 +385,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = createConfig(true, nil, nil, true)
+				var config MonitorConfig = simpleConfig(true, nil, nil, true, none)
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
@@ -361,7 +408,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				var config MonitorConfig = createConfig(true, nil, nil, false)
+				var config MonitorConfig = simpleConfig(true, nil, nil, false, none)
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
@@ -381,7 +428,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = createConfig(true, nil, nil, false)
+				var config MonitorConfig = simpleConfig(true, nil, nil, false, none)
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
@@ -412,7 +459,7 @@ func Test_OptOutByDisablingMonitorAllServices(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = createConfig(false, nil, nil, true)
+				var config MonitorConfig = simpleConfig(false, nil, nil, true, none)
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
@@ -659,7 +706,7 @@ func mergeMaps(maps ...map[string]string) map[string]string {
 	return result
 }
 
-func createConfig(monitorAll bool, excludedNs, excludedSvcs []string, autoRestart bool) MonitorConfig {
+func simpleConfig(monitorAll bool, excludedNs, excludedSvcs []string, autoRestart bool, customSelector AnnotationConfig) MonitorConfig {
 	return MonitorConfig{
 		MonitorAllServices: monitorAll,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
@@ -671,6 +718,6 @@ func createConfig(monitorAll bool, excludedNs, excludedSvcs []string, autoRestar
 			Namespaces: excludedNs,
 			Services:   excludedSvcs,
 		},
-		CustomSelector: AnnotationConfig{},
+		CustomSelector: customSelector,
 	}
 }

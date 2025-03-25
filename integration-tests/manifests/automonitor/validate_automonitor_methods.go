@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -47,7 +49,7 @@ const (
 	amazonControllerManager   = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath       = "../sample-daemonset.yaml"
-	sampleDeploymentYamlNameRelPath  = "../sample-deployment.yaml"
+	sampleDeploymentYaml             = "../sample-deployment.yaml"
 	sampleNginxAppYamlNameRelPath    = "../../java/sample-deployment-java.yaml"
 	sampleStatefulsetYamlNameRelPath = "../sample-statefulset.yaml"
 
@@ -61,23 +63,27 @@ type TestHelper struct {
 	t          *testing.T
 	startTime  time.Time
 	skipDelete bool
+	logger     logr.Logger
 }
 
 func NewTestHelper(t *testing.T, skipDelete bool) *TestHelper {
+	logger := testr.New(t)
 	return &TestHelper{
-		clientSet:  setupTest(t),
+		clientSet:  setupTest(t, logger),
 		t:          t,
 		skipDelete: skipDelete,
+		logger:     logger,
 	}
 }
 
-func setupTest(t *testing.T) *kubernetes.Clientset {
+func setupTest(t *testing.T, logger logr.Logger) *kubernetes.Clientset {
 	userHomeDir, err := os.UserHomeDir()
+
 	if err != nil {
 		t.Errorf("error getting user home dir: %v\n\n", err)
 	}
 	kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
-	fmt.Printf("Using kubeconfig: %s\n\n", kubeConfigPath)
+	logger.Info(fmt.Sprintf("Using kubeconfig: %s\n\n", kubeConfigPath))
 
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
@@ -93,12 +99,12 @@ func setupTest(t *testing.T) *kubernetes.Clientset {
 
 func (h *TestHelper) ApplyYAMLWithKubectl(filename, namespace string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
-	fmt.Printf("Applying YAML with kubectl %s\n", cmd)
+	h.logger.Info(fmt.Sprintf("Applying YAML with kubectl %s\n", cmd))
 	return cmd.Run()
 }
 
 func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resourceFiles []string) error {
-	fmt.Printf("Creating namespace %s\n", namespace)
+	h.logger.Info(fmt.Sprintf("Creating namespace %s\n", namespace))
 	err := h.CreateNamespace(namespace)
 	if err != nil {
 		return err
@@ -116,7 +122,10 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 		err = h.WaitYamlWithKubectl(file, namespace)
 		if err != nil {
 			h.t.Errorf("Could not wait resources %s/%s\n", namespace, file)
+			return err
 		}
+		// ignore error because it could run on resource which doesn't rollout (aka a service)
+		_ = h.RolloutWaitYamlWithKubectl(file, namespace)
 	}
 	return nil
 }
@@ -124,7 +133,7 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 func (h *TestHelper) IsNamespaceUpdated(namespace string) bool {
 	ns, err := h.clientSet.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 	if err != nil {
-		fmt.Printf("Failed to get namespace %s: %v\n", namespace, err)
+		h.logger.Info(fmt.Sprintf("Failed to get namespace %s: %v\n", namespace, err))
 		return false
 	}
 	return ns.CreationTimestamp.After(h.startTime) || ns.ResourceVersion != ""
@@ -193,12 +202,12 @@ func (h *TestHelper) CheckNameSpaceAnnotations(expectedAnnotations []string, uni
 
 	for {
 		if h.IsNamespaceUpdated(uniqueNamespace) {
-			fmt.Printf("Namespace %s has been updated.\n", uniqueNamespace)
+			h.logger.Info(fmt.Sprintf("Namespace %s has been updated.\n", uniqueNamespace))
 			break
 		}
 		elapsed := time.Since(h.startTime)
 		if elapsed >= timoutDuration {
-			fmt.Printf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace)
+			h.logger.Info(fmt.Sprintf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace))
 			break
 		}
 	}
@@ -207,7 +216,7 @@ func (h *TestHelper) CheckNameSpaceAnnotations(expectedAnnotations []string, uni
 		correct := true
 		ns, err := h.clientSet.CoreV1().Namespaces().Get(context.TODO(), uniqueNamespace, metav1.GetOptions{})
 		if err != nil {
-			fmt.Println("There was an error getting namespace, ", err)
+			h.logger.Error(err, "There was an error getting namespace, ")
 			return false
 		}
 
@@ -220,7 +229,7 @@ func (h *TestHelper) CheckNameSpaceAnnotations(expectedAnnotations []string, uni
 		}
 
 		if correct {
-			fmt.Println("Namespace annotations are correct!")
+			h.logger.Info("Namespace annotations are correct!")
 			return true
 		}
 	}
@@ -254,12 +263,11 @@ func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 
 	err := util.WaitForNewPodCreation(h.clientSet, deployment, now)
 	if err != nil {
-		fmt.Println("There was an error trying to wait for deployment available", err)
+		h.logger.Error(err, "There was an error trying to wait for deployment available")
 		return false
 	}
 
-	fmt.Println("Operator updated successfully!")
-	fmt.Println(args)
+	h.logger.Info("Operator updated successfully!", "args", args)
 	return true
 }
 
@@ -272,30 +280,31 @@ func forceRestart(deployment *appsV1.Deployment) {
 	deployment.Spec.Template.SetAnnotations(annotations)
 }
 
+// TODO: should check deployment template spec?
 func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotations []string, shouldNotExistAnnotations []string) bool {
 	currentPods, err := h.clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		fmt.Printf("Failed to list pods: %v\n", err)
+		h.logger.Info(fmt.Sprintf("Failed to list pods: %v\n", err))
 		return false
 	}
 
 	validAnnotations := true
 	for _, pod := range currentPods.Items {
-		fmt.Printf("Pod %s is in phase %s\n", pod.Name, pod.Status.Phase)
-		fmt.Println("Pod ", pod.GetAnnotations())
+		h.logger.Info(fmt.Sprintf("Pod %s is in phase %s\n", pod.Name, pod.Status.Phase))
+		h.logger.Info("Pod ", pod.GetAnnotations())
 		if pod.Status.Phase != v1.PodRunning {
 			continue
 		}
 		for _, annotation := range shouldExistAnnotations {
 			if value, exists := pod.Annotations[annotation]; !exists || value != "true" {
-				fmt.Println("Pod", pod.Namespace, pod.Name, " does not have annotation ", annotation)
+				h.logger.Info("Pod", pod.Namespace, pod.Name, " does not have annotation ", annotation)
 				validAnnotations = false
 				break
 			}
 		}
 		for _, annotation := range shouldNotExistAnnotations {
 			if _, exists := pod.Annotations[annotation]; exists {
-				fmt.Println("Pod", pod.Namespace, pod.Name, " shouldn't have annotation ", annotation)
+				h.logger.Info("Pod", pod.Namespace, pod.Name, " shouldn't have annotation ", annotation)
 				validAnnotations = false
 				break
 			}
@@ -315,7 +324,7 @@ func (h *TestHelper) restartOperator() {
 	cmd := exec.Command("kubectl", "rollout", "restart", "deployment", amazonControllerManager, "-n", amazonCloudwatchNamespace)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Error restarting deployment: %v\nOutput: %s\n", err, output)
+		h.logger.Info(fmt.Sprintf("Error restarting deployment: %v\nOutput: %s\n", err, output))
 		return
 	}
 
@@ -326,7 +335,7 @@ func (h *TestHelper) restartOperator() {
 
 	waitOutput, err := waitCmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Error waiting for deployment: %v\nOutput: %s\n", err, waitOutput)
+		h.logger.Info(fmt.Sprintf("Error waiting for deployment: %v\nOutput: %s\n", err, waitOutput))
 	}
 }
 
@@ -343,7 +352,7 @@ func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
 
-	fmt.Println("Setting monitor config to:")
+	h.logger.Info("Setting monitor config to:")
 	util.PrettyPrint(config)
 	h.updateOperatorConfig(string(jsonStr), "--auto-monitor-config=")
 }
@@ -351,7 +360,7 @@ func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) {
 func (h *TestHelper) UpdateAnnotationConfig(config auto.AnnotationConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
-	fmt.Println("Setting annotation config to:")
+	h.logger.Info("Setting annotation config to:")
 	util.PrettyPrint(config)
 	h.updateOperatorConfig(string(jsonStr), "--auto-annotation-config=")
 }
@@ -377,6 +386,14 @@ func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
 }
 
 func (h *TestHelper) ValidateWorkloadAnnotations(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
+	return retry.OnError(retry.DefaultBackoff, func(err error) bool {
+		return err != nil
+	}, func() error {
+		return h.ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace, resourceName, shouldExist, shouldNotExist)
+	})
+}
+
+func (h *TestHelper) ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
 	var resource interface{}
 	var err error
 
@@ -434,7 +451,7 @@ func (h *TestHelper) Initialize(namespace string, apps []string) string {
 
 	if !h.skipDelete {
 		h.t.Cleanup(func() {
-			fmt.Printf("Deleting namespace %s and resources %s", uniqueNamespace, apps)
+			h.logger.Info(fmt.Sprintf("Deleting namespace %s and resources %s", uniqueNamespace, apps))
 			if err := h.DeleteNamespaceAndResources(uniqueNamespace, apps); err != nil {
 				h.t.Fatalf("Failed to delete namespaces/resources: %v", err)
 			}
@@ -460,7 +477,13 @@ func (h *TestHelper) NumberOfRevisions(deploymentName string, namespace string) 
 
 func (h *TestHelper) WaitYamlWithKubectl(filename string, namespace string) error {
 	cmd := exec.Command("kubectl", "wait", "--for=create", "-f", filename, "-n", namespace)
-	fmt.Printf("Waiting YAML with kubectl %s\n", cmd)
+	h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
+	return cmd.Run()
+}
+
+func (h *TestHelper) RolloutWaitYamlWithKubectl(filename string, namespace string) error {
+	cmd := exec.Command("kubectl", "rollout", "status", "-f", filename, "-n", namespace)
+	h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
 	return cmd.Run()
 }
 
@@ -480,7 +503,14 @@ func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) 
 
 		// Update the deployment
 		_, updateErr := h.clientSet.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
-		return updateErr
+		if updateErr != nil {
+			return fmt.Errorf("failed to update deployment: %v", updateErr)
+		}
+
+		// wait
+		cmd := exec.Command("kubectl", "rollout", "status", "deployment/"+deploymentName, "-n", namespace)
+		h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
+		return cmd.Run()
 	})
 
 	if retryErr != nil {
@@ -493,7 +523,7 @@ func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) 
 		return fmt.Errorf("failed to wait for deployment rollout: %v", err)
 	}
 
-	fmt.Printf("Successfully restarted deployment %s in namespace %s\n", deploymentName, namespace)
+	h.logger.Info(fmt.Sprintf("Successfully restarted deployment %s in namespace %s\n", deploymentName, namespace))
 	return nil
 }
 
