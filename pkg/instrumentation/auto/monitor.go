@@ -30,15 +30,15 @@ type InstrumentationAnnotator interface {
 }
 
 type Monitor struct {
-	serviceInformer            cache.SharedIndexInformer
-	ctx                        context.Context
-	config                     MonitorConfig
-	k8sInterface               kubernetes.Interface
-	clientReader               client.Reader
-	clientWriter               client.Writer
-	customSelectors            *AnnotationMutators
-	logger                     logr.Logger
-	autoRestartCustomSelectors bool // Deprecated, do not use.
+	serviceInformer        cache.SharedIndexInformer
+	ctx                    context.Context
+	config                 MonitorConfig
+	k8sInterface           kubernetes.Interface
+	clientReader           client.Reader
+	clientWriter           client.Writer
+	customSelectors        *AnnotationMutators
+	logger                 logr.Logger
+	restartCustomSelectors bool // Deprecated, do not use.
 }
 
 func (m *Monitor) GetAnnotationMutators() *AnnotationMutators {
@@ -65,10 +65,6 @@ func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]s
 	return map[string]string{}
 }
 
-func (n NoopMonitor) AnyCustomSelectorDefined() bool {
-	return false
-}
-
 // NewMonitorWithLegacyMutator is used to create an InstrumentationMutator that supports AutoMonitor and the legacy autoAnnotateAutoInstrumentation
 //
 // *Deprecated, do not use directly.*
@@ -89,7 +85,7 @@ func NewMonitorWithLegacyMutator(ctx context.Context, config MonitorConfig, k8sI
 		mutator = NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.SupportedTypes())
 	}
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w, autoRestartCustomSelectors: legacy}
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w, restartCustomSelectors: legacy}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			m.onServiceEvent(nil, obj.(*corev1.Service))
@@ -125,7 +121,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 }
 
 func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Service) {
-	if !m.config.AutoRestart {
+	if !m.config.RestartPods {
 		return
 	}
 	for _, resource := range m.listServiceDeployments(m.ctx, oldService, service) {
@@ -234,7 +230,7 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 
 // MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
 func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
-	if !safeToMutate(oldObj, obj, m.config.AutoRestart, m.autoRestartCustomSelectors) {
+	if !safeToMutate(oldObj, obj, m.config.RestartPods, m.restartCustomSelectors) {
 		return map[string]string{}
 	}
 
@@ -337,7 +333,7 @@ func (m *Monitor) excludedNamespace(namespace string) bool {
 //  2. preserve existing autoAnnotateAutoConfiguration behavior by mutating if no custom selectors are defined in the MonitorConfig, AND customSelectors mutates the provided workload
 //
 // 3. MonitorAllServices is enabled AND the workload is already going to restart (aka, the pod template is already modified)
-func safeToMutate(oldWorkload client.Object, workload client.Object, autoRestart bool, autoRestartCustomSelectors bool) bool {
+func safeToMutate(oldWorkload client.Object, workload client.Object, restartPods bool, restartCustomSelectors bool) bool {
 	// always ok to mutate namespace
 	if isNamespace(workload) {
 		return true
@@ -347,11 +343,11 @@ func safeToMutate(oldWorkload client.Object, workload client.Object, autoRestart
 		return false
 	}
 
-	if autoRestart {
+	if restartPods {
 		return true
 	}
 
-	if autoRestartCustomSelectors {
+	if restartCustomSelectors {
 		return true
 	}
 

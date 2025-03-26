@@ -120,8 +120,8 @@ func Test_safeToMutate(t *testing.T) {
 		name                       string
 		oldObject                  client.Object
 		object                     client.Object
-		autoRestart                bool
-		autoRestartCustomSelectors bool
+		restartPods                bool
+		restartPodsCustomSelectors bool
 		want                       bool
 	}{
 		{"identical deployments", deploy.DeepCopy(), deploy.DeepCopy(), false, false, false},
@@ -137,7 +137,7 @@ func Test_safeToMutate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//noinspection GoDeprecation
-			assert.Equal(t, tt.want, safeToMutate(tt.oldObject, tt.object, tt.autoRestart, tt.autoRestartCustomSelectors))
+			assert.Equal(t, tt.want, safeToMutate(tt.oldObject, tt.object, tt.restartPods, tt.restartPodsCustomSelectors))
 		})
 	}
 }
@@ -567,7 +567,7 @@ func Test_mutate(t *testing.T) {
 	}
 }
 
-func Test_StartupAutoRestart(t *testing.T) {
+func Test_StartupRestartPods(t *testing.T) {
 	service := newTestService("service-1", defaultNs, map[string]string{"test": "test"})
 	matchingDeployment := newTestDeployment("deployment-1", defaultNs, map[string]string{"test": "test"}, nil)
 	nonMatchingDeployment := newTestDeployment("deployment-2", defaultNs, map[string]string{}, nil)
@@ -575,7 +575,7 @@ func Test_StartupAutoRestart(t *testing.T) {
 	config := MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
-		AutoRestart:        true,
+		RestartPods:        true,
 		CustomSelector: AnnotationConfig{
 			AnnotationResources{}, AnnotationResources{Deployments: []string{namespacedName(customSelectedDeployment)}},
 			AnnotationResources{}, AnnotationResources{},
@@ -706,11 +706,11 @@ func mergeMaps(maps ...map[string]string) map[string]string {
 	return result
 }
 
-func simpleConfig(monitorAll bool, excludedNs, excludedSvcs []string, autoRestart bool, customSelector AnnotationConfig) MonitorConfig {
+func simpleConfig(monitorAll bool, excludedNs, excludedSvcs []string, restartPods bool, customSelector AnnotationConfig) MonitorConfig {
 	return MonitorConfig{
 		MonitorAllServices: monitorAll,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
-		AutoRestart:        autoRestart,
+		RestartPods:        restartPods,
 		Exclude: struct {
 			Namespaces []string `json:"namespaces"`
 			Services   []string `json:"services"`

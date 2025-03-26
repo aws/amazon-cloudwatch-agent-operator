@@ -34,7 +34,7 @@ func TestServiceThenDeployment(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        false,
+		RestartPods:        false,
 	})
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
@@ -44,7 +44,7 @@ func TestServiceThenDeployment(t *testing.T) {
 }
 
 // create deployment, create service,  should not annotate anything
-func TestDeploymentThenServiceAutoRestartDisabled(t *testing.T) {
+func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
 	helper := NewTestHelper(t, true)
 
 	namespace := helper.Initialize("test-namespace", []string{})
@@ -55,7 +55,7 @@ func TestDeploymentThenServiceAutoRestartDisabled(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        false,
+		RestartPods:        false,
 	})
 
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
@@ -70,7 +70,7 @@ func TestDeploymentThenServiceAutoRestartDisabled(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDeploymentThenServiceAutoRestartEnabled(t *testing.T) {
+func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
 	helper := NewTestHelper(t, true)
 
 	namespace := helper.Initialize("test-namespace", []string{})
@@ -81,7 +81,7 @@ func TestDeploymentThenServiceAutoRestartEnabled(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        true,
+		RestartPods:        true,
 	})
 
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
@@ -117,7 +117,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        false,
+		RestartPods:        false,
 		CustomSelector:     customSelectorConfig,
 	})
 
@@ -141,7 +141,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        false,
+		RestartPods:        false,
 	})
 
 	// Create deployment
@@ -174,7 +174,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	helper.UpdateMonitorConfig(auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
-		AutoRestart:        false,
+		RestartPods:        false,
 		CustomSelector:     customSelectorConfig,
 	})
 

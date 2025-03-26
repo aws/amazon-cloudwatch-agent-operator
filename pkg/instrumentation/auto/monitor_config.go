@@ -10,7 +10,7 @@ import "github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 type MonitorConfig struct {
 	MonitorAllServices bool                    `json:"monitorAllServices"`
 	Languages          instrumentation.TypeSet `json:"languages"`
-	AutoRestart        bool                    `json:"autoRestart"`
+	RestartPods        bool                    `json:"restartPods"`
 	Exclude            struct {
 		Namespaces []string `json:"namespaces"`
 		Services   []string `json:"services"`
