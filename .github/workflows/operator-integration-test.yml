@@ -94,7 +94,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           sleep 5
-          kubectl wait --for=condition=Ready pod --all -n default
+          kubectl wait --for=condition=Ready pod --all -n default --timeout=120s
           kubectl get pods -A 
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json app_signals
