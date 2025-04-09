@@ -71,7 +71,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute)
 	serviceInformer := factory.Core().V1().Services().Informer()
 
-	var mutator *AnnotationMutators
+	mutator := NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.SupportedTypes())
 
 	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

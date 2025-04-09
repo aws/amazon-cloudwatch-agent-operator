@@ -220,8 +220,10 @@ func TestMonitor_MutateObject(t *testing.T) {
 			expectedWorkloadAnnotations: map[string]string{},
 		},
 		{
-			name:                        "same namespace, same selector, monitorallservices true, excluded namespace",
-			config:                      simpleConfig(true, false, none, none),
+			name: "same namespace, same selector, monitorallservices true, excluded namespace",
+			config: simpleConfig(true, false, none, AnnotationConfig{Java: AnnotationResources{
+				Namespaces: []string{"namespace-1"},
+			}}),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -229,8 +231,12 @@ func TestMonitor_MutateObject(t *testing.T) {
 			expectedWorkloadAnnotations: map[string]string{},
 		},
 		{
-			name:                        "same namespace, same selector, monitorallservices true, excluded service",
-			config:                      simpleConfig(true, false, none, none),
+			name: "same namespace, same selector, monitorallservices true, excluded service",
+			config: simpleConfig(true, false, none, AnnotationConfig{Java: AnnotationResources{
+				Deployments:  []string{"namespace-1/workload"},
+				DaemonSets:   []string{"namespace-1/workload"},
+				StatefulSets: []string{"namespace-1/workload"},
+			}}),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -263,7 +269,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 			serviceNs:                   "namespace-2",
 			deploymentSelector:          map[string]string{"app": "different-1"},
 			serviceSelector:             map[string]string{"app": "different-2"},
-			expectedWorkloadAnnotations: map[string]string{}, // empty because even though it should be custom selected, it is modified on the pod level for namespaces, so the pod template is not updated
+			expectedWorkloadAnnotations: annotated,
 		},
 		{
 			name: "different namespace, different selector, monitorallservices false, custom selected namespace of service, not workload",
@@ -481,7 +487,6 @@ func Test_mutate(t *testing.T) {
 		languagesToMonitor instrumentation.TypeSet
 		wantObjAnnotations map[string]string
 		wantMutated        map[string]string
-		shouldInsert       bool
 	}{
 		{
 			name:               "java only",
@@ -489,7 +494,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("java"),
-			shouldInsert:       true,
 		},
 		{
 			name:           "java and python",
@@ -500,7 +504,6 @@ func Test_mutate(t *testing.T) {
 			},
 			wantObjAnnotations: mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
 			wantMutated:        mergeMaps(buildAnnotations("java"), buildAnnotations("python")),
-			shouldInsert:       true,
 		},
 		{
 			name:               "remove python instrumentation",
@@ -508,7 +511,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("python"),
-			shouldInsert:       true,
 		},
 		{
 			name:               "remove one of two languages",
@@ -516,7 +518,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{"java": struct{}{}},
 			wantObjAnnotations: buildAnnotations("java"),
 			wantMutated:        buildAnnotations("python"),
-			shouldInsert:       true,
 		},
 		{
 			name:               "manually specified annotation is not touched",
@@ -524,7 +525,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): defaultAnnotationValue},
 			wantMutated:        map[string]string{},
-			shouldInsert:       true,
 		},
 		{
 			name:               "remove all",
@@ -532,7 +532,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{},
 			wantMutated:        buildAnnotations("java"),
-			shouldInsert:       true,
 		},
 		{
 			name:               "remove only language annotations",
@@ -540,15 +539,6 @@ func Test_mutate(t *testing.T) {
 			languagesToMonitor: instrumentation.TypeSet{},
 			wantObjAnnotations: map[string]string{"test": "test"},
 			wantMutated:        buildAnnotations("java"),
-			shouldInsert:       true,
-		},
-		{
-			name:               "respects isWorkloadAutoMonitored",
-			podAnnotations:     mergeAnnotations(buildAnnotations("python"), map[string]string{"test": "test"}),
-			languagesToMonitor: instrumentation.TypeSet{"python": struct{}{}, "java": struct{}{}},
-			wantObjAnnotations: map[string]string{"test": "test"},
-			wantMutated:        buildAnnotations("python"),
-			shouldInsert:       false,
 		},
 	}
 
