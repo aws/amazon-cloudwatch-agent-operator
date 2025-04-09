@@ -11,9 +11,6 @@ type MonitorConfig struct {
 	MonitorAllServices bool                    `json:"monitorAllServices"`
 	Languages          instrumentation.TypeSet `json:"languages"`
 	RestartPods        bool                    `json:"restartPods"`
-	Exclude            struct {
-		Namespaces []string `json:"namespaces"`
-		Services   []string `json:"services"`
-	} `json:"exclude"`
-	CustomSelector AnnotationConfig `json:"customSelector"`
+	Exclude            AnnotationConfig        `json:"exclude"`
+	CustomSelector     AnnotationConfig        `json:"customSelector"`
 }

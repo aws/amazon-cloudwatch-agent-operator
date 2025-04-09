@@ -290,29 +290,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	// TODO handle case where auto monitor is enabled but auto annotation config is not specified
-	var autoAnnotationConfig auto.AnnotationConfig
-	var autoAnnotationMutators *auto.AnnotationMutators
-	supportedLanguages := instrumentation.SupportedTypes()
-
-	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
-		setupLog.Info("Auto-annotation is disabled")
-	} else {
-		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
-		} else {
-			// TODO: detect empty
-			autoAnnotationMutators = auto.NewAnnotationMutators(
-				mgr.GetClient(),
-				mgr.GetAPIReader(),
-				logger,
-				autoAnnotationConfig,
-				supportedLanguages,
-			)
-		}
-	}
-
-	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), autoAnnotationMutators)
+	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, autoInstrumentationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
 
 	if monitor != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
@@ -372,7 +350,29 @@ func main() {
 	}
 }
 
-func createInstrumentationAnnotator(autoMonitorConfigStr string, ctx context.Context, client client.Client, reader client.Reader, autoAnnotationMutators *auto.AnnotationMutators) auto.InstrumentationAnnotator {
+func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) auto.InstrumentationAnnotator {
+	var autoAnnotationConfig auto.AnnotationConfig
+	var autoAnnotationMutators *auto.AnnotationMutators
+	supportedLanguages := instrumentation.SupportedTypes()
+
+	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" {
+		setupLog.Info("Auto-annotation is disabled")
+	} else if autoAnnotationConfigStr != "" {
+		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
+			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
+		} else {
+			// TODO: detect empty
+			setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
+			return auto.NewAnnotationMutators(
+				client,
+				reader,
+				setupLog,
+				autoAnnotationConfig,
+				supportedLanguages,
+			)
+		}
+	}
+
 	var monitorConfig *auto.MonitorConfig
 	var monitor auto.InstrumentationAnnotator = autoAnnotationMutators
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
@@ -391,11 +391,7 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, ctx context.Con
 			return monitor
 		}
 		logger := ctrl.Log.WithName("auto_monitor")
-		if monitorConfig.CustomSelector.Empty() && !autoAnnotationMutators.Empty() {
-			monitor = auto.NewMonitorWithLegacyMutator(ctx, *monitorConfig, clientSet, client, reader, logger, autoAnnotationMutators)
-		} else {
-			monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
-		}
+		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
 	}
 	return monitor
 }

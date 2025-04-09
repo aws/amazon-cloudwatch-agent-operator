@@ -42,6 +42,12 @@ func (c AnnotationConfig) LanguagesOf(obj client.Object) instrumentation.TypeSet
 
 	types := instrumentation.SupportedTypes()
 
+	for t := range types {
+		if slices.Contains(c.getResources(t).Namespaces, obj.GetNamespace()) {
+			typesSelected[t] = nil
+		}
+	}
+
 	switch obj.(type) {
 	case *appsv1.Deployment:
 		for t := range types {
