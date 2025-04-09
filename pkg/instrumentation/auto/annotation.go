@@ -137,6 +137,7 @@ func NewAnnotationMutators(
 	cfg AnnotationConfig,
 	typeSet instrumentation.TypeSet,
 ) *AnnotationMutators {
+	warnNonNamespacedNames(typeSet, cfg, logger)
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		clientWriter:        clientWriter,
@@ -149,6 +150,27 @@ func NewAnnotationMutators(
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
 		injectAnnotations:   buildInjectAnnotations(typeSet),
 		cfg:                 cfg,
+	}
+}
+
+func warnNonNamespacedNames(typeSet instrumentation.TypeSet, cfg AnnotationConfig, logger logr.Logger) {
+	for t := range typeSet {
+		resources := cfg.getResources(t)
+		for _, deployment := range resources.Deployments {
+			if !strings.Contains(deployment, "/") {
+				logger.Info("invalid deployment name, needs to be namespaced", "deployment", deployment)
+			}
+		}
+		for _, daemonSet := range resources.DaemonSets {
+			if !strings.Contains(daemonSet, "/") {
+				logger.Info("invalid daemonSet name, needs to be namespaced", "daemonSet", daemonSet)
+			}
+		}
+		for _, statefulSet := range resources.StatefulSets {
+			if !strings.Contains(statefulSet, "/") {
+				logger.Info("invalid statefulSet name, needs to be namespaced", "statefulSet", statefulSet)
+			}
+		}
 	}
 }
 

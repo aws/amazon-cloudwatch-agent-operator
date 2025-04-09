@@ -2,6 +2,7 @@ package auto
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/go-logr/logr"
@@ -66,9 +67,22 @@ func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]s
 // NewMonitor is used to create an InstrumentationMutator that supports AutoMonitor.
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
 	logger.Info("AutoMonitor starting...")
-	// todo, throw warning if exclude config service is not namespaced (doesn't contain `/`)
-	// todo: informers.WithTransform() as option to only store what parts of service are needed
-	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute)
+	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute, informers.WithTransform(func(obj interface{}) (interface{}, error) {
+		svc, ok := obj.(*corev1.Service)
+		if !ok {
+			return obj, errors.New(fmt.Sprintf("error transforming service: %s not a service", obj))
+		}
+		// Return only the fields we need
+		return &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      svc.Name,
+				Namespace: svc.Namespace,
+			},
+			Spec: corev1.ServiceSpec{
+				Selector: svc.Spec.Selector,
+			},
+		}, nil
+	}))
 	serviceInformer := factory.Core().V1().Services().Informer()
 
 	mutator := NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.SupportedTypes())
