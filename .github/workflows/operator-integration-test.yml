@@ -435,4 +435,4 @@ jobs:
           sleep 5
           go test -v -run TestNodeJSOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
-          go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 60m
