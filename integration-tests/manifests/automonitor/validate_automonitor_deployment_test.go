@@ -155,7 +155,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update operator with custom selector
-	namespacedDeployment := namespace + "sample-deployment"
+	namespacedDeployment := namespace + "/sample-deployment"
 	customSelectorConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
 			Deployments: []string{namespacedDeployment},
@@ -196,15 +196,18 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
-	// Set up config with service exclusion
+	// Set up config with exclusion
+	resources := auto.AnnotationResources{
+		Deployments: []string{namespace + "/sample-deployment"},
+	}
 	monitorConfig := auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
-		Exclude: struct {
-			Namespaces []string `json:"namespaces"`
-			Services   []string `json:"services"`
-		}{
-			Services: []string{namespace + "/sample-deployment-service"}, // assuming this is the service name in sampleDeploymentServiceYaml
+		Exclude: auto.AnnotationConfig{
+			Java:   resources,
+			Python: resources,
+			DotNet: resources,
+			NodeJS: resources,
 		},
 	}
 
@@ -227,7 +230,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update config to remove exclusion
-	monitorConfig.Exclude.Services = []string{}
+	monitorConfig.Exclude = auto.AnnotationConfig{}
 	helper.UpdateMonitorConfig(monitorConfig)
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	if err != nil {

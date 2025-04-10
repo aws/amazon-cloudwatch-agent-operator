@@ -314,10 +314,7 @@ func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotatio
 		}
 	}
 
-	if validAnnotations {
-		return true
-	}
-	return false
+	return validAnnotations
 }
 
 func (h *TestHelper) restartOperator() {
