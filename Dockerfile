@@ -39,7 +39,7 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build \
     -trimpath \
-    -ldflags="-w -s \
+    -ldflags="\
     -X ${VERSION_PKG}.version=${VERSION} \
     -X ${VERSION_PKG}.buildDate=${VERSION_DATE} \
     -X ${VERSION_PKG}.agent=${AGENT_VERSION} \
