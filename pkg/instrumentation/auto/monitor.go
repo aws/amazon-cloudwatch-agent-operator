@@ -230,13 +230,13 @@ func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
 	if !safeToMutate(oldObj, obj, m.config.RestartPods) {
 		return map[string]string{}
 	}
-	languagesToAnnotate := m.customSelectors.cfg.LanguagesOf(obj)
+	languagesToAnnotate := m.customSelectors.cfg.LanguagesOf(obj, false)
 	if m.isWorkloadAutoMonitored(obj) {
 		for l := range m.config.Languages {
 			languagesToAnnotate[l] = nil
 		}
 	}
-	for l := range m.config.Exclude.LanguagesOf(obj) {
+	for l := range m.config.Exclude.LanguagesOf(obj, true) {
 		delete(languagesToAnnotate, l)
 	}
 

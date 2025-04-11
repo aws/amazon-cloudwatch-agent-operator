@@ -149,9 +149,10 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate no annotations present
+	all := []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
 		none,
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+		all)
 	assert.NoError(t, err)
 
 	// Update operator with custom selector
@@ -178,16 +179,15 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 		CustomSelector:     customSelectorConfig,
 	})
 
-	// Validate annotations are not present
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none,
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	// Validate annotations are not present (custom selector obeys restart pods)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, all)
 	assert.NoError(t, err)
 
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	assert.NoError(t, err)
 
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none,
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+	// validate annotations are present
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", all, none)
 	assert.NoError(t, err)
 }
 

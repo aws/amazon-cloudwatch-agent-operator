@@ -221,9 +221,8 @@ func TestMonitor_MutateObject(t *testing.T) {
 		},
 		{
 			name: "same namespace, same selector, monitorallservices true, excluded namespace",
-			config: simpleConfig(true, false, none, AnnotationConfig{Java: AnnotationResources{
-				Namespaces: []string{"namespace-1"},
-			}}),
+			config: simpleConfig(true, false, none,
+				AnnotationConfig{Java: AnnotationResources{Namespaces: []string{"namespace-1"}}}),
 			deploymentNs:                "namespace-1",
 			serviceNs:                   "namespace-1",
 			deploymentSelector:          map[string]string{"app": "different-1"},
@@ -269,7 +268,7 @@ func TestMonitor_MutateObject(t *testing.T) {
 			serviceNs:                   "namespace-2",
 			deploymentSelector:          map[string]string{"app": "different-1"},
 			serviceSelector:             map[string]string{"app": "different-2"},
-			expectedWorkloadAnnotations: annotated,
+			expectedWorkloadAnnotations: map[string]string{}, // empty because even though it should be custom selected, it is modified on the pod level for namespaces, so the pod template is not updated
 		},
 		{
 			name: "different namespace, different selector, monitorallservices false, custom selected namespace of service, not workload",

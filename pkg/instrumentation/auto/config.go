@@ -36,15 +36,17 @@ func (c AnnotationConfig) getResources(instType instrumentation.Type) Annotation
 }
 
 // LanguagesOf get languages to annotate for an object
-func (c AnnotationConfig) LanguagesOf(obj client.Object) instrumentation.TypeSet {
+func (c AnnotationConfig) LanguagesOf(obj client.Object, checkNamespace bool) instrumentation.TypeSet {
 	objName := namespacedName(obj)
 	typesSelected := instrumentation.TypeSet{}
 
 	types := instrumentation.SupportedTypes()
 
-	for t := range types {
-		if slices.Contains(c.getResources(t).Namespaces, obj.GetNamespace()) {
-			typesSelected[t] = nil
+	if checkNamespace {
+		for t := range types {
+			if slices.Contains(c.getResources(t).Namespaces, obj.GetNamespace()) {
+				typesSelected[t] = nil
+			}
 		}
 	}
 
