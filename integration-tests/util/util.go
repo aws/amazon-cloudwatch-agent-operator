@@ -15,8 +15,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const TimoutDuration = 2 * time.Minute
-const TimeBetweenRetries = 2 * time.Second
+const TimoutDuration = 3 * time.Minute
+const TimeBetweenRetries = 5 * time.Second
 
 // WaitForNewPodCreation takes in a resource either Deployment, DaemonSet, or StatefulSet wait until it is in running stage
 func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time) error {

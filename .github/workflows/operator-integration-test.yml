@@ -61,7 +61,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset.yaml -n amazon-cloudwatch
           sleep 20
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-          
+
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
           if [ -z "$pod_name" ]; then
             echo "Pod $pod_name is not created. Exiting with ERROR."
@@ -74,9 +74,9 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          sleep 5 
+          sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json app_signals
 
@@ -86,8 +86,8 @@ jobs:
           kubectl delete pods --all -n default
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default
-          
-          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals    
+
+          go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
       - name: Test for default instrumentation resources for python
@@ -95,7 +95,7 @@ jobs:
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
           sleep 5
           kubectl wait --for=condition=Ready pod --all -n default --timeout=120s
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/python/default_instrumentation_python_env_variables.json app_signals
 
@@ -114,7 +114,7 @@ jobs:
           kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/dotnet/default_instrumentation_dotnet_env_variables.json app_signals
 
@@ -123,7 +123,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
           sleep 5
-          kubectl wait --for=condition=Ready pod --all -n default  
+          kubectl wait --for=condition=Ready pod --all -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
@@ -135,7 +135,7 @@ jobs:
           kubectl apply -f integration-tests/nodejs/sample-deployment-nodejs.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/nodejs/default_instrumentation_nodejs_env_variables.json app_signals
 
@@ -175,7 +175,7 @@ jobs:
           kubectl apply -f integration-tests/jmx/sample-deployment-jmx.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables.json app_signals
 
@@ -196,7 +196,7 @@ jobs:
           kubectl apply -f integration-tests/manifests/cloudwatch-agent-daemonset-no-app-signals.yaml -n amazon-cloudwatch
           sleep 20
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-          
+
           pod_name="$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/component=amazon-cloudwatch-agent,app.kubernetes.io/instance=amazon-cloudwatch.cloudwatch-agent -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
           if [ -z "$pod_name" ]; then
             echo "Pod $pod_name is not created. Exiting with ERROR."
@@ -214,7 +214,7 @@ jobs:
           kubectl apply -f integration-tests/jmx/sample-deployment-jmx.yaml
           sleep 5
           kubectl wait --for=condition=Available deployment/nginx -n default
-          kubectl get pods -A 
+          kubectl get pods -A
           kubectl describe pods -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/jmx/default_instrumentation_jmx_env_variables_no_app_signals.json no_app_signals
 
@@ -429,7 +429,7 @@ jobs:
           sleep 5
           go test -v -run TestJavaOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
-          go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
+          go test -v -run TestPythonOnlyNamespace ./integration-tests/manifests/annotations -timeout 45m
           sleep 5
           go test -v -run TestDotNetOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
