@@ -22,7 +22,7 @@ ENV GOPROXY="https://proxy.golang.org,direct" \
     GOOS=linux \
     GOARCH=$TARGETARCH \
     GOPRIVATE="" \
-    GOSUMDB=off
+    GOSUMDB=on
 
 WORKDIR /workspace
 
