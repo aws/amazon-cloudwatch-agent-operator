@@ -9,8 +9,8 @@ import "github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 // auto-annotation for each instrumentation type.
 type MonitorConfig struct {
 	MonitorAllServices bool                    `json:"monitorAllServices"`
-	Languages          instrumentation.TypeSet `json:"languages"`
+	Languages          instrumentation.TypeSet `json:"languages,omitempty"`
 	RestartPods        bool                    `json:"restartPods"`
-	Exclude            AnnotationConfig        `json:"exclude"`
-	CustomSelector     AnnotationConfig        `json:"customSelector"`
+	Exclude            AnnotationConfig        `json:"exclude,omitempty"`
+	CustomSelector     AnnotationConfig        `json:"customSelector,omitempty"`
 }
