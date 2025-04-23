@@ -306,7 +306,7 @@ func main() {
 			mgr.GetWebhookServer().StartedChecker(),
 			func(ctx context.Context) {
 				setupLog.Info("Applying auto-annotation")
-				auto.MutateAndPatchAll(monitor, ctx)
+				monitor.MutateAndPatchAll(ctx)
 			},
 		)
 	} else {

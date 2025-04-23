@@ -27,6 +27,7 @@ type InstrumentationAnnotator interface {
 	GetLogger() logr.Logger
 	GetReader() client.Reader
 	GetWriter() client.Writer
+	MutateAndPatchAll(ctx context.Context)
 }
 
 type Monitor struct {
@@ -38,6 +39,13 @@ type Monitor struct {
 	clientWriter    client.Writer
 	customSelectors *AnnotationMutators
 	logger          logr.Logger
+}
+
+func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
+	if m.config.RestartPods {
+		MutateAndPatchAll(m, ctx, false)
+	}
+	// todo: what to do about updating namespace annotations? maybe update them here? or pass in variable to MutateAndPatchAll?
 }
 
 func (m *Monitor) GetAnnotationMutators() *AnnotationMutators {
@@ -66,6 +74,12 @@ func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]s
 
 // NewMonitor is used to create an InstrumentationMutator that supports AutoMonitor.
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
+	// Config default values
+	if len(config.Languages) == 0 {
+		logger.Info("Setting languages to default")
+		config.Languages = instrumentation.SupportedTypes()
+	}
+
 	logger.Info("AutoMonitor starting...")
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute, informers.WithTransform(func(obj interface{}) (interface{}, error) {
 		svc, ok := obj.(*corev1.Service)

@@ -93,8 +93,11 @@ func patchFunc(m InstrumentationAnnotator, ctx context.Context, callback objectC
 	}
 }
 
-func restartNamespaceFunc(m InstrumentationAnnotator, ctx context.Context) objectCallbackFunc {
+func restartNamespaceFunc(m InstrumentationAnnotator, ctx context.Context, shouldRestartNamespace bool) objectCallbackFunc {
 	return func(obj client.Object, previousResult any) (any, bool) {
+		if !shouldRestartNamespace {
+			return nil, false
+		}
 		mutatedAnnotations, ok := previousResult.(map[string]string)
 		if !ok {
 			return nil, false
@@ -162,17 +165,18 @@ func RestartNamespace(m InstrumentationAnnotator, ctx context.Context, namespace
 }
 
 // MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
-func MutateAndPatchAll(m InstrumentationAnnotator, ctx context.Context) {
+func MutateAndPatchAll(m InstrumentationAnnotator, ctx context.Context, restartNamespace bool) {
 	f := getMutateObjectFunc(m)
 	callbackFunc := patchFunc(m, ctx, f)
 	rangeObjectList(m, ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, callbackFunc)
 	rangeObjectList(m, ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, callbackFunc)
 	rangeObjectList(m, ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, callbackFunc)
-	rangeObjectList(m, ctx, &corev1.NamespaceList{}, &client.ListOptions{}, chainCallbacks(callbackFunc, restartNamespaceFunc(m, ctx)))
+	rangeObjectList(m, ctx, &corev1.NamespaceList{}, &client.ListOptions{}, chainCallbacks(callbackFunc, restartNamespaceFunc(m, ctx, restartNamespace)))
 }
 
 func getMutateObjectFunc(m InstrumentationAnnotator) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
-		return m.MutateObject(nil, obj), true
+		mutatedAnnotations := m.MutateObject(nil, obj)
+		return mutatedAnnotations, true
 	}
 }

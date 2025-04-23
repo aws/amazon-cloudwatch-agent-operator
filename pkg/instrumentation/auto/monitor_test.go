@@ -375,7 +375,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
-				MutateAndPatchAll(monitor, context.TODO())
+				MutateAndPatchAll(monitor, context.TODO(), false)
 				updatedWorkload, err := wt.getWithClient(c, defaultNs, workload.GetName())
 				assert.NoError(t, err)
 				assert.Equal(t, userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
@@ -394,7 +394,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
-				MutateAndPatchAll(monitor, context.TODO())
+				MutateAndPatchAll(monitor, context.TODO(), false)
 
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
@@ -417,7 +417,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
-				MutateAndPatchAll(monitor, context.TODO())
+				MutateAndPatchAll(monitor, context.TODO(), false)
 
 				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
 				assert.NoError(t, err)
@@ -437,7 +437,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
-				MutateAndPatchAll(monitor, context.TODO())
+				MutateAndPatchAll(monitor, context.TODO(), false)
 
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
@@ -468,7 +468,7 @@ func Test_OptOutByDisablingMonitorAllServices(t *testing.T) {
 				var k8sInterface kubernetes.Interface = clientset
 				var logger logr.Logger = testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
-				MutateAndPatchAll(monitor, context.TODO())
+				MutateAndPatchAll(monitor, context.TODO(), false)
 
 				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
 				assert.NoError(t, err)
@@ -576,7 +576,7 @@ func Test_StartupRestartPods(t *testing.T) {
 	var k8sInterface kubernetes.Interface = clientset
 	var logger logr.Logger = testr.New(t)
 	m := NewMonitor(context.TODO(), config, k8sInterface, fakeClient, fakeClient, logger)
-	MutateAndPatchAll(m, context.TODO())
+	MutateAndPatchAll(m, context.TODO(), false)
 	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), updatedMatchingDeployment.Spec.Template.GetAnnotations())

@@ -117,7 +117,7 @@ func TestAnnotationMutators_Namespaces(t *testing.T) {
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			MutateAndPatchAll(mutators, ctx)
+			MutateAndPatchAll(mutators, ctx, false)
 			gotNamespaces := &corev1.NamespaceList{}
 			require.NoError(t, fakeClient.List(ctx, gotNamespaces))
 			for _, gotNamespace := range gotNamespaces.Items {
@@ -201,7 +201,7 @@ func TestAnnotationMutators_Namespaces_Restart(t *testing.T) {
 		cfg,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
 	)
-	MutateAndPatchAll(mutators, context.Background())
+	mutators.MutateAndPatchAll(context.Background())
 	ctx := context.Background()
 	for _, namespacedResource := range namespacedRestartExpectedResources {
 		assert.NoError(t, fakeClient.Get(ctx, client.ObjectKeyFromObject(namespacedResource), namespacedResource))
@@ -292,7 +292,7 @@ func TestAnnotationMutators_Deployments(t *testing.T) {
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			MutateAndPatchAll(mutators, ctx)
+			MutateAndPatchAll(mutators, ctx, false)
 			gotDeployments := &appsv1.DeploymentList{}
 			require.NoError(t, fakeClient.List(ctx, gotDeployments))
 			for _, gotDeployment := range gotDeployments.Items {
@@ -360,7 +360,7 @@ func TestAnnotationMutators_DaemonSets(t *testing.T) {
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			MutateAndPatchAll(mutators, ctx)
+			MutateAndPatchAll(mutators, ctx, false)
 			gotDaemonSets := &appsv1.DaemonSetList{}
 			require.NoError(t, fakeClient.List(ctx, gotDaemonSets))
 			for _, gotDaemonSet := range gotDaemonSets.Items {
@@ -428,7 +428,7 @@ func TestAnnotationMutators_StatefulSets(t *testing.T) {
 				testCase.cfg,
 				testCase.typeSet,
 			)
-			MutateAndPatchAll(mutators, ctx)
+			MutateAndPatchAll(mutators, ctx, false)
 			gotStatefulSets := &appsv1.StatefulSetList{}
 			require.NoError(t, fakeClient.List(ctx, gotStatefulSets))
 			for _, gotStatefulSet := range gotStatefulSets.Items {
@@ -494,11 +494,11 @@ func TestAnnotationMutators_ClientErrors(t *testing.T) {
 		cfg,
 		instrumentation.NewTypeSet(instrumentation.TypeJava),
 	)
-	MutateAndPatchAll(mutators, context.Background())
+	MutateAndPatchAll(mutators, context.Background(), false)
 	errClient.AssertCalled(t, "List", mock.Anything, mock.Anything, mock.Anything)
 	mutators.clientWriter = errClient
 	mutators.clientReader = fakeClient
-	MutateAndPatchAll(mutators, context.Background())
+	MutateAndPatchAll(mutators, context.Background(), false)
 	errClient.AssertCalled(t, "Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 

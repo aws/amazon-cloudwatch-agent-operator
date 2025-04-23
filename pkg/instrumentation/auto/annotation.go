@@ -41,6 +41,10 @@ type AnnotationMutators struct {
 	cfg                 AnnotationConfig
 }
 
+func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
+	MutateAndPatchAll(m, ctx, true)
+}
+
 func (m *AnnotationMutators) GetAnnotationMutators() *AnnotationMutators {
 	return m
 }

@@ -28,10 +28,7 @@ func TestServiceThenDeployment(t *testing.T) {
 
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
-	// Update operator
-	helper.UpdateAnnotationConfig(defaultAnnotationConfig)
-
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        false,
@@ -49,10 +46,7 @@ func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
-	// Update operator
-	helper.UpdateAnnotationConfig(defaultAnnotationConfig)
-
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        false,
@@ -75,10 +69,7 @@ func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
-	// Update operator
-	helper.UpdateAnnotationConfig(defaultAnnotationConfig)
-
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        true,
@@ -114,7 +105,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	}
 
 	// Update operator with auto monitor disabled and custom selector
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        false,
@@ -138,7 +129,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	namespace := helper.Initialize("test-namespace", []string{})
 
 	// Update operator with auto monitor disabled
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        false,
@@ -172,7 +163,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 		},
 	}
 
-	helper.UpdateMonitorConfig(auto.MonitorConfig{
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.SupportedTypes(),
 		RestartPods:        false,
@@ -212,8 +203,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	}
 
 	// Update operator config
-	helper.UpdateAnnotationConfig(defaultAnnotationConfig)
-	helper.UpdateMonitorConfig(monitorConfig)
+	helper.UpdateMonitorConfig(&monitorConfig)
 
 	// Create service first
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentServiceYaml})
@@ -231,7 +221,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 
 	// Update config to remove exclusion
 	monitorConfig.Exclude = auto.AnnotationConfig{}
-	helper.UpdateMonitorConfig(monitorConfig)
+	helper.UpdateMonitorConfig(&monitorConfig)
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	if err != nil {
 		return
