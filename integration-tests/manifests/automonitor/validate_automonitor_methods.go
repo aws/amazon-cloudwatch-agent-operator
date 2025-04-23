@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -280,41 +281,32 @@ func forceRestart(deployment *appsV1.Deployment) {
 	deployment.Spec.Template.SetAnnotations(annotations)
 }
 
-// TODO: should check deployment template spec?
 func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotations []string, shouldNotExistAnnotations []string) bool {
 	currentPods, err := h.clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("Failed to list pods: %v\n", err))
 		return false
 	}
-
-	validAnnotations := true
 	for _, pod := range currentPods.Items {
 		h.logger.Info(fmt.Sprintf("Pod %s is in phase %s\n", pod.Name, pod.Status.Phase))
-		h.logger.Info("Pod ", pod.GetAnnotations())
 		if pod.Status.Phase != v1.PodRunning {
 			continue
 		}
 		for _, annotation := range shouldExistAnnotations {
 			if value, exists := pod.Annotations[annotation]; !exists || value != "true" {
-				h.logger.Info("Pod", pod.Namespace, pod.Name, " does not have annotation ", annotation)
-				validAnnotations = false
-				break
+				h.logger.Info(fmt.Sprintf("%s/%s should have annotation %s", pod.Namespace, pod.Name, annotation))
+				return false
 			}
 		}
 		for _, annotation := range shouldNotExistAnnotations {
 			if _, exists := pod.Annotations[annotation]; exists {
-				h.logger.Info("Pod", pod.Namespace, pod.Name, " shouldn't have annotation ", annotation)
-				validAnnotations = false
-				break
+				h.logger.Info(fmt.Sprintf("%s/%s should not have annotation %s", pod.Namespace, pod.Name, annotation))
+				return false
 			}
-		}
-		if !validAnnotations {
-			break
 		}
 	}
 
-	return validAnnotations
+	return true
 }
 
 func (h *TestHelper) restartOperator() {
@@ -345,7 +337,7 @@ func (h *TestHelper) findIndexOfPrefix(str string, strs []string) int {
 	return -1
 }
 
-func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) {
+func (h *TestHelper) UpdateMonitorConfig(config *auto.MonitorConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
 
@@ -354,12 +346,13 @@ func (h *TestHelper) UpdateMonitorConfig(config auto.MonitorConfig) {
 	h.updateOperatorConfig(string(jsonStr), "--auto-monitor-config=")
 }
 
-func (h *TestHelper) UpdateAnnotationConfig(config auto.AnnotationConfig) {
-	jsonStr, err := json.Marshal(config)
-	assert.Nil(h.t, err)
-	h.logger.Info("Setting annotation config to:")
-	util.PrettyPrint(config)
-	h.updateOperatorConfig(string(jsonStr), "--auto-annotation-config=")
+func (h *TestHelper) UpdateAnnotationConfig(config *auto.AnnotationConfig) {
+	var jsonStr = ""
+	if marshalledConfig, err := json.Marshal(config); config != nil && assert.Nil(h.t, err) {
+		jsonStr = string(marshalledConfig)
+	}
+	h.logger.Info("Setting annotation config to ", "jsonStr", jsonStr)
+	h.updateOperatorConfig(jsonStr, "--auto-annotation-config=")
 }
 
 func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
@@ -370,10 +363,17 @@ func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
 	}
 	args := deployment.Spec.Template.Spec.Containers[0].Args
 	indexOfAutoAnnotationConfigString := h.findIndexOfPrefix(flag, args)
+	shouldDelete := len(jsonStr) == 0
 	if indexOfAutoAnnotationConfigString < 0 {
-		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, flag+jsonStr)
+		if !shouldDelete {
+			deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, flag+jsonStr)
+		}
 	} else {
-		deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = flag + jsonStr
+		if shouldDelete {
+			deployment.Spec.Template.Spec.Containers[0].Args = slices.Delete(deployment.Spec.Template.Spec.Containers[0].Args, indexOfAutoAnnotationConfigString, indexOfAutoAnnotationConfigString+1)
+		} else {
+			deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = flag + jsonStr
+		}
 	}
 
 	if !h.UpdateOperator(deployment) {
@@ -391,33 +391,49 @@ func (h *TestHelper) ValidateWorkloadAnnotations(resourceType, uniqueNamespace, 
 }
 
 func (h *TestHelper) ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
-	var resource interface{}
-	var err error
-
+	var annotations map[string]string
 	switch resourceType {
 	case "deployment":
-		resource, err = h.clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		resource, err := h.clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		annotations = resource.Spec.Template.Annotations
 	case "daemonset":
-		resource, err = h.clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		resource, err := h.clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		annotations = resource.Spec.Template.Annotations
 	case "statefulset":
-		resource, err = h.clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		resource, err := h.clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		annotations = resource.Spec.Template.Annotations
 	default:
 		return fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
-
-	if err != nil {
-		return fmt.Errorf("failed to get %s: %s", resourceType, err.Error())
+	for _, shouldExistAnnotation := range shouldExist {
+		if _, ok := annotations[shouldExistAnnotation]; !ok {
+			return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+		}
 	}
-
-	if err := util.WaitForNewPodCreation(h.clientSet, resource, h.startTime); err != nil {
-		return fmt.Errorf("error waiting for pod creation: %s", err.Error())
+	for _, shouldNotExistAnnotation := range shouldNotExist {
+		if _, ok := annotations[shouldNotExistAnnotation]; ok {
+			return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+		}
 	}
-
-	if h.PodsAnnotationsValid(uniqueNamespace, shouldExist, shouldNotExist) {
-		return nil
-	} else {
-		return fmt.Errorf("A pod has invalid annotations")
-	}
+	return nil
+	//if err := util.WaitForNewPodCreation(h.clientSet, resource, h.startTime); err != nil {
+	//	return fmt.Errorf("error waiting for pod creation: %s", err.Error())
+	//}
+	//
+	//if h.PodsAnnotationsValid(uniqueNamespace, shouldExist, shouldNotExist) {
+	//	return nil
+	//} else {
+	//	return fmt.Errorf("A pod has invalid annotations")
+	//}
 }
 
 func (h *TestHelper) CreateResource(uniqueNamespace string, sampleAppYamlPath string, skipDelete bool) error {
@@ -439,8 +455,8 @@ func (h *TestHelper) Initialize(namespace string, apps []string) string {
 	newUUID := uuid.New()
 	uniqueNamespace := fmt.Sprintf("%s-%s", namespace, newUUID.String())
 
-	h.UpdateMonitorConfig(auto.MonitorConfig{MonitorAllServices: false})
-	h.UpdateAnnotationConfig(auto.AnnotationConfig{})
+	h.UpdateMonitorConfig(&auto.MonitorConfig{MonitorAllServices: false})
+	h.UpdateAnnotationConfig(nil)
 	h.startTime = time.Now()
 	if err := h.CreateNamespaceAndApplyResources(uniqueNamespace, apps); err != nil {
 		h.t.Fatalf("Failed to create/apply resources on namespace: %v", err)
@@ -485,6 +501,7 @@ func (h *TestHelper) RolloutWaitYamlWithKubectl(filename string, namespace strin
 }
 
 func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) error {
+	h.logger.Info(fmt.Sprintf("Restarting %s/%s...", namespace, deploymentName))
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Get the latest version of the deployment
 		deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
