@@ -290,7 +290,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, autoInstrumentationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
+	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
 
 	if monitor != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
