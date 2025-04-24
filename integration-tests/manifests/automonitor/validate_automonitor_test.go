@@ -206,15 +206,15 @@ func TestPermutation6_MonitorSelectedLanguagesWithAutoRestarts(t *testing.T) {
 func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 	helper := NewTestHelper(t, true)
 
-	// Create two namespaces
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
-	kubeSystemNS := helper.Initialize("kube-system", []string{sampleDeploymentServiceYaml})
 
 	// Set up exclusions
 	excludeConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:  []string{"kube-system"},
 			Deployments: []string{namespace + "/customer-service"},
+		},
+		Python: auto.AnnotationResources{
+			Namespaces: []string{namespace},
 		},
 	}
 
@@ -226,10 +226,7 @@ func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 		Exclude:            excludeConfig,
 	})
 
-	// Create deployments in both namespaces
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml, customerServiceYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(kubeSystemNS, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
 	// Manually restart deployments
@@ -237,20 +234,18 @@ func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 	err = helper.RestartDeployment(namespace, "customer-service")
 	assert.NoError(t, err)
-	err = helper.RestartDeployment(kubeSystemNS, "sample-deployment")
-	assert.NoError(t, err)
 
-	// Verify regular deployment has all annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	nonPythonAnnotations := []string{autoAnnotateJavaAnnotation, injectJavaAnnotation, autoAnnotateDotNetAnnotation, injectDotNetAnnotation, autoAnnotateNodeJSAnnotation, injectNodeJSAnnotation}
+	// Verify regular deployment has all annotations except python
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", nonPythonAnnotations, []string{autoAnnotatePythonAnnotation})
 	assert.NoError(t, err)
 
 	// Verify excluded customer-service has no Java annotations
-	nonJavaAnnotations := []string{autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service", nonJavaAnnotations, []string{autoAnnotateJavaAnnotation})
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service", []string{autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}, []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation})
 	assert.NoError(t, err)
 
 	// Verify kube-system deployment has no Java annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", kubeSystemNS, "sample-deployment", nonJavaAnnotations, []string{autoAnnotateJavaAnnotation})
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", nonPythonAnnotations, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation})
 	assert.NoError(t, err)
 }
 
