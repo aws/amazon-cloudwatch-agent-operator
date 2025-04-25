@@ -29,7 +29,6 @@ func TestPermutation1_MonitorAllServicesNoAutoRestarts(t *testing.T) {
 	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentYaml})
 
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        false,
@@ -55,7 +54,6 @@ func TestPermutation2_DisableMonitoringNoAutoRestarts(t *testing.T) {
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// First enable monitoring with auto-restart
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        true,
@@ -114,7 +112,6 @@ func TestPermutation4_DisableMonitoringWithAutoRestarts(t *testing.T) {
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// Start with monitoring enabled
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        true,
@@ -143,7 +140,6 @@ func TestPermutation5_MonitorSelectedLanguagesNoAutoRestarts(t *testing.T) {
 	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml, sampleDeploymentYaml})
 	// Start with all languages enabled
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        true,
@@ -178,7 +174,6 @@ func TestPermutation6_MonitorSelectedLanguagesWithAutoRestarts(t *testing.T) {
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// Start with all languages enabled
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        true,
@@ -219,7 +214,6 @@ func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 	}
 
 	// Update config with exclusions
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        false,
@@ -267,7 +261,6 @@ func TestPermutation10_MonitorWithExclusionsWithAutoRestarts(t *testing.T) {
 		},
 	}
 
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		RestartPods:        true,
@@ -306,7 +299,6 @@ func TestPermutation18_MonitorWithCustomSelectorAndAutoRestarts(t *testing.T) {
 	}
 
 	// Update config with custom selector
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeDotNet),
@@ -362,7 +354,6 @@ func TestPermutation19_ConflictingCustomSelectorExclude(t *testing.T) {
 	}
 
 	// Update operator config
-	helper.UpdateAnnotationConfig(nil)
 	monitorConfig := &auto.MonitorConfig{
 		MonitorAllServices: true,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS),
@@ -419,7 +410,6 @@ func TestPermutation20_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	}
 
 	// Update operator config
-	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
 		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
