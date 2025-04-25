@@ -360,20 +360,24 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
-			// TODO: detect empty
-			setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config, Disabling AutoMonitor. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
-			return auto.NewAnnotationMutators(
-				client,
-				reader,
-				setupLog,
-				autoAnnotationConfig,
-				supportedLanguages,
-			)
+			// todo: technically a breaking change, because previously an empty autoAnnotationConfig would clear all annotations, but automonitor does not reproduce this behavior by default because it requires restartPods to be enabled.
+			if autoAnnotationConfig.Empty() && autoMonitorConfigStr != "" {
+				setupLog.Info("Auto-annotation is disabled because it is empty and the AutoMonitor config is not empty. Trying AutoMonitor...")
+			} else {
+				setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config, Disabling AutoMonitor. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
+				return auto.NewAnnotationMutators(
+					client,
+					reader,
+					setupLog,
+					autoAnnotationConfig,
+					supportedLanguages,
+				)
+			}
 		}
 	}
 
 	if os.Getenv("DISABLE_AUTO_MONITOR") == "true" {
-		setupLog.Info("Auto-monitor is disabled")
+		setupLog.Info("Auto-monitor is disabled due to DISABLE_AUTO_MONITOR environment variable")
 		return nil
 	}
 
