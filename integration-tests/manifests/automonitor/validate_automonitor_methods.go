@@ -60,7 +60,7 @@ const (
 )
 
 var (
-	amazonControllerManager = *flag.String("controllerManagerName", "amazon-cloudwatch-observability-controller-manager", "short")
+	amazonControllerManager = flag.String("controllerManagerName", "amazon-cloudwatch-observability-controller-manager", "short")
 )
 
 type TestHelper struct {
@@ -247,7 +247,7 @@ func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Get the latest version of the deployment
-		currentDeployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+		currentDeployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), *amazonControllerManager, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -314,7 +314,7 @@ func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotatio
 }
 
 func (h *TestHelper) restartOperator() {
-	cmd := exec.Command("kubectl", "rollout", "restart", "deployment", amazonControllerManager, "-n", amazonCloudwatchNamespace)
+	cmd := exec.Command("kubectl", "rollout", "restart", "deployment", *amazonControllerManager, "-n", amazonCloudwatchNamespace)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("Error restarting deployment: %v\nOutput: %s\n", err, output))
@@ -322,7 +322,7 @@ func (h *TestHelper) restartOperator() {
 	}
 
 	waitCmd := exec.Command("kubectl", "wait", "--for=condition=Available",
-		"deployment/"+amazonControllerManager,
+		"deployment/"+*amazonControllerManager,
 		"-n", amazonCloudwatchNamespace,
 		"--timeout=300s")
 
@@ -360,7 +360,7 @@ func (h *TestHelper) UpdateAnnotationConfig(config *auto.AnnotationConfig) {
 }
 
 func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
-	deployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), amazonControllerManager, metav1.GetOptions{})
+	deployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), *amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		h.t.Errorf("Error getting deployment: %v\n\n", err)
 		return
