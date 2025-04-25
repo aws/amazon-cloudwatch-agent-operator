@@ -6,6 +6,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/stretchr/testify/assert"
+	"maps"
+	"slices"
 	"testing"
 	"time"
 )
@@ -18,11 +20,30 @@ const (
 	conflictingDeploymentYaml          = "../conflicting-deployment.yaml"
 )
 
-var (
-	allLanguages     = []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
-	javaPythonOnly   = []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation}
-	dotnetNodejsOnly = []string{autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
-)
+var all = slices.Collect(maps.Keys(instrumentation.SupportedTypes()))
+var allAnnotations = getAnnotations(all...)
+
+// getAnnotations returns both auto and inject annotations for the specified language types
+func getAnnotations(types ...instrumentation.Type) []string {
+	var annotations []string
+	for _, t := range types {
+		switch t {
+		case instrumentation.TypeJava:
+			annotations = append(annotations, autoAnnotateJavaAnnotation, injectJavaAnnotation)
+		case instrumentation.TypePython:
+			annotations = append(annotations, autoAnnotatePythonAnnotation, injectPythonAnnotation)
+		case instrumentation.TypeDotNet:
+			annotations = append(annotations, autoAnnotateDotNetAnnotation, injectDotNetAnnotation)
+		case instrumentation.TypeNodeJS:
+			annotations = append(annotations, autoAnnotateNodeJSAnnotation, injectNodeJSAnnotation)
+		}
+	}
+	return annotations
+}
+
+// getAllTypes returns all supported language types
+
+// getNoAnnotations returns an empty annotation list
 
 // Permutation 1 [HIGH]: Enable monitoring for all services without auto restarts
 func TestPermutation1_MonitorAllServicesNoAutoRestarts(t *testing.T) {
@@ -38,13 +59,13 @@ func TestPermutation1_MonitorAllServicesNoAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify no annotations without restart
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allLanguages)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allAnnotations)
 	assert.NoError(t, err)
 
 	// Manually restart and verify annotations
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 }
 
@@ -63,7 +84,7 @@ func TestPermutation2_DisableMonitoringNoAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify initial annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Disable monitoring without auto-restart
@@ -73,13 +94,13 @@ func TestPermutation2_DisableMonitoringNoAutoRestarts(t *testing.T) {
 	})
 
 	// Verify annotations still present
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Manually restart and verify annotations removed
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allLanguages)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allAnnotations)
 	assert.NoError(t, err)
 }
 
@@ -92,7 +113,7 @@ func TestPermutation3_MonitorAllServicesWithAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify no initial annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allLanguages)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allAnnotations)
 	assert.NoError(t, err)
 
 	// Enable monitoring with auto-restart
@@ -102,7 +123,7 @@ func TestPermutation3_MonitorAllServicesWithAutoRestarts(t *testing.T) {
 	})
 
 	// Verify annotations automatically added
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 }
 
@@ -121,7 +142,7 @@ func TestPermutation4_DisableMonitoringWithAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify initial annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Disable monitoring with auto-restart
@@ -131,7 +152,7 @@ func TestPermutation4_DisableMonitoringWithAutoRestarts(t *testing.T) {
 	})
 
 	// Verify annotations automatically removed
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allLanguages)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, allAnnotations)
 	assert.NoError(t, err)
 }
 
@@ -148,23 +169,26 @@ func TestPermutation5_MonitorSelectedLanguagesNoAutoRestarts(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	// Verify all annotations present
-	err := helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err := helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Update to Java and Python only without auto-restart
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython), RestartPods: false,
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython),
+		RestartPods:        false,
 	})
 
 	// Verify annotations unchanged without restart
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Manually restart and verify only Java/Python remain
 	err = helper.RestartDeployment(namespace, "sample-deployment")
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", javaPythonOnly, dotnetNodejsOnly)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
+		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 }
 
@@ -183,17 +207,20 @@ func TestPermutation6_MonitorSelectedLanguagesWithAutoRestarts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify all annotations present
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Update to Java and Python only with auto-restart
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython), RestartPods: true,
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython),
+		RestartPods:        true,
 	})
 
 	// Verify only Java/Python annotations remain
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", javaPythonOnly, dotnetNodejsOnly)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
+		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 }
 
@@ -229,17 +256,22 @@ func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 	err = helper.RestartDeployment(namespace, "customer-service")
 	assert.NoError(t, err)
 
-	nonPythonAnnotations := []string{autoAnnotateJavaAnnotation, injectJavaAnnotation, autoAnnotateDotNetAnnotation, injectDotNetAnnotation, autoAnnotateNodeJSAnnotation, injectNodeJSAnnotation}
 	// Verify regular deployment has all annotations except python
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", nonPythonAnnotations, []string{autoAnnotatePythonAnnotation})
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypePython))
 	assert.NoError(t, err)
 
 	// Verify excluded customer-service has no Java annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service", []string{autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}, []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation})
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service",
+		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython))
 	assert.NoError(t, err)
 
-	// Verify kube-system deployment has no Java annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", nonPythonAnnotations, []string{injectPythonAnnotation, autoAnnotatePythonAnnotation})
+	// Verify kube-system deployment has no Python annotations
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypePython))
 	assert.NoError(t, err)
 }
 
@@ -268,12 +300,13 @@ func TestPermutation10_MonitorWithExclusionsWithAutoRestarts(t *testing.T) {
 	})
 
 	// Verify regular deployment has all annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allLanguages, none)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", allAnnotations, none)
 	assert.NoError(t, err)
 
 	// Verify excluded customer-service has no Java annotations
-	nonJavaAnnotations := []string{autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
-	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service", nonJavaAnnotations, []string{autoAnnotateJavaAnnotation})
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service",
+		getAnnotations(instrumentation.TypePython, instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava))
 	assert.NoError(t, err)
 }
 
@@ -308,14 +341,14 @@ func TestPermutation18_MonitorWithCustomSelectorAndAutoRestarts(t *testing.T) {
 
 	// Verify service-selected deployment has dotnet annotation
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
-		[]string{autoAnnotateDotNetAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation})
+		getAnnotations(instrumentation.TypeDotNet),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 
 	// Verify non-service deployment has python annotation
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment-without-service",
-		[]string{autoAnnotatePythonAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+		getAnnotations(instrumentation.TypePython),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 }
 
@@ -364,22 +397,22 @@ func TestPermutation19_ConflictingCustomSelectorExclude(t *testing.T) {
 
 	helper.UpdateMonitorConfig(monitorConfig)
 
-	// Verify conflicting-deployment has Python and NodeJS
+	// Verify conflicting-deployment has Python, NodeJS and Java
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "conflicting-deployment",
-		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation, autoAnnotateJavaAnnotation},
-		[]string{autoAnnotateDotNetAnnotation})
+		getAnnotations(instrumentation.TypePython, instrumentation.TypeNodeJS, instrumentation.TypeJava),
+		getAnnotations(instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 
 	// Verify customer-service has Python and NodeJS (Java excluded)
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service",
-		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation})
+		getAnnotations(instrumentation.TypePython, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 
 	// Verify sample-deployment has Java, Python, and NodeJS
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateDotNetAnnotation})
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 }
 
@@ -419,24 +452,24 @@ func TestPermutation20_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 
 	// Verify frontend-app and admin-dashboard have NodeJS only
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "frontend-app",
-		[]string{autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation})
+		getAnnotations(instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "admin-dashboard",
-		[]string{autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation})
+		getAnnotations(instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 
 	// Verify sample-deployment has no annotations
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
 		none,
-		allLanguages)
+		allAnnotations)
 	assert.NoError(t, err)
 
 	// Verify sample-deployment-without-service has Python
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment-without-service",
-		[]string{autoAnnotatePythonAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
+		getAnnotations(instrumentation.TypePython),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 }
