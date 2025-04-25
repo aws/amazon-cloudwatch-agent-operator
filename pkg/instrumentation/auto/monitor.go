@@ -244,12 +244,14 @@ func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
 	if !safeToMutate(oldObj, obj, m.config.RestartPods) {
 		return map[string]string{}
 	}
+
 	languagesToAnnotate := m.customSelectors.cfg.LanguagesOf(obj, false)
 	if m.isWorkloadAutoMonitored(obj) {
 		for l := range m.config.Languages {
 			languagesToAnnotate[l] = nil
 		}
 	}
+
 	for l := range m.config.Exclude.LanguagesOf(obj, true) {
 		delete(languagesToAnnotate, l)
 	}
@@ -257,7 +259,7 @@ func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
 	return mutate(obj, languagesToAnnotate)
 }
 
-// returns if workload is auto monitored
+// returns if workload is auto monitored (does not include custom selector)
 func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 	if isNamespace(obj) {
 		return false
