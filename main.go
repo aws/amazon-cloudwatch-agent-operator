@@ -310,7 +310,7 @@ func main() {
 			},
 		)
 	} else {
-		setupLog.Info("Auto-annotation and Auto Monitor is disabled")
+		setupLog.Info("Auto-annotation / Auto Monitor is disabled")
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
@@ -371,6 +371,11 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 				supportedLanguages,
 			)
 		}
+	}
+
+	if os.Getenv("DISABLE_AUTO_MONITOR") == "true" {
+		setupLog.Info("Auto-monitor is disabled")
+		return nil
 	}
 
 	var monitorConfig *auto.MonitorConfig
