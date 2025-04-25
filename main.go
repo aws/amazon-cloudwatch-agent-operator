@@ -352,7 +352,6 @@ func main() {
 
 func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) auto.InstrumentationAnnotator {
 	var autoAnnotationConfig auto.AnnotationConfig
-	var autoAnnotationMutators *auto.AnnotationMutators
 	supportedLanguages := instrumentation.SupportedTypes()
 
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" {
@@ -362,7 +361,7 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
 		} else {
 			// TODO: detect empty
-			setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
+			setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config, Disabling AutoMonitor. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
 			return auto.NewAnnotationMutators(
 				client,
 				reader,
@@ -379,26 +378,24 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 	}
 
 	var monitorConfig *auto.MonitorConfig
-	var monitor auto.InstrumentationAnnotator = autoAnnotationMutators
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
-		return monitor
+		return nil
 	} else {
 		k8sConfig, err := rest.InClusterConfig()
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return monitor
+			return nil
 		}
 
 		clientSet, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return monitor
+			return nil
 		}
 		logger := ctrl.Log.WithName("auto_monitor")
-		monitor = auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
+		return auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
 	}
-	return monitor
 }
 
 func waitForWebhookServerStart(ctx context.Context, checker healthz.Checker, callback func(context.Context)) {
