@@ -5,6 +5,7 @@ package annotations
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 	"github.com/go-logr/logr"
@@ -47,7 +48,6 @@ const (
 	statefulSetName           = "sample-statefulset"
 	amazonCloudwatchNamespace = "amazon-cloudwatch"
 	daemonSetName             = "sample-daemonset"
-	amazonControllerManager   = "amazon-cloudwatch-observability-controller-manager"
 
 	sampleDaemonsetYamlRelPath       = "../sample-daemonset.yaml"
 	sampleDeploymentYaml             = "../sample-deployment.yaml"
@@ -57,6 +57,10 @@ const (
 	timoutDuration     = 2 * time.Minute
 	numberOfRetries    = 10
 	timeBetweenRetries = 5 * time.Second
+)
+
+var (
+	amazonControllerManager = *flag.String("controllerManagerName", "amazon-cloudwatch-observability-controller-manager", "short")
 )
 
 type TestHelper struct {
