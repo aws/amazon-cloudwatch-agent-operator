@@ -24,7 +24,7 @@ var (
 )
 
 func TestServiceThenDeployment(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
@@ -42,7 +42,7 @@ func TestServiceThenDeployment(t *testing.T) {
 
 // create deployment, create service,  should not annotate anything
 func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
@@ -65,7 +65,7 @@ func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
 }
 
 func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
@@ -90,7 +90,7 @@ func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
 }
 
 func TestDeploymentWithCustomSelector(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
@@ -124,7 +124,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 }
 
 func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{})
 
@@ -183,7 +183,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 }
 
 func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{})
 

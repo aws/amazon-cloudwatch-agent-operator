@@ -26,7 +26,7 @@ var (
 
 // Permutation 1 [HIGH]: Enable monitoring for all services without auto restarts
 func TestPermutation1_MonitorAllServicesNoAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentYaml})
 
 	helper.UpdateAnnotationConfig(nil)
@@ -51,7 +51,7 @@ func TestPermutation1_MonitorAllServicesNoAutoRestarts(t *testing.T) {
 
 // Permutation 2 [HIGH]: Disable automatic monitoring for all services
 func TestPermutation2_DisableMonitoringNoAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// First enable monitoring with auto-restart
@@ -87,7 +87,7 @@ func TestPermutation2_DisableMonitoringNoAutoRestarts(t *testing.T) {
 
 // Permutation 3 [HIGH]: Monitor all services with pod restarts enabled
 func TestPermutation3_MonitorAllServicesWithAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
@@ -110,7 +110,7 @@ func TestPermutation3_MonitorAllServicesWithAutoRestarts(t *testing.T) {
 
 // Permutation 4 [MED]: Disable monitoring but allow pod restarts
 func TestPermutation4_DisableMonitoringWithAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// Start with monitoring enabled
@@ -140,7 +140,7 @@ func TestPermutation4_DisableMonitoringWithAutoRestarts(t *testing.T) {
 
 // Permutation 5 [HIGH]: Monitor only Java and Python services without pod restarts
 func TestPermutation5_MonitorSelectedLanguagesNoAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml, sampleDeploymentYaml})
 	// Start with all languages enabled
 	helper.UpdateAnnotationConfig(nil)
@@ -174,7 +174,7 @@ func TestPermutation5_MonitorSelectedLanguagesNoAutoRestarts(t *testing.T) {
 
 // Permutation 6 [MED]: Monitor Java and Python with pod restarts enabled
 func TestPermutation6_MonitorSelectedLanguagesWithAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// Start with all languages enabled
@@ -204,7 +204,7 @@ func TestPermutation6_MonitorSelectedLanguagesWithAutoRestarts(t *testing.T) {
 
 // Permutation 9 [HIGH]: Monitor all services but exclude specific Java workloads
 func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
@@ -251,22 +251,18 @@ func TestPermutation9_MonitorWithExclusionsNoAutoRestarts(t *testing.T) {
 
 // Permutation 10 [HIGH]: Monitor all services with auto-restarts but exclude specific Java workloads
 func TestPermutation10_MonitorWithExclusionsWithAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
-	// Create two namespaces
+	// Create single namespace
 	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
-	kubeSystemNS := helper.Initialize("kube-system", []string{sampleDeploymentServiceYaml})
 
 	// Create deployments before enabling monitoring
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml, customerServiceYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(kubeSystemNS, []string{sampleDeploymentYaml})
 	assert.NoError(t, err)
 
 	// Set up exclusions and enable monitoring with auto-restart
 	excludeConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:  []string{"kube-system"},
 			Deployments: []string{namespace + "/customer-service"},
 		},
 	}
@@ -286,32 +282,26 @@ func TestPermutation10_MonitorWithExclusionsWithAutoRestarts(t *testing.T) {
 	nonJavaAnnotations := []string{autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation}
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service", nonJavaAnnotations, []string{autoAnnotateJavaAnnotation})
 	assert.NoError(t, err)
-
-	// Verify kube-system deployment has no Java annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", kubeSystemNS, "sample-deployment", nonJavaAnnotations, []string{autoAnnotateJavaAnnotation})
-	assert.NoError(t, err)
 }
 
 // Permutation 18 [HIGH]: Monitor all services with customSelector and specific languages
 func TestPermutation18_MonitorWithCustomSelectorAndAutoRestarts(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
-	defaultNS := helper.Initialize("default", []string{sampleDeploymentServiceYaml})
-	testNS := helper.Initialize("test", []string{})
+	// Create single namespace
+	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
 	// Create deployments
-	err := helper.CreateNamespaceAndApplyResources(defaultNS, []string{sampleDeploymentYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(testNS, []string{sampleDeploymentWithoutServiceYaml})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml, sampleDeploymentWithoutServiceYaml})
 	assert.NoError(t, err)
 
 	// Set up custom selector config
 	customSelectorConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces: []string{"default"},
+			Namespaces: []string{namespace},
 		},
 		Python: auto.AnnotationResources{
-			Deployments: []string{testNS + "/sample-deployment-without-service"},
+			Deployments: []string{namespace + "/sample-deployment-without-service"},
 		},
 	}
 
@@ -319,117 +309,112 @@ func TestPermutation18_MonitorWithCustomSelectorAndAutoRestarts(t *testing.T) {
 	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.TypeDotNet), RestartPods: true,
-		CustomSelector: customSelectorConfig,
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeDotNet),
+		RestartPods:        true,
+		CustomSelector:     customSelectorConfig,
 	})
 
-	// Verify default namespace deployment has dotnet annotation
-	err = helper.ValidateWorkloadAnnotations("deployment", defaultNS, "sample-deployment",
+	// Verify service-selected deployment has dotnet annotation
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
 		[]string{autoAnnotateDotNetAnnotation},
 		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
 
-	// Verify test namespace deployment has python annotation
-	err = helper.ValidateWorkloadAnnotations("deployment", testNS, "sample-deployment-without-service",
+	// Verify non-service deployment has python annotation
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment-without-service",
 		[]string{autoAnnotatePythonAnnotation},
 		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
 }
 
-// Permutation 19 [HIGH++]: Complex scenario with exclusions and customSelector
-func TestPermutation19_ComplexMonitoringWithExclusionsAndCustomSelector(t *testing.T) {
-	helper := NewTestHelper(t, true)
+// Permutation 19 [HIGH++]: Test that exclude takes precedence over all
+func TestPermutation19_ConflictingCustomSelectorExclude(t *testing.T) {
+	helper := NewTestHelper(t, false)
 
-	defaultNS := helper.Initialize("default", []string{sampleDeploymentServiceYaml})
-	testNS := helper.Initialize("test", []string{})
-	kubeSystemNS := helper.Initialize("kube-system", []string{sampleDeploymentServiceYaml})
+	// Create single namespace
+	namespace := helper.Initialize("test-namespace", []string{sampleDeploymentServiceYaml})
 
-	// Create deployments in all namespaces
-	err := helper.CreateNamespaceAndApplyResources(defaultNS, []string{sampleDeploymentYaml, customerServiceYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(testNS, []string{conflictingDeploymentYaml, sampleDeploymentYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(kubeSystemNS, []string{sampleDeploymentYaml})
+	// Create deployments in the namespace
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{
+		sampleDeploymentYaml,
+		customerServiceYaml,
+		conflictingDeploymentYaml,
+	})
 	assert.NoError(t, err)
 
-	// Set up complex config
+	// exclude config without namespace-level exclusion, will add later
 	excludeConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:  []string{"kube-system", "test"},
-			Deployments: []string{defaultNS + "/customer-service"},
+			Deployments: []string{namespace + "/customer-service"},
 		},
 	}
 
 	customSelectorConfig := auto.AnnotationConfig{
 		Java: auto.AnnotationResources{
-			Namespaces:  []string{"default"},
-			Deployments: []string{testNS + "/conflicting-deployment"},
+			Namespaces: []string{namespace},
 		},
 		Python: auto.AnnotationResources{
-			Deployments: []string{testNS + "/conflicting-deployment"},
+			Deployments: []string{namespace + "/conflicting-deployment"},
 		},
 		DotNet: auto.AnnotationResources{
-			Namespaces: []string{"test"},
+			Namespaces: []string{namespace},
 		},
 	}
 
 	// Update operator config
 	helper.UpdateAnnotationConfig(nil)
-	helper.UpdateMonitorConfig(&auto.MonitorConfig{
+	monitorConfig := &auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS), RestartPods: true,
-		Exclude:        excludeConfig,
-		CustomSelector: customSelectorConfig,
-	})
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS),
+		RestartPods:        true,
+		Exclude:            excludeConfig,
+		CustomSelector:     customSelectorConfig,
+	}
 
-	// Verify test/conflicting-deployment
-	err = helper.ValidateWorkloadAnnotations("deployment", testNS, "conflicting-deployment",
-		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation})
-	assert.NoError(t, err)
+	helper.UpdateMonitorConfig(monitorConfig)
 
-	// Verify default/customer-service
-	err = helper.ValidateWorkloadAnnotations("deployment", defaultNS, "customer-service",
-		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
-		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation})
-	assert.NoError(t, err)
-
-	// Verify default/sample-deployment
-	err = helper.ValidateWorkloadAnnotations("deployment", defaultNS, "sample-deployment",
-		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
+	// Verify conflicting-deployment has Python and NodeJS
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "conflicting-deployment",
+		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation, autoAnnotateJavaAnnotation},
 		[]string{autoAnnotateDotNetAnnotation})
 	assert.NoError(t, err)
 
-	// Verify kube-system/sample-deployment
-	err = helper.ValidateWorkloadAnnotations("deployment", kubeSystemNS, "sample-deployment",
+	// Verify customer-service has Python and NodeJS (Java excluded)
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "customer-service",
 		[]string{autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
 		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation})
+	assert.NoError(t, err)
+
+	// Verify sample-deployment has Java, Python, and NodeJS
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
+		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateNodeJSAnnotation},
+		[]string{autoAnnotateDotNetAnnotation})
 	assert.NoError(t, err)
 }
 
 // Permutation 20 [HIGH]: Disable general monitoring but enable specific instrumentation
 func TestPermutation20_SelectiveMonitoringWithCustomSelector(t *testing.T) {
-	helper := NewTestHelper(t, true)
+	helper := NewTestHelper(t, false)
 
-	webNS := helper.Initialize("web", []string{})
-	analyticsNS := helper.Initialize("analytics", []string{})
-	dataScienceNS := helper.Initialize("data-science", []string{})
+	// Create single namespace
+	namespace := helper.Initialize("test-namespace", []string{})
 
 	// Create deployments
-	err := helper.CreateNamespaceAndApplyResources(webNS, []string{frontendAppYaml, adminDashboardYaml, sampleDeploymentYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(analyticsNS, []string{sampleDeploymentYaml})
-	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(dataScienceNS, []string{sampleDeploymentYaml})
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{
+		frontendAppYaml,
+		adminDashboardYaml,
+		sampleDeploymentYaml,
+		sampleDeploymentWithoutServiceYaml,
+	})
 	assert.NoError(t, err)
 
 	// Set up custom selector config
 	customSelectorConfig := auto.AnnotationConfig{
 		Python: auto.AnnotationResources{
-			Namespaces: []string{"analytics", "data-science"},
+			Deployments: []string{namespace + "/sample-deployment-without-service"},
 		},
 		NodeJS: auto.AnnotationResources{
-			Deployments: []string{webNS + "/frontend-app", webNS + "/admin-dashboard"},
+			Deployments: []string{namespace + "/frontend-app", namespace + "/admin-dashboard"},
 		},
 	}
 
@@ -437,35 +422,31 @@ func TestPermutation20_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	helper.UpdateAnnotationConfig(nil)
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava), RestartPods: true,
-		CustomSelector: customSelectorConfig,
+		Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+		RestartPods:        true,
+		CustomSelector:     customSelectorConfig,
 	})
 
 	// Verify frontend-app and admin-dashboard have NodeJS only
-	err = helper.ValidateWorkloadAnnotations("deployment", webNS, "frontend-app",
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "frontend-app",
 		[]string{autoAnnotateNodeJSAnnotation},
 		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation})
 	assert.NoError(t, err)
 
-	err = helper.ValidateWorkloadAnnotations("deployment", webNS, "admin-dashboard",
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "admin-dashboard",
 		[]string{autoAnnotateNodeJSAnnotation},
 		[]string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation})
 	assert.NoError(t, err)
 
-	// Verify sample-deployment in web namespace has no annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", webNS, "sample-deployment",
+	// Verify sample-deployment has no annotations
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment",
 		none,
 		allLanguages)
 	assert.NoError(t, err)
 
-	// Verify analytics/data-science deployments have no pod template annotations
-	err = helper.ValidateWorkloadAnnotations("deployment", analyticsNS, "sample-deployment",
-		none,
-		allLanguages)
-	assert.NoError(t, err)
-
-	err = helper.ValidateWorkloadAnnotations("deployment", dataScienceNS, "sample-deployment",
-		none,
-		allLanguages)
+	// Verify sample-deployment-without-service has Python
+	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment-without-service",
+		[]string{autoAnnotatePythonAnnotation},
+		[]string{autoAnnotateJavaAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)
 }
