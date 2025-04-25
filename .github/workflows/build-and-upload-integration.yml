@@ -17,11 +17,8 @@ permissions:
 
 jobs:
   BuildAndUpload:
-    uses: ./.github/workflows/build-and-upload-release.yml
+    uses: ./.github/workflows/build-and-upload.yml
     secrets: inherit
-    permissions:
-      id-token: write
-      contents: read
     with:
       release: false
       tag: 'integration-test'

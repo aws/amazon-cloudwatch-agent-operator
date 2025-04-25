@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ inputs.target-sha }}    
+          ref: ${{ inputs.target-sha }}
           repository: ${{inputs.repository}}
 
 
@@ -94,10 +94,27 @@ jobs:
           file: ./Dockerfile
           context: .
           push: true
-          platforms: linux/amd64, linux/arm64
+          platforms: linux/amd64,linux/arm64
           tags: |
-           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
-           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+            ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+            ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION_PKG=${{ env.VERSION_PKG }}
+            VERSION=${{ inputs.tag }}
+            VERSION_DATE=${{ env.VERSION_DATE }}
+            AGENT_VERSION=${{ env.AGENT_VERSION }}
+            AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
+            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
+            AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
+            AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
+            DCMG_EXPORTER_VERSION=${{ env.DCMG_EXPORTER_VERSION }}
+            NEURON_MONITOR_VERSION=${{ env.NEURON_MONITOR_VERSION }}
+            TARGET_ALLOCATOR_VERSION=${{ env.TARGET_ALLOCATOR_VERSION }}
+          outputs: type=image,push=true
+          provenance: false
+
   MakeTABinary:
     name: 'MakeTargetAllocatorImage'
     runs-on: ubuntu-latest
@@ -139,7 +156,8 @@ jobs:
       - name: Build Binaries
         run: |
           go mod download
-          export GOARCH=arm64 && make targetallocator 
+          go mod tidy
+          export GOARCH=arm64 && make targetallocator
           export GOARCH=amd64 && make targetallocator 
 
       - name: Build Cloudwatch Agent Target Allocator Image and push to ECR
@@ -150,8 +168,8 @@ jobs:
           context: ./cmd/amazon-cloudwatch-agent-target-allocator
           push: true
           tags: |
-           ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
-           ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.target-sha }}
+            ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
+            ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.target-sha }}
           platforms: linux/amd64, linux/arm64
 
   bypass-info:
@@ -178,7 +196,7 @@ jobs:
 
   push-release-ecr:
     if: ${{ inputs.release }}
-    needs: [MakeTABinary, e2e-test]
+    needs: [ MakeTABinary, e2e-test ]
     permissions:
       id-token: write
       contents: read
@@ -193,7 +211,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
-          aws-region: ${{inputs.region}} 
+          aws-region: ${{inputs.region}}
 
       - name: Login ECR
         id: login-ecr
