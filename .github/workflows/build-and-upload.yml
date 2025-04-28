@@ -48,10 +48,7 @@ on:
 
 
 jobs:
-  GetBuildArgs:
-    uses: ./.github/workflows/operator-build-args.yml
   MakeBinary:
-    needs: GetBuildArgs
     name: 'MakeContainerImage'
     runs-on: ubuntu-latest
     permissions:
@@ -103,7 +100,18 @@ jobs:
             ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}-linux-amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: ${{ needs.GetBuildArgs.outputs.build_args }}
+          build-args: |
+            VERSION_PKG=${{ env.VERSION_PKG }}
+            VERSION=${{ inputs.tag }}
+            VERSION_DATE=${{ env.VERSION_DATE }}
+            AGENT_VERSION=${{ env.AGENT_VERSION }}
+            AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
+            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
+            AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
+            AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
+            DCMG_EXPORTER_VERSION=${{ env.DCMG_EXPORTER_VERSION }}
+            NEURON_MONITOR_VERSION=${{ env.NEURON_MONITOR_VERSION }}
+            TARGET_ALLOCATOR_VERSION=${{ env.TARGET_ALLOCATOR_VERSION }}
           outputs: type=image,push=true
           provenance: false
 
@@ -119,7 +127,18 @@ jobs:
             ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}-linux-arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: ${{ needs.GetBuildArgs.outputs.build_args }}
+          build-args: |
+            VERSION_PKG=${{ env.VERSION_PKG }}
+            VERSION=${{ inputs.tag }}
+            VERSION_DATE=${{ env.VERSION_DATE }}
+            AGENT_VERSION=${{ env.AGENT_VERSION }}
+            AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
+            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
+            AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
+            AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
+            DCMG_EXPORTER_VERSION=${{ env.DCMG_EXPORTER_VERSION }}
+            NEURON_MONITOR_VERSION=${{ env.NEURON_MONITOR_VERSION }}
+            TARGET_ALLOCATOR_VERSION=${{ env.TARGET_ALLOCATOR_VERSION }}
           outputs: type=image,push=true
           provenance: false
 
