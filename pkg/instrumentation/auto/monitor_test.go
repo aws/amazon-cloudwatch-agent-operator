@@ -355,6 +355,128 @@ func TestMonitor_MutateObject(t *testing.T) {
 	}
 }
 
+func TestSystemNamespaceExclusion(t *testing.T) {
+	tests := []struct {
+		name                        string
+		namespace                   string
+		config                      MonitorConfig
+		expectedWorkloadAnnotations map[string]string
+	}{
+		{
+			name:      "kube-system namespace is excluded by default",
+			namespace: "kube-system",
+			config: MonitorConfig{
+				MonitorAllServices: true,
+				Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods:        true,
+			},
+			expectedWorkloadAnnotations: map[string]string{},
+		},
+		{
+			name:      "amazon-cloudwatch namespace is excluded by default",
+			namespace: "amazon-cloudwatch",
+			config: MonitorConfig{
+				MonitorAllServices: true,
+				Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods:        true,
+			},
+			expectedWorkloadAnnotations: map[string]string{},
+		},
+		{
+			name:      "kube-system can be included via customSelector",
+			namespace: "kube-system",
+			config: MonitorConfig{
+				MonitorAllServices: true,
+				Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods:        true,
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						DaemonSets:   []string{"kube-system/workload"},
+						Deployments:  []string{"kube-system/workload"},
+						StatefulSets: []string{"kube-system/workload"},
+					},
+				},
+			},
+			expectedWorkloadAnnotations: buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name:      "amazon-cloudwatch can be included via customSelector",
+			namespace: "amazon-cloudwatch",
+			config: MonitorConfig{
+				MonitorAllServices: true,
+				Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods:        true,
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						DaemonSets:   []string{"amazon-cloudwatch/workload"},
+						Deployments:  []string{"amazon-cloudwatch/workload"},
+						StatefulSets: []string{"amazon-cloudwatch/workload"},
+					},
+				},
+			},
+			expectedWorkloadAnnotations: buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name:      "regular namespace is not excluded by default",
+			namespace: "test-namespace",
+			config: MonitorConfig{
+				MonitorAllServices: true,
+				Languages:          instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods:        true,
+			},
+			expectedWorkloadAnnotations: buildAnnotations(instrumentation.TypeJava),
+		},
+	}
+
+	for _, workloadType := range workloadTypes {
+		t.Run(workloadType.name, func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					// Setup fresh clients for each test
+					clientset := fake.NewSimpleClientset()
+					fakeClient := fake2.NewFakeClient()
+					ctx := context.TODO()
+					logger := testr.New(t)
+
+					// Create namespace
+					namespace := createNamespace(t, clientset, ctx, tt.namespace)
+
+					// Create a monitor
+					monitor := NewMonitor(ctx, tt.config, clientset, fakeClient, fakeClient, logger)
+
+					// Create service
+					labels := map[string]string{"app": "test"}
+					service := newTestService("service", namespace.Name, labels)
+					_, err := clientset.CoreV1().Services(namespace.Name).Create(ctx, service, metav1.CreateOptions{})
+					assert.NoError(t, err)
+
+					// Create workload object
+					workloadObj := workloadType.create("workload", namespace.Name, labels, nil)
+
+					// Add workload to clientset based on its type
+					switch obj := workloadObj.(type) {
+					case *appsv1.Deployment:
+						_, err = clientset.AppsV1().Deployments(namespace.Name).Create(ctx, obj, metav1.CreateOptions{})
+					case *appsv1.StatefulSet:
+						_, err = clientset.AppsV1().StatefulSets(namespace.Name).Create(ctx, obj, metav1.CreateOptions{})
+					case *appsv1.DaemonSet:
+						_, err = clientset.AppsV1().DaemonSets(namespace.Name).Create(ctx, obj, metav1.CreateOptions{})
+					}
+					assert.NoError(t, err)
+
+					// Wait for service informer to be updated
+					err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys > 0 })
+					assert.NoError(t, err)
+
+					// Test mutation
+					mutatedAnnotations := monitor.MutateObject(nil, workloadObj)
+					assert.Equal(t, tt.expectedWorkloadAnnotations, mutatedAnnotations)
+				})
+			}
+		})
+	}
+}
+
 func TestMonitor_MutateObject_Namespace(t *testing.T) {
 	tests := []struct {
 		name                         string

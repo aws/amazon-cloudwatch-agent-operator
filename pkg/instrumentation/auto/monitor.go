@@ -259,6 +259,8 @@ func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
 	return mutate(obj, languagesToAnnotate)
 }
 
+var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
+
 // returns if workload is auto monitored (does not include custom selector)
 func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 	if isNamespace(obj) {
@@ -269,6 +271,9 @@ func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 		return false
 	}
 
+	if slices.Contains(excludedNamespaces, obj.GetNamespace()) {
+		return false
+	}
 	// determine if the object is currently selected by a service
 	objectLabels := getTemplateSpecLabels(obj)
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
