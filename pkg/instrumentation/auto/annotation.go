@@ -128,6 +128,9 @@ func (m *AnnotationMutators) Empty() bool {
 }
 
 func namespacedName(obj metav1.Object) string {
+	if _, ok := obj.(*corev1.Namespace); ok {
+		return obj.GetName()
+	}
 	return fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName())
 }
 

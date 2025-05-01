@@ -355,6 +355,193 @@ func TestMonitor_MutateObject(t *testing.T) {
 	}
 }
 
+func TestMonitor_MutateObject_Namespace(t *testing.T) {
+	tests := []struct {
+		name                         string
+		config                       MonitorConfig
+		namespace                    string
+		existingAnnotations          map[string]string
+		expectedNamespaceAnnotations map[string]string
+		expectedMutated              map[string]string
+	}{
+		{
+			name: "namespace included in custom selector java",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava),
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          nil,
+			expectedNamespaceAnnotations: buildAnnotations(instrumentation.TypeJava),
+			expectedMutated:              buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name: "namespace included in custom selector python",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypePython),
+				CustomSelector: AnnotationConfig{
+					Python: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          nil,
+			expectedNamespaceAnnotations: buildAnnotations(instrumentation.TypePython),
+			expectedMutated:              buildAnnotations(instrumentation.TypePython),
+		},
+		{
+			name: "namespace excluded",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava),
+				Exclude: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          nil,
+			expectedNamespaceAnnotations: map[string]string{},
+			expectedMutated:              map[string]string{},
+		},
+		{
+			name: "namespace not in any selection",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava),
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          nil,
+			expectedNamespaceAnnotations: map[string]string{},
+			expectedMutated:              map[string]string{},
+		},
+		{
+			name: "multiple languages in custom selector",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava, instrumentation.TypePython),
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+					Python: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:           "test-namespace",
+			existingAnnotations: nil,
+			expectedNamespaceAnnotations: mergeMaps(
+				buildAnnotations(instrumentation.TypeJava),
+				buildAnnotations(instrumentation.TypePython),
+			),
+			expectedMutated: mergeMaps(
+				buildAnnotations(instrumentation.TypeJava),
+				buildAnnotations(instrumentation.TypePython),
+			),
+		},
+		{
+			name: "remove java when no longer selected",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava),
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          buildAnnotations(instrumentation.TypeJava),
+			expectedNamespaceAnnotations: map[string]string{},
+			expectedMutated:              buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name: "preserve existing non-instrumentation annotations",
+			config: MonitorConfig{
+				Languages: instrumentation.NewTypeSet(instrumentation.TypeJava),
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:           "test-namespace",
+			existingAnnotations: map[string]string{"custom-key": "custom-value"},
+			expectedNamespaceAnnotations: mergeMaps(
+				buildAnnotations(instrumentation.TypeJava),
+				map[string]string{"custom-key": "custom-value"},
+			),
+			expectedMutated: buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name: "restart pods has no effect on namespace selection",
+			config: MonitorConfig{
+				Languages:   instrumentation.NewTypeSet(instrumentation.TypeJava),
+				RestartPods: true,
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:                    "test-namespace",
+			existingAnnotations:          nil,
+			expectedNamespaceAnnotations: buildAnnotations(instrumentation.TypeJava),
+			expectedMutated:              buildAnnotations(instrumentation.TypeJava),
+		},
+		{
+			name: "add annotation to namespace with existing annotations",
+			config: MonitorConfig{
+				CustomSelector: AnnotationConfig{
+					Java: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+					Python: AnnotationResources{
+						Namespaces: []string{"test-namespace"},
+					},
+				},
+			},
+			namespace:           "test-namespace",
+			existingAnnotations: buildAnnotations(instrumentation.TypePython),
+			expectedNamespaceAnnotations: mergeMaps(
+				buildAnnotations(instrumentation.TypeJava),
+				buildAnnotations(instrumentation.TypePython),
+			),
+			expectedMutated: buildAnnotations(instrumentation.TypeJava),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup test environment
+			clientset := fake.NewSimpleClientset()
+			fakeClient := fake2.NewFakeClient()
+			ctx := context.TODO()
+
+			// Create namespace with existing annotations if any
+			namespace := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        tt.namespace,
+					Annotations: tt.existingAnnotations,
+				},
+			}
+
+			// Create monitor
+			logger := testr.New(t)
+			monitor := NewMonitor(ctx, tt.config, clientset, fakeClient, fakeClient, logger)
+
+			// Test
+			mutatedAnnotations := monitor.MutateObject(nil, namespace)
+			assert.Equal(t, tt.expectedMutated, mutatedAnnotations, "Mutated annotations don't match expected")
+
+			assert.Equal(t, tt.expectedNamespaceAnnotations, namespace.GetAnnotations(), "Namespace annotations don't match expected")
+		})
+	}
+}
+
 func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
 	return wait.PollImmediate(1*time.Millisecond, 5*time.Millisecond, func() (bool, error) {
 		return isValid(len(monitor.serviceInformer.GetStore().ListKeys())), nil
