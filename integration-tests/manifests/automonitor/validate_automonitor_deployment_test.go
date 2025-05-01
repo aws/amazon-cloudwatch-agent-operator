@@ -15,13 +15,6 @@ import (
 const sampleDeploymentServiceYaml = "../sample-deployment-service.yaml"
 
 var (
-	defaultAnnotationConfig = auto.AnnotationConfig{
-		Java:   auto.AnnotationResources{},
-		Python: auto.AnnotationResources{},
-		DotNet: auto.AnnotationResources{},
-		NodeJS: auto.AnnotationResources{},
-	}
-
 	none []string
 )
 
@@ -55,6 +48,7 @@ func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
 	})
 
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml})
+	assert.NoError(t, err)
 
 	err = helper.ValidateWorkloadAnnotations("deployment", namespace, "sample-deployment", none, []string{autoAnnotateJavaAnnotation, autoAnnotatePythonAnnotation, autoAnnotateDotNetAnnotation, autoAnnotateNodeJSAnnotation})
 	assert.NoError(t, err)

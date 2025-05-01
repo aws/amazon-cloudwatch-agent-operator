@@ -315,25 +315,6 @@ func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotatio
 	return true
 }
 
-func (h *TestHelper) restartOperator() {
-	cmd := exec.Command("kubectl", "rollout", "restart", "deployment", *amazonControllerManager, "-n", amazonCloudwatchNamespace)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		h.logger.Info(fmt.Sprintf("Error restarting deployment: %v\nOutput: %s\n", err, output))
-		return
-	}
-
-	waitCmd := exec.Command("kubectl", "wait", "--for=condition=Available",
-		"deployment/"+*amazonControllerManager,
-		"-n", amazonCloudwatchNamespace,
-		"--timeout=300s")
-
-	waitOutput, err := waitCmd.CombinedOutput()
-	if err != nil {
-		h.logger.Info(fmt.Sprintf("Error waiting for deployment: %v\nOutput: %s\n", err, waitOutput))
-	}
-}
-
 func (h *TestHelper) findIndexOfPrefix(str string, strs []string) int {
 	for i, s := range strs {
 		if strings.HasPrefix(s, str) {
@@ -549,20 +530,25 @@ func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) 
 
 // WaitForDeploymentRollout waits for the deployment to complete its rollout
 func (h *TestHelper) WaitForDeploymentRollout(namespace string, deploymentName string) error {
-	return wait.PollImmediate(time.Second*2, time.Minute*5, func() (bool, error) {
-		deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
-		if err != nil {
-			return false, err
-		}
+	return wait.PollUntilContextTimeout(
+		context.TODO(), // parent context
+		time.Second*2,  // interval between polls
+		time.Minute*5,  // timeout
+		false,          // immediate (set to false to match PollImmediate behavior)
+		func(ctx context.Context) (bool, error) {
+			deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
 
-		// Check if the rollout is complete
-		if deployment.Generation <= deployment.Status.ObservedGeneration &&
-			deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas &&
-			deployment.Status.Replicas == *deployment.Spec.Replicas &&
-			deployment.Status.AvailableReplicas == *deployment.Spec.Replicas {
-			return true, nil
-		}
+			// Check if the rollout is complete
+			if deployment.Generation <= deployment.Status.ObservedGeneration &&
+				deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas &&
+				deployment.Status.Replicas == *deployment.Spec.Replicas &&
+				deployment.Status.AvailableReplicas == *deployment.Spec.Replicas {
+				return true, nil
+			}
 
-		return false, nil
-	})
+			return false, nil
+		})
 }

@@ -46,15 +46,14 @@ type instrumentationWithContainers struct {
 }
 
 type languageInstrumentations struct {
-	Java                      instrumentationWithContainers
-	NodeJS                    instrumentationWithContainers
-	Python                    instrumentationWithContainers
-	DotNet                    instrumentationWithContainers
-	ApacheHttpd               instrumentationWithContainers
-	Nginx                     instrumentationWithContainers
-	Go                        instrumentationWithContainers
-	Sdk                       instrumentationWithContainers
-	monitorAllServicesEnabled bool
+	Java        instrumentationWithContainers
+	NodeJS      instrumentationWithContainers
+	Python      instrumentationWithContainers
+	DotNet      instrumentationWithContainers
+	ApacheHttpd instrumentationWithContainers
+	Nginx       instrumentationWithContainers
+	Go          instrumentationWithContainers
+	Sdk         instrumentationWithContainers
 }
 
 // Check if single instrumentation is configured for Pod and return which is configured.
@@ -162,10 +161,6 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 	}
 
 	return true, nil
-}
-
-func (langInsts languageInstrumentations) shouldSkipMultiInstrumentationContainerValidation() bool {
-	return featuregate.SkipMultiInstrumentationContainerValidation.IsEnabled() || langInsts.monitorAllServicesEnabled
 }
 
 // Set containers for configured instrumentation.

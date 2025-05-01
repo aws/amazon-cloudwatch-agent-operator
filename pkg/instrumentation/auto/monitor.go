@@ -5,7 +5,6 @@ package auto
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -70,14 +69,6 @@ func (m *Monitor) GetWriter() client.Writer {
 	return m.clientWriter
 }
 
-type NoopMonitor struct {
-	customSelectors *AnnotationMutators
-}
-
-func (n NoopMonitor) MutateObject(_ client.Object, _ client.Object) map[string]string {
-	return map[string]string{}
-}
-
 // NewMonitor is used to create an InstrumentationMutator that supports AutoMonitor.
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
 	// Config default values
@@ -90,7 +81,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute, informers.WithTransform(func(obj interface{}) (interface{}, error) {
 		svc, ok := obj.(*corev1.Service)
 		if !ok {
-			return obj, errors.New(fmt.Sprintf("error transforming service: %s not a service", obj))
+			return obj, fmt.Errorf("error transforming service: %s not a service", obj)
 		}
 		// Return only the fields we need
 		return &corev1.Service{
@@ -284,7 +275,7 @@ func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 	objectLabels := getTemplateSpecLabels(obj)
 	for _, informerObj := range m.serviceInformer.GetStore().List() {
 		service := informerObj.(*corev1.Service)
-		if service.Spec.Selector == nil || len(service.Spec.Selector) == 0 || service.GetNamespace() != obj.GetNamespace() {
+		if len(service.Spec.Selector) == 0 || service.GetNamespace() != obj.GetNamespace() {
 			continue
 		}
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
