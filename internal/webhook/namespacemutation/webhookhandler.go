@@ -6,8 +6,9 @@ package namespacemutation
 import (
 	"context"
 	"encoding/json"
-	corev1 "k8s.io/api/core/v1"
 	"net/http"
+
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"

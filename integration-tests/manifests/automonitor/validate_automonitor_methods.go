@@ -7,12 +7,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	"github.com/go-logr/logr"
-	"github.com/go-logr/logr/testr"
-	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +15,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/testr"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 
 	"github.com/google/uuid"
 	appsV1 "k8s.io/api/apps/v1"

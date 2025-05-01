@@ -3,13 +3,15 @@
 package annotations
 
 import (
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
-	"github.com/stretchr/testify/assert"
 	"maps"
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 )
 
 const (

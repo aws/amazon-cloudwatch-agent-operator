@@ -8,15 +8,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"os"
 	"runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -290,7 +292,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	monitor := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
+	monitor, shouldMonitorAllServices := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
 
 	if monitor != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
@@ -326,7 +328,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), shouldMonitorAllServices),
 				}),
 		})
 	} else {
@@ -350,7 +352,7 @@ func main() {
 	}
 }
 
-func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) auto.InstrumentationAnnotator {
+func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) (auto.InstrumentationAnnotator, bool) {
 	var autoAnnotationConfig auto.AnnotationConfig
 	supportedLanguages := instrumentation.SupportedTypes()
 
@@ -371,34 +373,34 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 					setupLog,
 					autoAnnotationConfig,
 					supportedLanguages,
-				)
+				), false
 			}
 		}
 	}
 
 	if os.Getenv("DISABLE_AUTO_MONITOR") == "true" {
 		setupLog.Info("Auto-monitor is disabled due to DISABLE_AUTO_MONITOR environment variable")
-		return nil
+		return nil, false
 	}
 
 	var monitorConfig *auto.MonitorConfig
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
-		return nil
+		return nil, false
 	} else {
 		k8sConfig, err := rest.InClusterConfig()
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return nil
+			return nil, false
 		}
 
 		clientSet, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
 			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return nil
+			return nil, false
 		}
 		logger := ctrl.Log.WithName("auto_monitor")
-		return auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger)
+		return auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger), monitorConfig.MonitorAllServices
 	}
 }
 

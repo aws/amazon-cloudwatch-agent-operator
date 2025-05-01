@@ -105,7 +105,7 @@ func TestGetInstrumentationInstanceJMX(t *testing.T) {
 }
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
+	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), false)
 	require.NotNil(t, mutator)
 
 	true := true

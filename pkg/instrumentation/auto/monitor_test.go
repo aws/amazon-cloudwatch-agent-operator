@@ -6,7 +6,9 @@ package auto
 import (
 	"context"
 	"encoding/json"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"testing"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
@@ -19,8 +21,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fake2 "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
-	"time"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
 const defaultNs = "default"

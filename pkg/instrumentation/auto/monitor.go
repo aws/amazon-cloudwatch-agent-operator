@@ -7,7 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+	"os"
+	"reflect"
+	"slices"
+	"time"
+
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,11 +20,9 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"slices"
-	"time"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
 // InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation

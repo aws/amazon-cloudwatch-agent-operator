@@ -16,7 +16,7 @@ ARG NEURON_MONITOR_VERSION
 ARG TARGET_ALLOCATOR_VERSION
 
 # Set environment variables
-ENV GOPROXY="https://proxy.golang.org,direct" \
+ENV GOPROXY="direct" \
     GO111MODULE=on \
     CGO_ENABLED=0 \
     GOOS=linux \

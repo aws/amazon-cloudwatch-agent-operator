@@ -6,10 +6,12 @@ package workloadmutation
 import (
 	"context"
 	"encoding/json"
-	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
-	"github.com/go-logr/logr"
 	"net/http"
 	"testing"
+
+	"github.com/go-logr/logr"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
