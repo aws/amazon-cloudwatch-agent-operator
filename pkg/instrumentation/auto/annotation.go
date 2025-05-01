@@ -42,7 +42,9 @@ type AnnotationMutators struct {
 }
 
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	MutateAndPatchAll(m, ctx, true)
+	var m2 InstrumentationAnnotator = m
+	MutateAndPatchWorkloads(m2, ctx)
+	MutateAndPatchNamespaces(m2, ctx, true)
 }
 
 func (m *AnnotationMutators) GetAnnotationMutators() *AnnotationMutators {

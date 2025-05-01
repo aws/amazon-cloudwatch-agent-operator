@@ -43,8 +43,9 @@ type Monitor struct {
 
 func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
 	if m.config.RestartPods {
-		MutateAndPatchAll(m, ctx, false)
+		MutateAndPatchWorkloads(m, ctx)
 	}
+	MutateAndPatchNamespaces(m, ctx, m.config.RestartPods)
 	// todo: what to do about updating namespace annotations? maybe update them here? or pass in variable to MutateAndPatchAll?
 }
 
