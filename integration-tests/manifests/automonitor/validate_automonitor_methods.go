@@ -18,13 +18,13 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
 
-	"github.com/google/uuid"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,7 +35,13 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/integration-tests/util"
 )
 
+type workloadType string
+
 const (
+	Deployment  workloadType = "deployment"
+	DaemonSet   workloadType = "daemonset"
+	StatefulSet workloadType = "statefulset"
+
 	injectJavaAnnotation         = "instrumentation.opentelemetry.io/inject-java"
 	autoAnnotateJavaAnnotation   = "cloudwatch.aws.amazon.com/auto-annotate-java"
 	injectPythonAnnotation       = "instrumentation.opentelemetry.io/inject-python"
@@ -45,42 +51,42 @@ const (
 	injectNodeJSAnnotation       = "instrumentation.opentelemetry.io/inject-nodejs"
 	autoAnnotateNodeJSAnnotation = "cloudwatch.aws.amazon.com/auto-annotate-nodejs"
 
-	deploymentName            = "sample-deployment"
-	nginxDeploymentName       = "nginx"
-	statefulSetName           = "sample-statefulset"
+	kubeSystemNamespace       = "kube-system"
 	amazonCloudwatchNamespace = "amazon-cloudwatch"
-	daemonSetName             = "sample-daemonset"
-
-	sampleDaemonsetYamlRelPath       = "../sample-daemonset.yaml"
-	sampleDeploymentYaml             = "../sample-deployment.yaml"
-	sampleNginxAppYamlNameRelPath    = "../../java/sample-deployment-java.yaml"
-	sampleStatefulsetYamlNameRelPath = "../sample-statefulset.yaml"
 
 	timoutDuration     = 2 * time.Minute
-	numberOfRetries    = 10
 	timeBetweenRetries = 5 * time.Second
 )
 
 var (
-	amazonControllerManager = flag.String("controllerManagerName", "amazon-cloudwatch-observability-controller-manager", "short")
+	amazonControllerManager = flag.String("controllerManagerName", "cloudwatch-controller-manager", "short")
 )
 
 type TestHelper struct {
-	clientSet  *kubernetes.Clientset
-	t          *testing.T
-	startTime  time.Time
-	skipDelete bool
-	logger     logr.Logger
+	clientSet *kubernetes.Clientset
+	t         *testing.T
+	startTime time.Time
+	logger    logr.Logger
 }
 
-func NewTestHelper(t *testing.T, skipDelete bool) *TestHelper {
+func NewTestHelper(t *testing.T) *TestHelper {
 	logger := testr.New(t)
 	return &TestHelper{
-		clientSet:  setupTest(t, logger),
-		t:          t,
-		skipDelete: skipDelete,
-		logger:     logger,
+		clientSet: setupTest(t, logger),
+		t:         t,
+		logger:    logger,
 	}
+}
+
+func (h *TestHelper) Initialize(namespace string) string {
+	newUUID := uuid.New()
+	uniqueNamespace := fmt.Sprintf("%s-%s", namespace, newUUID.String())
+
+	h.UpdateMonitorConfig(&auto.MonitorConfig{MonitorAllServices: false, RestartPods: false})
+	h.UpdateAnnotationConfig(nil)
+	h.startTime = time.Now()
+
+	return uniqueNamespace
 }
 
 func setupTest(t *testing.T, logger logr.Logger) *kubernetes.Clientset {
@@ -105,14 +111,14 @@ func setupTest(t *testing.T, logger logr.Logger) *kubernetes.Clientset {
 }
 
 func (h *TestHelper) ApplyYAMLWithKubectl(filename, namespace string) error {
-	cmd := exec.Command("kubectl", "apply", "-f", filename, "-n", namespace)
+	cmd := exec.Command("kubectl", "apply", "--wait=true", "-f", filename, "-n", namespace)
 	h.logger.Info(fmt.Sprintf("Applying YAML with kubectl %s\n", cmd))
 	return cmd.Run()
 }
 
-func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resourceFiles []string) error {
+func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resourceFiles []string, skipDelete bool) error {
 	h.logger.Info(fmt.Sprintf("Creating namespace %s\n", namespace))
-	err := h.CreateNamespace(namespace)
+	err := h.CreateNamespace(namespace, skipDelete)
 	if err != nil {
 		return err
 	}
@@ -125,15 +131,12 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 		}
 	}
 
-	for _, file := range resourceFiles {
-		err = h.WaitYamlWithKubectl(file, namespace)
-		if err != nil {
-			h.t.Errorf("Could not wait resources %s/%s\n", namespace, file)
-			return err
+	h.t.Cleanup(func() {
+		h.logger.Info(fmt.Sprintf("Deleting resources %s in namespace %s", namespace, resourceFiles))
+		if err := h.DeleteResources(namespace, resourceFiles); err != nil {
+			h.t.Logf("Failed to delete resources: %v", err)
 		}
-		// ignore error because it could run on resource which doesn't rollout (aka a service)
-		_ = h.RolloutWaitYamlWithKubectl(file, namespace)
-	}
+	})
 	return nil
 }
 
@@ -151,17 +154,17 @@ func (h *TestHelper) DeleteYAMLWithKubectl(filename, namespace string) error {
 	return cmd.Run()
 }
 
-func (h *TestHelper) DeleteNamespaceAndResources(name string, resourceFiles []string) error {
+func (h *TestHelper) DeleteResources(name string, resourceFiles []string) error {
 	for _, file := range resourceFiles {
 		if err := h.DeleteYAMLWithKubectl(file, name); err != nil {
 			return err
 		}
 	}
-	return h.DeleteNamespace(name)
+	return nil
 }
 
 // CreateNamespace if not already created
-func (h *TestHelper) CreateNamespace(name string) error {
+func (h *TestHelper) CreateNamespace(name string, skipDelete bool) error {
 	_, err := h.clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if err == nil {
 		return nil
@@ -183,64 +186,27 @@ func (h *TestHelper) CreateNamespace(name string) error {
 
 		_, err := h.clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 		if err == nil {
-			return nil
+			break
 		} else if !errors.IsNotFound(err) {
 			return err
 		}
 
 		time.Sleep(timeBetweenRetries)
 	}
+
+	if !skipDelete {
+		h.t.Cleanup(func() {
+			h.logger.Info(fmt.Sprintf("Deleting namespace %v", namespace))
+			if err := h.DeleteNamespace(name); err != nil {
+				h.t.Fatalf("Failed to delete namespaces: %v", err)
+			}
+		})
+	}
+	return nil
 }
 
 func (h *TestHelper) DeleteNamespace(name string) error {
 	return h.clientSet.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
-}
-
-func (h *TestHelper) CheckNameSpaceAnnotations(expectedAnnotations []string, uniqueNamespace string) bool {
-	if err := h.CreateNamespace(uniqueNamespace); err != nil {
-		h.t.Fatalf("Failed to create/apply resources on namespace: %v", err)
-	}
-
-	defer func() {
-		if err := h.DeleteNamespace(uniqueNamespace); err != nil {
-			h.t.Fatalf("Failed to delete namespace: %v", err)
-		}
-	}()
-
-	for {
-		if h.IsNamespaceUpdated(uniqueNamespace) {
-			h.logger.Info(fmt.Sprintf("Namespace %s has been updated.\n", uniqueNamespace))
-			break
-		}
-		elapsed := time.Since(h.startTime)
-		if elapsed >= timoutDuration {
-			h.logger.Info(fmt.Sprintf("Timeout reached while waiting for namespace %s to be updated.\n", uniqueNamespace))
-			break
-		}
-	}
-
-	for i := 0; i < numberOfRetries; i++ {
-		correct := true
-		ns, err := h.clientSet.CoreV1().Namespaces().Get(context.TODO(), uniqueNamespace, metav1.GetOptions{})
-		if err != nil {
-			h.logger.Error(err, "There was an error getting namespace, ")
-			return false
-		}
-
-		for _, annotation := range expectedAnnotations {
-			if ns.ObjectMeta.Annotations[annotation] != "true" {
-				time.Sleep(timeBetweenRetries)
-				correct = false
-				break
-			}
-		}
-
-		if correct {
-			h.logger.Info("Namespace annotations are correct!")
-			return true
-		}
-	}
-	return false
 }
 
 func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
@@ -285,34 +251,6 @@ func forceRestart(deployment *appsV1.Deployment) {
 	}
 	annotations["test-restart"] = time.Now().String()
 	deployment.Spec.Template.SetAnnotations(annotations)
-}
-
-func (h *TestHelper) PodsAnnotationsValid(namespace string, shouldExistAnnotations []string, shouldNotExistAnnotations []string) bool {
-	currentPods, err := h.clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		h.logger.Info(fmt.Sprintf("Failed to list pods: %v\n", err))
-		return false
-	}
-	for _, pod := range currentPods.Items {
-		h.logger.Info(fmt.Sprintf("Pod %s is in phase %s\n", pod.Name, pod.Status.Phase))
-		if pod.Status.Phase != v1.PodRunning {
-			continue
-		}
-		for _, annotation := range shouldExistAnnotations {
-			if value, exists := pod.Annotations[annotation]; !exists || value != "true" {
-				h.logger.Info(fmt.Sprintf("%s/%s should have annotation %s", pod.Namespace, pod.Name, annotation))
-				return false
-			}
-		}
-		for _, annotation := range shouldNotExistAnnotations {
-			if _, exists := pod.Annotations[annotation]; exists {
-				h.logger.Info(fmt.Sprintf("%s/%s should not have annotation %s", pod.Namespace, pod.Name, annotation))
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 func (h *TestHelper) findIndexOfPrefix(str string, strs []string) int {
@@ -369,38 +307,30 @@ func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
 	time.Sleep(5 * time.Second)
 }
 
-func (h *TestHelper) ValidateWorkloadAnnotations(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
-	return retry.OnError(retry.DefaultBackoff, func(err error) bool {
-		return err != nil
-	}, func() error {
-		return h.ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace, resourceName, shouldExist, shouldNotExist)
-	})
-}
-
-func (h *TestHelper) ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
-	var annotations map[string]string
-	switch resourceType {
-	case "deployment":
-		resource, err := h.clientSet.AppsV1().Deployments(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
-		if err != nil {
-			return err
+func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist []string, shouldNotExist []string) error {
+	for {
+		if h.IsNamespaceUpdated(namespace) {
+			h.logger.Info(fmt.Sprintf("Namespace %s has been updated.\n", namespace))
+			break
 		}
-		annotations = resource.Spec.Template.Annotations
-	case "daemonset":
-		resource, err := h.clientSet.AppsV1().DaemonSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
-		if err != nil {
-			return err
+		elapsed := time.Since(h.startTime)
+		if elapsed >= timoutDuration {
+			h.logger.Info(fmt.Sprintf("Timeout reached while waiting for namespace %s to be updated.\n", namespace))
+			break
 		}
-		annotations = resource.Spec.Template.Annotations
-	case "statefulset":
-		resource, err := h.clientSet.AppsV1().StatefulSets(uniqueNamespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		annotations = resource.Spec.Template.Annotations
-	default:
-		return fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
+
+	ns, err := h.clientSet.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err != nil {
+		h.logger.Error(err, "There was an error getting namespace")
+		return err
+	}
+
+	annotations := ns.ObjectMeta.Annotations
+	if annotations == nil {
+		annotations = map[string]string{} // Initialize empty map to simplify checks
+	}
+
 	for _, shouldExistAnnotation := range shouldExist {
 		if _, ok := annotations[shouldExistAnnotation]; !ok {
 			return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
@@ -411,54 +341,95 @@ func (h *TestHelper) ValidateWorkloadAnnotationsA(resourceType, uniqueNamespace,
 			return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
 		}
 	}
+
 	return nil
-	//if err := util.WaitForNewPodCreation(h.clientSet, resource, h.startTime); err != nil {
-	//	return fmt.Errorf("error waiting for pod creation: %s", err.Error())
-	//}
-	//
-	//if h.PodsAnnotationsValid(uniqueNamespace, shouldExist, shouldNotExist) {
-	//	return nil
-	//} else {
-	//	return fmt.Errorf("A pod has invalid annotations")
-	//}
+}
+
+func (h *TestHelper) ValidateWorkloadAnnotations(workloadType workloadType, namespace, resourceName string, shouldExist []string, shouldNotExist []string) error {
+	return retry.OnError(retry.DefaultBackoff, func(err error) bool {
+		return err != nil
+	}, func() error {
+		var annotations map[string]string
+		switch workloadType {
+		case Deployment:
+			resource, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			annotations = resource.Spec.Template.Annotations
+		case DaemonSet:
+			resource, err := h.clientSet.AppsV1().DaemonSets(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			annotations = resource.Spec.Template.Annotations
+		case StatefulSet:
+			resource, err := h.clientSet.AppsV1().StatefulSets(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			annotations = resource.Spec.Template.Annotations
+		default:
+			return fmt.Errorf("unsupported resource type: %s", workloadType)
+		}
+
+		// resource level annotation validation
+		if len(annotations) > 0 {
+			for _, shouldExistAnnotation := range shouldExist {
+				if _, ok := annotations[shouldExistAnnotation]; !ok {
+					return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+				}
+			}
+			for _, shouldNotExistAnnotation := range shouldNotExist {
+				if _, ok := annotations[shouldNotExistAnnotation]; ok {
+					return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func (h *TestHelper) ValidatePodsAnnotations(namespace string, shouldExist []string, shouldNotExist []string) error {
+	currentPods, err := h.clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		h.logger.Info(fmt.Sprintf("Failed to list pods: %v\n", err))
+		return err
+	}
+	for _, pod := range currentPods.Items {
+		h.logger.Info(fmt.Sprintf("Pod %s is in phase %s\n", pod.Name, pod.Status.Phase))
+		if pod.Status.Phase != v1.PodRunning {
+			continue
+		}
+		annotations := pod.Annotations
+		for _, shouldExistAnnotation := range shouldExist {
+			if _, ok := annotations[shouldExistAnnotation]; !ok {
+				return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+			}
+		}
+		for _, shouldNotExistAnnotation := range shouldNotExist {
+			if _, ok := annotations[shouldNotExistAnnotation]; ok {
+				return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (h *TestHelper) CreateResource(uniqueNamespace string, sampleAppYamlPath string, skipDelete bool) error {
-	if err := h.CreateNamespaceAndApplyResources(uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
+	if err := h.CreateNamespaceAndApplyResources(uniqueNamespace, []string{sampleAppYamlPath}, true); err != nil {
 		return fmt.Errorf("failed to create/apply resources on namespace: %v", err)
 	}
 
 	if !skipDelete {
 		h.t.Cleanup(func() {
-			if err := h.DeleteNamespaceAndResources(uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
+			if err := h.DeleteResources(uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
 				h.t.Fatalf("Failed to delete namespaces/resources: %v", err)
 			}
 		})
 	}
 	return nil
-}
-
-func (h *TestHelper) Initialize(namespace string, apps []string) string {
-	newUUID := uuid.New()
-	uniqueNamespace := fmt.Sprintf("%s-%s", namespace, newUUID.String())
-
-	h.UpdateMonitorConfig(&auto.MonitorConfig{MonitorAllServices: false})
-	h.UpdateAnnotationConfig(nil)
-	h.startTime = time.Now()
-	if err := h.CreateNamespaceAndApplyResources(uniqueNamespace, apps); err != nil {
-		h.t.Fatalf("Failed to create/apply resources on namespace: %v", err)
-	}
-
-	if !h.skipDelete {
-		h.t.Cleanup(func() {
-			h.logger.Info(fmt.Sprintf("Deleting namespace %s and resources %s", uniqueNamespace, apps))
-			if err := h.DeleteNamespaceAndResources(uniqueNamespace, apps); err != nil {
-				h.t.Fatalf("Failed to delete namespaces/resources: %v", err)
-			}
-		})
-	}
-
-	return uniqueNamespace
 }
 
 func (h *TestHelper) NumberOfRevisions(deploymentName string, namespace string) int {
@@ -487,68 +458,89 @@ func (h *TestHelper) RolloutWaitYamlWithKubectl(filename string, namespace strin
 	return cmd.Run()
 }
 
-func (h *TestHelper) RestartDeployment(namespace string, deploymentName string) error {
-	h.logger.Info(fmt.Sprintf("Restarting %s/%s...", namespace, deploymentName))
+func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string) error {
+	h.logger.Info(fmt.Sprintf("Restarting %s/%s...", namespace, name))
+
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// Get the latest version of the deployment
-		deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to get deployment: %v", err)
+		var updateErr error
+
+		switch wlType {
+		case Deployment:
+			deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to get deployment: %v", err)
+			}
+
+			if deployment.Spec.Template.Annotations == nil {
+				deployment.Spec.Template.Annotations = make(map[string]string)
+			}
+			deployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+
+			_, updateErr = h.clientSet.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+
+		case DaemonSet:
+			ds, err := h.clientSet.AppsV1().DaemonSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to get daemonset: %v", err)
+			}
+
+			if ds.Spec.Template.Annotations == nil {
+				ds.Spec.Template.Annotations = make(map[string]string)
+			}
+			ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+
+			_, updateErr = h.clientSet.AppsV1().DaemonSets(namespace).Update(context.TODO(), ds, metav1.UpdateOptions{})
 		}
 
-		// Add or update restart annotation
-		if deployment.Spec.Template.Annotations == nil {
-			deployment.Spec.Template.Annotations = make(map[string]string)
-		}
-		deployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-
-		// Update the deployment
-		_, updateErr := h.clientSet.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 		if updateErr != nil {
-			return fmt.Errorf("failed to update deployment: %v", updateErr)
+			return fmt.Errorf("failed to update %s: %v", wlType, updateErr)
 		}
 
-		// wait
-		cmd := exec.Command("kubectl", "rollout", "status", "deployment/"+deploymentName, "-n", namespace)
+		cmd := exec.Command("kubectl", "rollout", "status", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
 		h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
 		return cmd.Run()
 	})
 
 	if retryErr != nil {
-		return fmt.Errorf("failed to restart deployment %s: %v", deploymentName, retryErr)
+		return fmt.Errorf("failed to restart %s %s: %v", wlType, name, retryErr)
 	}
 
-	// Wait for rollout to complete
-	err := h.WaitForDeploymentRollout(namespace, deploymentName)
+	err := h.waitForWorkloadRollout(wlType, namespace, name)
 	if err != nil {
-		return fmt.Errorf("failed to wait for deployment rollout: %v", err)
+		return fmt.Errorf("failed to wait for %s rollout: %v", wlType, err)
 	}
 
-	h.logger.Info(fmt.Sprintf("Successfully restarted deployment %s in namespace %s\n", deploymentName, namespace))
+	h.logger.Info(fmt.Sprintf("Successfully restarted %s %s in namespace %s\n", wlType, name, namespace))
 	return nil
 }
 
-// WaitForDeploymentRollout waits for the deployment to complete its rollout
-func (h *TestHelper) WaitForDeploymentRollout(namespace string, deploymentName string) error {
+func (h *TestHelper) waitForWorkloadRollout(wlType workloadType, namespace, name string) error {
 	return wait.PollUntilContextTimeout(
 		context.TODO(), // parent context
 		time.Second*2,  // interval between polls
 		time.Minute*5,  // timeout
 		false,          // immediate (set to false to match PollImmediate behavior)
 		func(ctx context.Context) (bool, error) {
-			deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
-			if err != nil {
-				return false, err
-			}
+			switch wlType {
+			case Deployment:
+				deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				return deployment.Generation <= deployment.Status.ObservedGeneration &&
+					deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas &&
+					deployment.Status.Replicas == *deployment.Spec.Replicas &&
+					deployment.Status.AvailableReplicas == *deployment.Spec.Replicas, nil
 
-			// Check if the rollout is complete
-			if deployment.Generation <= deployment.Status.ObservedGeneration &&
-				deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas &&
-				deployment.Status.Replicas == *deployment.Spec.Replicas &&
-				deployment.Status.AvailableReplicas == *deployment.Spec.Replicas {
-				return true, nil
+			case DaemonSet:
+				daemonset, err := h.clientSet.AppsV1().DaemonSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				return daemonset.Generation <= daemonset.Status.ObservedGeneration &&
+					daemonset.Status.UpdatedNumberScheduled == daemonset.Status.DesiredNumberScheduled &&
+					daemonset.Status.NumberReady == daemonset.Status.DesiredNumberScheduled, nil
 			}
-
-			return false, nil
+			return false, fmt.Errorf("unknown workload type: %s", wlType)
 		})
 }
