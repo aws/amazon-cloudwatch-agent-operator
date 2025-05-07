@@ -78,7 +78,6 @@ jobs:
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A
           kubectl describe pods -n default
-          kubectl logs deployment/cloudwatch-controller-manager --all-containers=true -n amazon-cloudwatch
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/java/default_instrumentation_java_env_variables.json app_signals
 
       - name: Test for defined instrumentation resources for Java
