@@ -47,9 +47,6 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance", ss.Name)
 	assert.Equal(t, "my-instance", ss.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", ss.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", ss.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", ss.Annotations["prometheus.io/path"])
 	assert.Equal(t, testTolerationValues, ss.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, ss.Spec.Template.Spec.Containers, 1)
@@ -57,9 +54,6 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
 		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                             "/metrics",
-		"prometheus.io/port":                             "8888",
-		"prometheus.io/scrape":                           "true",
 	}
 	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 
@@ -190,9 +184,6 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	expectedAnnotations := map[string]string{
 		"annotation-key": "annotation-value",
 		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                             "/metrics",
-		"prometheus.io/port":                             "8888",
-		"prometheus.io/scrape":                           "true",
 	}
 	// verify
 	assert.Equal(t, "my-instance", ss.Name)
@@ -459,9 +450,6 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	s := StatefulSet(params)
 	assert.Equal(t, "my-instance", s.Name)
 	assert.Equal(t, "my-instance", s.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.InitContainers, 1)
 }
 
@@ -536,9 +524,6 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	s := StatefulSet(params)
 	assert.Equal(t, "my-instance", s.Name)
 	assert.Equal(t, "my-instance", s.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
 }
