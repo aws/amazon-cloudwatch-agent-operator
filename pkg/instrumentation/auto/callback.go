@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -117,11 +118,11 @@ func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations m
 	return func(obj client.Object, _ any) (any, bool) {
 		switch o := obj.(type) {
 		case *appsv1.Deployment:
-			return nil, shouldRestartResource(m, namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		case *appsv1.DaemonSet:
-			return nil, shouldRestartResource(m, namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		case *appsv1.StatefulSet:
-			return nil, shouldRestartResource(m, namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		default:
 			return nil, false
 		}
@@ -129,13 +130,13 @@ func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations m
 }
 
 // shouldRestartResource returns true if a resource requires a restart corresponding to the mutated annotations on its namespace
-func shouldRestartResource(m InstrumentationAnnotator, namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
+func shouldRestartResource(namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
 	var shouldRestart bool
-
+	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes())
 	if resourceAnnotations := obj.GetAnnotations(); resourceAnnotations != nil {
 		// For each of the namespace mutated annotations,
 		for namespaceMutatedAnnotation, namespaceMutatedAnnotationValue := range namespaceMutatedAnnotations {
-			if _, ok := m.GetAnnotationMutators().injectAnnotations[namespaceMutatedAnnotation]; !ok {
+			if _, ok := injectAnnotations[namespaceMutatedAnnotation]; !ok {
 				// If it is not an inject-* annotation, we can ignore it
 				continue
 			}
@@ -181,7 +182,6 @@ func MutateAndPatchNamespaces(m InstrumentationAnnotator, ctx context.Context, r
 
 func getMutateObjectFunc(m InstrumentationAnnotator) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
-		mutatedAnnotations := m.MutateObject(nil, obj)
-		return mutatedAnnotations, true
+		return m.MutateObject(nil, obj), true
 	}
 }

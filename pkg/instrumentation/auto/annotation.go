@@ -38,17 +38,11 @@ type AnnotationMutators struct {
 	statefulSetMutators map[string]instrumentation.AnnotationMutator
 	defaultMutator      instrumentation.AnnotationMutator
 	injectAnnotations   map[string]struct{}
-	cfg                 AnnotationConfig
 }
 
 func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	var m2 InstrumentationAnnotator = m
-	MutateAndPatchWorkloads(m2, ctx)
-	MutateAndPatchNamespaces(m2, ctx, true)
-}
-
-func (m *AnnotationMutators) GetAnnotationMutators() *AnnotationMutators {
-	return m
+	MutateAndPatchWorkloads(m, ctx)
+	MutateAndPatchNamespaces(m, ctx, true)
 }
 
 func (m *AnnotationMutators) GetLogger() logr.Logger {
@@ -64,13 +58,9 @@ func (m *AnnotationMutators) GetWriter() client.Writer {
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) MutateObject(_ client.Object, obj client.Object) map[string]string {
+func (m *AnnotationMutators) MutateObject(oldObj client.Object, obj client.Object) any {
 	mutatedAnnotations, _ := m.mutateObject(obj, nil)
-	annotations, ok := mutatedAnnotations.(map[string]string)
-	if !ok {
-		m.logger.Error(nil, "could not cast annotations to map")
-	}
-	return annotations
+	return mutatedAnnotations.(map[string]string)
 }
 
 // mutateObject modifies annotations for a single object using the configured mutators.
@@ -125,10 +115,6 @@ func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumenta
 	return mutatedAnnotations, len(mutatedAnnotations) != 0
 }
 
-func (m *AnnotationMutators) Empty() bool {
-	return m.cfg.Empty()
-}
-
 func namespacedName(obj metav1.Object) string {
 	if _, ok := obj.(*corev1.Namespace); ok {
 		return obj.GetName()
@@ -146,7 +132,7 @@ func NewAnnotationMutators(
 	cfg AnnotationConfig,
 	typeSet instrumentation.TypeSet,
 ) *AnnotationMutators {
-	warnNonNamespacedNames(typeSet, cfg, logger)
+	warnNonNamespacedNames(cfg, logger)
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		clientWriter:        clientWriter,
@@ -158,12 +144,11 @@ func NewAnnotationMutators(
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
 		injectAnnotations:   buildInjectAnnotations(typeSet),
-		cfg:                 cfg,
 	}
 }
 
-func warnNonNamespacedNames(typeSet instrumentation.TypeSet, cfg AnnotationConfig, logger logr.Logger) {
-	for t := range typeSet {
+func warnNonNamespacedNames(cfg AnnotationConfig, logger logr.Logger) {
+	for t := range instrumentation.SupportedTypes() {
 		resources := cfg.getResources(t)
 		for _, deployment := range resources.Deployments {
 			if !strings.Contains(deployment, "/") {

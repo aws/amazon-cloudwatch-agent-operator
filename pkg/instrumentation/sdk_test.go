@@ -298,7 +298,7 @@ func TestSDKInjection(t *testing.T) {
 			},
 		},
 		{
-			name: "AnyResourcesConfigured instrumentation spec",
+			name: "Empty instrumentation spec",
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{},
 			},

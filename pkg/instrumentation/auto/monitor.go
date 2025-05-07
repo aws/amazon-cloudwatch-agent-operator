@@ -6,7 +6,6 @@ package auto
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"slices"
 	"time"
@@ -26,8 +25,7 @@ import (
 
 // InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation
 type InstrumentationAnnotator interface {
-	MutateObject(oldObj client.Object, obj client.Object) map[string]string
-	GetAnnotationMutators() *AnnotationMutators
+	MutateObject(oldObj client.Object, obj client.Object) any
 	GetLogger() logr.Logger
 	GetReader() client.Reader
 	GetWriter() client.Writer
@@ -41,7 +39,6 @@ type Monitor struct {
 	k8sInterface    kubernetes.Interface
 	clientReader    client.Reader
 	clientWriter    client.Writer
-	customSelectors *AnnotationMutators
 	logger          logr.Logger
 }
 
@@ -50,11 +47,6 @@ func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
 		MutateAndPatchWorkloads(m, ctx)
 	}
 	MutateAndPatchNamespaces(m, ctx, m.config.RestartPods)
-	// todo: what to do about updating namespace annotations? maybe update them here? or pass in variable to MutateAndPatchAll?
-}
-
-func (m *Monitor) GetAnnotationMutators() *AnnotationMutators {
-	return m.customSelectors
 }
 
 func (m *Monitor) GetLogger() logr.Logger {
@@ -70,7 +62,7 @@ func (m *Monitor) GetWriter() client.Writer {
 }
 
 // NewMonitor is used to create an InstrumentationMutator that supports AutoMonitor.
-func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
+func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
 	// Config default values
 	if len(config.Languages) == 0 {
 		logger.Info("Setting languages to default")
@@ -78,7 +70,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	}
 
 	logger.Info("AutoMonitor starting...")
-	factory := informers.NewSharedInformerFactoryWithOptions(k8sInterface, 10*time.Minute, informers.WithTransform(func(obj interface{}) (interface{}, error) {
+	factory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute, informers.WithTransform(func(obj interface{}) (interface{}, error) {
 		svc, ok := obj.(*corev1.Service)
 		if !ok {
 			return obj, fmt.Errorf("error transforming service: %s not a service", obj)
@@ -96,9 +88,9 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	}))
 	serviceInformer := factory.Core().V1().Services().Informer()
 
-	mutator := NewAnnotationMutators(w, r, logger, config.CustomSelector, instrumentation.SupportedTypes())
+	warnNonNamespacedNames(config.Exclude, logger)
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sInterface, customSelectors: mutator, clientReader: r, clientWriter: w}
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sClient, clientReader: r, clientWriter: w}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			m.onServiceEvent(nil, obj.(*corev1.Service))
@@ -118,9 +110,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sInterface kubernet
 	synced := factory.WaitForCacheSync(ctx.Done())
 	for v, ok := range synced {
 		if !ok {
-			_, _ = fmt.Fprintf(os.Stderr, "caches failed to sync: %v", v)
-			// TODO: handle bad cache sync
-			panic("TODO: handle bad cache sync")
+			logger.Error(fmt.Errorf("caches failed to sync: %v", v), "bad cache sync")
 		}
 	}
 
@@ -133,33 +123,33 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 		return
 	}
 	for _, resource := range m.listServiceDeployments(m.ctx, oldService, service) {
-		mutatedAnnotations := m.MutateObject(&resource, &resource)
+		mutatedAnnotations := m.MutateObject(&resource, &resource).(map[string]string)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().Deployments(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			m.logger.Error(err, "failed to update deployment")
+			m.logger.Error(err, "failed to update deployment", "deployment", resource.Name)
 		}
 	}
 	for _, resource := range m.listServiceStatefulSets(m.ctx, oldService, service) {
-		mutatedAnnotations := m.MutateObject(&resource, &resource)
+		mutatedAnnotations := m.MutateObject(&resource, &resource).(map[string]string)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().StatefulSets(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			m.logger.Error(err, "failed to update statefulset")
+			m.logger.Error(err, "failed to update statefulset", "statefulset", resource.Name)
 		}
 	}
 	for _, resource := range m.listServiceDaemonSets(m.ctx, oldService, service) {
-		mutatedAnnotations := m.MutateObject(&resource, &resource)
+		mutatedAnnotations := m.MutateObject(&resource, &resource).(map[string]string)
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
 		_, err := m.k8sInterface.AppsV1().DaemonSets(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
 		if err != nil {
-			m.logger.Error(err, "failed to update daemonset")
+			m.logger.Error(err, "failed to update daemonset", "daemonset", resource.Name)
 		}
 	}
 }
@@ -191,7 +181,7 @@ func (m *Monitor) listServiceStatefulSets(ctx context.Context, services ...*core
 		}
 		list, err := m.k8sInterface.AppsV1().StatefulSets(service.GetNamespace()).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			m.logger.Error(err, "failed to list statefulsets")
+			m.logger.Error(err, "failed to list 	statefulsets")
 		}
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 		trimmed := slices.DeleteFunc(list.Items, func(statefulSet appsv1.StatefulSet) bool {
@@ -237,12 +227,12 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 }
 
 // MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
-func (m *Monitor) MutateObject(oldObj, obj client.Object) map[string]string {
+func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 	if !safeToMutate(oldObj, obj, m.config.RestartPods) {
 		return map[string]string{}
 	}
 
-	languagesToAnnotate := m.customSelectors.cfg.LanguagesOf(obj, false)
+	languagesToAnnotate := m.config.CustomSelector.LanguagesOf(obj, false)
 	if m.isWorkloadAutoMonitored(obj) {
 		for l := range m.config.Languages {
 			languagesToAnnotate[l] = nil

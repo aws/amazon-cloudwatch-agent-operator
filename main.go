@@ -13,24 +13,20 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
-
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -41,7 +37,9 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
@@ -292,14 +290,14 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	monitor, shouldMonitorAllServices := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
+	instrumentationAnnotator, shouldMonitorAllServices := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
 
-	if monitor != nil {
+	if instrumentationAnnotator != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-			Handler: workloadmutation.NewWebhookHandler(decoder, monitor),
+			Handler: workloadmutation.NewWebhookHandler(decoder, instrumentationAnnotator),
 		})
 		mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
-			Handler: namespacemutation.NewWebhookHandler(decoder, monitor),
+			Handler: namespacemutation.NewWebhookHandler(decoder, instrumentationAnnotator),
 		})
 
 		setupLog.Info("Auto-annotation is enabled")
@@ -308,7 +306,7 @@ func main() {
 			mgr.GetWebhookServer().StartedChecker(),
 			func(ctx context.Context) {
 				setupLog.Info("Applying auto-annotation")
-				monitor.MutateAndPatchAll(ctx)
+				instrumentationAnnotator.MutateAndPatchAll(ctx)
 			},
 		)
 	} else {
@@ -383,8 +381,8 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 		return nil, false
 	}
 
-	var monitorConfig *auto.MonitorConfig
-	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &monitorConfig); err != nil {
+	var autoMonitorConfig *auto.MonitorConfig
+	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &autoMonitorConfig); err != nil {
 		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
 		return nil, false
 	} else {
@@ -400,7 +398,7 @@ func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 			return nil, false
 		}
 		logger := ctrl.Log.WithName("auto_monitor")
-		return auto.NewMonitor(ctx, *monitorConfig, clientSet, client, reader, logger), monitorConfig.MonitorAllServices
+		return auto.NewMonitor(ctx, *autoMonitorConfig, clientSet, client, reader, logger), autoMonitorConfig.MonitorAllServices
 	}
 }
 
