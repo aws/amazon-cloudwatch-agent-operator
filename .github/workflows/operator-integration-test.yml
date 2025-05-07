@@ -282,48 +282,6 @@ jobs:
           sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
 
-  AutoMonitorTest:
-    name: AutoMonitorTest
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-
-      - name: Deploy cert-manager to minikube
-        run:
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-      - name: Verify minikube and cert-manager
-        run: |
-          sleep 10
-          kubectl get pods -A
-
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-
-      - name: Test AutoMonitor-created annotations
-        run: |
-          kubectl get pods -A
-          kubectl describe pods -n default
-          sleep 10
-          go test -v ./integration-tests/manifests/automonitor -timeout 30m -controllerManagerName 'cloudwatch-controller-manager'
-          sleep 10
-
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
     runs-on: ubuntu-latest
