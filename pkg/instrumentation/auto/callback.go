@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 
 	appsv1 "k8s.io/api/apps/v1"
