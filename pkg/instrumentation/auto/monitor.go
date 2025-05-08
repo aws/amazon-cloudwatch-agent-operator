@@ -313,7 +313,7 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) ma
 // safeToMutate returns whether the customer consents to the operator updating their workload's pods. The user consents if any of the following conditions are true:
 //
 // 1. Auto restart enabled.
-// 2. MonitorAllServices is enabled AND the workload is already going to restart (aka, the pod template is already modified)
+// 2. The user was already modifying the pod template spec (aka a restart would already be triggered)
 func safeToMutate(oldWorkload client.Object, workload client.Object, restartPods bool) bool {
 	// always ok to mutate namespace
 	if isNamespace(workload) {
