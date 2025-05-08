@@ -24,7 +24,7 @@ func TestContainerNewDefault(t *testing.T) {
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -43,7 +43,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -62,7 +62,7 @@ func TestContainerPorts(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
 	assert.Len(t, c.Ports, 1)
@@ -83,10 +83,10 @@ func TestContainerVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
-	assert.Len(t, c.VolumeMounts, 2)
+	assert.Len(t, c.VolumeMounts, 3)
 	assert.Equal(t, naming.TAConfigMapVolume(), c.VolumeMounts[0].Name)
 }
 
@@ -120,7 +120,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 		},
 	}
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 	resourcesValues := c.Resources
 
 	// verify
@@ -176,6 +176,11 @@ func TestContainerHasEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 			{
+				Name:      "ta-client",
+				ReadOnly:  true,
+				MountPath: ClientCertMountPath,
+			},
+			{
 				Name:      "ta-secret",
 				ReadOnly:  true,
 				MountPath: TACertMountPath,
@@ -191,7 +196,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -233,6 +238,11 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 			{
+				Name:      "ta-client",
+				ReadOnly:  true,
+				MountPath: ClientCertMountPath,
+			},
+			{
 				Name:      "ta-secret",
 				ReadOnly:  true,
 				MountPath: TACertMountPath,
@@ -248,7 +258,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, otelcol)
 
 	// verify
 	assert.Equal(t, expected, c)
