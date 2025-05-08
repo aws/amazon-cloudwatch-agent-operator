@@ -131,12 +131,14 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 		}
 	}
 
-	h.t.Cleanup(func() {
-		h.logger.Info(fmt.Sprintf("Deleting resources %s in namespace %s", namespace, resourceFiles))
-		if err := h.DeleteResources(namespace, resourceFiles); err != nil {
-			h.t.Logf("Failed to delete resources: %v", err)
-		}
-	})
+	if !skipDelete {
+		h.t.Cleanup(func() {
+			h.logger.Info(fmt.Sprintf("Deleting resources %s in namespace %s", namespace, resourceFiles))
+			if err := h.DeleteResources(namespace, resourceFiles); err != nil {
+				h.t.Logf("Failed to delete resources: %v", err)
+			}
+		})
+	}
 	return nil
 }
 
@@ -414,21 +416,6 @@ func (h *TestHelper) ValidatePodsAnnotations(namespace string, shouldExist []str
 		}
 	}
 
-	return nil
-}
-
-func (h *TestHelper) CreateResource(uniqueNamespace string, sampleAppYamlPath string, skipDelete bool) error {
-	if err := h.CreateNamespaceAndApplyResources(uniqueNamespace, []string{sampleAppYamlPath}, true); err != nil {
-		return fmt.Errorf("failed to create/apply resources on namespace: %v", err)
-	}
-
-	if !skipDelete {
-		h.t.Cleanup(func() {
-			if err := h.DeleteResources(uniqueNamespace, []string{sampleAppYamlPath}); err != nil {
-				h.t.Fatalf("Failed to delete namespaces/resources: %v", err)
-			}
-		})
-	}
 	return nil
 }
 
