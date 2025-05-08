@@ -5,11 +5,8 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
-
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -21,51 +18,44 @@ import (
 const TimoutDuration = 3 * time.Minute
 const TimeBetweenRetries = 5 * time.Second
 
+// WaitForNewPodCreation takes in a resource either Deployment, DaemonSet, or StatefulSet wait until it is in running stage
 func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}, startTime time.Time) error {
-	namespace := ""
-	labelSelector := ""
-	switch r := resource.(type) {
-	case *appsV1.Deployment:
-		namespace = r.Namespace
-		labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-	case *appsV1.DaemonSet:
-		namespace = r.Namespace
-		labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-	case *appsV1.StatefulSet:
-		namespace = r.Namespace
-		labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
-	default:
-		return fmt.Errorf("unsupported resource type")
-	}
-	return wait.PollUntilContextTimeout(context.TODO(), TimeBetweenRetries, TimoutDuration, true, func(ctx context.Context) (bool, error) {
-		newPods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+	start := time.Now()
+	for {
+		if time.Since(start) > TimoutDuration {
+			return fmt.Errorf("timed out waiting for new pod creation")
+		}
+		namespace := ""
+		labelSelector := ""
+		switch r := resource.(type) {
+		case *appsV1.Deployment:
+			namespace = r.Namespace
+			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
+		case *appsV1.DaemonSet:
+			namespace = r.Namespace
+			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
+		case *appsV1.StatefulSet:
+			namespace = r.Namespace
+			labelSelector = labels.Set(r.Spec.Selector.MatchLabels).AsSelector().String()
+		default:
+			return fmt.Errorf("unsupported resource type")
+		}
+
+		newPods, _ := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
-		if err != nil {
-			return false, fmt.Errorf("failed to list pods: %v", err)
-		}
+
 		for _, pod := range newPods.Items {
-			if pod.CreationTimestamp.Time.After(startTime.Add(-time.Second)) {
-				if pod.Status.Phase == v1.PodRunning {
-					isReady := isPodReady(&pod)
-					if isReady {
-						return true, nil
-					}
-				}
+			if pod.CreationTimestamp.Time.After(startTime) && pod.Status.Phase == v1.PodRunning {
+				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
+				return nil
+			} else if pod.CreationTimestamp.Time.After(startTime) {
+				fmt.Printf("Operator pod %s created after start time but is not in running stage\n", pod.Name)
 			}
 		}
-		return false, nil
-	})
-}
 
-// Helper function to check if pod is ready
-func isPodReady(pod *v1.Pod) bool {
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == v1.PodReady {
-			return condition.Status == v1.ConditionTrue
-		}
+		time.Sleep(TimeBetweenRetries)
 	}
-	return false
 }
 
 func CheckIfPodsAreRunning(pods *v1.PodList) bool {
@@ -81,9 +71,4 @@ func CheckIfPodsAreRunning(pods *v1.PodList) bool {
 	}
 	fmt.Println("All pods are in the Running phase")
 	return true
-}
-
-func PrettyPrint(data interface{}) {
-	b, _ := json.MarshalIndent(data, "", "  ")
-	fmt.Println(string(b))
 }
