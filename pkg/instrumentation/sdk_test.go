@@ -1007,7 +1007,7 @@ func TestInjectDotNet(t *testing.T) {
 				{
 					Name:    dotnetInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      dotnetVolumeName,
 						MountPath: dotnetInstrMountPath,
@@ -1192,7 +1192,7 @@ func TestInjectJavaPythonAndDotNet(t *testing.T) {
 				{
 					Name:    dotnetInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      dotnetVolumeName,
 						MountPath: dotnetInstrMountPath,

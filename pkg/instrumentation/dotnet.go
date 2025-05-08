@@ -50,7 +50,7 @@ const (
 )
 
 var (
-	dotNetCommandLinux   = []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath}
+	dotNetCommandLinux   = []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath}
 	dotNetCommandWindows = []string{"CMD", "/c", "xcopy", "/e", "autoinstrumentation\\*", dotnetInstrMountPathWindows}
 )
 
