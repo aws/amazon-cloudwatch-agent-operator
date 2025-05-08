@@ -18,12 +18,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
-// ConfigureAutoAnnotation handles the auto annotation configuration logic
-func ConfigureAutoAnnotation(autoAnnotationConfigStr string, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, error) {
+// configureAutoAnnotation handles the auto annotation configuration logic
+func configureAutoAnnotation(autoAnnotationConfigStr string, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, error) {
 	// Check environment variables first
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" {
-		setupLog.Info("Auto-annotation is disabled")
-		return nil, fmt.Errorf("detected DISABLE_AUTO_ANNOTATION environment variable")
+		setupLog.Info("detected DISABLE_AUTO_ANNOTATION environment variable, disabling AutoAnnotation")
+		return nil, nil
 	}
 
 	if autoAnnotationConfigStr == "" {
@@ -49,11 +49,12 @@ func ConfigureAutoAnnotation(autoAnnotationConfigStr string, client client.Clien
 	), nil
 }
 
-// ConfigureAutoMonitor handles the auto monitor configuration logic
-func ConfigureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clientSet kubernetes.Interface, client client.Client, reader client.Reader) (*Monitor, error) {
+// configureAutoMonitor handles the auto monitor configuration logic
+func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) (*Monitor, error) {
 	// If auto-annotation is not configured or failed, try auto-monitor
 	if os.Getenv("DISABLE_AUTO_MONITOR") == "true" {
-		return nil, fmt.Errorf("auto-monitor is disabled due to DISABLE_AUTO_MONITOR environment variable")
+		setupLog.Info("W! auto-monitor is disabled due to DISABLE_AUTO_MONITOR environment variable")
+		return nil, nil
 	}
 
 	var autoMonitorConfig *MonitorConfig
@@ -81,18 +82,20 @@ func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 
 // for testing
 func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, bool) {
-	autoAnnotation, err := ConfigureAutoAnnotation(autoAnnotationConfigStr, client, reader, setupLog)
+	autoAnnotation, err := configureAutoAnnotation(autoAnnotationConfigStr, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-annotation, trying AutoMonitor")
 	} else if autoAnnotation != nil {
 		return autoAnnotation, false
 	}
 
-	monitor, err := ConfigureAutoMonitor(ctx, autoMonitorConfigStr, clientSet, client, reader)
+	monitor, err := configureAutoMonitor(ctx, autoMonitorConfigStr, clientSet, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-monitor")
 		return nil, false
+	} else if monitor != nil {
+		return monitor, monitor.config.MonitorAllServices
 	}
 
-	return monitor, monitor.config.MonitorAllServices
+	return nil, false
 }
