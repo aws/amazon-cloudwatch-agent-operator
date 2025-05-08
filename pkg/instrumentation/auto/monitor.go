@@ -66,7 +66,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	// Config default values
 	if len(config.Languages) == 0 {
 		logger.Info("Setting languages to default")
-		config.Languages = instrumentation.SupportedTypes()
+		config.Languages = instrumentation.SupportedTypes
 	}
 
 	logger.Info("AutoMonitor starting...")
@@ -294,7 +294,7 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) ma
 	}
 
 	allMutatedAnnotations := map[string]string{}
-	for language := range instrumentation.SupportedTypes() {
+	for language := range instrumentation.SupportedTypes {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
 		if _, ok := languagesToMonitor[language]; ok {

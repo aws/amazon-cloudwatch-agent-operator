@@ -352,7 +352,7 @@ func main() {
 
 func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) (auto.InstrumentationAnnotator, bool) {
 	var autoAnnotationConfig auto.AnnotationConfig
-	supportedLanguages := instrumentation.SupportedTypes()
+	supportedLanguages := instrumentation.SupportedTypes
 
 	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" {
 		setupLog.Info("Auto-annotation is disabled")

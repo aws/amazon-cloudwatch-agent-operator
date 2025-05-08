@@ -42,7 +42,7 @@ func (c AnnotationConfig) LanguagesOf(obj client.Object, checkNamespace bool) in
 	objName := namespacedName(obj)
 	typesSelected := instrumentation.TypeSet{}
 
-	types := instrumentation.SupportedTypes()
+	types := instrumentation.SupportedTypes
 
 	if checkNamespace {
 		for t := range types {
@@ -83,7 +83,7 @@ func (c AnnotationConfig) LanguagesOf(obj client.Object, checkNamespace bool) in
 }
 
 func (c AnnotationConfig) Empty() bool {
-	for t := range instrumentation.SupportedTypes() {
+	for t := range instrumentation.SupportedTypes {
 		resources := c.getResources(t)
 		if len(resources.DaemonSets) > 0 {
 			return false

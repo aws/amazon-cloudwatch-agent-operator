@@ -133,7 +133,7 @@ func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations m
 // shouldRestartResource returns true if a resource requires a restart corresponding to the mutated annotations on its namespace
 func shouldRestartResource(namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
 	var shouldRestart bool
-	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes())
+	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes)
 	if resourceAnnotations := obj.GetAnnotations(); resourceAnnotations != nil {
 		// For each of the namespace mutated annotations,
 		for namespaceMutatedAnnotation, namespaceMutatedAnnotationValue := range namespaceMutatedAnnotations {
