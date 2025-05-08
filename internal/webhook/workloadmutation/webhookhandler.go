@@ -30,15 +30,15 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	decoder *admission.Decoder
-	monitor auto.InstrumentationAnnotator
+	decoder                  *admission.Decoder
+	instrumentationAnnotator auto.InstrumentationAnnotator
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, monitor auto.InstrumentationAnnotator) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, instrumentationAnnotator auto.InstrumentationAnnotator) WebhookHandler {
 	return &workloadMutationWebhook{
-		decoder: decoder,
-		monitor: monitor,
+		decoder:                  decoder,
+		instrumentationAnnotator: instrumentationAnnotator,
 	}
 }
 
@@ -65,12 +65,12 @@ func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Reques
 	// populate old object
 	if req.Operation == v1.Update {
 		if err := p.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
-			p.monitor.GetLogger().WithName("workload_webhook").Error(err, "failed to unmarshal old object")
+			p.instrumentationAnnotator.GetLogger().WithName("workload_webhook").Error(err, "failed to unmarshal old object")
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 	}
 
-	p.monitor.MutateObject(oldObj, obj)
+	p.instrumentationAnnotator.MutateObject(oldObj, obj)
 
 	marshaledObject, err := json.Marshal(obj)
 	if err != nil {
