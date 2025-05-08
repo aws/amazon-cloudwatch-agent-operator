@@ -23,6 +23,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
+var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
+
 // InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation
 type InstrumentationAnnotator interface {
 	MutateObject(oldObj client.Object, obj client.Object) any
@@ -245,8 +247,6 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 
 	return mutate(obj, languagesToAnnotate)
 }
-
-var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
 
 // returns if workload is auto monitored (does not include custom selector)
 func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
