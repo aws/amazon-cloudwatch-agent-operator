@@ -322,15 +322,32 @@ func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist 
 		}
 	}
 
-	ns, err := h.clientSet.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
-	if err != nil {
-		h.logger.Error(err, "There was an error getting namespace")
-		return err
-	}
+	maxRetries := 3
+	var annotations map[string]string
+	var err error
+	var ns *v1.Namespace
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			h.logger.Info(fmt.Sprintf("Attempt %d/%d: Waiting 5 seconds before retrying...", attempt+1, maxRetries))
+			time.Sleep(timeBetweenRetries)
+		}
 
-	annotations := ns.ObjectMeta.Annotations
-	if annotations == nil {
-		annotations = map[string]string{} // Initialize empty map to simplify checks
+		ns, err = h.clientSet.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+		if err != nil {
+			h.logger.Error(err, "There was an error getting namespace")
+			return err
+		}
+
+		annotations = ns.ObjectMeta.Annotations
+		if annotations != nil && len(annotations) > 0 {
+			break
+		}
+
+		h.logger.Info(fmt.Sprintf("Namespace annotations are empty or nil on attempt %d/%d", attempt+1, maxRetries))
+
+		if attempt == maxRetries-1 {
+			annotations = map[string]string{}
+		}
 	}
 
 	for _, shouldExistAnnotation := range shouldExist {
@@ -338,6 +355,7 @@ func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist 
 			return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
 		}
 	}
+
 	for _, shouldNotExistAnnotation := range shouldNotExist {
 		if _, ok := annotations[shouldNotExistAnnotation]; ok {
 			return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)

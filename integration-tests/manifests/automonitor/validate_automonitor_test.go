@@ -1155,7 +1155,7 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	// more deployments to different NSes
 	err = helper.CreateNamespaceAndApplyResources(nsPerf, []string{customerServiceYaml}, false)
 	assert.NoError(t, err)
-	err = helper.CreateNamespaceAndApplyResources(nsBatch, []string{customerServiceYaml}, true)
+	err = helper.CreateNamespaceAndApplyResources(nsBatch, []string{customerServiceYaml}, false)
 	assert.NoError(t, err)
 	err = helper.CreateNamespaceAndApplyResources(nsFinance, []string{customerServiceYaml}, false)
 	assert.NoError(t, err)
