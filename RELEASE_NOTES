@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.0.0 (2025-05-09)
+========================================================================
+Features:
+* [ApplicationSignals] Introduce AutoMonitor for enhanced enablement
+
+Bug Fixes:
+* [ApplicationSignals] Fix cp issue for .net when run as non-root
+
+========================================================================
 Amazon CloudWatch Agent Operator v2.2.1 (2025-04-21)
 ========================================================================
 Enhancements:
