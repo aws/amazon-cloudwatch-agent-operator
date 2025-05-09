@@ -128,6 +128,7 @@ func main() {
 		autoInstrumentationDotNet    string
 		autoInstrumentationNodeJS    string
 		autoAnnotationConfigStr      string
+		autoMonitorConfigStr         string
 		autoInstrumentationConfigStr string
 		webhookPort                  int
 		tlsOpt                       tlsConfig
@@ -145,6 +146,7 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("%s:%s", autoInstrumentationDotNetImageRepository, v.AutoInstrumentationDotNet), "The default OpenTelemetry Dotnet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("%s:%s", autoInstrumentationNodeJSImageRepository, v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
+	pflag.StringVar(&autoMonitorConfigStr, "auto-monitor-config", "", "The configuration for auto-monitor.")
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
@@ -285,40 +287,27 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" || autoAnnotationConfigStr == "" {
-		setupLog.Info("Auto-annotation is disabled")
+	instrumentationAnnotator, shouldMonitorAllServices := auto.CreateInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), setupLog)
+
+	if instrumentationAnnotator != nil {
+		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
+			Handler: workloadmutation.NewWebhookHandler(decoder, instrumentationAnnotator),
+		})
+		mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
+			Handler: namespacemutation.NewWebhookHandler(decoder, instrumentationAnnotator),
+		})
+
+		setupLog.Info("Auto-annotation is enabled")
+		go waitForWebhookServerStart(
+			ctx,
+			mgr.GetWebhookServer().StartedChecker(),
+			func(ctx context.Context) {
+				setupLog.Info("Applying auto-annotation")
+				instrumentationAnnotator.MutateAndPatchAll(ctx)
+			},
+		)
 	} else {
-		var autoAnnotationConfig auto.AnnotationConfig
-		if err = json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
-		} else {
-			autoAnnotationMutators := auto.NewAnnotationMutators(
-				mgr.GetClient(),
-				mgr.GetAPIReader(),
-				logger,
-				autoAnnotationConfig,
-				instrumentation.NewTypeSet(
-					instrumentation.TypeJava,
-					instrumentation.TypePython,
-					instrumentation.TypeDotNet,
-					instrumentation.TypeNodeJS,
-				),
-			)
-			mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
-				Handler: workloadmutation.NewWebhookHandler(decoder, autoAnnotationMutators)})
-			mgr.GetWebhookServer().Register("/mutate-v1-namespace", &webhook.Admission{
-				Handler: namespacemutation.NewWebhookHandler(decoder, autoAnnotationMutators),
-			})
-			setupLog.Info("Auto-annotation is enabled")
-			go waitForWebhookServerStart(
-				ctx,
-				mgr.GetWebhookServer().StartedChecker(),
-				func(ctx context.Context) {
-					setupLog.Info("Applying auto-annotation")
-					autoAnnotationMutators.MutateAndPatchAll(ctx)
-				},
-			)
-		}
+		setupLog.Info("Auto-annotation / Auto Monitor is disabled")
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
@@ -334,7 +323,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), shouldMonitorAllServices),
 				}),
 		})
 	} else {

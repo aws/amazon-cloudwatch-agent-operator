@@ -19,14 +19,14 @@ import (
 var _ admission.Handler = (*handler)(nil)
 
 type handler struct {
-	decoder            *admission.Decoder
-	annotationMutators *auto.AnnotationMutators
+	decoder                  *admission.Decoder
+	instrumentationAnnotator auto.InstrumentationAnnotator
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) admission.Handler {
+func NewWebhookHandler(decoder *admission.Decoder, instrumentationAnnotator auto.InstrumentationAnnotator) admission.Handler {
 	return &handler{
-		decoder:            decoder,
-		annotationMutators: annotationMutators,
+		decoder:                  decoder,
+		instrumentationAnnotator: instrumentationAnnotator,
 	}
 }
 
@@ -36,7 +36,10 @@ func (h *handler) Handle(_ context.Context, req admission.Request) admission.Res
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	h.annotationMutators.MutateObject(namespace)
+
+	// do not need to pass in oldObj because it's only used to check for workload pod template diff
+	h.instrumentationAnnotator.MutateObject(nil, namespace)
+
 	marshaledNamespace, err := json.Marshal(namespace)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

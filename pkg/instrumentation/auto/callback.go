@@ -8,9 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,11 +69,11 @@ func createPatch(obj client.Object) (client.Patch, error) {
 	return &basicPatch{originalJSON: originalJSON}, nil
 }
 
-func (m *AnnotationMutators) patchFunc(ctx context.Context, callback objectCallbackFunc) objectCallbackFunc {
+func patchFunc(m InstrumentationAnnotator, ctx context.Context, callback objectCallbackFunc) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
 		patch, err := createPatch(obj)
 		if err != nil {
-			m.logger.Error(err, "Unable to create patch",
+			m.GetLogger().Error(err, "Unable to create patch",
 				"kind", fmt.Sprintf("%T", obj),
 				"name", obj.GetName(),
 				"namespace", obj.GetNamespace(),
@@ -81,8 +84,8 @@ func (m *AnnotationMutators) patchFunc(ctx context.Context, callback objectCallb
 		if !ok {
 			return ret, false
 		}
-		if err = m.clientWriter.Patch(ctx, obj, patch); err != nil {
-			m.logger.Error(err, "Unable to send patch",
+		if err = m.GetWriter().Patch(ctx, obj, patch); err != nil {
+			m.GetLogger().Error(err, "Unable to send patch",
 				"kind", fmt.Sprintf("%T", obj),
 				"name", obj.GetName(),
 				"namespace", obj.GetNamespace(),
@@ -93,8 +96,11 @@ func (m *AnnotationMutators) patchFunc(ctx context.Context, callback objectCallb
 	}
 }
 
-func (m *AnnotationMutators) restartNamespaceFunc(ctx context.Context) objectCallbackFunc {
+func restartNamespaceFunc(m InstrumentationAnnotator, ctx context.Context, shouldRestartNamespace bool) objectCallbackFunc {
 	return func(obj client.Object, previousResult any) (any, bool) {
+		if !shouldRestartNamespace {
+			return nil, false
+		}
 		mutatedAnnotations, ok := previousResult.(map[string]string)
 		if !ok {
 			return nil, false
@@ -103,21 +109,21 @@ func (m *AnnotationMutators) restartNamespaceFunc(ctx context.Context) objectCal
 		if !ok {
 			return nil, false
 		}
-		m.RestartNamespace(ctx, namespace, mutatedAnnotations)
+		RestartNamespace(m, ctx, namespace, mutatedAnnotations)
 		return nil, true
 	}
 }
 
 // shouldRestartFunc returns a func that determines if a resource should be restarted
-func (m *AnnotationMutators) shouldRestartFunc(namespaceMutatedAnnotations map[string]string) objectCallbackFunc {
+func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations map[string]string) objectCallbackFunc {
 	return func(obj client.Object, _ any) (any, bool) {
 		switch o := obj.(type) {
 		case *appsv1.Deployment:
-			return nil, m.shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		case *appsv1.DaemonSet:
-			return nil, m.shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		case *appsv1.StatefulSet:
-			return nil, m.shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
+			return nil, shouldRestartResource(namespaceMutatedAnnotations, o.Spec.Template.GetObjectMeta())
 		default:
 			return nil, false
 		}
@@ -125,13 +131,13 @@ func (m *AnnotationMutators) shouldRestartFunc(namespaceMutatedAnnotations map[s
 }
 
 // shouldRestartResource returns true if a resource requires a restart corresponding to the mutated annotations on its namespace
-func (m *AnnotationMutators) shouldRestartResource(namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
+func shouldRestartResource(namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
 	var shouldRestart bool
-
+	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes)
 	if resourceAnnotations := obj.GetAnnotations(); resourceAnnotations != nil {
 		// For each of the namespace mutated annotations,
 		for namespaceMutatedAnnotation, namespaceMutatedAnnotationValue := range namespaceMutatedAnnotations {
-			if _, ok := m.injectAnnotations[namespaceMutatedAnnotation]; !ok {
+			if _, ok := injectAnnotations[namespaceMutatedAnnotation]; !ok {
 				// If it is not an inject-* annotation, we can ignore it
 				continue
 			}
@@ -151,4 +157,33 @@ func (m *AnnotationMutators) shouldRestartResource(namespaceMutatedAnnotations m
 	}
 
 	return shouldRestart
+}
+
+// RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
+func RestartNamespace(m InstrumentationAnnotator, ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
+	callbackFunc := patchFunc(m, ctx, setRestartAnnotation)
+	rangeObjectList(m, ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
+	rangeObjectList(m, ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
+	rangeObjectList(m, ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
+}
+
+// MutateAndPatchWorkloads runs the mutators for all workloads and patches them with the updated injection annotations
+func MutateAndPatchWorkloads(m InstrumentationAnnotator, ctx context.Context) {
+	f := getMutateObjectFunc(m)
+	callbackFunc := patchFunc(m, ctx, f)
+	rangeObjectList(m, ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, callbackFunc)
+	rangeObjectList(m, ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, callbackFunc)
+	rangeObjectList(m, ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, callbackFunc)
+}
+
+// MutateAndPatchNamespaces runs the mutators for all namespaces.
+// If restartNamespace is true, RestartNamespace will be called for each affected namespace.
+func MutateAndPatchNamespaces(m InstrumentationAnnotator, ctx context.Context, restartNamespace bool) {
+	rangeObjectList(m, ctx, &corev1.NamespaceList{}, &client.ListOptions{}, chainCallbacks(patchFunc(m, ctx, getMutateObjectFunc(m)), restartNamespaceFunc(m, ctx, restartNamespace)))
+}
+
+func getMutateObjectFunc(m InstrumentationAnnotator) objectCallbackFunc {
+	return func(obj client.Object, _ any) (any, bool) {
+		return m.MutateObject(nil, obj), true
+	}
 }

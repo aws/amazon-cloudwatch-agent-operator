@@ -10,6 +10,7 @@ import (
 	"errors"
 	"net/http"
 
+	v1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -29,26 +30,29 @@ type WebhookHandler interface {
 
 // the implementation.
 type workloadMutationWebhook struct {
-	decoder            *admission.Decoder
-	annotationMutators *auto.AnnotationMutators
+	decoder                  *admission.Decoder
+	instrumentationAnnotator auto.InstrumentationAnnotator
 }
 
 // NewWebhookHandler creates a new WorkloadWebhookHandler.
-func NewWebhookHandler(decoder *admission.Decoder, annotationMutators *auto.AnnotationMutators) WebhookHandler {
+func NewWebhookHandler(decoder *admission.Decoder, instrumentationAnnotator auto.InstrumentationAnnotator) WebhookHandler {
 	return &workloadMutationWebhook{
-		decoder:            decoder,
-		annotationMutators: annotationMutators,
+		decoder:                  decoder,
+		instrumentationAnnotator: instrumentationAnnotator,
 	}
 }
 
 func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Request) admission.Response {
-	var obj client.Object
+	var oldObj, obj client.Object
 	switch objectKind := req.Kind.Kind; objectKind {
 	case "DaemonSet":
+		oldObj = &appsv1.DaemonSet{}
 		obj = &appsv1.DaemonSet{}
 	case "Deployment":
+		oldObj = &appsv1.Deployment{}
 		obj = &appsv1.Deployment{}
 	case "StatefulSet":
+		oldObj = &appsv1.StatefulSet{}
 		obj = &appsv1.StatefulSet{}
 	default:
 		return admission.Errored(http.StatusBadRequest, errors.New("failed to unmarshal request object"))
@@ -58,7 +62,16 @@ func (p *workloadMutationWebhook) Handle(_ context.Context, req admission.Reques
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	p.annotationMutators.MutateObject(obj)
+	// populate old object
+	if req.Operation == v1.Update {
+		if err := p.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
+			p.instrumentationAnnotator.GetLogger().WithName("workload_webhook").Error(err, "failed to unmarshal old object")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	}
+
+	p.instrumentationAnnotator.MutateObject(oldObj, obj)
+
 	marshaledObject, err := json.Marshal(obj)
 	if err != nil {
 		res := admission.Errored(http.StatusInternalServerError, err)

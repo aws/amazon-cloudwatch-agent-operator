@@ -40,29 +40,27 @@ type AnnotationMutators struct {
 	injectAnnotations   map[string]struct{}
 }
 
-// RestartNamespace sets the restartedAtAnnotation for each of the namespace's supported resources and patches them.
-func (m *AnnotationMutators) RestartNamespace(ctx context.Context, namespace *corev1.Namespace, mutatedAnnotations map[string]string) {
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name),
-		chainCallbacks(m.shouldRestartFunc(mutatedAnnotations), m.patchFunc(ctx, setRestartAnnotation)))
+func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
+	MutateAndPatchWorkloads(m, ctx)
+	MutateAndPatchNamespaces(m, ctx, true)
 }
 
-// MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
-func (m *AnnotationMutators) MutateAndPatchAll(ctx context.Context) {
-	m.rangeObjectList(ctx, &appsv1.DeploymentList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &appsv1.DaemonSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, m.patchFunc(ctx, m.mutateObject))
-	m.rangeObjectList(ctx, &corev1.NamespaceList{}, &client.ListOptions{},
-		chainCallbacks(m.patchFunc(ctx, m.mutateObject), m.restartNamespaceFunc(ctx)),
-	)
+func (m *AnnotationMutators) GetLogger() logr.Logger {
+	return m.logger
+}
+
+func (m *AnnotationMutators) GetReader() client.Reader {
+	return m.clientReader
+}
+
+func (m *AnnotationMutators) GetWriter() client.Writer {
+	return m.clientWriter
 }
 
 // MutateObject modifies annotations for a single object using the configured mutators.
-func (m *AnnotationMutators) MutateObject(obj client.Object) (any, bool) {
-	return m.mutateObject(obj, nil)
+func (m *AnnotationMutators) MutateObject(oldObj client.Object, obj client.Object) any {
+	mutatedAnnotations, _ := m.mutateObject(obj, nil)
+	return mutatedAnnotations.(map[string]string)
 }
 
 // mutateObject modifies annotations for a single object using the configured mutators.
@@ -81,9 +79,9 @@ func (m *AnnotationMutators) mutateObject(obj client.Object, _ any) (any, bool) 
 	}
 }
 
-func (m *AnnotationMutators) rangeObjectList(ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
-	if err := m.clientReader.List(ctx, list, option); err != nil {
-		m.logger.Error(err, "Unable to list objects",
+func rangeObjectList(m InstrumentationAnnotator, ctx context.Context, list client.ObjectList, option client.ListOption, fn objectCallbackFunc) {
+	if err := m.GetReader().List(ctx, list, option); err != nil {
+		m.GetLogger().Error(err, "Unable to list objects",
 			"kind", fmt.Sprintf("%T", list),
 		)
 		return
@@ -118,6 +116,9 @@ func (m *AnnotationMutators) mutate(name string, mutators map[string]instrumenta
 }
 
 func namespacedName(obj metav1.Object) string {
+	if _, ok := obj.(*corev1.Namespace); ok {
+		return obj.GetName()
+	}
 	return fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName())
 }
 
@@ -131,6 +132,7 @@ func NewAnnotationMutators(
 	cfg AnnotationConfig,
 	typeSet instrumentation.TypeSet,
 ) *AnnotationMutators {
+	warnNonNamespacedNames(cfg, logger)
 	builder := newMutatorBuilder(typeSet)
 	return &AnnotationMutators{
 		clientWriter:        clientWriter,
@@ -142,6 +144,27 @@ func NewAnnotationMutators(
 		statefulSetMutators: builder.buildMutators(getResources(cfg, typeSet, getStatefulSets)),
 		defaultMutator:      instrumentation.NewAnnotationMutator(maps.Values(builder.removeMutations)),
 		injectAnnotations:   buildInjectAnnotations(typeSet),
+	}
+}
+
+func warnNonNamespacedNames(cfg AnnotationConfig, logger logr.Logger) {
+	for t := range instrumentation.SupportedTypes {
+		resources := cfg.getResources(t)
+		for _, deployment := range resources.Deployments {
+			if !strings.Contains(deployment, "/") {
+				logger.Info("invalid deployment name, needs to be namespaced", "deployment", deployment)
+			}
+		}
+		for _, daemonSet := range resources.DaemonSets {
+			if !strings.Contains(daemonSet, "/") {
+				logger.Info("invalid daemonSet name, needs to be namespaced", "daemonSet", daemonSet)
+			}
+		}
+		for _, statefulSet := range resources.StatefulSets {
+			if !strings.Contains(statefulSet, "/") {
+				logger.Info("invalid statefulSet name, needs to be namespaced", "statefulSet", statefulSet)
+			}
+		}
 	}
 }
 

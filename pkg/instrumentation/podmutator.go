@@ -32,10 +32,11 @@ var (
 )
 
 type instPodMutator struct {
-	Client      client.Client
-	sdkInjector *sdkInjector
-	Logger      logr.Logger
-	Recorder    record.EventRecorder
+	Client                              client.Client
+	sdkInjector                         *sdkInjector
+	Logger                              logr.Logger
+	Recorder                            record.EventRecorder
+	overrideEnabledMultiInstrumentation bool
 }
 
 type instrumentationWithContainers struct {
@@ -192,7 +193,7 @@ func (langInsts *languageInstrumentations) setInstrumentationLanguageContainers(
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, overrideEnabledMultiInstrumentation bool) *instPodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -200,7 +201,8 @@ func NewMutator(logger logr.Logger, client client.Client, recorder record.EventR
 			logger: logger,
 			client: client,
 		},
-		Recorder: recorder,
+		Recorder:                            recorder,
+		overrideEnabledMultiInstrumentation: overrideEnabledMultiInstrumentation,
 	}
 }
 
@@ -322,7 +324,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() || pm.overrideEnabledMultiInstrumentation {
 		// We use annotations specific for instrumentation language
 		insts.Java.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
 		insts.NodeJS.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
@@ -335,7 +337,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 		// We check if provided annotations and instrumentations are valid
 		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
-		if !ok {
+		if !ok && !pm.overrideEnabledMultiInstrumentation {
 			logger.V(1).Error(msg, "skipping instrumentation injection")
 			return pod, nil
 		}
