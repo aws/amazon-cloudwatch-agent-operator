@@ -339,7 +339,7 @@ func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist 
 		}
 
 		annotations = ns.ObjectMeta.Annotations
-		if len(annotations) > 0 {
+		if annotations != nil && len(annotations) > 0 {
 			break
 		}
 
