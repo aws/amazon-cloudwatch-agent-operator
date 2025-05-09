@@ -82,9 +82,6 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance", d.Name)
 	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Equal(t, testTolerationValues, d.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
@@ -92,9 +89,6 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
 		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                             "/metrics",
-		"prometheus.io/port":                             "8888",
-		"prometheus.io/scrape":                           "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
@@ -150,9 +144,6 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	expectedPodAnnotationValues := map[string]string{
 		"annotation-key": "annotation-value",
 		"amazon-cloudwatch-agent-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                             "/metrics",
-		"prometheus.io/port":                             "8888",
-		"prometheus.io/scrape":                           "true",
 	}
 
 	// verify
@@ -463,9 +454,6 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 	d := Deployment(params)
 	assert.Equal(t, "my-instance", d.Name)
 	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
 }
 
@@ -539,9 +527,6 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 	d := Deployment(params)
 	assert.Equal(t, "my-instance", d.Name)
 	assert.Equal(t, "my-instance", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
 }
