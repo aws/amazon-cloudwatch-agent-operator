@@ -286,9 +286,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	monitorConfig.Exclude = auto.AnnotationConfig{}
 	helper.UpdateMonitorConfig(&monitorConfig)
 	err = helper.RestartWorkload(Deployment, namespace, deploymentName)
-	if err != nil {
-		return
-	}
+	assert.NoError(t, err)
 	// Validate that deployment now has annotations
 	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, deploymentName,
 		allAnnotations,
@@ -939,6 +937,7 @@ func TestPermutation17_MonitorAndNoAutoRestartsWithNamespaceCustomSelector(t *te
 	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, customServiceDeploymentName, none, allAnnotations)
 	assert.NoError(t, err)
 	err = helper.RestartWorkload(Deployment, namespace, customServiceDeploymentName)
+	assert.NoError(t, err)
 	//include all after restart
 	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, customServiceDeploymentName, allAnnotations, none)
 	assert.NoError(t, err)
@@ -1204,29 +1203,34 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	//postcheck3 with manual restarts
 	//other ns
 	err = helper.RestartWorkload(Deployment, namespace, customServiceDeploymentName)
+	assert.NoError(t, err)
 	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeNodeJS, instrumentation.TypeDotNet),
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython))
 	assert.NoError(t, err)
 	// exclude nodejs by ns
 	err = helper.RestartWorkload(Deployment, nsPerf, customServiceDeploymentName)
+	assert.NoError(t, err)
 	err = helper.ValidateWorkloadAnnotations(Deployment, nsPerf, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeDotNet),
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 	// exclude dotnet by workloads
 	err = helper.RestartWorkload(Deployment, nsFinance, customServiceDeploymentName)
+	assert.NoError(t, err)
 	err = helper.ValidateWorkloadAnnotations(Deployment, nsFinance, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeNodeJS),
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 	err = helper.RestartWorkload(StatefulSet, nsDatabase, statefulSetName)
+	assert.NoError(t, err)
 	err = helper.ValidateWorkloadAnnotations(StatefulSet, nsDatabase, statefulSetName,
 		getAnnotations(instrumentation.TypeNodeJS),
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 	// include java only at pod level by custom selector
 	err = helper.RestartWorkload(Deployment, nsBatch, customServiceDeploymentName)
+	assert.NoError(t, err)
 	err = helper.ValidatePodsAnnotations(nsBatch,
 		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython))
