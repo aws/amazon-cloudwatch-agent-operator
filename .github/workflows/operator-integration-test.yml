@@ -28,7 +28,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+          - uses: actions/setup-go@v5
         with:
           fetch-depth: 0
 
@@ -240,6 +240,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
@@ -332,6 +333,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
@@ -377,6 +379,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
@@ -430,6 +433,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
@@ -484,6 +488,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
