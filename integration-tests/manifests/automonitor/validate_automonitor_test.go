@@ -34,7 +34,7 @@ const (
 	conflictingDeploymentYaml          = "../conflicting-deployment.yaml"
 )
 
-var all = slices.Collect(maps.Keys(instrumentation.SupportedTypes()))
+var all = slices.Collect(maps.Keys(instrumentation.SupportedTypes))
 var allAnnotations = getAnnotations(all...)
 var none []string
 
@@ -92,7 +92,7 @@ func TestServiceThenDeployment(t *testing.T) {
 
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        false,
 	})
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml, sampleDeploymentServiceYaml}, false)
@@ -110,7 +110,7 @@ func TestDeploymentThenServiceRestartPodsDisabled(t *testing.T) {
 
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        false,
 	})
 
@@ -134,7 +134,7 @@ func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
 
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        true,
 	})
 
@@ -170,7 +170,7 @@ func TestDeploymentWithCustomSelector(t *testing.T) {
 	// Update operator with auto monitor disabled and custom selector
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        false,
 		CustomSelector:     customSelectorConfig,
 	})
@@ -194,7 +194,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 	// Update operator with auto monitor disabled
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        false,
 	})
 
@@ -228,7 +228,7 @@ func TestDeploymentWithCustomSelectorAfterCreation(t *testing.T) {
 
 	helper.UpdateMonitorConfig(&auto.MonitorConfig{
 		MonitorAllServices: false,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		RestartPods:        false,
 		CustomSelector:     customSelectorConfig,
 	})
@@ -256,7 +256,7 @@ func TestDeploymentWithExcludedThenIncludedService(t *testing.T) {
 	}
 	monitorConfig := auto.MonitorConfig{
 		MonitorAllServices: true,
-		Languages:          instrumentation.SupportedTypes(),
+		Languages:          instrumentation.SupportedTypes,
 		Exclude: auto.AnnotationConfig{
 			Java:   resources,
 			Python: resources,
