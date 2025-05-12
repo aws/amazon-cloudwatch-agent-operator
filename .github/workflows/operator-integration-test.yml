@@ -22,6 +22,7 @@ permissions:
 jobs:
   InstrumentationTest:
     name: InstrumentationTest
+    needs: [BuildAndCacheImage]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -44,11 +45,17 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
+
 
       - name: Deploy operator to minikube
         run: |
@@ -231,6 +238,7 @@ jobs:
 
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
+    needs: [BuildAndCacheImage]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -254,11 +262,16 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
 
       - name: Deploy operator to minikube
         run: |
@@ -372,6 +385,7 @@ jobs:
 
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
+    needs: [BuildAndCacheImage]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -395,11 +409,17 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
+
 
       - name: Deploy operator to minikube
         run: |
@@ -426,6 +446,7 @@ jobs:
 
   StatefulsetAnnotationsTest:
     name: StatefulsetAnnotationsTest
+    needs: [BuildAndCacheImage]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -449,11 +470,17 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
+
 
       - name: Deploy operator to minikube
         run: |
@@ -481,6 +508,7 @@ jobs:
 
   NamespaceAnnotationsTest:
     name: NamespaceAnnotationsTest
+    needs: [BuildAndCacheImage]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -503,11 +531,17 @@ jobs:
         run: |
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
+
 
       - name: Deploy operator to minikube
         run: |
