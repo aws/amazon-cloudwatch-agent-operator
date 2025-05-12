@@ -19,14 +19,11 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
 	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -290,7 +287,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	instrumentationAnnotator, shouldMonitorAllServices := createInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader())
+	instrumentationAnnotator, shouldMonitorAllServices := auto.CreateInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), setupLog)
 
 	if instrumentationAnnotator != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
@@ -347,58 +344,6 @@ func main() {
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
-	}
-}
-
-func createInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader) (auto.InstrumentationAnnotator, bool) {
-	var autoAnnotationConfig auto.AnnotationConfig
-	supportedLanguages := instrumentation.SupportedTypes()
-
-	if os.Getenv("DISABLE_AUTO_ANNOTATION") == "true" {
-		setupLog.Info("Auto-annotation is disabled")
-	} else if autoAnnotationConfigStr != "" {
-		if err := json.Unmarshal([]byte(autoAnnotationConfigStr), &autoAnnotationConfig); err != nil {
-			setupLog.Error(err, "Unable to unmarshal auto-annotation config")
-		} else {
-			// todo: technically a breaking change, because previously an empty autoAnnotationConfig would clear all annotations, but automonitor does not reproduce this behavior by default because it requires restartPods to be enabled.
-			if autoAnnotationConfig.Empty() && autoMonitorConfigStr != "" {
-				setupLog.Info("Auto-annotation is disabled because it is empty and the AutoMonitor config is not empty. Trying AutoMonitor...")
-			} else {
-				setupLog.Info("WARNING: Using deprecated autoAnnotateAutoInstrumentation config, Disabling AutoMonitor. Please upgrade to AutoMonitor. autoAnnotateAutoInstrumentation will be removed in a future release.")
-				return auto.NewAnnotationMutators(
-					client,
-					reader,
-					setupLog,
-					autoAnnotationConfig,
-					supportedLanguages,
-				), false
-			}
-		}
-	}
-
-	if os.Getenv("DISABLE_AUTO_MONITOR") == "true" {
-		setupLog.Info("Auto-monitor is disabled due to DISABLE_AUTO_MONITOR environment variable")
-		return nil, false
-	}
-
-	var autoMonitorConfig *auto.MonitorConfig
-	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &autoMonitorConfig); err != nil {
-		setupLog.Error(err, "Unable to unmarshal auto-monitor config, disabling AutoMonitor")
-		return nil, false
-	} else {
-		k8sConfig, err := rest.InClusterConfig()
-		if err != nil {
-			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return nil, false
-		}
-
-		clientSet, err := kubernetes.NewForConfig(k8sConfig)
-		if err != nil {
-			setupLog.Error(err, "AutoMonitor: Unable to create in-cluster config, disabling AutoMonitor.")
-			return nil, false
-		}
-		logger := ctrl.Log.WithName("auto_monitor")
-		return auto.NewMonitor(ctx, *autoMonitorConfig, clientSet, client, reader, logger), autoMonitorConfig.MonitorAllServices
 	}
 }
 

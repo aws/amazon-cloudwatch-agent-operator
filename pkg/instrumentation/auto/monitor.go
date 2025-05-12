@@ -23,6 +23,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
+var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
+
 // InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation
 type InstrumentationAnnotator interface {
 	MutateObject(oldObj client.Object, obj client.Object) any
@@ -66,7 +68,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	// Config default values
 	if len(config.Languages) == 0 {
 		logger.Info("Setting languages to default")
-		config.Languages = instrumentation.SupportedTypes()
+		config.Languages = instrumentation.SupportedTypes
 	}
 
 	logger.Info("AutoMonitor starting...")
@@ -246,8 +248,6 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 	return mutate(obj, languagesToAnnotate)
 }
 
-var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
-
 // returns if workload is auto monitored (does not include custom selector)
 func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 	if isNamespace(obj) {
@@ -294,7 +294,7 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) ma
 	}
 
 	allMutatedAnnotations := map[string]string{}
-	for language := range instrumentation.SupportedTypes() {
+	for language := range instrumentation.SupportedTypes {
 		insertMutation, removeMutation := buildMutations(language)
 		var mutatedAnnotations map[string]string
 		if _, ok := languagesToMonitor[language]; ok {
@@ -313,7 +313,7 @@ func mutate(object client.Object, languagesToMonitor instrumentation.TypeSet) ma
 // safeToMutate returns whether the customer consents to the operator updating their workload's pods. The user consents if any of the following conditions are true:
 //
 // 1. Auto restart enabled.
-// 2. MonitorAllServices is enabled AND the workload is already going to restart (aka, the pod template is already modified)
+// 2. The user was already modifying the pod template spec (aka a restart would already be triggered)
 func safeToMutate(oldWorkload client.Object, workload client.Object, restartPods bool) bool {
 	// always ok to mutate namespace
 	if isNamespace(workload) {

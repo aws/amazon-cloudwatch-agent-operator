@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -132,7 +133,7 @@ func shouldRestartFunc(m InstrumentationAnnotator, namespaceMutatedAnnotations m
 // shouldRestartResource returns true if a resource requires a restart corresponding to the mutated annotations on its namespace
 func shouldRestartResource(namespaceMutatedAnnotations map[string]string, obj metav1.Object) bool {
 	var shouldRestart bool
-	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes())
+	injectAnnotations := buildInjectAnnotations(instrumentation.SupportedTypes)
 	if resourceAnnotations := obj.GetAnnotations(); resourceAnnotations != nil {
 		// For each of the namespace mutated annotations,
 		for namespaceMutatedAnnotation, namespaceMutatedAnnotationValue := range namespaceMutatedAnnotations {
@@ -166,8 +167,7 @@ func RestartNamespace(m InstrumentationAnnotator, ctx context.Context, namespace
 	rangeObjectList(m, ctx, &appsv1.StatefulSetList{}, client.InNamespace(namespace.Name), chainCallbacks(shouldRestartFunc(m, mutatedAnnotations), callbackFunc))
 }
 
-// MutateAndPatchAll runs the mutators for each of the supported resources and patches them.
-
+// MutateAndPatchWorkloads runs the mutators for all workloads and patches them with the updated injection annotations
 func MutateAndPatchWorkloads(m InstrumentationAnnotator, ctx context.Context) {
 	f := getMutateObjectFunc(m)
 	callbackFunc := patchFunc(m, ctx, f)
@@ -176,6 +176,8 @@ func MutateAndPatchWorkloads(m InstrumentationAnnotator, ctx context.Context) {
 	rangeObjectList(m, ctx, &appsv1.StatefulSetList{}, &client.ListOptions{}, callbackFunc)
 }
 
+// MutateAndPatchNamespaces runs the mutators for all namespaces.
+// If restartNamespace is true, RestartNamespace will be called for each affected namespace.
 func MutateAndPatchNamespaces(m InstrumentationAnnotator, ctx context.Context, restartNamespace bool) {
 	rangeObjectList(m, ctx, &corev1.NamespaceList{}, &client.ListOptions{}, chainCallbacks(patchFunc(m, ctx, getMutateObjectFunc(m)), restartNamespaceFunc(m, ctx, restartNamespace)))
 }

@@ -148,7 +148,7 @@ func NewAnnotationMutators(
 }
 
 func warnNonNamespacedNames(cfg AnnotationConfig, logger logr.Logger) {
-	for t := range instrumentation.SupportedTypes() {
+	for t := range instrumentation.SupportedTypes {
 		resources := cfg.getResources(t)
 		for _, deployment := range resources.Deployments {
 			if !strings.Contains(deployment, "/") {
