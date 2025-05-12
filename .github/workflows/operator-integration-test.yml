@@ -306,14 +306,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
+#      - name: Start minikube
+#        uses: medyagh/setup-minikube@master
 
       - name: Build image
         run: |
-          eval $(minikube docker-env)
+#          eval $(minikube docker-env)
           make container
-          docker save $(make print-image-name) > image.tar
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep operator | head -n 1) > image.tar
 
       - name: Cache Docker image
         uses: actions/cache@v3
