@@ -28,10 +28,10 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-          - uses: actions/setup-go@v5
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
+      - uses: actions/setup-go@v5
       - name: Start minikube
         uses: medyagh/setup-minikube@master
 
