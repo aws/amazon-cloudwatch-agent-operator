@@ -305,13 +305,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-#      - name: Start minikube
-#        uses: medyagh/setup-minikube@master
-
       - name: Build image
         run: |
-#          eval $(minikube docker-env)
           make container
           docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep operator | head -n 1) > image.tar
 
