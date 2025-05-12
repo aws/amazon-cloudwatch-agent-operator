@@ -299,11 +299,32 @@ jobs:
         run: |
           TESTS=$(echo "${{ steps.tests.outputs.tests }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "matrix={\"test\":${TESTS}}" >> $GITHUB_OUTPUT
+  BuildAndCacheImage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Build image
+        run: |
+          eval $(minikube docker-env)
+          make container
+          docker save $(make print-image-name) > image.tar
+
+      - name: Cache Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
 
   AutoMonitorTest:
     name: AutoMonitorTest
     runs-on: ubuntu-latest
-    needs: DefineAutoMonitorTestMatrix
+    needs: [DefineAutoMonitorTestMatrix, BuildAndCacheImage]
     permissions:
       id-token: write
       contents: read
@@ -329,11 +350,16 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
+      - name: Restore cached Docker image
+        uses: actions/cache@v3
+        with:
+          path: image.tar
+          key: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
         run: |
           eval $(minikube docker-env)
-          make container
-          docker images
+          docker load < image.tar
 
       - name: Deploy operator to minikube
         run: |
