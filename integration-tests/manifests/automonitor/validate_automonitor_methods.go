@@ -494,6 +494,20 @@ func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string
 			ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 
 			_, updateErr = h.clientSet.AppsV1().DaemonSets(namespace).Update(context.TODO(), ds, metav1.UpdateOptions{})
+
+		case StatefulSet:
+			ss, err := h.clientSet.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to get statefulset: %v", err)
+			}
+
+			if ss.Spec.Template.Annotations == nil {
+				ss.Spec.Template.Annotations = make(map[string]string)
+			}
+			ss.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+
+			_, updateErr = h.clientSet.AppsV1().StatefulSets(namespace).Update(context.TODO(), ss, metav1.UpdateOptions{})
+
 		}
 
 		if updateErr != nil {
@@ -544,6 +558,15 @@ func (h *TestHelper) waitForWorkloadRollout(wlType workloadType, namespace, name
 				return daemonset.Generation <= daemonset.Status.ObservedGeneration &&
 					daemonset.Status.UpdatedNumberScheduled == daemonset.Status.DesiredNumberScheduled &&
 					daemonset.Status.NumberReady == daemonset.Status.DesiredNumberScheduled, nil
+			case StatefulSet:
+				statefulset, err := h.clientSet.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				return statefulset.Generation <= statefulset.Status.ObservedGeneration &&
+					statefulset.Status.UpdatedReplicas == *statefulset.Spec.Replicas &&
+					statefulset.Status.ReadyReplicas == *statefulset.Spec.Replicas &&
+					statefulset.Status.CurrentReplicas == *statefulset.Spec.Replicas, nil
 			}
 			return false, fmt.Errorf("unknown workload type: %s", wlType)
 		})
