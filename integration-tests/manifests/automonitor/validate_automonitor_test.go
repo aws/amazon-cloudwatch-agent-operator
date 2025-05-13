@@ -98,7 +98,7 @@ func TestServiceThenDeployment(t *testing.T) {
 	err := helper.CreateNamespaceAndApplyResources(namespace, []string{sampleDeploymentYaml, sampleDeploymentServiceYaml}, false)
 	assert.NoError(t, err)
 
-	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, deploymentName, allAnnotations, none)
+	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, deploymentName, none, allAnnotations)
 	assert.NoError(t, err)
 }
 
@@ -1236,8 +1236,8 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	err = helper.RestartWorkload(Deployment, nsBatch, customServiceDeploymentName)
 	assert.NoError(t, err)
 	err = helper.ValidatePodInitContainers(nsBatch,
-		[]string{"opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-nodejs"},
-		[]string{"opentelemetry-auto-instrumentation-java", "opentelemetry-auto-instrumentation-python"})
+		[]string{"opentelemetry-auto-instrumentation-java"},
+		[]string{"opentelemetry-auto-instrumentation-nodejs", "opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-python"})
 	assert.NoError(t, err) //FAILING: pod is annotated .net & nodejs
 	err = helper.ValidateWorkloadAnnotations(Deployment, nsBatch, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeNodeJS, instrumentation.TypeDotNet),
