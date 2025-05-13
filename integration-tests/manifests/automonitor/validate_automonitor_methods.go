@@ -82,8 +82,7 @@ func (h *TestHelper) Initialize(namespace string) string {
 	newUUID := uuid.New()
 	uniqueNamespace := fmt.Sprintf("%s-%s", namespace, newUUID.String())
 
-	h.UpdateMonitorConfig(&auto.MonitorConfig{MonitorAllServices: false, RestartPods: false})
-	h.UpdateAnnotationConfig(nil)
+	h.UpdateMonitorAndAnnotationConfig(&auto.MonitorConfig{MonitorAllServices: false, RestartPods: false}, nil)
 	h.startTime = time.Now()
 
 	return uniqueNamespace
@@ -264,12 +263,27 @@ func (h *TestHelper) findIndexOfPrefix(str string, strs []string) int {
 	return -1
 }
 
+func (h *TestHelper) UpdateMonitorAndAnnotationConfig(monitorConfig *auto.MonitorConfig, annotationConfig *auto.AnnotationConfig) {
+	monitorStr, err := json.Marshal(monitorConfig)
+	assert.Nil(h.t, err)
+
+	h.logger.Info("Setting monitor config to:", "monitorStr", string(monitorStr))
+
+	var annotationStr = ""
+	if marshalledConfig, err := json.Marshal(annotationConfig); annotationConfig != nil && assert.Nil(h.t, err) {
+		annotationStr = string(marshalledConfig)
+	}
+	h.logger.Info("Setting annotation config to ", "annotationStr", annotationStr)
+	h.updateOperatorConfig(deploymentArg{string(monitorStr), "--auto-monitor-config="}, deploymentArg{annotationStr, "--auto-annotation-config="})
+
+}
+
 func (h *TestHelper) UpdateMonitorConfig(config *auto.MonitorConfig) {
 	jsonStr, err := json.Marshal(config)
 	assert.Nil(h.t, err)
 
 	h.logger.Info("Setting monitor config to:")
-	h.updateOperatorConfig(string(jsonStr), "--auto-monitor-config=")
+	h.updateOperatorConfig(deploymentArg{string(jsonStr), "--auto-monitor-config="})
 }
 
 func (h *TestHelper) UpdateAnnotationConfig(config *auto.AnnotationConfig) {
@@ -278,27 +292,31 @@ func (h *TestHelper) UpdateAnnotationConfig(config *auto.AnnotationConfig) {
 		jsonStr = string(marshalledConfig)
 	}
 	h.logger.Info("Setting annotation config to ", "jsonStr", jsonStr)
-	h.updateOperatorConfig(jsonStr, "--auto-annotation-config=")
+	h.updateOperatorConfig(deploymentArg{jsonStr, "--auto-annotation-config="})
 }
 
-func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
+func (h *TestHelper) updateOperatorConfig(argList ...deploymentArg) {
 	deployment, err := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Get(context.TODO(), *amazonControllerManager, metav1.GetOptions{})
 	if err != nil {
 		h.t.Errorf("Error getting deployment: %v\n\n", err)
 		return
 	}
 	args := deployment.Spec.Template.Spec.Containers[0].Args
-	indexOfAutoAnnotationConfigString := h.findIndexOfPrefix(flag, args)
-	shouldDelete := len(jsonStr) == 0
-	if indexOfAutoAnnotationConfigString < 0 {
-		if !shouldDelete {
-			deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, flag+jsonStr)
-		}
-	} else {
-		if shouldDelete {
-			deployment.Spec.Template.Spec.Containers[0].Args = slices.Delete(deployment.Spec.Template.Spec.Containers[0].Args, indexOfAutoAnnotationConfigString, indexOfAutoAnnotationConfigString+1)
+	for _, x := range argList {
+		jsonStr := x.jsonStr
+		flag := x.flag
+		indexOfAutoAnnotationConfigString := h.findIndexOfPrefix(flag, args)
+		shouldDelete := len(jsonStr) == 0
+		if indexOfAutoAnnotationConfigString < 0 {
+			if !shouldDelete {
+				deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, flag+jsonStr)
+			}
 		} else {
-			deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = flag + jsonStr
+			if shouldDelete {
+				deployment.Spec.Template.Spec.Containers[0].Args = slices.Delete(deployment.Spec.Template.Spec.Containers[0].Args, indexOfAutoAnnotationConfigString, indexOfAutoAnnotationConfigString+1)
+			} else {
+				deployment.Spec.Template.Spec.Containers[0].Args[indexOfAutoAnnotationConfigString] = flag + jsonStr
+			}
 		}
 	}
 
@@ -306,6 +324,11 @@ func (h *TestHelper) updateOperatorConfig(jsonStr string, flag string) {
 		h.t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
 	time.Sleep(5 * time.Second)
+}
+
+type deploymentArg struct {
+	jsonStr string
+	flag    string
 }
 
 func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist []string, shouldNotExist []string) error {
