@@ -488,62 +488,15 @@ func (h *TestHelper) RolloutWaitYamlWithKubectl(filename string, namespace strin
 func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string) error {
 	h.logger.Info(fmt.Sprintf("Restarting %s/%s...", namespace, name))
 
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var updateErr error
+	restartCmd := exec.Command("kubectl", "rollout", "restart", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
+	if err := restartCmd.Run(); err != nil {
+		return err
+	}
 
-		switch wlType {
-		case Deployment:
-			deployment, err := h.clientSet.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to get deployment: %v", err)
-			}
-
-			if deployment.Spec.Template.Annotations == nil {
-				deployment.Spec.Template.Annotations = make(map[string]string)
-			}
-			deployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-
-			_, updateErr = h.clientSet.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
-
-		case DaemonSet:
-			ds, err := h.clientSet.AppsV1().DaemonSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to get daemonset: %v", err)
-			}
-
-			if ds.Spec.Template.Annotations == nil {
-				ds.Spec.Template.Annotations = make(map[string]string)
-			}
-			ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-
-			_, updateErr = h.clientSet.AppsV1().DaemonSets(namespace).Update(context.TODO(), ds, metav1.UpdateOptions{})
-
-		case StatefulSet:
-			ss, err := h.clientSet.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to get statefulset: %v", err)
-			}
-
-			if ss.Spec.Template.Annotations == nil {
-				ss.Spec.Template.Annotations = make(map[string]string)
-			}
-			ss.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-
-			_, updateErr = h.clientSet.AppsV1().StatefulSets(namespace).Update(context.TODO(), ss, metav1.UpdateOptions{})
-
-		}
-
-		if updateErr != nil {
-			return fmt.Errorf("failed to update %s: %v", wlType, updateErr)
-		}
-
-		cmd := exec.Command("kubectl", "rollout", "status", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
-		h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
-		return cmd.Run()
-	})
-
-	if retryErr != nil {
-		return fmt.Errorf("failed to restart %s %s: %v", wlType, name, retryErr)
+	statusCmd := exec.Command("kubectl", "rollout", "status", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
+	h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", statusCmd))
+	if err := statusCmd.Run(); err != nil {
+		return err
 	}
 
 	err := h.waitForWorkloadRollout(wlType, namespace, name)
