@@ -416,16 +416,14 @@ func (h *TestHelper) ValidateWorkloadAnnotations(workloadType workloadType, name
 		}
 
 		// resource level annotation validation
-		if len(annotations) > 0 {
-			for _, shouldExistAnnotation := range shouldExist {
-				if _, ok := annotations[shouldExistAnnotation]; !ok {
-					return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
-				}
+		for _, shouldExistAnnotation := range shouldExist {
+			if _, ok := annotations[shouldExistAnnotation]; !ok {
+				return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
 			}
-			for _, shouldNotExistAnnotation := range shouldNotExist {
-				if _, ok := annotations[shouldNotExistAnnotation]; ok {
-					return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
-				}
+		}
+		for _, shouldNotExistAnnotation := range shouldNotExist {
+			if _, ok := annotations[shouldNotExistAnnotation]; ok {
+				return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
 			}
 		}
 		return nil
