@@ -323,7 +323,7 @@ func (h *TestHelper) updateOperatorConfig(argList ...deploymentArg) {
 	if !h.UpdateOperator(deployment) {
 		h.t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
-	time.Sleep(5 * time.Second)
+	time.Sleep(15 * time.Second)
 }
 
 type deploymentArg struct {
