@@ -537,7 +537,12 @@ func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string
 
 		cmd := exec.Command("kubectl", "rollout", "status", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
 		h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", cmd))
-		return cmd.Run()
+		updateErr = cmd.Run()
+		if updateErr != nil {
+			return fmt.Errorf("failed to wait for rollout to finish: %v", updateErr)
+		}
+		time.Sleep(5 * time.Second)
+		return updateErr
 	})
 
 	if retryErr != nil {
