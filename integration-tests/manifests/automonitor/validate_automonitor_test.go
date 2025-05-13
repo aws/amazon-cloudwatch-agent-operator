@@ -951,16 +951,22 @@ func TestPermutation17_MonitorAndNoAutoRestartsWithNamespaceCustomSelector(t *te
 	// include java and python by custom selector
 	err = helper.CreateNamespaceAndApplyResources(nsAnother, []string{customerServiceYaml}, false)
 	assert.NoError(t, err)
-	err = helper.ValidatePodsAnnotations(nsAnother,
+	//check ns
+	err = helper.ValidateNamespaceAnnotations(nsAnother,
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
 		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
+	assert.NoError(t, err)
+
+	err = helper.ValidatePodInitContainers(nsAnother,
+		[]string{"opentelemetry-auto-instrumentation-java", "opentelemetry-auto-instrumentation-python"},
+		[]string{"opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-nodejs"})
 	assert.NoError(t, err)
 	// include java and python by custom selector
 	err = helper.CreateNamespaceAndApplyResources(nsAnother, []string{sampleDeploymentWithoutServiceYaml}, false)
 	assert.NoError(t, err)
-	err = helper.ValidatePodsAnnotations(nsAnother,
-		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
-		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
+	err = helper.ValidatePodInitContainers(nsAnother,
+		[]string{"opentelemetry-auto-instrumentation-java", "opentelemetry-auto-instrumentation-python"},
+		[]string{"opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-nodejs"})
 	assert.NoError(t, err)
 	//check ns
 	err = helper.ValidateNamespaceAnnotations(nsAnother,
@@ -1229,9 +1235,9 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	// include java only at pod level by custom selector
 	err = helper.RestartWorkload(Deployment, nsBatch, customServiceDeploymentName)
 	assert.NoError(t, err)
-	err = helper.ValidatePodsAnnotations(nsBatch,
-		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS),
-		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython))
+	err = helper.ValidatePodInitContainers(nsBatch,
+		[]string{"opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-nodejs"},
+		[]string{"opentelemetry-auto-instrumentation-java", "opentelemetry-auto-instrumentation-python"})
 	assert.NoError(t, err) //FAILING: pod is annotated .net & nodejs
 	err = helper.ValidateWorkloadAnnotations(Deployment, nsBatch, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeNodeJS, instrumentation.TypeDotNet),

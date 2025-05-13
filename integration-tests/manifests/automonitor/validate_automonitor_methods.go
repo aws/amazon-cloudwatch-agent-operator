@@ -432,7 +432,7 @@ func (h *TestHelper) ValidateWorkloadAnnotations(workloadType workloadType, name
 	})
 }
 
-func (h *TestHelper) ValidatePodsAnnotations(namespace string, shouldExist []string, shouldNotExist []string) error {
+func (h *TestHelper) ValidatePodInitContainers(namespace string, shouldExist []string, shouldNotExist []string) error {
 	currentPods, err := h.clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("Failed to list pods: %v\n", err))
@@ -443,15 +443,21 @@ func (h *TestHelper) ValidatePodsAnnotations(namespace string, shouldExist []str
 		if pod.Status.Phase != v1.PodRunning {
 			continue
 		}
-		annotations := pod.Annotations
-		for _, shouldExistAnnotation := range shouldExist {
-			if _, ok := annotations[shouldExistAnnotation]; !ok {
-				return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+		initContainers := pod.Spec.InitContainers
+		initContainerNames := map[string]any{}
+		for _, initContainer := range initContainers {
+			initContainerNames[initContainer.Name] = nil
+		}
+		h.logger.Info(fmt.Sprintf("Init container names %s", initContainerNames))
+		// opentelemetry-auto-instrumentation-java
+		for _, shouldExistInitContainerName := range shouldExist {
+			if _, ok := initContainerNames[shouldExistInitContainerName]; !ok {
+				return fmt.Errorf("annotation should be present: %s", shouldExistInitContainerName)
 			}
 		}
-		for _, shouldNotExistAnnotation := range shouldNotExist {
-			if _, ok := annotations[shouldNotExistAnnotation]; ok {
-				return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+		for _, shouldNotExistInitContainerName := range shouldNotExist {
+			if _, ok := initContainerNames[shouldNotExistInitContainerName]; ok {
+				return fmt.Errorf("annotation should not be present: %s", shouldNotExistInitContainerName)
 			}
 		}
 	}
