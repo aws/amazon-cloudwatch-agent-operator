@@ -269,7 +269,6 @@ func (h *TestHelper) UpdateMonitorConfig(config *auto.MonitorConfig) {
 	assert.Nil(h.t, err)
 
 	h.logger.Info("Setting monitor config to:")
-	util.PrettyPrint(config)
 	h.updateOperatorConfig(string(jsonStr), "--auto-monitor-config=")
 }
 
