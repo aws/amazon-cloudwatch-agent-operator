@@ -1,0 +1,5 @@
+*_test.go
+integration-tests
+bin
+.github
+amazon-cloudwatch-agent-operator
