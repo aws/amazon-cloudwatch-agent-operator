@@ -493,9 +493,9 @@ func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string
 		return err
 	}
 
-	waitCmd := exec.Command("kubectl", "wait", "pod", "--all", "--for=condition=Ready", "-n", namespace)
-	h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", waitCmd))
-	if err := waitCmd.Run(); err != nil {
+	statusCmd := exec.Command("kubectl", "rollout", "status", fmt.Sprintf("%s/%s", wlType, name), "-n", namespace)
+	h.logger.Info(fmt.Sprintf("Waiting YAML with kubectl %s\n", statusCmd))
+	if err := statusCmd.Run(); err != nil {
 		return err
 	}
 
