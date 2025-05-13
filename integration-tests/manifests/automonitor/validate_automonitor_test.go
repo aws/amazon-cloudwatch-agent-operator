@@ -951,14 +951,14 @@ func TestPermutation17_MonitorAndNoAutoRestartsWithNamespaceCustomSelector(t *te
 	// include java and python by custom selector
 	err = helper.CreateNamespaceAndApplyResources(nsAnother, []string{customerServiceYaml}, false)
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations(Deployment, nsAnother, customServiceDeploymentName,
+	err = helper.ValidatePodsAnnotations(nsAnother,
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
 		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)
 	// include java and python by custom selector
 	err = helper.CreateNamespaceAndApplyResources(nsAnother, []string{sampleDeploymentWithoutServiceYaml}, false)
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations(Deployment, nsAnother, deploymentWithoutService,
+	err = helper.ValidatePodsAnnotations(nsAnother,
 		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython),
 		getAnnotations(instrumentation.TypeDotNet, instrumentation.TypeNodeJS))
 	assert.NoError(t, err)

@@ -129,6 +129,8 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 			return err
 		}
 	}
+	// sleep to give pods time to come up
+	time.Sleep(10 * time.Second)
 
 	if !skipDelete {
 		h.t.Cleanup(func() {
