@@ -1236,8 +1236,8 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	err = helper.RestartWorkload(Deployment, nsBatch, customServiceDeploymentName)
 	assert.NoError(t, err)
 	err = helper.ValidatePodInitContainers(nsBatch,
-		[]string{"opentelemetry-auto-instrumentation-java"},
-		[]string{"opentelemetry-auto-instrumentation-nodejs", "opentelemetry-auto-instrumentation-dotnet", "opentelemetry-auto-instrumentation-python"})
+		[]string{"opentelemetry-auto-instrumentation-java", "opentelemetry-auto-instrumentation-nodejs", "opentelemetry-auto-instrumentation-dotnet"},
+		[]string{"opentelemetry-auto-instrumentation-python"})
 	assert.NoError(t, err) //FAILING: pod is annotated .net & nodejs
 	err = helper.ValidateWorkloadAnnotations(Deployment, nsBatch, customServiceDeploymentName,
 		getAnnotations(instrumentation.TypeNodeJS, instrumentation.TypeDotNet),
