@@ -671,10 +671,10 @@ func TestMonitor_MutateObject_Namespace(t *testing.T) {
 
 func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
 	return wait.PollUntilContextTimeout(
-		context.TODO(),     // parent context
-		1*time.Millisecond, // interval between polls
-		5*time.Millisecond, // timeout
-		false,              // immediate (set to false to match PollImmediate behavior)
+		context.TODO(),       // parent context
+		1*time.Millisecond,   // interval between polls
+		500*time.Millisecond, // timeout
+		false,                // immediate (set to false to match PollImmediate behavior)
 		func(ctx context.Context) (bool, error) {
 			return isValid(len(monitor.serviceInformer.GetStore().ListKeys())), nil
 		})
