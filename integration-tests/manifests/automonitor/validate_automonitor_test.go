@@ -152,6 +152,24 @@ func TestDeploymentThenServiceRestartPodsEnabled(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDeploymentThenServiceRestartPodsEnabledSameManifest(t *testing.T) {
+	helper := NewTestHelper(t)
+
+	namespace := helper.Initialize("test-namespace")
+
+	helper.UpdateMonitorConfig(&auto.MonitorConfig{
+		MonitorAllServices: true,
+		Languages:          instrumentation.SupportedTypes,
+		RestartPods:        true,
+	})
+
+	err := helper.CreateNamespaceAndApplyResources(namespace, []string{customerServiceYaml}, true)
+	assert.NoError(t, err)
+
+	err = helper.ValidateWorkloadAnnotations(Deployment, namespace, customServiceDeploymentName, allAnnotations, none)
+	assert.NoError(t, err)
+}
+
 func TestDeploymentWithCustomSelector(t *testing.T) {
 	helper := NewTestHelper(t)
 
