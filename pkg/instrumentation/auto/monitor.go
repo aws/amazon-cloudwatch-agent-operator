@@ -7,10 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"slices"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -52,6 +53,7 @@ type Monitor struct {
 }
 
 func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
+	m.logger.Info("Mutating and patching all")
 	if m.config.RestartPods {
 		MutateAndPatchWorkloads(m, ctx)
 	}
@@ -151,6 +153,9 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 			},
 		}, nil
 	})
+	if err != nil {
+		logger.Error(err, "Setting daemonset informer failed")
+	}
 
 	err = daemonsetInformer.AddIndexers(map[string]cache.IndexFunc{
 		ByLabel: func(obj interface{}) ([]string, error) {
@@ -179,6 +184,9 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 			},
 		}, nil
 	})
+	if err != nil {
+		logger.Error(err, "Setting statefulset informer failed")
+	}
 	err = statefulSetInformer.AddIndexers(map[string]cache.IndexFunc{
 		ByLabel: func(obj interface{}) ([]string, error) {
 			return []string{labels.SelectorFromSet(obj.(*appsv1.StatefulSet).Spec.Template.Labels).String()}, nil
@@ -257,6 +265,7 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 		if err != nil {
 			m.logger.Error(err, "failed to update deployment", "deployment", resource.Name)
 		}
+		m.logger.V(1).Info("Updated deployment", "deployment", deployment)
 	}
 	for _, resource := range m.listServiceStatefulSets(oldService, service) {
 		mutatedAnnotations := m.MutateObject(&resource, &resource).(map[string]string)
@@ -401,6 +410,7 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 		delete(languagesToAnnotate, l)
 	}
 
+	m.logger.Info("languages to annotate", "objName", obj.GetName(), "languages", languagesToAnnotate)
 	return mutate(obj, languagesToAnnotate)
 }
 
