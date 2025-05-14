@@ -92,7 +92,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 
 	warnNonNamespacedNames(config.Exclude, logger)
 
-	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sClient, clientReader: r, clientWriter: w}
+	m := &Monitor{serviceInformer: serviceInformer, ctx: ctx, config: config, k8sInterface: k8sClient, clientReader: r, clientWriter: w, logger: logger}
 	_, err := serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			m.onServiceEvent(nil, obj.(*corev1.Service))
