@@ -1189,7 +1189,7 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 			},
 			DotNet: auto.AnnotationResources{
 				Deployments:  []string{nsFinance + "/" + customServiceDeploymentName},
-				StatefulSets: []string{nsDatabase + "/" + customServiceDeploymentName},
+				StatefulSets: []string{nsDatabase + "/" + statefulSetName},
 			},
 		},
 	})
@@ -1230,7 +1230,9 @@ func TestPermutation21_SelectiveMonitoringWithCustomSelector(t *testing.T) {
 	assert.NoError(t, err)
 	err = helper.RestartWorkload(StatefulSet, nsDatabase, statefulSetName)
 	assert.NoError(t, err)
-	err = helper.ValidateWorkloadAnnotations(StatefulSet, nsDatabase, statefulSetName, none, allAnnotations)
+	err = helper.ValidateWorkloadAnnotations(StatefulSet, nsDatabase, statefulSetName,
+		getAnnotations(instrumentation.TypeNodeJS),
+		getAnnotations(instrumentation.TypeJava, instrumentation.TypePython, instrumentation.TypeDotNet))
 	assert.NoError(t, err)
 	// include java only at pod level by custom selector
 	err = helper.RestartWorkload(Deployment, nsBatch, customServiceDeploymentName)
