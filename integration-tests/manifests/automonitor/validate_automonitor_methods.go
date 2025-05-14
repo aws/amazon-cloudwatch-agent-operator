@@ -129,9 +129,6 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 			return err
 		}
 	}
-	// sleep to give pods time to come up
-	time.Sleep(10 * time.Second)
-
 	if !skipDelete {
 		h.t.Cleanup(func() {
 			h.logger.Info(fmt.Sprintf("Deleting resources %s in namespace %s", namespace, resourceFiles))
@@ -325,7 +322,6 @@ func (h *TestHelper) updateOperatorConfig(argList ...deploymentArg) {
 	if !h.UpdateOperator(deployment) {
 		h.t.Error("Failed to update Operator", deployment, deployment.Name, deployment.Spec.Template.Spec.Containers[0].Args)
 	}
-	time.Sleep(15 * time.Second)
 }
 
 type deploymentArg struct {
@@ -549,7 +545,6 @@ func (h *TestHelper) RestartWorkload(wlType workloadType, namespace, name string
 		if updateErr != nil {
 			return fmt.Errorf("failed to wait for rollout to finish: %v", updateErr)
 		}
-		time.Sleep(5 * time.Second)
 		return updateErr
 	})
 
