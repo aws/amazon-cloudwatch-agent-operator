@@ -5,7 +5,9 @@ package auto
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"slices"
 	"time"
@@ -77,8 +79,9 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	logger.Info("AutoMonitor starting...")
-	factory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
-	serviceInformer := factory.Core().V1().Services().Informer()
+	serviceFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
+	workloadFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
+	serviceInformer := serviceFactory.Core().V1().Services().Informer()
 	err := serviceInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		svc, ok := obj.(*corev1.Service)
 		if !ok {
@@ -100,7 +103,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	// create deployment informer
-	deploymentInformer := factory.Apps().V1().Deployments().Informer()
+	deploymentInformer := workloadFactory.Apps().V1().Deployments().Informer()
 	err = deploymentInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		deployment, ok := obj.(*appsv1.Deployment)
 		if !ok {
@@ -132,7 +135,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	// create daemonset informer
-	daemonsetInformer := factory.Apps().V1().DaemonSets().Informer()
+	daemonsetInformer := workloadFactory.Apps().V1().DaemonSets().Informer()
 	err = daemonsetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		daemonset, ok := obj.(*appsv1.DaemonSet)
 		if !ok {
@@ -160,7 +163,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	// create statefulset informer
-	statefulSetInformer := factory.Apps().V1().StatefulSets().Informer()
+	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
 	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		statefulSet, ok := obj.(*appsv1.StatefulSet)
 		if !ok {
@@ -214,11 +217,20 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 		logger.Error(err, "failed to start auto monitor")
 		return nil
 	}
-	factory.Start(ctx.Done())
-	synced := factory.WaitForCacheSync(ctx.Done())
+
+	workloadFactory.Start(ctx.Done())
+	synced := workloadFactory.WaitForCacheSync(ctx.Done())
 	for v, ok := range synced {
 		if !ok {
-			logger.Error(fmt.Errorf("caches failed to sync: %v", v), "bad cache sync")
+			logger.Error(fmt.Errorf("workload caches failed to sync: %v", v), "bad cache sync")
+		}
+	}
+
+	serviceFactory.Start(ctx.Done())
+	synced = serviceFactory.WaitForCacheSync(ctx.Done())
+	for v, ok := range synced {
+		if !ok {
+			logger.Error(fmt.Errorf("service cache failed to sync: %v", v), "bad cache sync")
 		}
 	}
 
@@ -235,7 +247,13 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
-		_, err := m.k8sInterface.AppsV1().Deployments(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
+
+		data, err := getAnnotationsPatch(resource.Spec.Template.Annotations)
+
+		if err != nil {
+			m.logger.Error(err, "Failed to marshal resource")
+		}
+		deployment, err := m.k8sInterface.AppsV1().Deployments(resource.GetNamespace()).Patch(m.ctx, resource.Name, types.JSONPatchType, data, metav1.PatchOptions{})
 		if err != nil {
 			m.logger.Error(err, "failed to update deployment", "deployment", resource.Name)
 		}
@@ -245,7 +263,12 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
-		_, err := m.k8sInterface.AppsV1().StatefulSets(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
+		data, err := getAnnotationsPatch(resource.Spec.Template.Annotations)
+		if err != nil {
+			m.logger.Error(err, "Failed to marshal resource")
+		}
+
+		_, err = m.k8sInterface.AppsV1().StatefulSets(resource.GetNamespace()).Patch(m.ctx, resource.Name, types.JSONPatchType, data, metav1.PatchOptions{})
 		if err != nil {
 			m.logger.Error(err, "failed to update statefulset", "statefulset", resource.Name)
 		}
@@ -255,11 +278,35 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 		if len(mutatedAnnotations) == 0 {
 			continue
 		}
-		_, err := m.k8sInterface.AppsV1().DaemonSets(resource.GetNamespace()).Update(m.ctx, &resource, metav1.UpdateOptions{})
+		data, err := getAnnotationsPatch(resource.Spec.Template.Annotations)
+		if err != nil {
+			m.logger.Error(err, "Failed to marshal resource")
+		}
+		_, err = m.k8sInterface.AppsV1().DaemonSets(resource.GetNamespace()).Patch(m.ctx, resource.Name, types.JSONPatchType, data, metav1.PatchOptions{})
 		if err != nil {
 			m.logger.Error(err, "failed to update daemonset", "daemonset", resource.Name)
 		}
 	}
+}
+
+type annotationsPatch struct {
+	Spec struct {
+		Template struct {
+			Metadata struct {
+				Annotations map[string]string `json:"annotations"`
+			} `json:"metadata"`
+		} `json:"template"`
+	} `json:"spec"`
+}
+
+func getAnnotationsPatch(annotations map[string]string) ([]byte, error) {
+	return json.Marshal([]interface{}{
+		map[string]interface{}{
+			"op":    "replace",
+			"path":  "/spec/template/metadata/annotations",
+			"value": annotations,
+		},
+	})
 }
 
 func (m *Monitor) listServiceDeployments(services ...*corev1.Service) []appsv1.Deployment {
