@@ -289,16 +289,6 @@ func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Ser
 	}
 }
 
-type annotationsPatch struct {
-	Spec struct {
-		Template struct {
-			Metadata struct {
-				Annotations map[string]string `json:"annotations"`
-			} `json:"metadata"`
-		} `json:"template"`
-	} `json:"spec"`
-}
-
 func getAnnotationsPatch(annotations map[string]string) ([]byte, error) {
 	return json.Marshal([]interface{}{
 		map[string]interface{}{
