@@ -376,13 +376,13 @@ func (h *TestHelper) ValidateNamespaceAnnotations(namespace string, shouldExist 
 
 	for _, shouldExistAnnotation := range shouldExist {
 		if _, ok := annotations[shouldExistAnnotation]; !ok {
-			return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+			return fmt.Errorf("annotation %s should be present on namespace '%s'", shouldExistAnnotation, namespace)
 		}
 	}
 
 	for _, shouldNotExistAnnotation := range shouldNotExist {
 		if _, ok := annotations[shouldNotExistAnnotation]; ok {
-			return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+			return fmt.Errorf("annotation %s should not be present on namespace '%s'", shouldNotExistAnnotation, namespace)
 		}
 	}
 
@@ -420,12 +420,12 @@ func (h *TestHelper) ValidateWorkloadAnnotations(workloadType workloadType, name
 		// resource level annotation validation
 		for _, shouldExistAnnotation := range shouldExist {
 			if _, ok := annotations[shouldExistAnnotation]; !ok {
-				return fmt.Errorf("annotation should be present: %s", shouldExistAnnotation)
+				return fmt.Errorf("annotation '%s' should be present on workload '%s/%s'", shouldExistAnnotation, namespace, resourceName)
 			}
 		}
 		for _, shouldNotExistAnnotation := range shouldNotExist {
 			if _, ok := annotations[shouldNotExistAnnotation]; ok {
-				return fmt.Errorf("annotation should not be present: %s", shouldNotExistAnnotation)
+				return fmt.Errorf("annotation %s should not be present on workload '%s/%s'", shouldNotExistAnnotation, namespace, resourceName)
 			}
 		}
 		return nil
@@ -452,12 +452,12 @@ func (h *TestHelper) ValidatePodInitContainers(namespace string, shouldExist []s
 		// opentelemetry-auto-instrumentation-java
 		for _, shouldExistInitContainerName := range shouldExist {
 			if _, ok := initContainerNames[shouldExistInitContainerName]; !ok {
-				return fmt.Errorf("annotation should be present: %s", shouldExistInitContainerName)
+				return fmt.Errorf("annotation '%s' should be present on all pods in '%s'", shouldExistInitContainerName, namespace)
 			}
 		}
 		for _, shouldNotExistInitContainerName := range shouldNotExist {
 			if _, ok := initContainerNames[shouldNotExistInitContainerName]; ok {
-				return fmt.Errorf("annotation should not be present: %s", shouldNotExistInitContainerName)
+				return fmt.Errorf("annotation '%s' should not be present on all pods in '%s'", shouldNotExistInitContainerName, namespace)
 			}
 		}
 	}
