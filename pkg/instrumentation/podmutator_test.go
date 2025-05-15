@@ -105,7 +105,7 @@ func TestGetInstrumentationInstanceJMX(t *testing.T) {
 }
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), false)
+	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
 	require.NotNil(t, mutator)
 
 	true := true
@@ -5173,8 +5173,8 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 	}
-
 	for _, test := range tests {
+		overrideFeatureFlags(t)
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			if test.setFeatureGates != nil {
@@ -5316,12 +5316,18 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		overrideFeatureFlags(t)
 		t.Run(test.name, func(t *testing.T) {
 			ok, msg := test.instrumentations.areContainerNamesConfiguredForMultipleInstrumentations()
 			assert.Equal(t, test.expectedStatus, ok)
 			assert.Equal(t, test.expectedMsg, msg)
 		})
 	}
+}
+
+func overrideFeatureFlags(t *testing.T) {
+	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.SkipMultiInstrumentationContainerValidation.ID(), false))
+	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), false))
 }
 
 func TestInstrumentationLanguageContainersSet(t *testing.T) {

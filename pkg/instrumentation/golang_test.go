@@ -276,6 +276,7 @@ func TestInjectGoSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			overrideFeatureFlags(t)
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
 			}

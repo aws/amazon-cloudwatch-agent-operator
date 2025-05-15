@@ -287,7 +287,7 @@ func main() {
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
-	instrumentationAnnotator, shouldMonitorAllServices := auto.CreateInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), setupLog)
+	instrumentationAnnotator := auto.CreateInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), setupLog)
 
 	if instrumentationAnnotator != nil {
 		mgr.GetWebhookServer().Register("/mutate-v1-workload", &webhook.Admission{
@@ -323,7 +323,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), shouldMonitorAllServices),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
 				}),
 		})
 	} else {

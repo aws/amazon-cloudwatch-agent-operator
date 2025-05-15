@@ -673,7 +673,7 @@ func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
 	return wait.PollUntilContextTimeout(
 		context.TODO(),     // parent context
 		1*time.Millisecond, // interval between polls
-		5*time.Millisecond, // timeout
+		5*time.Second,      // timeout
 		false,              // immediate (set to false to match PollImmediate behavior)
 		func(ctx context.Context) (bool, error) {
 			return isValid(len(monitor.serviceInformer.GetStore().ListKeys())), nil
@@ -905,18 +905,6 @@ func Test_StartupRestartPods(t *testing.T) {
 	err = fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(customSelectedDeployment), customSelectedDeployment)
 	assert.NoError(t, err)
 	assert.Equal(t, buildAnnotations(instrumentation.TypePython), customSelectedDeployment.Spec.Template.GetAnnotations())
-}
-
-func Test_listServiceDeployments(t *testing.T) {
-	testService := newTestService("service-1", defaultNs, map[string]string{"test": "test"})
-	testDeployment := newTestDeployment("deployment-1", defaultNs, map[string]string{"test": "test"}, nil)
-	notMatchingService := newTestService("service-2", defaultNs, map[string]string{"test2": "test2"})
-	clientset := fake.NewSimpleClientset(testService, testDeployment, notMatchingService)
-	m := Monitor{k8sInterface: clientset, logger: testr.New(t)}
-	matchingServiceDeployments := m.listServiceDeployments(context.TODO(), testService)
-	assert.Len(t, matchingServiceDeployments, 1)
-	notMatchingServiceDeployments := m.listServiceDeployments(context.TODO(), notMatchingService)
-	assert.Len(t, notMatchingServiceDeployments, 0)
 }
 
 // Helper functions

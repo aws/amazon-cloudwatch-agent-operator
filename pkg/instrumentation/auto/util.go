@@ -7,6 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/api/apps/v1"
+	v2 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 	"os"
 
 	"github.com/go-logr/logr"
@@ -67,7 +72,7 @@ func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clie
 }
 
 // CreateInstrumentationAnnotator creates an instrumentationAnnotator based on config and environment. Returns the InstrumentationAnnotator and whether AutoMonitor is enabled.
-func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, bool) {
+func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader, setupLog logr.Logger) InstrumentationAnnotator {
 	k8sConfig, err := rest.InClusterConfig()
 	if err != nil {
 		setupLog.Error(err, "unable to create in-cluster config")
@@ -81,21 +86,50 @@ func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 }
 
 // for testing
-func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, bool) {
+func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) InstrumentationAnnotator {
 	autoAnnotation, err := configureAutoAnnotation(autoAnnotationConfigStr, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-annotation, trying AutoMonitor")
 	} else if autoAnnotation != nil {
-		return autoAnnotation, false
+		return autoAnnotation
 	}
 
 	monitor, err := configureAutoMonitor(ctx, autoMonitorConfigStr, clientSet, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-monitor")
-		return nil, false
+		return nil
 	} else if monitor != nil {
-		return monitor, monitor.config.MonitorAllServices
+		return monitor
 	}
 
-	return nil, false
+	return nil
+}
+
+func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
+	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+		statefulSet, ok := obj.(*v1.StatefulSet)
+		if !ok {
+			return obj, fmt.Errorf("error transforming statefulset: %s not a statefulset", obj)
+		}
+		return &v1.StatefulSet{
+			ObjectMeta: v2.ObjectMeta{
+				Name:      statefulSet.Name,
+				Namespace: statefulSet.Namespace,
+			},
+			Spec: v1.StatefulSetSpec{
+				Template: statefulSet.Spec.Template,
+			},
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = statefulSetInformer.AddIndexers(map[string]cache.IndexFunc{
+		ByLabel: func(obj interface{}) ([]string, error) {
+			return []string{labels.SelectorFromSet(obj.(*v1.StatefulSet).Spec.Template.Labels).String()}, nil
+		},
+	})
+	return statefulSetInformer, err
 }
