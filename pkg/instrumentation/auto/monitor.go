@@ -53,7 +53,6 @@ type Monitor struct {
 }
 
 func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
-	m.logger.Info("Mutating and patching all")
 	if m.config.RestartPods {
 		MutateAndPatchWorkloads(m, ctx)
 	}
@@ -76,13 +75,14 @@ func (m *Monitor) GetWriter() client.Writer {
 func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.Interface, w client.Writer, r client.Reader, logger logr.Logger) *Monitor {
 	// Config default values
 	if len(config.Languages) == 0 {
-		logger.Info("Setting languages to default")
+		logger.V(1).Info("Setting languages to default", "languages", instrumentation.SupportedTypes)
 		config.Languages = instrumentation.SupportedTypes
 	}
 
-	logger.Info("AutoMonitor starting...")
+	logger.V(1).Info("AutoMonitor starting...")
 	serviceFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
 	workloadFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
+
 	serviceInformer := serviceFactory.Core().V1().Services().Informer()
 	err := serviceInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		svc, ok := obj.(*corev1.Service)
@@ -105,38 +105,72 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	// create deployment informer
-	deploymentInformer := workloadFactory.Apps().V1().Deployments().Informer()
-	err = deploymentInformer.SetTransform(func(obj interface{}) (interface{}, error) {
-		deployment, ok := obj.(*appsv1.Deployment)
-		if !ok {
-			return obj, fmt.Errorf("error transforming deployment: %s not a deployment", obj)
-		}
-		return &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      deployment.Name,
-				Namespace: deployment.Namespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Template: deployment.Spec.Template,
-			},
-		}, nil
-	})
+	deploymentInformer, err := createDeploymentInformer(workloadFactory, err)
 	if err != nil {
-		logger.Error(err, "Setting deployment informer failed")
-	}
-
-	err = deploymentInformer.AddIndexers(map[string]cache.IndexFunc{
-		ByLabel: func(obj interface{}) ([]string, error) {
-			s := labels.SelectorFromSet(obj.(*appsv1.Deployment).Spec.Template.Labels).String()
-			return []string{s}, nil
-		},
-	})
-
-	if err != nil {
-		logger.Error(err, "Adding indexer failed")
+		logger.Error(err, "Creating deployment informer failed")
 	}
 
 	// create daemonset informer
+	daemonsetInformer, err := createDaemonsetInformer(workloadFactory, err)
+	if err != nil {
+		logger.Error(err, "Creating daemonset informer failed")
+	}
+	// create statefulset informer
+	statefulSetInformer, err := createStatefulsetInformer(workloadFactory, err)
+	if err != nil {
+		logger.Error(err, "Creating daemonset informer failed")
+	}
+
+	warnNonNamespacedNames(config.Exclude, logger)
+
+	m := &Monitor{
+		serviceInformer:     serviceInformer,
+		ctx:                 ctx,
+		config:              config,
+		k8sInterface:        k8sClient,
+		clientReader:        r,
+		clientWriter:        w,
+		logger:              logger,
+		deploymentInformer:  deploymentInformer,
+		daemonsetInformer:   daemonsetInformer,
+		statefulsetInformer: statefulSetInformer,
+	}
+
+	_, err = serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			m.onServiceEvent(nil, obj.(*corev1.Service))
+		},
+		UpdateFunc: func(oldObj, obj interface{}) {
+			m.onServiceEvent(oldObj.(*corev1.Service), obj.(*corev1.Service))
+		},
+		DeleteFunc: func(obj interface{}) {
+			m.onServiceEvent(obj.(*corev1.Service), nil)
+		},
+	})
+	if err != nil {
+		logger.Error(err, "failed to start auto monitor")
+		return nil
+	}
+
+	// initialize workload factory before service factory so workloads are available during onServiceEvent calls when
+	// service informer is initialized
+	factories := []informers.SharedInformerFactory{workloadFactory, serviceFactory}
+
+	for _, factory := range factories {
+		factory.Start(ctx.Done())
+		synced := factory.WaitForCacheSync(ctx.Done())
+		for v, ok := range synced {
+			if !ok {
+				logger.Error(fmt.Errorf("workload caches failed to sync: %v", v), "bad cache sync")
+			}
+		}
+	}
+
+	logger.V(1).Info("Initialization complete!")
+	return m
+}
+
+func createDaemonsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
 	daemonsetInformer := workloadFactory.Apps().V1().DaemonSets().Informer()
 	err = daemonsetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		daemonset, ok := obj.(*appsv1.DaemonSet)
@@ -154,7 +188,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 		}, nil
 	})
 	if err != nil {
-		logger.Error(err, "Setting daemonset informer failed")
+		return nil, err
 	}
 
 	err = daemonsetInformer.AddIndexers(map[string]cache.IndexFunc{
@@ -162,88 +196,37 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 			return []string{labels.SelectorFromSet(obj.(*appsv1.DaemonSet).Spec.Template.Labels).String()}, nil
 		},
 	})
+	return daemonsetInformer, err
+}
 
-	if err != nil {
-		logger.Error(err, "Adding indexer failed")
-	}
-
-	// create statefulset informer
-	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
-	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
-		statefulSet, ok := obj.(*appsv1.StatefulSet)
+func createDeploymentInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+	deploymentInformer := workloadFactory.Apps().V1().Deployments().Informer()
+	err = deploymentInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+		deployment, ok := obj.(*appsv1.Deployment)
 		if !ok {
-			return obj, fmt.Errorf("error transforming statefulset: %s not a statefulset", obj)
+			return obj, fmt.Errorf("error transforming deployment: %s not a deployment", obj)
 		}
-		return &appsv1.StatefulSet{
+		return &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      statefulSet.Name,
-				Namespace: statefulSet.Namespace,
+				Name:      deployment.Name,
+				Namespace: deployment.Namespace,
 			},
-			Spec: appsv1.StatefulSetSpec{
-				Template: statefulSet.Spec.Template,
+			Spec: appsv1.DeploymentSpec{
+				Template: deployment.Spec.Template,
 			},
 		}, nil
 	})
 	if err != nil {
-		logger.Error(err, "Setting statefulset informer failed")
+		return nil, err
 	}
-	err = statefulSetInformer.AddIndexers(map[string]cache.IndexFunc{
+	err = deploymentInformer.AddIndexers(map[string]cache.IndexFunc{
 		ByLabel: func(obj interface{}) ([]string, error) {
-			return []string{labels.SelectorFromSet(obj.(*appsv1.StatefulSet).Spec.Template.Labels).String()}, nil
+			s := labels.SelectorFromSet(obj.(*appsv1.Deployment).Spec.Template.Labels).String()
+			return []string{s}, nil
 		},
 	})
-	if err != nil {
-		logger.Error(err, "Adding indexer failed")
-	}
 
-	warnNonNamespacedNames(config.Exclude, logger)
-
-	m := &Monitor{
-		serviceInformer:     serviceInformer,
-		ctx:                 ctx,
-		config:              config,
-		k8sInterface:        k8sClient,
-		clientReader:        r,
-		clientWriter:        w,
-		logger:              logger,
-		deploymentInformer:  deploymentInformer,
-		daemonsetInformer:   daemonsetInformer,
-		statefulsetInformer: statefulSetInformer,
-	}
-	_, err = serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			m.onServiceEvent(nil, obj.(*corev1.Service))
-		},
-		UpdateFunc: func(oldObj, obj interface{}) {
-			m.onServiceEvent(oldObj.(*corev1.Service), obj.(*corev1.Service))
-		},
-		DeleteFunc: func(obj interface{}) {
-			m.onServiceEvent(obj.(*corev1.Service), nil)
-		},
-	})
-	if err != nil {
-		logger.Error(err, "failed to start auto monitor")
-		return nil
-	}
-
-	workloadFactory.Start(ctx.Done())
-	synced := workloadFactory.WaitForCacheSync(ctx.Done())
-	for v, ok := range synced {
-		if !ok {
-			logger.Error(fmt.Errorf("workload caches failed to sync: %v", v), "bad cache sync")
-		}
-	}
-
-	serviceFactory.Start(ctx.Done())
-	synced = serviceFactory.WaitForCacheSync(ctx.Done())
-	for v, ok := range synced {
-		if !ok {
-			logger.Error(fmt.Errorf("service cache failed to sync: %v", v), "bad cache sync")
-		}
-	}
-
-	logger.Info("Initialization complete!")
-	return m
+	return deploymentInformer, err
 }
 
 func (m *Monitor) onServiceEvent(oldService *corev1.Service, service *corev1.Service) {
@@ -410,7 +393,7 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 		delete(languagesToAnnotate, l)
 	}
 
-	m.logger.Info("languages to annotate", "objName", obj.GetName(), "languages", languagesToAnnotate)
+	m.logger.V(2).Info("languages to annotate", "objName", obj.GetName(), "languages", languagesToAnnotate)
 	return mutate(obj, languagesToAnnotate)
 }
 
@@ -437,7 +420,7 @@ func (m *Monitor) isWorkloadAutoMonitored(obj client.Object) bool {
 		serviceSelector := labels.SelectorFromSet(service.Spec.Selector)
 
 		if serviceSelector.Matches(objectLabels) {
-			m.logger.Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
+			m.logger.V(2).Info(fmt.Sprintf("setting %s instrumentation annotations to %s because it is owned by service %s", obj.GetName(), m.config.Languages, service.Name))
 			return true
 		}
 	}

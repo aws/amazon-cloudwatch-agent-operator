@@ -7,6 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/api/apps/v1"
+	v2 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 	"os"
 
 	"github.com/go-logr/logr"
@@ -98,4 +103,33 @@ func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, au
 	}
 
 	return nil, false
+}
+
+func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
+	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+		statefulSet, ok := obj.(*v1.StatefulSet)
+		if !ok {
+			return obj, fmt.Errorf("error transforming statefulset: %s not a statefulset", obj)
+		}
+		return &v1.StatefulSet{
+			ObjectMeta: v2.ObjectMeta{
+				Name:      statefulSet.Name,
+				Namespace: statefulSet.Namespace,
+			},
+			Spec: v1.StatefulSetSpec{
+				Template: statefulSet.Spec.Template,
+			},
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = statefulSetInformer.AddIndexers(map[string]cache.IndexFunc{
+		ByLabel: func(obj interface{}) ([]string, error) {
+			return []string{labels.SelectorFromSet(obj.(*v1.StatefulSet).Spec.Template.Labels).String()}, nil
+		},
+	})
+	return statefulSetInformer, err
 }
