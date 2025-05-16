@@ -15,17 +15,18 @@ func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
-	// set default prometheus annotations
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = "8888"
-	annotations["prometheus.io/path"] = "/metrics"
+	// do not set default prometheus annotations as the cw agent does not expose a prometheus metrics endpoint
+	// annotations["prometheus.io/scrape"] = "true"
+	// annotations["prometheus.io/port"] = "8888"
+	// annotations["prometheus.io/path"] = "/metrics"
 
-	// allow override of prometheus annotations
+	// allow override of annotations
 	if nil != instance.Annotations {
 		for k, v := range instance.Annotations {
 			annotations[k] = v
 		}
 	}
+
 	// make sure sha256 for configMap is always calculated
 	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
