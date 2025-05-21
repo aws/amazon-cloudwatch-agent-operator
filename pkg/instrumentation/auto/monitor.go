@@ -28,7 +28,10 @@ import (
 
 var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
 
-const ByLabel = "IndexByLabel"
+const (
+	ByLabel              = "IndexByLabel"
+	informerResyncPeriod = 10 * time.Minute
+)
 
 // InstrumentationAnnotator is the highest level abstraction used to annotate kubernetes resources for instrumentation
 type InstrumentationAnnotator interface {
@@ -80,8 +83,8 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	logger.V(1).Info("AutoMonitor starting...")
-	serviceFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
-	workloadFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, 10*time.Minute)
+	serviceFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, informerResyncPeriod)
+	workloadFactory := informers.NewSharedInformerFactoryWithOptions(k8sClient, informerResyncPeriod)
 
 	serviceInformer := serviceFactory.Core().V1().Services().Informer()
 	err := serviceInformer.SetTransform(func(obj interface{}) (interface{}, error) {
@@ -118,7 +121,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	// create statefulset informer
 	statefulSetInformer, err := createStatefulsetInformer(workloadFactory, err)
 	if err != nil {
-		logger.Error(err, "Creating daemonset informer failed")
+		logger.Error(err, "Creating statefulset informer failed")
 	}
 
 	warnNonNamespacedNames(config.Exclude, logger)
@@ -161,7 +164,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 		synced := factory.WaitForCacheSync(ctx.Done())
 		for v, ok := range synced {
 			if !ok {
-				logger.Error(fmt.Errorf("workload caches failed to sync: %v", v), "bad cache sync")
+				logger.Error(fmt.Errorf("caches failed to sync: %v", v), "bad cache sync")
 			}
 		}
 	}
@@ -197,6 +200,35 @@ func createDaemonsetInformer(workloadFactory informers.SharedInformerFactory, er
 		},
 	})
 	return daemonsetInformer, err
+}
+
+func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
+	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+		statefulSet, ok := obj.(*appsv1.StatefulSet)
+		if !ok {
+			return obj, fmt.Errorf("error transforming statefulset: %s not a statefulset", obj)
+		}
+		return &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      statefulSet.Name,
+				Namespace: statefulSet.Namespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Template: statefulSet.Spec.Template,
+			},
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = statefulSetInformer.AddIndexers(map[string]cache.IndexFunc{
+		ByLabel: func(obj interface{}) ([]string, error) {
+			return []string{labels.SelectorFromSet(obj.(*appsv1.StatefulSet).Spec.Template.Labels).String()}, nil
+		},
+	})
+	return statefulSetInformer, err
 }
 
 func createDeploymentInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
@@ -300,7 +332,7 @@ func (m *Monitor) listServiceDeployments(services ...*corev1.Service) []appsv1.D
 		s := labels.SelectorFromSet(service.Spec.Selector).String()
 		informerList, err := m.deploymentInformer.GetIndexer().ByIndex(ByLabel, s)
 		if err != nil {
-			m.logger.Error(err, "failed to list deployment", "deployment", service.Name)
+			m.logger.Error(err, "failed to list deployment for service", "service", service.Name)
 		}
 		for _, obj := range informerList {
 			deployment, ok := obj.(*appsv1.Deployment)
@@ -323,7 +355,7 @@ func (m *Monitor) listServiceStatefulSets(services ...*corev1.Service) []appsv1.
 		s := labels.SelectorFromSet(service.Spec.Selector).String()
 		informerList, err := m.statefulsetInformer.GetIndexer().ByIndex(ByLabel, s)
 		if err != nil {
-			m.logger.Error(err, "failed to list deployment", "deployment", service.Name)
+			m.logger.Error(err, "failed to list statefulsets for service", "service", service.Name)
 		}
 
 		for _, obj := range informerList {
@@ -347,7 +379,7 @@ func (m *Monitor) listServiceDaemonSets(services ...*corev1.Service) []appsv1.Da
 		s := labels.SelectorFromSet(service.Spec.Selector).String()
 		informerList, err := m.daemonsetInformer.GetIndexer().ByIndex(ByLabel, s)
 		if err != nil {
-			m.logger.Error(err, "failed to list deployment", "deployment", service.Name)
+			m.logger.Error(err, "failed to list daemonsets for service", "service", service.Name)
 		}
 
 		for _, obj := range informerList {
