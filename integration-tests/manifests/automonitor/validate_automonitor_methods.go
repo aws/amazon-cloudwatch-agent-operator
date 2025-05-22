@@ -243,6 +243,10 @@ func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 		return false
 	}
 
+	operatorDelay := 5 * time.Second
+	h.logger.Info("Sleeping before updating deployment", "duration", operatorDelay)
+	time.Sleep(operatorDelay)
+
 	h.logger.Info("Operator updated successfully!", "args", args)
 	return true
 }
