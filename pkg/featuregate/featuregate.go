@@ -59,7 +59,7 @@ var (
 
 	EnableMultiInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.multi-instrumentation",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterFromVersion("0.86.0"),
 		featuregate.WithRegisterDescription("controls whether the operator supports multi instrumentation"))
 
@@ -86,7 +86,7 @@ var (
 	// annotations from being used.
 	SkipMultiInstrumentationContainerValidation = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.multi-instrumentation.skip-container-validation",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator validates the container annotations when multi-instrumentation is enabled"))
 )
 
