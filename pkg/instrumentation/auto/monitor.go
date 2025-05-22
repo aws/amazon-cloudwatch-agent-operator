@@ -108,18 +108,18 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	}
 
 	// create deployment informer
-	deploymentInformer, err := createDeploymentInformer(workloadFactory, err)
+	deploymentInformer, err := createDeploymentInformer(workloadFactory)
 	if err != nil {
 		logger.Error(err, "Creating deployment informer failed")
 	}
 
 	// create daemonset informer
-	daemonsetInformer, err := createDaemonsetInformer(workloadFactory, err)
+	daemonsetInformer, err := createDaemonsetInformer(workloadFactory)
 	if err != nil {
 		logger.Error(err, "Creating daemonset informer failed")
 	}
 	// create statefulset informer
-	statefulSetInformer, err := createStatefulsetInformer(workloadFactory, err)
+	statefulSetInformer, err := createStatefulsetInformer(workloadFactory)
 	if err != nil {
 		logger.Error(err, "Creating statefulset informer failed")
 	}
@@ -173,9 +173,9 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 	return m
 }
 
-func createDaemonsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+func createDaemonsetInformer(workloadFactory informers.SharedInformerFactory) (cache.SharedIndexInformer, error) {
 	daemonsetInformer := workloadFactory.Apps().V1().DaemonSets().Informer()
-	err = daemonsetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+	err := daemonsetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		daemonset, ok := obj.(*appsv1.DaemonSet)
 		if !ok {
 			return obj, fmt.Errorf("error transforming daemonset: %s not a daemonset", obj)
@@ -202,9 +202,9 @@ func createDaemonsetInformer(workloadFactory informers.SharedInformerFactory, er
 	return daemonsetInformer, err
 }
 
-func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory) (cache.SharedIndexInformer, error) {
 	statefulSetInformer := workloadFactory.Apps().V1().StatefulSets().Informer()
-	err = statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+	err := statefulSetInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		statefulSet, ok := obj.(*appsv1.StatefulSet)
 		if !ok {
 			return obj, fmt.Errorf("error transforming statefulset: %s not a statefulset", obj)
@@ -231,9 +231,9 @@ func createStatefulsetInformer(workloadFactory informers.SharedInformerFactory, 
 	return statefulSetInformer, err
 }
 
-func createDeploymentInformer(workloadFactory informers.SharedInformerFactory, err error) (cache.SharedIndexInformer, error) {
+func createDeploymentInformer(workloadFactory informers.SharedInformerFactory) (cache.SharedIndexInformer, error) {
 	deploymentInformer := workloadFactory.Apps().V1().Deployments().Informer()
-	err = deploymentInformer.SetTransform(func(obj interface{}) (interface{}, error) {
+	err := deploymentInformer.SetTransform(func(obj interface{}) (interface{}, error) {
 		deployment, ok := obj.(*appsv1.Deployment)
 		if !ok {
 			return obj, fmt.Errorf("error transforming deployment: %s not a deployment", obj)
