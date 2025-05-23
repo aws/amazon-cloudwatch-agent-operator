@@ -29,7 +29,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 		autoAnnotationConfig string
 		autoMonitorConfig    string
 		expectNilAnnotator   bool
-		expectedMonitorAll   bool
 		expectedType         string
 	}{
 		{
@@ -39,7 +38,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{"java":{"deployments":["default/myapp"]}}`,
 			autoMonitorConfig:    `{"monitorAllServices":true}`,
 			expectNilAnnotator:   true,
-			expectedMonitorAll:   false,
 			expectedType:         "",
 		},
 		{
@@ -49,7 +47,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{"java":{"deployments":["default/myapp"]}}`,
 			autoMonitorConfig:    `{"monitorAllServices":true}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   false,
 			expectedType:         "*auto.AnnotationMutators",
 		},
 		{
@@ -59,7 +56,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{"java":{"deployments":["default/myapp"]}}`,
 			autoMonitorConfig:    `{"monitorAllServices":true}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   true,
 			expectedType:         "*auto.Monitor",
 		},
 		{
@@ -69,7 +65,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{"java":{"deployments":["default/myapp"]}}`,
 			autoMonitorConfig:    `{"monitorAllServices":false}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   false,
 			expectedType:         "*auto.Monitor",
 		},
 		{
@@ -79,7 +74,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{invalid-json}`,
 			autoMonitorConfig:    `{"monitorAllServices":true}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   true,
 			expectedType:         "*auto.Monitor",
 		},
 		{
@@ -89,7 +83,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{}`,
 			autoMonitorConfig:    `{"monitorAllServices":true}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   true,
 			expectedType:         "*auto.Monitor",
 		},
 		{
@@ -99,7 +92,6 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			autoAnnotationConfig: `{"java":{"deployments":["default/myapp"]}}`,
 			autoMonitorConfig:    `{invalid-json}`,
 			expectNilAnnotator:   false,
-			expectedMonitorAll:   false,
 			expectedType:         "*auto.AnnotationMutators",
 		},
 	}
@@ -120,7 +112,7 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			}
 
 			// Call the function
-			annotator, monitorAll := createInstrumentationAnnotatorWithClientset(tt.autoMonitorConfig, tt.autoAnnotationConfig, ctx, fake.NewSimpleClientset(), fakeClient, fakeClient, logger)
+			annotator := createInstrumentationAnnotatorWithClientset(tt.autoMonitorConfig, tt.autoAnnotationConfig, ctx, fake.NewSimpleClientset(), fakeClient, fakeClient, logger)
 
 			// Check results
 			if tt.expectNilAnnotator {
@@ -138,17 +130,10 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 					_, ok := annotator.(*AnnotationMutators)
 					assert.True(t, ok, "Expected annotator to be of type *AnnotationMutators")
 				case "*auto.Monitor":
-					monitor, ok := annotator.(*Monitor)
+					_, ok := annotator.(*Monitor)
 					assert.True(t, ok, "Expected annotator to be of type *Monitor")
-					if tt.expectedMonitorAll {
-						assert.True(t, monitor.config.MonitorAllServices, "Expected MonitorAllServices to be true")
-					} else {
-						assert.False(t, monitor.config.MonitorAllServices, "Expected MonitorAllServices to be false")
-					}
 				}
 			}
-
-			assert.Equal(t, tt.expectedMonitorAll, monitorAll, "Unexpected monitorAll value")
 		})
 	}
 }

@@ -67,7 +67,7 @@ func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clie
 }
 
 // CreateInstrumentationAnnotator creates an instrumentationAnnotator based on config and environment. Returns the InstrumentationAnnotator and whether AutoMonitor is enabled.
-func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, bool) {
+func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, client client.Client, reader client.Reader, setupLog logr.Logger) InstrumentationAnnotator {
 	k8sConfig, err := rest.InClusterConfig()
 	if err != nil {
 		setupLog.Error(err, "unable to create in-cluster config")
@@ -81,21 +81,21 @@ func CreateInstrumentationAnnotator(autoMonitorConfigStr string, autoAnnotationC
 }
 
 // for testing
-func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) (InstrumentationAnnotator, bool) {
+func createInstrumentationAnnotatorWithClientset(autoMonitorConfigStr string, autoAnnotationConfigStr string, ctx context.Context, clientSet kubernetes.Interface, client client.Client, reader client.Reader, setupLog logr.Logger) InstrumentationAnnotator {
 	autoAnnotation, err := configureAutoAnnotation(autoAnnotationConfigStr, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-annotation, trying AutoMonitor")
 	} else if autoAnnotation != nil {
-		return autoAnnotation, false
+		return autoAnnotation
 	}
 
 	monitor, err := configureAutoMonitor(ctx, autoMonitorConfigStr, clientSet, client, reader, setupLog)
 	if err != nil {
 		setupLog.Error(err, "Failed to configure auto-monitor")
-		return nil, false
+		return nil
 	} else if monitor != nil {
-		return monitor, monitor.config.MonitorAllServices
+		return monitor
 	}
 
-	return nil, false
+	return nil
 }
