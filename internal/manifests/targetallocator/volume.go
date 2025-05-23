@@ -27,6 +27,20 @@ func Volumes(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) []corev1
 		},
 	},
 		{
+			Name: naming.TAClientVolume(),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "amazon-cloudwatch-observability-agent-ta-client-cert",
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "ca.crt",
+							Path: "tls-ca.crt",
+						},
+					},
+				},
+			},
+		},
+		{
 			Name: naming.TASecretVolume(),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
