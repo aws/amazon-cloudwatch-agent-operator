@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-deployment-without-service
+  labels:
+    app: sample-app-without-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app-without-service
+  template:
+    metadata:
+      labels:
+        app: sample-app-without-service
+    spec:
+      containers:
+      - name: sample-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
