@@ -41,7 +41,7 @@ resource "aws_eks_node_group" "this" {
     min_size     = 1
   }
 
-  ami_type = var.k8s_version >= "1.33" ? "AL2023_x86_64" : "AL2_x86_64"
+  ami_type = var.k8s_version >= "1.33" ? "AL2023_x86_64_STANDARD" : "AL2_x86_64"
   capacity_type  = "ON_DEMAND"
   disk_size      = 20
   instance_types = ["t3.medium"]
