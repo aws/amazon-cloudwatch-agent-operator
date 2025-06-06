@@ -19,11 +19,11 @@ import (
 var _ admission.Handler = (*handler)(nil)
 
 type handler struct {
-	decoder                  *admission.Decoder
+	decoder                  admission.Decoder
 	instrumentationAnnotator auto.InstrumentationAnnotator
 }
 
-func NewWebhookHandler(decoder *admission.Decoder, instrumentationAnnotator auto.InstrumentationAnnotator) admission.Handler {
+func NewWebhookHandler(decoder admission.Decoder, instrumentationAnnotator auto.InstrumentationAnnotator) admission.Handler {
 	return &handler{
 		decoder:                  decoder,
 		instrumentationAnnotator: instrumentationAnnotator,
