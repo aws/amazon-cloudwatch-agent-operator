@@ -148,6 +148,15 @@ Each ConfigMap will be added to the Collector's Deployments as a volume named `c
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#amazoncloudwatchagentspecdeploymentupdatestrategy">deploymentUpdateStrategy</a></b></td>
+        <td>object</td>
+        <td>
+          UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
+This is only applicable to Deployment mode.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#amazoncloudwatchagentspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -5479,6 +5488,103 @@ metric across all relevant pods (as a quantity)<br/>
           Configmap defines name and path where the configMaps should be mounted.<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.deploymentUpdateStrategy
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspec)</sup></sup>
+
+
+
+UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
+This is only applicable to Deployment mode.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspecdeploymentupdatestrategyrollingupdate">rollingUpdate</a></b></td>
+        <td>object</td>
+        <td>
+          Rolling update config params. Present only if DeploymentStrategyType =
+RollingUpdate.
+---
+TODO: Update this to follow our convention for oneOf, whatever we decide it
+to be.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of deployment. Can be "Recreate" or "RollingUpdate". Default is RollingUpdate.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.deploymentUpdateStrategy.rollingUpdate
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspecdeploymentupdatestrategy)</sup></sup>
+
+
+
+Rolling update config params. Present only if DeploymentStrategyType =
+RollingUpdate.
+---
+TODO: Update this to follow our convention for oneOf, whatever we decide it
+to be.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSurge</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be scheduled above the desired number of
+pods.
+Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+This can not be 0 if MaxUnavailable is 0.
+Absolute number is calculated from percentage by rounding up.
+Defaults to 25%.
+Example: when this is set to 30%, the new ReplicaSet can be scaled up immediately when
+the rolling update starts, such that the total number of old and new pods do not exceed
+130% of desired pods. Once old pods have been killed,
+new ReplicaSet can be scaled up further, ensuring that total number of pods running
+at any time during the update is at most 130% of desired pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be unavailable during the update.
+Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+Absolute number is calculated from percentage by rounding down.
+This can not be 0 if MaxSurge is 0.
+Defaults to 25%.
+Example: when this is set to 30%, the old ReplicaSet can be scaled down to 70% of desired pods
+immediately when the rolling update starts. Once new pods are ready, old ReplicaSet
+can be scaled down further, followed by scaling up the new ReplicaSet, ensuring
+that the total number of pods available at all times during the update is at
+least 70% of desired pods.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
