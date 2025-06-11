@@ -759,6 +759,22 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Collector mode is set to deployment, which does not support the attribute 'updateStrategy'",
 		},
+		{
+			name: "invalid updateStrategy for Statefulset mode",
+			otelcol: AmazonCloudWatchAgent{
+				Spec: AmazonCloudWatchAgentSpec{
+					Mode: ModeStatefulSet,
+					DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
+						Type: "RollingUpdate",
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
+							MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to statefulset, which does not support the attribute 'deploymentUpdateStrategy'",
+		},
 	}
 
 	for _, test := range tests {
