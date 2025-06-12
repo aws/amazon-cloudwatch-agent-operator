@@ -64,6 +64,7 @@ type PrometheusCRConfig struct {
 }
 
 type HTTPSServerConfig struct {
+	Enabled         bool   `yaml:"enabled,omitempty"`
 	ListenAddr      string `yaml:"listen_addr,omitempty"`
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
@@ -118,6 +119,11 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
+	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
 	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
 	if err != nil {
 		return err
@@ -160,6 +166,7 @@ func CreateDefaultConfig() Config {
 		},
 		AllocationStrategy: &allocation_strategy,
 		HTTPS: HTTPSServerConfig{
+			Enabled:         true,
 			ListenAddr:      DefaultListenAddr,
 			CAFilePath:      DefaultCABundlePath,
 			TLSCertFilePath: DefaultTLSCertPath,
