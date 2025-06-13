@@ -33,8 +33,13 @@ func ConfigMapExtra(extraConfigMapName string) string {
 func TAConfigMapVolume() string {
 	return "ta-internal"
 }
+
 func TASecretVolume() string {
 	return "ta-secret"
+}
+
+func TAClientVolume() string {
+	return "ta-client"
 }
 
 // PrometheusConfigMapVolume returns the name to use for the prometheus config map's volume in the pod.
