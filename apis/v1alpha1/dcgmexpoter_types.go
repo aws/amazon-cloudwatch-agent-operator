@@ -58,6 +58,15 @@ type DcgmExporterSpec struct {
 	// If specified, indicates the pod's scheduling constraints
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// In deployment, daemonset, or statefulset mode, this controls
+	// the security context settings for the primary application
+	// container.
+	//
+	// In sidecar mode, this controls the security context for the
+	// injected sidecar container.
+	//
+	// +optional
+	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // DcgmExporterStatus defines the observed state of DcgmExporter.
