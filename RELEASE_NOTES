@@ -1,4 +1,13 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.1.0 (2025-06-24)
+========================================================================
+Enhancements:
+* Upgrade K8s dependencies to support DRA with K8s 1.33
+* Implement mTLS resources and configuration for Target Allocator server
+* Support security context config with DCGM
+* Add support for UpdateStrategy when collector mode is Deployment
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.0.1 (2025-05-23)
 ========================================================================
 Enhancements:
