@@ -4,12 +4,12 @@
 package collector
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -96,17 +96,38 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		logger.Error(err, "error parsing config")
 	}
 
-	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(agent.Spec.OtelConfig); err == nil {
-		if probe, err := getLivenessProbe(configFromString, agent.Spec.LivenessProbe); err == nil {
-			livenessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("extensions not configured, skipping liveness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
-		} else {
-			logger.Error(err, "cannot create liveness probe.")
-		}
+	// Create health check probe pointing to health_check extension endpoint
+	livenessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/healthz",
+				Port: intstr.FromInt(13133),
+			},
+		},
+		InitialDelaySeconds: 15,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+	readinessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/readyz",
+				Port: intstr.FromInt(13133),
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+
+	// Apply user-defined probe settings if provided
+	if agent.Spec.LivenessProbe != nil {
+		defaultProbeSettings(livenessProbe, agent.Spec.LivenessProbe)
+	}
+	if agent.Spec.ReadinessProbe != nil {
+		defaultProbeSettings(readinessProbe, agent.Spec.ReadinessProbe)
 	}
 
 	return corev1.Container{
@@ -122,6 +143,7 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		Ports:           portMapToContainerPortList(ports),
 		SecurityContext: agent.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
+		ReadinessProbe:  readinessProbe,
 		Lifecycle:       agent.Spec.Lifecycle,
 	}
 }
@@ -169,12 +191,8 @@ func portMapToContainerPortList(portMap map[string]corev1.ContainerPort) []corev
 	return ports
 }
 
-func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
-	probe, err := adapters.ConfigToContainerProbe(config)
-	if err != nil {
-		return nil, err
-	}
-	if probeConfig != nil {
+func defaultProbeSettings(probe *corev1.Probe, probeConfig *v1alpha1.Probe) {
+	if probe != nil && probeConfig != nil {
 		if probeConfig.InitialDelaySeconds != nil {
 			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
 		}
@@ -192,5 +210,4 @@ func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.
 		}
 		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
 	}
-	return probe, nil
 }
