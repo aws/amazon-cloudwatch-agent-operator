@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -59,6 +60,41 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		envVars = []corev1.EnvVar{}
 	}
 
+	// Add health probes for Neuron Monitor
+	var probePort intstr.IntOrString
+	if len(ports) > 0 {
+		probePort = intstr.FromInt32(ports[0].ContainerPort)
+	} else {
+		probePort = intstr.FromInt(10259) // Default Neuron monitor health port
+	}
+
+	livenessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   probePort,
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 15,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+	readinessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   probePort,
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+
 	return corev1.Container{
 		Name:            ComponentNeuronExporter,
 		Image:           image,
@@ -69,5 +105,7 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		Env:             envVars,
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
+		LivenessProbe:   livenessProbe,
+		ReadinessProbe:  readinessProbe,
 	}
 }
