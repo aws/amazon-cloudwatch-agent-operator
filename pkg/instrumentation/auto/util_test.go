@@ -12,7 +12,6 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/fake"
-
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
