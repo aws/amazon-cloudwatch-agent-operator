@@ -17,8 +17,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
-// extractVersionFromImage extracts version from container image tag
-// Example: "602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/observability/prod-neuron-monitor:1.5.1" -> "1.5.1"
 func extractVersionFromImage(image string) string {
 	if image == "" {
 		return ""
@@ -55,6 +53,12 @@ func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *
 	// Update replica status for READY column
 	readyReplicas := obj.Status.NumberReady
 	totalReplicas := obj.Status.DesiredNumberScheduled
+	
+	// Handle case where DaemonSet status might not be fully updated yet
+	if totalReplicas == 0 && obj.Status.CurrentNumberScheduled > 0 {
+		totalReplicas = obj.Status.CurrentNumberScheduled
+	}
+	
 	changed.Status.Scale.StatusReplicas = fmt.Sprintf("%d/%d", readyReplicas, totalReplicas)
 
 	// Update image for IMAGE column
@@ -72,7 +76,8 @@ func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *
 	}
 
 	// Emit health events based on pod readiness
-	if totalReplicas > 0 {
+	// Only emit events if we have valid replica counts and the DaemonSet appears stable
+	if totalReplicas > 0 && obj.Status.ObservedGeneration == obj.Generation {
 		if readyReplicas == totalReplicas {
 			// All pods are ready - emit Normal event
 			recorder.Event(changed, "Normal", "ComponentHealthy", 

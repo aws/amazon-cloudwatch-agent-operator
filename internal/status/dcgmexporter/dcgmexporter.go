@@ -17,8 +17,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
-// extractVersionFromImage extracts version from container image tag
-// Example: "602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/observability/dcgm-exporter:3.3.9-3.6.1-ubuntu22.04-amd64" -> "3.3.9-3.6.1-ubuntu22.04-amd64"
 func extractVersionFromImage(image string) string {
 	if image == "" {
 		return ""
