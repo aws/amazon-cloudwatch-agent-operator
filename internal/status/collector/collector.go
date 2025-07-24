@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,13 +20,28 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
+func extractVersionFromImage(image string) string {
+	if image == "" {
+		return ""
+	}
+
+	// Split by ':' to get the tag part
+	parts := strings.Split(image, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	// Return the tag (version) part
+	return parts[len(parts)-1]
+}
+
 func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.AmazonCloudWatchAgent()
 	}
 	mode := changed.Spec.Mode
-	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
+	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet && mode != v1alpha1.ModeDaemonSet {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 		return nil
@@ -78,11 +94,22 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
 		}
+		// For DaemonSets, use different status fields
+		replicas = obj.Status.DesiredNumberScheduled
+		readyReplicas = obj.Status.NumberReady
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
 	changed.Status.Scale.Replicas = replicas
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
+
+	// Extract and set version from image tag if not already set or is default
+	if statusImage != "" && (changed.Status.Version == "" || changed.Status.Version == "0.0.0") {
+		if imageVersion := extractVersionFromImage(statusImage); imageVersion != "" {
+			changed.Status.Version = imageVersion
+		}
+	}
 
 	return nil
 }

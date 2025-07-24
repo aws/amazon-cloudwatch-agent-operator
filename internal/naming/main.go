@@ -135,3 +135,13 @@ func ServiceMonitor(otelcol string) string {
 func PodMonitor(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))
 }
+
+// DcgmExporter builds the DCGM exporter name based on the instance.
+func DcgmExporter(name string) string {
+	return DNSName(Truncate("%s", 63, name))
+}
+
+// NeuronMonitor builds the Neuron monitor name based on the instance.
+func NeuronMonitor(name string) string {
+	return DNSName(Truncate("%s", 63, name))
+}
