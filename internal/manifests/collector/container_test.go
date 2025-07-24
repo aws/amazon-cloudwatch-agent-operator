@@ -160,13 +160,9 @@ service:
 	c := Container(cfg, logger, otelcol, true)
 
 	// verify
-	assert.Equal(t, "/healthz", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
-
-	assert.Equal(t, "/readyz", c.ReadinessProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
 
 	assert.Equal(t, initialDelaySeconds, c.LivenessProbe.InitialDelaySeconds)
 	assert.Equal(t, timeoutSeconds, c.LivenessProbe.TimeoutSeconds)
@@ -194,13 +190,9 @@ service:
 	c := Container(cfg, logger, otelcol, true)
 
 	// verify
-	assert.Equal(t, "/healthz", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
-
-	assert.Equal(t, "/readyz", c.ReadinessProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
 }
 
 func TestContainerProbeNoConfig(t *testing.T) {
@@ -220,11 +212,7 @@ service:
 	c := Container(cfg, logger, otelcol, true)
 
 	// verify
-	assert.Equal(t, "/healthz", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
-
-	assert.Equal(t, "/readyz", c.ReadinessProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
 }

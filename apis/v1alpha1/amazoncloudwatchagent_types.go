@@ -232,10 +232,6 @@ type AmazonCloudWatchAgentSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
-	// Readiness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
-	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
-	// +optional
-	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
 	// InitContainers allows injecting initContainers to the Collector's pod definition.
 	// These init containers can be used to fetch secrets for injection into the
 	// configuration from external sources, run added checks, etc. Any errors during the execution of
@@ -405,11 +401,6 @@ type AmazonCloudWatchAgentStatus struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
-
-	// Conditions represent the latest available observations of the AmazonCloudWatchAgent's state.
-	// +optional
-	// +listType=atomic
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// Messages about actions performed by the operator on this resource.
 	// +optional

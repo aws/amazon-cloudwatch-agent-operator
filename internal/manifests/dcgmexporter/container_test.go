@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -65,32 +64,6 @@ func TestDcgmContainer(t *testing.T) {
 						MountPath: configmapMountPath,
 					},
 				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 15,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 5,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
-				},
 			},
 		},
 		{
@@ -136,32 +109,6 @@ func TestDcgmContainer(t *testing.T) {
 						Name:      DcgmConfigMapVolumeName,
 						MountPath: configmapMountPath,
 					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 15,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 5,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
 				},
 			},
 		},
@@ -210,32 +157,6 @@ func TestDcgmContainer(t *testing.T) {
 						Name:      DcgmConfigMapVolumeName,
 						MountPath: configmapMountPath,
 					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 15,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/health",
-							Port:   intstr.FromInt32(9400),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 5,
-					PeriodSeconds:       10,
-					TimeoutSeconds:      5,
-					FailureThreshold:    3,
 				},
 			},
 		},

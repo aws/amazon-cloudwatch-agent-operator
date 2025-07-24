@@ -8,11 +8,9 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -61,25 +59,6 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		envVars = []corev1.EnvVar{}
 	}
 
-	// Add health probes for Neuron Monitor using utility functions
-	var probePort intstr.IntOrString
-	if len(ports) > 0 {
-		probePort = intstr.FromInt32(ports[0].ContainerPort)
-	} else {
-		probePort = intstr.FromInt(10259) // Default Neuron monitor health port
-	}
-
-	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", probePort, nil)
-	readinessProbe := manifestutils.CreateReadinessProbe("/healthz", probePort, nil)
-	
-	// Set HTTPS scheme for Neuron Monitor probes
-	if livenessProbe.HTTPGet != nil {
-		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
-	}
-	if readinessProbe.HTTPGet != nil {
-		readinessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
-	}
-
 	return corev1.Container{
 		Name:            ComponentNeuronExporter,
 		Image:           image,
@@ -90,7 +69,5 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		Env:             envVars,
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
-		LivenessProbe:   livenessProbe,
-		ReadinessProbe:  readinessProbe,
 	}
 }

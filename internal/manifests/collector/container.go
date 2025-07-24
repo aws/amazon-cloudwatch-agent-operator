@@ -4,17 +4,16 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
-	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
@@ -97,9 +96,18 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		logger.Error(err, "error parsing config")
 	}
 
-	// Create health probes using utility functions
-	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", intstr.FromInt(13133), agent.Spec.LivenessProbe)
-	readinessProbe := manifestutils.CreateReadinessProbe("/readyz", intstr.FromInt(13133), agent.Spec.ReadinessProbe)
+	var livenessProbe *corev1.Probe
+	if configFromString, err := adapters.ConfigFromString(agent.Spec.OtelConfig); err == nil {
+		if probe, err := getLivenessProbe(configFromString, agent.Spec.LivenessProbe); err == nil {
+			livenessProbe = probe
+		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+			logger.Info("extensions not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
+		} else {
+			logger.Error(err, "cannot create liveness probe.")
+		}
+	}
 
 	return corev1.Container{
 		Name:            naming.Container(),
@@ -114,7 +122,6 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		Ports:           portMapToContainerPortList(ports),
 		SecurityContext: agent.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
-		ReadinessProbe:  readinessProbe,
 		Lifecycle:       agent.Spec.Lifecycle,
 	}
 }
@@ -160,4 +167,30 @@ func portMapToContainerPortList(portMap map[string]corev1.ContainerPort) []corev
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
+}
+
+func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
+	probe, err := adapters.ConfigToContainerProbe(config)
+	if err != nil {
+		return nil, err
+	}
+	if probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
+	return probe, nil
 }
