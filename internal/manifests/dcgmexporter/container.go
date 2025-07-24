@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -75,7 +76,7 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		Value: fmt.Sprintf("%s/%s", configmapMountPath, DcgmMetricsIncludedCsv),
 	})
 
-	// Add health probes for DCGM Exporter
+	// Add health probes for DCGM Exporter using utility functions
 	var probePort intstr.IntOrString
 	if len(ports) > 0 {
 		probePort = intstr.FromInt32(ports[0].ContainerPort)
@@ -83,31 +84,15 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		probePort = intstr.FromInt(9400) // Default DCGM exporter port
 	}
 
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/health",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	livenessProbe := manifestutils.CreateLivenessProbe("/health", probePort, nil)
+	readinessProbe := manifestutils.CreateReadinessProbe("/health", probePort, nil)
+	
+	// Set HTTPS scheme for DCGM exporter probes
+	if livenessProbe.HTTPGet != nil {
+		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/health",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	if readinessProbe.HTTPGet != nil {
+		readinessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
 
 	return corev1.Container{

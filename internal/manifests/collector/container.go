@@ -14,6 +14,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
@@ -96,39 +97,9 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 		logger.Error(err, "error parsing config")
 	}
 
-	// Create health check probe pointing to health_check extension endpoint
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/healthz",
-				Port: intstr.FromInt(13133),
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/readyz",
-				Port: intstr.FromInt(13133),
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
-
-	// Apply user-defined probe settings if provided
-	if agent.Spec.LivenessProbe != nil {
-		defaultProbeSettings(livenessProbe, agent.Spec.LivenessProbe)
-	}
-	if agent.Spec.ReadinessProbe != nil {
-		defaultProbeSettings(readinessProbe, agent.Spec.ReadinessProbe)
-	}
+	// Create health probes using utility functions
+	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", intstr.FromInt(13133), agent.Spec.LivenessProbe)
+	readinessProbe := manifestutils.CreateReadinessProbe("/readyz", intstr.FromInt(13133), agent.Spec.ReadinessProbe)
 
 	return corev1.Container{
 		Name:            naming.Container(),
@@ -189,25 +160,4 @@ func portMapToContainerPortList(portMap map[string]corev1.ContainerPort) []corev
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
-}
-
-func defaultProbeSettings(probe *corev1.Probe, probeConfig *v1alpha1.Probe) {
-	if probe != nil && probeConfig != nil {
-		if probeConfig.InitialDelaySeconds != nil {
-			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
-		}
-		if probeConfig.PeriodSeconds != nil {
-			probe.PeriodSeconds = *probeConfig.PeriodSeconds
-		}
-		if probeConfig.FailureThreshold != nil {
-			probe.FailureThreshold = *probeConfig.FailureThreshold
-		}
-		if probeConfig.SuccessThreshold != nil {
-			probe.SuccessThreshold = *probeConfig.SuccessThreshold
-		}
-		if probeConfig.TimeoutSeconds != nil {
-			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
-		}
-		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
-	}
 }

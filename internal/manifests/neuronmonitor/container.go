@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -60,7 +61,7 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		envVars = []corev1.EnvVar{}
 	}
 
-	// Add health probes for Neuron Monitor
+	// Add health probes for Neuron Monitor using utility functions
 	var probePort intstr.IntOrString
 	if len(ports) > 0 {
 		probePort = intstr.FromInt32(ports[0].ContainerPort)
@@ -68,31 +69,15 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		probePort = intstr.FromInt(10259) // Default Neuron monitor health port
 	}
 
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", probePort, nil)
+	readinessProbe := manifestutils.CreateReadinessProbe("/healthz", probePort, nil)
+	
+	// Set HTTPS scheme for Neuron Monitor probes
+	if livenessProbe.HTTPGet != nil {
+		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	if readinessProbe.HTTPGet != nil {
+		readinessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
 
 	return corev1.Container{

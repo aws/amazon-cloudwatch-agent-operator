@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
@@ -73,32 +74,16 @@ func Container(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) corev1
 		args = append(args, "--enable-prometheus-cr-watcher")
 	}
 
-	// Add health probes for Target Allocator
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/livez",
-				Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	// Add health probes for Target Allocator using utility functions
+	livenessProbe := manifestutils.CreateLivenessProbe("/livez", intstr.FromInt32(naming.TargetAllocatorContainerPort), nil)
+	readinessProbe := manifestutils.CreateReadinessProbe("/readyz", intstr.FromInt32(naming.TargetAllocatorContainerPort), nil)
+	
+	// Set HTTPS scheme for Target Allocator probes
+	if livenessProbe.HTTPGet != nil {
+		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/readyz",
-				Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+	if readinessProbe.HTTPGet != nil {
+		readinessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
 	}
 	return corev1.Container{
 		Name:           naming.TAContainer(),

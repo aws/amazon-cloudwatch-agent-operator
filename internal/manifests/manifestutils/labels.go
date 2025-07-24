@@ -7,8 +7,11 @@ import (
 	"regexp"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
@@ -79,4 +82,80 @@ func SelectorLabelsForAllOperatorManaged(instance metav1.ObjectMeta) map[string]
 		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
 	}
+}
+
+// CreateLivenessProbe creates a standard liveness probe for health endpoints
+func CreateLivenessProbe(path string, port intstr.IntOrString, probeConfig *v1alpha1.Probe) *corev1.Probe {
+	probe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: path,
+				Port: port,
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+
+	// Apply custom probe configuration if provided
+	if probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
+
+	return probe
+}
+
+// CreateReadinessProbe creates a standard readiness probe for health endpoints
+func CreateReadinessProbe(path string, port intstr.IntOrString, probeConfig *v1alpha1.Probe) *corev1.Probe {
+	probe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: path,
+				Port: port,
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      5,
+		FailureThreshold:    3,
+	}
+
+	// Apply custom probe configuration if provided
+	if probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
+
+	return probe
 }
