@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -75,41 +74,6 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		Value: fmt.Sprintf("%s/%s", configmapMountPath, DcgmMetricsIncludedCsv),
 	})
 
-	// Add health probes for DCGM Exporter
-	var probePort intstr.IntOrString
-	if len(ports) > 0 {
-		probePort = intstr.FromInt32(ports[0].ContainerPort)
-	} else {
-		probePort = intstr.FromInt(9400) // Default DCGM exporter port
-	}
-
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/health",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/health",
-				Port:   probePort,
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
-
 	return corev1.Container{
 		Name:            ComponentDcgmExporter,
 		Image:           image,
@@ -119,7 +83,5 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		SecurityContext: exporter.Spec.SecurityContext,
-		LivenessProbe:   livenessProbe,
-		ReadinessProbe:  readinessProbe,
 	}
 }
