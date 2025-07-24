@@ -5,7 +5,6 @@ package targetallocator
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -73,42 +72,13 @@ func Container(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) corev1
 		args = append(args, "--enable-prometheus-cr-watcher")
 	}
 
-	// Add health probes for Target Allocator
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/livez",
-				Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 15,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/readyz",
-				Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 5,
-		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
-	}
 	return corev1.Container{
-		Name:           naming.TAContainer(),
-		Image:          image,
-		Ports:          ports,
-		Env:            envVars,
-		VolumeMounts:   volumeMounts,
-		Resources:      otelcol.Spec.TargetAllocator.Resources,
-		Args:           args,
-		LivenessProbe:  livenessProbe,
-		ReadinessProbe: readinessProbe,
+		Name:         naming.TAContainer(),
+		Image:        image,
+		Ports:        ports,
+		Env:          envVars,
+		VolumeMounts: volumeMounts,
+		Resources:    otelcol.Spec.TargetAllocator.Resources,
+		Args:         args,
 	}
 }
