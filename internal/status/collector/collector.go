@@ -25,13 +25,13 @@ func extractVersionFromImage(image string) string {
 	if image == "" {
 		return ""
 	}
-	
+
 	// Split by ':' to get the tag part
 	parts := strings.Split(image, ":")
 	if len(parts) < 2 {
 		return ""
 	}
-	
+
 	// Return the tag (version) part
 	return parts[len(parts)-1]
 }
@@ -117,15 +117,15 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		if replicas > 0 {
 			if readyReplicas == replicas {
 				// All pods are ready - emit Normal event
-				recorder.Event(changed, "Normal", "ComponentHealthy", 
+				recorder.Event(changed, "Normal", "ComponentHealthy",
 					fmt.Sprintf("CloudWatch Agent is healthy: %d/%d pods ready", readyReplicas, replicas))
 			} else if readyReplicas == 0 {
 				// No pods are ready - emit Warning event
-				recorder.Event(changed, "Warning", "ComponentUnhealthy", 
+				recorder.Event(changed, "Warning", "ComponentUnhealthy",
 					fmt.Sprintf("CloudWatch Agent is unhealthy: %d/%d pods ready", readyReplicas, replicas))
 			} else {
 				// Some pods are ready - emit Warning event
-				recorder.Event(changed, "Warning", "ComponentPartiallyHealthy", 
+				recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
 					fmt.Sprintf("CloudWatch Agent is partially healthy: %d/%d pods ready", readyReplicas, replicas))
 			}
 		}
@@ -142,20 +142,20 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		if err := cli.Get(ctx, taObjKey, taObj); err == nil {
 			taReplicas := taObj.Status.Replicas
 			taReadyReplicas := taObj.Status.ReadyReplicas
-			
-			// Only emit Target Allocator events if the deployment appears stable
-			if taReplicas > 0 && taObj.Status.ObservedGeneration == taObj.Generation {
+
+			// Emit Target Allocator events (simplified logic like other components)
+			if taReplicas > 0 {
 				if taReadyReplicas == taReplicas {
 					// All Target Allocator pods are ready - emit Normal event
-					recorder.Event(changed, "Normal", "ComponentHealthy", 
+					recorder.Event(changed, "Normal", "ComponentHealthy",
 						fmt.Sprintf("Target Allocator is healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				} else if taReadyReplicas == 0 {
 					// No Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, "Warning", "ComponentUnhealthy", 
+					recorder.Event(changed, "Warning", "ComponentUnhealthy",
 						fmt.Sprintf("Target Allocator is unhealthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				} else {
 					// Some Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, "Warning", "ComponentPartiallyHealthy", 
+					recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
 						fmt.Sprintf("Target Allocator is partially healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				}
 			}
