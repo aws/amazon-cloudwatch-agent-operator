@@ -11,6 +11,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -35,7 +36,7 @@ func extractVersionFromImage(image string) string {
 	return parts[len(parts)-1]
 }
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent) error {
+func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent, recorder record.EventRecorder) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.AmazonCloudWatchAgent()
@@ -108,6 +109,56 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	if statusImage != "" && (changed.Status.Version == "" || changed.Status.Version == "0.0.0") {
 		if imageVersion := extractVersionFromImage(statusImage); imageVersion != "" {
 			changed.Status.Version = imageVersion
+		}
+	}
+
+	// Emit health events based on pod readiness (for all modes including daemonset)
+	if mode == v1alpha1.ModeDeployment || mode == v1alpha1.ModeStatefulSet || mode == v1alpha1.ModeDaemonSet {
+		if replicas > 0 {
+			if readyReplicas == replicas {
+				// All pods are ready - emit Normal event
+				recorder.Event(changed, "Normal", "ComponentHealthy",
+					fmt.Sprintf("CloudWatch Agent is healthy: %d/%d pods ready", readyReplicas, replicas))
+			} else if readyReplicas == 0 {
+				// No pods are ready - emit Warning event
+				recorder.Event(changed, "Warning", "ComponentUnhealthy",
+					fmt.Sprintf("CloudWatch Agent is unhealthy: %d/%d pods ready", readyReplicas, replicas))
+			} else {
+				// Some pods are ready - emit Warning event
+				recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
+					fmt.Sprintf("CloudWatch Agent is partially healthy: %d/%d pods ready", readyReplicas, replicas))
+			}
+		}
+	}
+
+	// Emit health events for Target Allocator if enabled
+	if changed.Spec.TargetAllocator.Enabled {
+		taObjKey := client.ObjectKey{
+			Namespace: changed.GetNamespace(),
+			Name:      naming.TargetAllocator(changed.Name),
+		}
+
+		taObj := &appsv1.Deployment{}
+		if err := cli.Get(ctx, taObjKey, taObj); err == nil {
+			taReplicas := taObj.Status.Replicas
+			taReadyReplicas := taObj.Status.ReadyReplicas
+
+			// Emit Target Allocator events (simplified logic like other components)
+			if taReplicas > 0 {
+				if taReadyReplicas == taReplicas {
+					// All Target Allocator pods are ready - emit Normal event
+					recorder.Event(changed, "Normal", "ComponentHealthy",
+						fmt.Sprintf("Target Allocator is healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
+				} else if taReadyReplicas == 0 {
+					// No Target Allocator pods are ready - emit Warning event
+					recorder.Event(changed, "Warning", "ComponentUnhealthy",
+						fmt.Sprintf("Target Allocator is unhealthy: %d/%d pods ready", taReadyReplicas, taReplicas))
+				} else {
+					// Some Target Allocator pods are ready - emit Warning event
+					recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
+						fmt.Sprintf("Target Allocator is partially healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
+				}
+			}
 		}
 	}
 

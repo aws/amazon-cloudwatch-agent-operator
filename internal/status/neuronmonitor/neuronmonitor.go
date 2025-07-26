@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -31,7 +32,7 @@ func extractVersionFromImage(image string) string {
 	return parts[len(parts)-1]
 }
 
-func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.NeuronMonitor) error {
+func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.NeuronMonitor, recorder record.EventRecorder) error {
 	// Get DaemonSet status (Neuron Monitor runs as DaemonSet)
 	objKey := client.ObjectKey{
 		Namespace: changed.GetNamespace(),
@@ -71,6 +72,24 @@ func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *
 			} else {
 				changed.Status.Version = version.NeuronMonitor()
 			}
+		}
+	}
+
+	// Emit health events based on pod readiness
+	// Only emit events if we have valid replica counts and the DaemonSet appears stable
+	if totalReplicas > 0 && obj.Status.ObservedGeneration == obj.Generation {
+		if readyReplicas == totalReplicas {
+			// All pods are ready - emit Normal event
+			recorder.Event(changed, "Normal", "ComponentHealthy",
+				fmt.Sprintf("Neuron Monitor is healthy: %d/%d pods ready", readyReplicas, totalReplicas))
+		} else if readyReplicas == 0 {
+			// No pods are ready - emit Warning event
+			recorder.Event(changed, "Warning", "ComponentUnhealthy",
+				fmt.Sprintf("Neuron Monitor is unhealthy: %d/%d pods ready", readyReplicas, totalReplicas))
+		} else {
+			// Some pods are ready - emit Warning event
+			recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
+				fmt.Sprintf("Neuron Monitor is partially healthy: %d/%d pods ready", readyReplicas, totalReplicas))
 		}
 	}
 
