@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
@@ -76,16 +77,19 @@ func UpdateNeuronMonitorStatus(ctx context.Context, cli client.Client, changed *
 	}
 
 	// Emit health events based on pod readiness
-	// Only emit events if we have valid replica counts and the DaemonSet appears stable
-	if totalReplicas > 0 && obj.Status.ObservedGeneration == obj.Generation {
+	if totalReplicas > 0 {
 		if readyReplicas == totalReplicas {
 			// All pods are ready - emit Normal event
 			recorder.Event(changed, "Normal", "ComponentHealthy",
 				fmt.Sprintf("Neuron Monitor is healthy: %d/%d pods ready", readyReplicas, totalReplicas))
 		} else if readyReplicas == 0 {
-			// No pods are ready - emit Warning event
-			recorder.Event(changed, "Warning", "ComponentUnhealthy",
-				fmt.Sprintf("Neuron Monitor is unhealthy: %d/%d pods ready", readyReplicas, totalReplicas))
+			// Give pods 90 seconds to start up before declaring unhealthy (matches probe InitialDelaySeconds)
+			// Use DaemonSet creation time for grace period
+			if time.Since(obj.CreationTimestamp.Time) >= 90*time.Second {
+				// No pods are ready - emit Warning event
+				recorder.Event(changed, "Warning", "ComponentUnhealthy",
+					fmt.Sprintf("Neuron Monitor is unhealthy: %d/%d pods ready", readyReplicas, totalReplicas))
+			}
 		} else {
 			// Some pods are ready - emit Warning event
 			recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",

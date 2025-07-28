@@ -105,8 +105,8 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
 
-	// Extract and set version from image tag if not already set or is default
-	if statusImage != "" && (changed.Status.Version == "" || changed.Status.Version == "0.0.0") {
+	// Extract and set version from image tag (always prioritize image tag over default)
+	if statusImage != "" {
 		if imageVersion := extractVersionFromImage(statusImage); imageVersion != "" {
 			changed.Status.Version = imageVersion
 		}

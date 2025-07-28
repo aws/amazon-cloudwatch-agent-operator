@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
@@ -76,9 +77,13 @@ func UpdateDcgmExporterStatus(ctx context.Context, cli client.Client, changed *v
 			recorder.Event(changed, "Normal", "ComponentHealthy",
 				fmt.Sprintf("DCGM Exporter is healthy: %d/%d pods ready", readyReplicas, totalReplicas))
 		} else if readyReplicas == 0 {
-			// No pods are ready - emit Warning event
-			recorder.Event(changed, "Warning", "ComponentUnhealthy",
-				fmt.Sprintf("DCGM Exporter is unhealthy: %d/%d pods ready", readyReplicas, totalReplicas))
+			// Give pods 30 seconds to start up before declaring unhealthy
+			// Use DaemonSet creation time for grace period
+			if time.Since(obj.CreationTimestamp.Time) >= 30*time.Second {
+				// No pods are ready - emit Warning event
+				recorder.Event(changed, "Warning", "ComponentUnhealthy",
+					fmt.Sprintf("DCGM Exporter is unhealthy: %d/%d pods ready", readyReplicas, totalReplicas))
+			}
 		} else {
 			// Some pods are ready - emit Warning event
 			recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
