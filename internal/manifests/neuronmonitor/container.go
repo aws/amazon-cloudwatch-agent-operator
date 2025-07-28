@@ -5,6 +5,7 @@ package neuronmonitor
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -42,8 +43,14 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		argsMap = map[string]string{}
 	}
 	var args []string
-	for k, v := range argsMap {
-		args = append(args, "--"+k, v)
+	// Sort map keys to ensure deterministic order
+	var keys []string
+	for k := range argsMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		args = append(args, "--"+k, argsMap[k])
 	}
 	args = append(args, "--neuron-monitor-config", fmt.Sprintf("%s/%s", configmapMountPath, NeuronMonitorJson))
 
@@ -69,9 +76,21 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NeuronMo
 		probePort = intstr.FromInt(10259) // Default Neuron monitor health port
 	}
 
-	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", probePort, nil)
-	readinessProbe := manifestutils.CreateReadinessProbe("/healthz", probePort, nil)
-	
+	// Create custom probe config for Neuron Monitor (needs more time to start)
+	// Use static variables to avoid creating new memory addresses on each call
+	initialDelaySeconds := int32(90)
+	timeoutSeconds := int32(20)
+	failureThreshold := int32(5)
+
+	customProbeConfig := &v1alpha1.Probe{
+		InitialDelaySeconds: &initialDelaySeconds,
+		TimeoutSeconds:      &timeoutSeconds,
+		FailureThreshold:    &failureThreshold,
+	}
+
+	livenessProbe := manifestutils.CreateLivenessProbe("/healthz", probePort, customProbeConfig)
+	readinessProbe := manifestutils.CreateReadinessProbe("/healthz", probePort, customProbeConfig)
+
 	// Set HTTPS scheme for Neuron Monitor probes
 	if livenessProbe.HTTPGet != nil {
 		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS

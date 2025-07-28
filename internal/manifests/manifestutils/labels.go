@@ -93,10 +93,10 @@ func CreateLivenessProbe(path string, port intstr.IntOrString, probeConfig *v1al
 				Port: port,
 			},
 		},
-		InitialDelaySeconds: 5,
+		InitialDelaySeconds: 15,
 		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+		TimeoutSeconds:      10,
+		FailureThreshold:    5,
 	}
 
 	// Apply custom probe configuration if provided
@@ -131,10 +131,10 @@ func CreateReadinessProbe(path string, port intstr.IntOrString, probeConfig *v1a
 				Port: port,
 			},
 		},
-		InitialDelaySeconds: 5,
+		InitialDelaySeconds: 10,
 		PeriodSeconds:       10,
-		TimeoutSeconds:      5,
-		FailureThreshold:    3,
+		TimeoutSeconds:      10,
+		FailureThreshold:    5,
 	}
 
 	// Apply custom probe configuration if provided
