@@ -7,9 +7,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,21 +21,6 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
-
-func extractVersionFromImage(image string) string {
-	if image == "" {
-		return ""
-	}
-
-	// Split by ':' to get the tag part
-	parts := strings.Split(image, ":")
-	if len(parts) < 2 {
-		return ""
-	}
-
-	// Return the tag (version) part
-	return parts[len(parts)-1]
-}
 
 func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent, recorder record.EventRecorder) error {
 	if changed.Status.Version == "" {
@@ -68,6 +54,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	var readyReplicas int32
 	var statusReplicas string
 	var statusImage string
+	var creationTime time.Time
 
 	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
@@ -79,6 +66,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		readyReplicas = obj.Status.ReadyReplicas
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 
 	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
@@ -89,6 +77,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		readyReplicas = obj.Status.ReadyReplicas
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 
 	case v1alpha1.ModeDaemonSet:
 		obj := &appsv1.DaemonSet{}
@@ -100,6 +89,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		readyReplicas = obj.Status.NumberReady
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 	}
 	changed.Status.Scale.Replicas = replicas
 	changed.Status.Image = statusImage
@@ -107,28 +97,14 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 
 	// Extract and set version from image tag (always prioritize image tag over default)
 	if statusImage != "" {
-		if imageVersion := extractVersionFromImage(statusImage); imageVersion != "" {
+		if imageVersion := manifestutils.ExtractVersionFromImage(statusImage); imageVersion != "" {
 			changed.Status.Version = imageVersion
 		}
 	}
 
 	// Emit health events based on pod readiness (for all modes including daemonset)
 	if mode == v1alpha1.ModeDeployment || mode == v1alpha1.ModeStatefulSet || mode == v1alpha1.ModeDaemonSet {
-		if replicas > 0 {
-			if readyReplicas == replicas {
-				// All pods are ready - emit Normal event
-				recorder.Event(changed, "Normal", "ComponentHealthy",
-					fmt.Sprintf("CloudWatch Agent is healthy: %d/%d pods ready", readyReplicas, replicas))
-			} else if readyReplicas == 0 {
-				// No pods are ready - emit Warning event
-				recorder.Event(changed, "Warning", "ComponentUnhealthy",
-					fmt.Sprintf("CloudWatch Agent is unhealthy: %d/%d pods ready", readyReplicas, replicas))
-			} else {
-				// Some pods are ready - emit Warning event
-				recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
-					fmt.Sprintf("CloudWatch Agent is partially healthy: %d/%d pods ready", readyReplicas, replicas))
-			}
-		}
+		manifestutils.EmitHealthEvents(recorder, changed, "CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
 	}
 
 	// Emit health events for Target Allocator if enabled
@@ -143,19 +119,18 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 			taReplicas := taObj.Status.Replicas
 			taReadyReplicas := taObj.Status.ReadyReplicas
 
-			// Emit Target Allocator events (simplified logic like other components)
 			if taReplicas > 0 {
 				if taReadyReplicas == taReplicas {
 					// All Target Allocator pods are ready - emit Normal event
-					recorder.Event(changed, "Normal", "ComponentHealthy",
+					recorder.Event(changed, corev1.EventTypeNormal, "ComponentHealthy",
 						fmt.Sprintf("Target Allocator is healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				} else if taReadyReplicas == 0 {
 					// No Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, "Warning", "ComponentUnhealthy",
+					recorder.Event(changed, corev1.EventTypeWarning, "ComponentUnhealthy",
 						fmt.Sprintf("Target Allocator is unhealthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				} else {
 					// Some Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, "Warning", "ComponentPartiallyHealthy",
+					recorder.Event(changed, corev1.EventTypeWarning, "ComponentUnhealthy",
 						fmt.Sprintf("Target Allocator is partially healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
 				}
 			}
