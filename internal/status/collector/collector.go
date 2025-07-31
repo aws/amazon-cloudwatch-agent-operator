@@ -10,7 +10,6 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -119,21 +118,8 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 			taReplicas := taObj.Status.Replicas
 			taReadyReplicas := taObj.Status.ReadyReplicas
 
-			if taReplicas > 0 {
-				if taReadyReplicas == taReplicas {
-					// All Target Allocator pods are ready - emit Normal event
-					recorder.Event(changed, corev1.EventTypeNormal, "ComponentHealthy",
-						fmt.Sprintf("Target Allocator is healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
-				} else if taReadyReplicas == 0 {
-					// No Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, corev1.EventTypeWarning, "ComponentUnhealthy",
-						fmt.Sprintf("Target Allocator is unhealthy: %d/%d pods ready", taReadyReplicas, taReplicas))
-				} else {
-					// Some Target Allocator pods are ready - emit Warning event
-					recorder.Event(changed, corev1.EventTypeWarning, "ComponentUnhealthy",
-						fmt.Sprintf("Target Allocator is partially healthy: %d/%d pods ready", taReadyReplicas, taReplicas))
-				}
-			}
+			// Emit health events for Target Allocator using utility function
+			manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taObj.CreationTimestamp.Time, 30*time.Second)
 		}
 	}
 
