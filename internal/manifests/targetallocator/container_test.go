@@ -204,8 +204,8 @@ func TestContainerHasEnvVars(t *testing.T) {
 			},
 			InitialDelaySeconds: 15,
 			PeriodSeconds:       10,
-			TimeoutSeconds:      5,
-			FailureThreshold:    3,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
 		},
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -215,10 +215,10 @@ func TestContainerHasEnvVars(t *testing.T) {
 					Scheme: corev1.URISchemeHTTPS,
 				},
 			},
-			InitialDelaySeconds: 5,
+			InitialDelaySeconds: 10,
 			PeriodSeconds:       10,
-			TimeoutSeconds:      5,
-			FailureThreshold:    3,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
 		},
 	}
 
@@ -292,8 +292,8 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			},
 			InitialDelaySeconds: 15,
 			PeriodSeconds:       10,
-			TimeoutSeconds:      5,
-			FailureThreshold:    3,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
 		},
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -303,10 +303,10 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 					Scheme: corev1.URISchemeHTTPS,
 				},
 			},
-			InitialDelaySeconds: 5,
+			InitialDelaySeconds: 10,
 			PeriodSeconds:       10,
-			TimeoutSeconds:      5,
-			FailureThreshold:    3,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
 		},
 	}
 
