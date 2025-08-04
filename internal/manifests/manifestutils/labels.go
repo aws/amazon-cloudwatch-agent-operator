@@ -105,16 +105,21 @@ func ExtractVersionFromImage(image string) string {
 // EmitHealthEvents emits health events based on pod readiness status
 func EmitHealthEvents(recorder record.EventRecorder, obj client.Object, componentName string, readyReplicas, totalReplicas int32, creationTime time.Time, gracePeriod time.Duration) {
 	if totalReplicas > 0 {
+		// Use component-specific event reasons to prevent conflicts
+		healthyReason := strings.ReplaceAll(componentName, " ", "") + "Healthy"
+		unhealthyReason := strings.ReplaceAll(componentName, " ", "") + "Unhealthy"
+		partialReason := strings.ReplaceAll(componentName, " ", "") + "PartiallyHealthy"
+
 		if readyReplicas == totalReplicas {
-			recorder.Event(obj, corev1.EventTypeNormal, "ComponentHealthy",
+			recorder.Event(obj, corev1.EventTypeNormal, healthyReason,
 				fmt.Sprintf("%s is healthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
 		} else if readyReplicas == 0 {
 			if time.Since(creationTime) >= gracePeriod {
-				recorder.Event(obj, corev1.EventTypeWarning, "ComponentUnhealthy",
+				recorder.Event(obj, corev1.EventTypeWarning, unhealthyReason,
 					fmt.Sprintf("%s is unhealthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
 			}
 		} else {
-			recorder.Event(obj, corev1.EventTypeWarning, "ComponentPartiallyHealthy",
+			recorder.Event(obj, corev1.EventTypeWarning, partialReason,
 				fmt.Sprintf("%s is partially healthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
 		}
 	}

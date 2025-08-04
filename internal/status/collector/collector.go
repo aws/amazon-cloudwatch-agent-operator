@@ -101,27 +101,25 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		}
 	}
 
-	// Emit health events based on pod readiness (for all modes including daemonset)
-	if mode == v1alpha1.ModeDeployment || mode == v1alpha1.ModeStatefulSet || mode == v1alpha1.ModeDaemonSet {
-		manifestutils.EmitHealthEvents(recorder, changed, "CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
+	// Always emit health events like DCGM and Neuron do
+	manifestutils.EmitHealthEvents(recorder, changed, "CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
+
+	// Always emit Target Allocator health events
+	taObjKey := client.ObjectKey{
+		Namespace: changed.GetNamespace(),
+		Name:      naming.TargetAllocator(changed.Name),
 	}
 
-	// Emit health events for Target Allocator if enabled
-	if changed.Spec.TargetAllocator.Enabled {
-		taObjKey := client.ObjectKey{
-			Namespace: changed.GetNamespace(),
-			Name:      naming.TargetAllocator(changed.Name),
-		}
-
-		taObj := &appsv1.Deployment{}
-		if err := cli.Get(ctx, taObjKey, taObj); err == nil {
-			taReplicas := taObj.Status.Replicas
-			taReadyReplicas := taObj.Status.ReadyReplicas
-
-			// Emit health events for Target Allocator using utility function
-			manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taObj.CreationTimestamp.Time, 30*time.Second)
-		}
+	taObj := &appsv1.Deployment{}
+	var taReplicas, taReadyReplicas int32
+	var taCreationTime time.Time
+	if err := cli.Get(ctx, taObjKey, taObj); err == nil {
+		taReplicas = taObj.Status.Replicas
+		taReadyReplicas = taObj.Status.ReadyReplicas
+		taCreationTime = taObj.CreationTimestamp.Time
 	}
+	// Always emit health events regardless of whether we can get the deployment
+	manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taCreationTime, 30*time.Second)
 
 	return nil
 }
