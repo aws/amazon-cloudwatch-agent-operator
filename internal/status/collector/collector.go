@@ -21,6 +21,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
+// Global state tracking to prevent duplicate events
+var (
+	lastAgentHealthy = make(map[string]bool)
+	lastTAHealthy    = make(map[string]bool)
+)
+
 func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent, recorder record.EventRecorder) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
@@ -101,25 +107,33 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		}
 	}
 
-	// Always emit health events like DCGM and Neuron do
-	manifestutils.EmitHealthEvents(recorder, changed, "CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
-
-	// Always emit Target Allocator health events
-	taObjKey := client.ObjectKey{
-		Namespace: changed.GetNamespace(),
-		Name:      naming.TargetAllocator(changed.Name),
+	// Only emit health events when status changes
+	key := fmt.Sprintf("%s/%s", changed.Namespace, changed.Name)
+	isHealthy := readyReplicas == replicas && replicas > 0
+	if lastHealthy, exists := lastAgentHealthy[key]; !exists || lastHealthy != isHealthy {
+		manifestutils.EmitHealthEvents(recorder, changed, "Amazon CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
+		lastAgentHealthy[key] = isHealthy
 	}
 
-	taObj := &appsv1.Deployment{}
-	var taReplicas, taReadyReplicas int32
-	var taCreationTime time.Time
-	if err := cli.Get(ctx, taObjKey, taObj); err == nil {
-		taReplicas = taObj.Status.Replicas
-		taReadyReplicas = taObj.Status.ReadyReplicas
-		taCreationTime = taObj.CreationTimestamp.Time
+	// Emit health events for Target Allocator if enabled
+	if changed.Spec.TargetAllocator.Enabled {
+		taObjKey := client.ObjectKey{
+			Namespace: changed.GetNamespace(),
+			Name:      naming.TargetAllocator(changed.Name),
+		}
+
+		taObj := &appsv1.Deployment{}
+		if err := cli.Get(ctx, taObjKey, taObj); err == nil {
+			taReplicas := taObj.Status.Replicas
+			taReadyReplicas := taObj.Status.ReadyReplicas
+			// Only emit Target Allocator events when status changes
+			taIsHealthy := taReadyReplicas == taReplicas && taReplicas > 0
+			if lastHealthy, exists := lastTAHealthy[key]; !exists || lastHealthy != taIsHealthy {
+				manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taObj.CreationTimestamp.Time, 30*time.Second)
+				lastTAHealthy[key] = taIsHealthy
+			}
+		}
 	}
-	// Always emit health events regardless of whether we can get the deployment
-	manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taCreationTime, 30*time.Second)
 
 	return nil
 }
