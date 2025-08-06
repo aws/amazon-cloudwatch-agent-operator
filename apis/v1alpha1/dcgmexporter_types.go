@@ -83,11 +83,6 @@ type DcgmExporterStatus struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Conditions represent the latest available observations of the DcgmExporter's state.
-	// +optional
-	// +listType=atomic
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
 	// Messages about actions performed by the operator on this resource.
 	// +optional
 	// +listType=atomic
