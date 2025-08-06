@@ -4,10 +4,15 @@
 package manifestutils
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
@@ -78,5 +83,44 @@ func SelectorLabelsForAllOperatorManaged(instance metav1.ObjectMeta) map[string]
 		"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
 		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
 		"app.kubernetes.io/part-of":    "amazon-cloudwatch-agent",
+	}
+}
+
+// ExtractVersionFromImage extracts the version tag from a container image string
+func ExtractVersionFromImage(image string) string {
+	if image == "" {
+		return ""
+	}
+
+	// Split by ':' to get the tag part
+	parts := strings.Split(image, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	// Return the tag (version) part
+	return parts[len(parts)-1]
+}
+
+// EmitHealthEvents emits health events based on pod readiness status
+func EmitHealthEvents(recorder record.EventRecorder, obj client.Object, componentName string, readyReplicas, totalReplicas int32, creationTime time.Time, gracePeriod time.Duration) {
+	if totalReplicas > 0 {
+		// Use component-specific event reasons to prevent conflicts
+		healthyReason := strings.ReplaceAll(componentName, " ", "") + "Healthy"
+		unhealthyReason := strings.ReplaceAll(componentName, " ", "") + "Unhealthy"
+		partialReason := strings.ReplaceAll(componentName, " ", "") + "PartiallyHealthy"
+
+		if readyReplicas == totalReplicas {
+			recorder.Event(obj, corev1.EventTypeNormal, healthyReason,
+				fmt.Sprintf("%s is healthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
+		} else if readyReplicas == 0 {
+			if time.Since(creationTime) >= gracePeriod {
+				recorder.Event(obj, corev1.EventTypeWarning, unhealthyReason,
+					fmt.Sprintf("%s is unhealthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
+			}
+		} else {
+			recorder.Event(obj, corev1.EventTypeWarning, partialReason,
+				fmt.Sprintf("%s is partially healthy: %d/%d pods ready", componentName, readyReplicas, totalReplicas))
+		}
 	}
 }
