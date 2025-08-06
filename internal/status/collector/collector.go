@@ -7,9 +7,11 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -19,13 +21,19 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 )
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent) error {
+// Global state tracking to prevent duplicate events
+var (
+	lastAgentHealthy = make(map[string]bool)
+	lastTAHealthy = make(map[string]bool)
+)
+
+func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent, recorder record.EventRecorder) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.AmazonCloudWatchAgent()
 	}
 	mode := changed.Spec.Mode
-	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
+	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet && mode != v1alpha1.ModeDaemonSet {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 		return nil
@@ -51,6 +59,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	var readyReplicas int32
 	var statusReplicas string
 	var statusImage string
+	var creationTime time.Time
 
 	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
@@ -62,6 +71,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		readyReplicas = obj.Status.ReadyReplicas
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 
 	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
@@ -72,17 +82,58 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		readyReplicas = obj.Status.ReadyReplicas
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 
 	case v1alpha1.ModeDaemonSet:
 		obj := &appsv1.DaemonSet{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
 		}
+		// For DaemonSets, use different status fields
+		replicas = obj.Status.DesiredNumberScheduled
+		readyReplicas = obj.Status.NumberReady
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+		creationTime = obj.CreationTimestamp.Time
 	}
 	changed.Status.Scale.Replicas = replicas
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
+
+	// Extract and set version from image tag (always prioritize image tag over default)
+	if statusImage != "" {
+		if imageVersion := manifestutils.ExtractVersionFromImage(statusImage); imageVersion != "" {
+			changed.Status.Version = imageVersion
+		}
+	}
+
+	// Only emit health events when status changes
+	key := fmt.Sprintf("%s/%s", changed.Namespace, changed.Name)
+	isHealthy := readyReplicas == replicas && replicas > 0
+	if lastHealthy, exists := lastAgentHealthy[key]; !exists || lastHealthy != isHealthy {
+		manifestutils.EmitHealthEvents(recorder, changed, "Amazon CloudWatch Agent", readyReplicas, replicas, creationTime, 30*time.Second)
+		lastAgentHealthy[key] = isHealthy
+	}
+
+	// Emit health events for Target Allocator if enabled
+	if changed.Spec.TargetAllocator.Enabled {
+		taObjKey := client.ObjectKey{
+			Namespace: changed.GetNamespace(),
+			Name:      naming.TargetAllocator(changed.Name),
+		}
+
+		taObj := &appsv1.Deployment{}
+		if err := cli.Get(ctx, taObjKey, taObj); err == nil {
+			taReplicas := taObj.Status.Replicas
+			taReadyReplicas := taObj.Status.ReadyReplicas
+			// Only emit Target Allocator events when status changes
+			taIsHealthy := taReadyReplicas == taReplicas && taReplicas > 0
+			if lastHealthy, exists := lastTAHealthy[key]; !exists || lastHealthy != taIsHealthy {
+				manifestutils.EmitHealthEvents(recorder, changed, "Target Allocator", taReadyReplicas, taReplicas, taObj.CreationTimestamp.Time, 30*time.Second)
+				lastTAHealthy[key] = taIsHealthy
+			}
+		}
+	}
 
 	return nil
 }
