@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -81,6 +82,32 @@ func TestNeuronContainer(t *testing.T) {
 						Name:      NeuronConfigMapVolumeName,
 						MountPath: configmapMountPath,
 					},
+				},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt32(8000),
+							Scheme: corev1.URISchemeHTTPS,
+						},
+					},
+					InitialDelaySeconds: 90,
+					PeriodSeconds:       10,
+					TimeoutSeconds:      20,
+					FailureThreshold:    5,
+				},
+				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt32(8000),
+							Scheme: corev1.URISchemeHTTPS,
+						},
+					},
+					InitialDelaySeconds: 90,
+					PeriodSeconds:       10,
+					TimeoutSeconds:      20,
+					FailureThreshold:    5,
 				},
 			},
 		},

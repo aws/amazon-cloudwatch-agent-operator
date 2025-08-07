@@ -228,10 +228,14 @@ type AmazonCloudWatchAgentSpec struct {
 	// Duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
-	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// Liveness config for the AmazonCloudWatchAgent except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the AmazonCloudWatchAgent pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// Readiness config for the AmazonCloudWatchAgent except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the AmazonCloudWatchAgent pipeline.
+	// +optional
+	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
 	// InitContainers allows injecting initContainers to the Collector's pod definition.
 	// These init containers can be used to fetch secrets for injection into the
 	// configuration from external sources, run added checks, etc. Any errors during the execution of

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -193,6 +194,32 @@ func TestContainerHasEnvVars(t *testing.T) {
 				Protocol:      corev1.ProtocolTCP,
 			},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/livez",
+					Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
+					Scheme: corev1.URISchemeHTTPS,
+				},
+			},
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/readyz",
+					Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
+					Scheme: corev1.URISchemeHTTPS,
+				},
+			},
+			InitialDelaySeconds: 10,
+			PeriodSeconds:       10,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
+		},
 	}
 
 	// test
@@ -254,6 +281,32 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				ContainerPort: naming.TargetAllocatorContainerPort,
 				Protocol:      corev1.ProtocolTCP,
 			},
+		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/livez",
+					Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
+					Scheme: corev1.URISchemeHTTPS,
+				},
+			},
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/readyz",
+					Port:   intstr.FromInt32(naming.TargetAllocatorContainerPort),
+					Scheme: corev1.URISchemeHTTPS,
+				},
+			},
+			InitialDelaySeconds: 10,
+			PeriodSeconds:       10,
+			TimeoutSeconds:      10,
+			FailureThreshold:    5,
 		},
 	}
 

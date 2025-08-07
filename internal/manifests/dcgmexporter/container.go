@@ -9,9 +9,11 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 )
 
 const (
@@ -74,6 +76,25 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		Value: fmt.Sprintf("%s/%s", configmapMountPath, DcgmMetricsIncludedCsv),
 	})
 
+	// Add health probes for DCGM Exporter using utility functions
+	var probePort intstr.IntOrString
+	if len(ports) > 0 {
+		probePort = intstr.FromInt32(ports[0].ContainerPort)
+	} else {
+		probePort = intstr.FromInt(9400) // Default DCGM exporter port
+	}
+
+	livenessProbe := manifestutils.CreateLivenessProbe("/health", probePort, nil)
+	readinessProbe := manifestutils.CreateReadinessProbe("/health", probePort, nil)
+	
+	// Set HTTPS scheme for DCGM exporter probes
+	if livenessProbe.HTTPGet != nil {
+		livenessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
+	}
+	if readinessProbe.HTTPGet != nil {
+		readinessProbe.HTTPGet.Scheme = corev1.URISchemeHTTPS
+	}
+
 	return corev1.Container{
 		Name:            ComponentDcgmExporter,
 		Image:           image,
@@ -83,5 +104,7 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.DcgmExpo
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		SecurityContext: exporter.Spec.SecurityContext,
+		LivenessProbe:   livenessProbe,
+		ReadinessProbe:  readinessProbe,
 	}
 }

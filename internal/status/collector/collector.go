@@ -24,7 +24,7 @@ import (
 // Global state tracking to prevent duplicate events
 var (
 	lastAgentHealthy = make(map[string]bool)
-	lastTAHealthy    = make(map[string]bool)
+	lastTAHealthy = make(map[string]bool)
 )
 
 func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.AmazonCloudWatchAgent, recorder record.EventRecorder) error {
