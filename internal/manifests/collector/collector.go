@@ -52,7 +52,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			if params.OtelCol.Spec.Service.IsEnabled() {
 				manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 			}
-			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 		}
 	}
 	for _, factory := range manifestFactories {
