@@ -99,7 +99,6 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
