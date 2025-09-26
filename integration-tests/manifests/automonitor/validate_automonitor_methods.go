@@ -130,7 +130,7 @@ func (h *TestHelper) CreateNamespaceAndApplyResources(namespace string, resource
 		}
 	}
 	// sleep to give pods time to come up
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 
 	if !skipDelete {
 		h.t.Cleanup(func() {
@@ -226,7 +226,6 @@ func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 		// Apply your changes to the latest version
 		currentDeployment.Spec.Template.Spec.Containers[0].Args = args
 		forceRestart(currentDeployment)
-
 		// Try to update
 		_, updateErr := h.clientSet.AppsV1().Deployments(amazonCloudwatchNamespace).Update(context.TODO(), currentDeployment, metav1.UpdateOptions{})
 		return updateErr
@@ -242,12 +241,12 @@ func (h *TestHelper) UpdateOperator(deployment *appsV1.Deployment) bool {
 		h.logger.Error(err, "There was an error trying to wait for deployment available")
 		return false
 	}
-
 	operatorDelay := 5 * time.Second
-	h.logger.Info("Sleeping before updating deployment", "duration", operatorDelay)
+	h.logger.Info("Sleeping before updating operator", "duration", operatorDelay)
 	time.Sleep(operatorDelay)
-
 	h.logger.Info("Operator updated successfully!", "args", args)
+	h.logger.Info("Sleeping after updating operator to allow changes to take effect")
+	time.Sleep(operatorDelay)
 	return true
 }
 
