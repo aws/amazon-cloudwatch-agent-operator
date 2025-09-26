@@ -22,7 +22,7 @@ func TestVolumeNewDefault(t *testing.T) {
 	volumes := Volumes(cfg, otelcol)
 
 	// verify
-	assert.Len(t, volumes, 2)
+	assert.Len(t, volumes, 3)
 
 	// check if the number of elements in the volume source items list is 1
 	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)

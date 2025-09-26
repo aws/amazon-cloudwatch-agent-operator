@@ -81,7 +81,7 @@ jobs:
       - name: Test for default instrumentation resources for Java
         run: |
           kubectl apply -f integration-tests/java/sample-deployment-java.yaml
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Ready pod --all -n default
           kubectl get pods -A
           kubectl describe pods -n default
@@ -92,7 +92,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Ready pod --all -n default
 
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
@@ -101,7 +101,7 @@ jobs:
       - name: Test for default instrumentation resources for python
         run: |
           kubectl apply -f integration-tests/python/sample-deployment-python.yaml
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Ready pod --all -n default --timeout=120s
           kubectl get pods -A
           kubectl describe pods -n default
@@ -111,7 +111,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Ready pod --all -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
@@ -120,7 +120,7 @@ jobs:
         run: |
           cat integration-tests/dotnet/sample-deployment-dotnet.yaml
           kubectl apply -f integration-tests/dotnet/sample-deployment-dotnet.yaml
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
           kubectl describe pods -n default
@@ -130,7 +130,7 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Ready pod --all -n default
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
@@ -138,10 +138,10 @@ jobs:
       - name: Test for default instrumentation resources for nodejs
         run: |
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           cat integration-tests/nodejs/sample-deployment-nodejs.yaml
           kubectl apply -f integration-tests/nodejs/sample-deployment-nodejs.yaml
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Available deployment/nginx -n default
           kubectl get pods -A
           kubectl describe pods -n default
@@ -151,27 +151,27 @@ jobs:
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Available deployment/nginx -n default
-          sleep 5
+          sleep 15
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
       - name: Test for default instrumentation resources for all languages
         run: |
           kubectl apply -f integration-tests/all-languages/sample-deployment-all-languages.yaml
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Available deployment/nginx -n default
-          sleep 5
+          sleep 15
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/all-languages/default_instrumentation_all-languages_env_variables.json app_signals
 
       - name: Test for defined instrumentation resources for all languages
         run: |
           kubectl apply -f integration-tests/manifests/sample-instrumentation.yaml
           kubectl delete pods --all -n default
-          sleep 5
+          sleep 15
           kubectl wait --for=condition=Available deployment/nginx -n default
-          sleep 5
+          sleep 15
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 

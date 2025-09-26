@@ -1,14 +1,5 @@
 [
   {
-    "k8sVersion": "1.25"
-  },
-  {
-    "k8sVersion": "1.26"
-  },
-  {
-    "k8sVersion": "1.27"
-  },
-  {
     "k8sVersion": "1.28"
   },
   {
@@ -22,5 +13,11 @@
   },
   {
     "k8sVersion": "1.32"
+  },
+  {
+    "k8sVersion": "1.33"
+  },
+  {
+    "k8sVersion": "1.34"
   }
 ]

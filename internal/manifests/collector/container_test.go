@@ -6,12 +6,11 @@ package collector
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var metricContainerPort = corev1.ContainerPort{

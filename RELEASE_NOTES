@@ -1,4 +1,31 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.2.0 (2025-09-24)
+========================================================================
+Enhancements:
+* Remove B3 propagator from default instrumentation
+
+========================================================================
+Amazon CloudWatch Agent Operator v3.1.1 (2025-08-29)
+========================================================================
+Enhancements:
+* Go.mod dependency upgrades
+
+========================================================================
+Amazon CloudWatch Agent Operator v3.1.0 (2025-06-24)
+========================================================================
+Enhancements:
+* Upgrade K8s dependencies to support DRA with K8s 1.33
+* Implement mTLS resources and configuration for Target Allocator server
+* Support security context config with DCGM
+* Add support for UpdateStrategy when collector mode is Deployment
+
+========================================================================
+Amazon CloudWatch Agent Operator v3.0.1 (2025-05-23)
+========================================================================
+Enhancements:
+* [ApplicationSignals] Improve AutoMonitor performance when listing workloads
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.0.0 (2025-05-09)
 ========================================================================
 Features:

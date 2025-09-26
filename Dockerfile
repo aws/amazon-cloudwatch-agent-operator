@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$BUILDPLATFORM golang:1.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24 AS builder
 
 # Set build arguments early
 ARG TARGETARCH
@@ -16,7 +16,7 @@ ARG NEURON_MONITOR_VERSION
 ARG TARGET_ALLOCATOR_VERSION
 
 # Set environment variables
-ENV GOPROXY="https://proxy.golang.org,direct" \
+ENV GOPROXY="direct" \
     GO111MODULE=on \
     CGO_ENABLED=0 \
     GOOS=linux \

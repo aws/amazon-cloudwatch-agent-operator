@@ -56,7 +56,6 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
@@ -180,7 +179,6 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
@@ -388,7 +386,6 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
@@ -512,7 +509,6 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
@@ -716,7 +712,6 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{
@@ -797,7 +792,6 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 			Propagators: []v1alpha1.Propagator{
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
-				v1alpha1.B3,
 				v1alpha1.XRay,
 			},
 			Java: v1alpha1.Java{

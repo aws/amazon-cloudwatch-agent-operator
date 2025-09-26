@@ -295,6 +295,11 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'updateStrategy'", r.Spec.Mode)
 	}
 
+	// validate updateStrategy for Deployment
+	if r.Spec.Mode != ModeDeployment && len(r.Spec.DeploymentUpdateStrategy.Type) > 0 {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
+	}
+
 	return warnings, nil
 }
 

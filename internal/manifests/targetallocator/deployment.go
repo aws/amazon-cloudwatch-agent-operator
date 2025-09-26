@@ -50,7 +50,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(params.OtelCol),
-					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
+					Containers:                []corev1.Container{Container(params.Config, params.OtelCol)},
 					Volumes:                   Volumes(params.Config, params.OtelCol),
 					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
 					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,

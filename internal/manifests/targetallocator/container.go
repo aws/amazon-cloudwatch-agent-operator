@@ -4,7 +4,6 @@
 package targetallocator
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -12,11 +11,14 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
-// This has to be a constant so that TA container code can access it as well
-const TACertMountPath = "/etc/amazon-cloudwatch-target-allocator-cert"
+// These have to be constants so that TA container code can access it as well
+const (
+	TACertMountPath     = "/etc/amazon-cloudwatch-target-allocator-cert"
+	ClientCertMountPath = "/etc/amazon-cloudwatch-observability-agent-ta-client-cert"
+)
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) corev1.Container {
+func Container(cfg config.Config, otelcol v1alpha1.AmazonCloudWatchAgent) corev1.Container {
 	image := otelcol.Spec.TargetAllocator.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()
@@ -32,6 +34,10 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.AmazonClo
 	volumeMounts := []corev1.VolumeMount{{
 		Name:      naming.TAConfigMapVolume(),
 		MountPath: "/conf",
+	}, {
+		Name:      naming.TAClientVolume(),
+		MountPath: ClientCertMountPath,
+		ReadOnly:  true,
 	}, {
 		Name:      naming.TASecretVolume(),
 		MountPath: TACertMountPath,

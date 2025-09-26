@@ -33,6 +33,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentAmazonCloudWatchAgent),
 			},
+			Strategy: params.OtelCol.Spec.DeploymentUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,

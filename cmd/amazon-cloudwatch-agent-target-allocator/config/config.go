@@ -6,7 +6,6 @@ package config
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -24,23 +23,22 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	tamanifest "github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/targetallocator"
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
-	DefaultListenAddr                        = ":8443"
-	DefaultCertMountPath                     = tamanifest.TACertMountPath
-	DefaultTLSKeyPath                        = DefaultCertMountPath + "/server.key"
-	DefaultTLSCertPath                       = DefaultCertMountPath + "/server.crt"
-	DefaultCABundlePath                      = ""
+	DefaultResyncTime                         = 5 * time.Minute
+	DefaultConfigFilePath      string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval    model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                 = "consistent-hashing"
+	DefaultListenAddr                         = ":8443"
+	DefaultCertMountPath                      = tamanifest.TACertMountPath
+	DefaultClientCertMountPath                = tamanifest.ClientCertMountPath
+	DefaultTLSKeyPath                         = DefaultCertMountPath + "/server.key"
+	DefaultTLSCertPath                        = DefaultCertMountPath + "/server.crt"
+	DefaultCABundlePath                       = DefaultClientCertMountPath + "/tls-ca.crt"
 )
 
 type Config struct {
@@ -150,7 +148,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 }
 
 func unmarshal(cfg *Config, configFile string) error {
-
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
@@ -217,31 +214,29 @@ func ValidateConfig(config *Config) error {
 }
 
 func (c HTTPSServerConfig) NewTLSConfig(ctx context.Context) (*tls.Config, error) {
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS13,
+	certWatcher, err := NewCertAndCAWatcher(c.TLSCertFilePath, c.TLSKeyFilePath, c.CAFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("error creating certwatcher: %w", err)
 	}
 
-	certWatcher, err := certwatcher.New(c.TLSCertFilePath, c.TLSKeyFilePath)
-	if err != nil {
-		return nil, err
-	}
-	tlsConfig.GetCertificate = certWatcher.GetCertificate
 	go func() {
 		_ = certWatcher.Start(ctx)
 	}()
 
-	if c.CAFilePath == "" {
-		return tlsConfig, nil
+	// Create the TLS config
+	tlsConfig := &tls.Config{
+		MinVersion:     tls.VersionTLS13,
+		GetCertificate: certWatcher.GetCertificate,
+		ClientCAs:      certWatcher.GetCAPool(),
+		ClientAuth:     tls.RequireAndVerifyClientCert,
 	}
 
-	caCert, err := os.ReadFile(c.CAFilePath)
-	caCertPool := x509.NewCertPool()
-	if err != nil {
-		return nil, err
+	// Dynamically update the CA pool if needed
+	tlsConfig.GetConfigForClient = func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
+		newTLSConfig := tlsConfig.Clone()
+		newTLSConfig.ClientCAs = certWatcher.GetCAPool()
+		return newTLSConfig, nil
 	}
-	caCertPool.AppendCertsFromPEM(caCert)
-	tlsConfig.ClientCAs = caCertPool
-	tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 
 	return tlsConfig, nil
 }
