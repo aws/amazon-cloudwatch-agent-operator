@@ -539,7 +539,12 @@ func TestInjectDotNetSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime)
+			// Pass container's env vars for validation
+			allEnvs := []corev1.EnvVar{}
+			if len(test.pod.Spec.Containers) > 0 {
+				allEnvs = test.pod.Spec.Containers[0].Env
+			}
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime, allEnvs)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

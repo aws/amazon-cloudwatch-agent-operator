@@ -6,6 +6,8 @@ package auto
 import (
 	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	fake2 "k8s.io/client-go/discovery/fake"
 	"os"
 	"testing"
 
@@ -28,6 +30,7 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 		envDisableMonitor    bool
 		autoAnnotationConfig string
 		autoMonitorConfig    string
+		otelSetupExists      bool
 		expectNilAnnotator   bool
 		expectedType         string
 	}{
@@ -94,6 +97,16 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 			expectNilAnnotator:   false,
 			expectedType:         "*auto.AnnotationMutators",
 		},
+		{
+			name:                 "Disable auto monitor with otel setup found",
+			envDisableAnnotation: false,
+			envDisableMonitor:    false,
+			otelSetupExists:      true,
+			autoAnnotationConfig: ``,
+			autoMonitorConfig:    `{"monitorAllServices":true}`,
+			expectNilAnnotator:   true,
+			expectedType:         "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,8 +124,29 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 				os.Unsetenv("DISABLE_AUTO_MONITOR")
 			}
 
+			fakeClientset := fake.NewSimpleClientset()
+			if tt.otelSetupExists {
+				fakeDiscovery, ok := fakeClientset.Discovery().(*fake2.FakeDiscovery)
+				if !ok {
+					t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
+				}
+
+				fakeDiscovery.Resources = []*metav1.APIResourceList{
+					{
+						GroupVersion: "opentelemetry.io/v1alpha1",
+						APIResources: []metav1.APIResource{
+							{
+								Name:       "instrumentations",
+								Namespaced: true,
+								Kind:       "Instrumentation",
+								Verbs:      []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+							},
+						},
+					},
+				}
+			}
 			// Call the function
-			annotator := createInstrumentationAnnotatorWithClientset(tt.autoMonitorConfig, tt.autoAnnotationConfig, ctx, fake.NewSimpleClientset(), fakeClient, fakeClient, logger)
+			annotator := createInstrumentationAnnotatorWithClientset(tt.autoMonitorConfig, tt.autoAnnotationConfig, ctx, fakeClientset, fakeClient, fakeClient, logger)
 
 			// Check results
 			if tt.expectNilAnnotator {

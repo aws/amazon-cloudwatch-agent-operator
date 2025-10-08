@@ -356,7 +356,12 @@ func TestInjectPythonSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, 0)
+			// Pass container's env vars for validation
+			allEnvs := []corev1.EnvVar{}
+			if len(test.pod.Spec.Containers) > 0 {
+				allEnvs = test.pod.Spec.Containers[0].Env
+			}
+			pod, err := injectPythonSDK(test.Python, test.pod, 0, allEnvs)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

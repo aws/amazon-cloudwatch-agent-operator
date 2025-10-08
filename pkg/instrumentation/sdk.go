@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/constants"
 )
 
@@ -32,6 +33,13 @@ const (
 	initContainerName = "opentelemetry-auto-instrumentation"
 	sideCarName       = "opentelemetry-auto-instrumentation"
 )
+
+var vendorCollectorImageMatcher = []string{
+	"opentelemetry-collector",
+	"otel-collector",
+	// *dot-collector
+	"dot-collector",
+}
 
 // inject a new sidecar container to the given pod, based on the given AmazonCloudWatchAgent.
 
@@ -45,6 +53,31 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		return pod
 	}
 
+	// Note: There is a potential edge case where injection might be skipped if CloudWatch Agent
+	// is already present as a sidecar. This is considered low risk since running CloudWatch Agent
+	// as a sidecar is not a officially supported configuration pattern within the operator.
+	if otcContainerExistsIn(pod) {
+		i.logger.V(3).Info("An otel collector container already exists, skipping injection")
+		return pod
+	}
+
+	// Pre-resolve all ConfigMaps from envFrom for all containers
+	// Uses caches to avoid redundant API calls when multiple containers reference the same ConfigMap
+	configMapCache := make(map[string]*corev1.ConfigMap)
+	containerEnvCache := make(map[int][]corev1.EnvVar)
+
+	for idx := range pod.Spec.Containers {
+		container := &pod.Spec.Containers[idx]
+		// Always call getAllEnvVars for consistency, regardless of envFrom presence
+		allEnvs := getAllEnvVars(ctx, i.client, container, pod.Namespace, i.logger, configMapCache)
+		containerEnvCache[idx] = allEnvs
+		i.logger.V(1).Info("cached resolved environment variables for container",
+			"containerIndex", idx,
+			"containerName", container.Name,
+			"directEnvCount", len(container.Env),
+			"totalEnvCount", len(allEnvs))
+	}
+
 	if insts.Java.Instrumentation != nil {
 		otelinst := *insts.Java.Instrumentation
 		var err error
@@ -54,7 +87,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range strings.Split(javaContainers, ",") {
 			index := getContainerIndex(container, pod)
-			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
+			// Pass cached environment variables to avoid re-fetching ConfigMap
+			envs, exists := containerEnvCache[index]
+			if !exists {
+				i.logger.Error(fmt.Errorf("container index %d not found in cache", index), "missing container in cache")
+				continue
+			}
+			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index, envs)
 			if err != nil {
 				i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -75,7 +114,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range strings.Split(nodejsContainers, ",") {
 			index := getContainerIndex(container, pod)
-			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
+			// Pass cached environment variables to avoid re-fetching ConfigMap
+			envs, exists := containerEnvCache[index]
+			if !exists {
+				i.logger.Error(fmt.Errorf("container index %d not found in cache", index), "missing container in cache")
+				continue
+			}
+			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index, envs)
 			if err != nil {
 				i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -94,7 +139,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range strings.Split(pythonContainers, ",") {
 			index := getContainerIndex(container, pod)
-			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
+			// Pass cached environment variables to avoid re-fetching ConfigMap
+			envs, exists := containerEnvCache[index]
+			if !exists {
+				i.logger.Error(fmt.Errorf("container index %d not found in cache", index), "missing container in cache")
+				continue
+			}
+			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, envs)
 			if err != nil {
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -113,7 +164,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range strings.Split(dotnetContainers, ",") {
 			index := getContainerIndex(container, pod)
-			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
+			// Pass cached environment variables to avoid re-fetching ConfigMap
+			envs, exists := containerEnvCache[index]
+			if !exists {
+				i.logger.Error(fmt.Errorf("container index %d not found in cache", index), "missing container in cache")
+				continue
+			}
+			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime], envs)
 			if err != nil {
 				i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -199,6 +256,38 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	}
 
 	return pod
+}
+
+func otcContainerExistsIn(pod corev1.Pod) bool {
+	if len(pod.Spec.Containers)+len(pod.Spec.InitContainers) == 1 {
+		return false
+	}
+	for _, container := range pod.Spec.Containers {
+		if isOtcContainer(container) {
+			return true
+		}
+	}
+	// Check init container since k8s 1.28
+	for _, container := range pod.Spec.InitContainers {
+		if isOtcContainer(container) {
+			return true
+		}
+	}
+	return false
+}
+
+func isOtcContainer(container corev1.Container) bool {
+	// Check if there's auto-injected collector sidecar
+	if container.Name == naming.Container() {
+		return true
+	}
+	// Check if the container image matches the OTEL Collector naming pattern
+	for _, matcher := range vendorCollectorImageMatcher {
+		if strings.Contains(container.Image, matcher) {
+			return true
+		}
+	}
+	return false
 }
 
 func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext, instrInitContainerName string) corev1.Pod {

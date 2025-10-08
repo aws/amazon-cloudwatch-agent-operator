@@ -26,7 +26,50 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
-var excludedNamespaces = []string{"kube-system", "amazon-cloudwatch"}
+// List of namespaces excluded from AppSignals auto-monitoring by default (best-effort basis).
+// Customers must explicitly opt in to enable AppSignals for workloads in these namespaces.
+var excludedNamespaces = []string{
+	// --- Monitoring & Observability ---
+	"monitoring",                    // Prometheus, kube-prometheus-stack, Grafana
+	"loki",                          // Loki, Promtail
+	"observability",                 // Tempo, Jaeger
+	"opentelemetry-operator-system", // OpenTelemetry Collector / Operator
+	"amazon-cloudwatch",             // Amazon CloudWatch Agent
+	"tracing",                       // Zipkin or similar tracing tools
+
+	// --- Ingress & Networking ---
+	"ingress-nginx", // NGINX Ingress Controller
+	"traefik",       // Traefik Ingress Controller
+	"istio-system",  // Istio control plane
+	"linkerd",       // Linkerd service mesh
+	"cert-manager",  // Cert-Manager for TLS certificates
+	"external-dns",  // ExternalDNS controller
+
+	// --- Cloud Integrations ---
+	"aws-load-balancer-controller", // AWS Load Balancer Controller
+	"kube-system",                  // Cluster Autoscaler, CSI Drivers, Metrics Server
+	"external-dns",                 // ExternalDNS (sometimes deployed here too)
+
+	// --- Security & Policy ---
+	"kyverno",           // Kyverno policy engine
+	"gatekeeper-system", // OPA Gatekeeper
+	"falco",             // Falco runtime security
+	"vault",             // HashiCorp Vault for secrets
+
+	// --- CI/CD & Management ---
+	"argocd",           // Argo CD
+	"flux-system",      // Flux CD
+	"jenkins",          // Jenkins CI/CD
+	"tekton-pipelines", // Tekton pipelines
+	"spinnaker",        // Spinnaker
+	"harbor",           // Harbor container registry
+	"reloader",         // Reloader for configmap/secret reloads
+
+	// --- Other Utilities ---
+	"keda",   // KEDA event-driven autoscaler
+	"velero", // Velero backup/restore
+	"minio",  // MinIO object storage
+}
 
 const (
 	ByLabel              = "IndexByLabel"
