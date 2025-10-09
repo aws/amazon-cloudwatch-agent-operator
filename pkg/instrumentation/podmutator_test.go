@@ -750,7 +750,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -922,7 +922,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -1249,7 +1249,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -1437,7 +1437,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -3411,7 +3411,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -3420,7 +3420,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -4069,7 +4069,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -4078,7 +4078,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,

@@ -26,8 +26,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
-// List of namespaces excluded from AppSignals auto-monitoring by default (best-effort basis).
-// Customers must explicitly opt in to enable AppSignals for workloads in these namespaces.
+// List of namespaces excluded from ApplicationSignals auto-monitoring by default (best-effort basis).
+// Customers must explicitly opt in to enable ApplicationSignals for workloads in these namespaces.
 var excludedNamespaces = []string{
 	// --- Monitoring & Observability ---
 	"monitoring",                    // Prometheus, kube-prometheus-stack, Grafana

@@ -628,7 +628,7 @@ func TestInjectNodeJS(t *testing.T) {
 				{
 					Name:    nodejsInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      nodejsVolumeName,
 						MountPath: nodejsInstrMountPath,

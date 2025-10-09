@@ -74,6 +74,7 @@ func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clie
 	} else {
 		if !errors.IsNotFound(err) {
 			setupLog.Info(fmt.Sprintf("W! auto-monitor is disabled due to failures in retrieving server groups: %v", err))
+			return nil, nil
 		}
 	}
 

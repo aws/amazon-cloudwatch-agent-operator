@@ -384,25 +384,25 @@ func TestShouldInjectEnvVar(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "App Signals disabled: Skip OTEL_ var",
+			name:     "Application Signals disabled: Skip OTEL_ var",
 			envs:     []corev1.EnvVar{{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "false"}},
 			envName:  "OTEL_METRICS_EXPORTER",
 			expected: false,
 		},
 		{
-			name:     "App Signals disabled: Skip non-OTEL var",
+			name:     "Application Signals disabled: Skip non-OTEL var",
 			envs:     []corev1.EnvVar{{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "false"}},
 			envName:  "MY_CUSTOM_VAR",
 			expected: false,
 		},
 		{
-			name:     "App Signals enabled: Inject OTEL_ var",
+			name:     "Application Signals enabled: Inject OTEL_ var",
 			envs:     []corev1.EnvVar{{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"}},
 			envName:  "OTEL_METRICS_EXPORTER",
 			expected: true,
 		},
 		{
-			name:     "App Signals not set: Inject OTEL_ var",
+			name:     "Application Signals not set: Inject OTEL_ var",
 			envs:     []corev1.EnvVar{},
 			envName:  "OTEL_TRACES_SAMPLER",
 			expected: true,
@@ -495,7 +495,7 @@ func TestShouldInjectADOTSDK(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "App Signals enabled + custom endpoint: Inject",
+			name: "Application Signals enabled + custom endpoint: Inject",
 			envs: []corev1.EnvVar{
 				{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
 				{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://custom:4318"},
@@ -505,7 +505,7 @@ func TestShouldInjectADOTSDK(t *testing.T) {
 			expected:  true,
 		},
 		{
-			name: "App Signals not set + custom endpoint: Skip",
+			name: "Application Signals not set + custom endpoint: Skip",
 			envs: []corev1.EnvVar{
 				{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://custom:4318"},
 			},
