@@ -390,10 +390,10 @@ func TestShouldInjectEnvVar(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "App Signals disabled: Inject non-OTEL var",
+			name:     "App Signals disabled: Skip non-OTEL var",
 			envs:     []corev1.EnvVar{{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "false"}},
 			envName:  "MY_CUSTOM_VAR",
-			expected: true,
+			expected: false,
 		},
 		{
 			name:     "App Signals enabled: Inject OTEL_ var",

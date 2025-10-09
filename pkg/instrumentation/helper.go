@@ -318,9 +318,9 @@ func shouldInjectEnvVar(envs []corev1.EnvVar, envName string) bool {
 		return false
 	}
 
-	// If Application Signals is explicitly disabled, skip all OTEL_ configuration overrides
+	// If Application Signals is explicitly disabled, skip all OTEL configuration overrides
 	// This allows users to configure their own OTel settings when not using Application Signals
-	if isApplicationSignalsExplicitlyDisabled(envs) && strings.HasPrefix(envName, "OTEL_") {
+	if isApplicationSignalsExplicitlyDisabled(envs) {
 		return false
 	}
 

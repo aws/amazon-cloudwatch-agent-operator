@@ -6,15 +6,14 @@ package auto
 import (
 	"context"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	fake2 "k8s.io/client-go/discovery/fake"
 	"os"
 	"testing"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	discoveryfake "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
-
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -126,7 +125,7 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 
 			fakeClientset := fake.NewSimpleClientset()
 			if tt.otelSetupExists {
-				fakeDiscovery, ok := fakeClientset.Discovery().(*fake2.FakeDiscovery)
+				fakeDiscovery, ok := fakeClientset.Discovery().(*discoveryfake.FakeDiscovery)
 				if !ok {
 					t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
 				}

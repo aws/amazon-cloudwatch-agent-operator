@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -66,12 +67,14 @@ func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clie
 	if err == nil {
 		for _, r := range resources.APIResources {
 			if r.Name == "instrumentations" {
-				setupLog.Info("Found OpenTelemetry setup in the cluster, skip auto-monitor.")
+				setupLog.Info("W! auto-monitor is disabled due to the presence of opentelemetry.io/v1alpha1 group version")
 				return nil, nil
 			}
 		}
 	} else {
-		setupLog.Info(fmt.Sprintf("Proceed with auto-monitor, OpenTelemetry setup is not found: %v", err))
+		if !errors.IsNotFound(err) {
+			setupLog.Info(fmt.Sprintf("W! auto-monitor is disabled due to failures in retrieving server groups: %v", err))
+		}
 	}
 
 	logger := ctrl.Log.WithName("auto_monitor")
