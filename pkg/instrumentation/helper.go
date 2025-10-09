@@ -25,6 +25,15 @@ const (
 	cloudwatchAgentWindowsEndpoint  = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
 )
 
+// ADOT/OTel environment variable names
+const (
+	EnvOTelApplicationSignalsEnabled   = "OTEL_AWS_APPLICATION_SIGNALS_ENABLED"
+	EnvOTelExporterOTLPEndpoint        = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	EnvOTelExporterOTLPTracesEndpoint  = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+	EnvOTelExporterOTLPMetricsEndpoint = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"
+	EnvOTelExporterOTLPLogsEndpoint    = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"
+)
+
 var defaultSize = resource.MustParse("200Mi")
 
 // Calculate if we already inject InitContainers.
@@ -152,12 +161,12 @@ func getEnvValue(envs []corev1.EnvVar, name string) string {
 
 // isApplicationSignalsExplicitlyEnabled checks if OTEL_AWS_APPLICATION_SIGNALS_ENABLED is explicitly set to true
 func isApplicationSignalsExplicitlyEnabled(envs []corev1.EnvVar) bool {
-	value := getEnvValue(envs, "OTEL_AWS_APPLICATION_SIGNALS_ENABLED")
+	value := getEnvValue(envs, EnvOTelApplicationSignalsEnabled)
 	return strings.EqualFold(value, "true")
 }
 
 func isApplicationSignalsExplicitlyDisabled(envs []corev1.EnvVar) bool {
-	value := getEnvValue(envs, "OTEL_AWS_APPLICATION_SIGNALS_ENABLED")
+	value := getEnvValue(envs, EnvOTelApplicationSignalsEnabled)
 	return strings.EqualFold(value, "false")
 }
 
@@ -283,25 +292,25 @@ func shouldInjectADOTSDK(envs []corev1.EnvVar, pod corev1.Pod, container *corev1
 	// Skip injection if any endpoint is configured to a third-party (non-CloudWatch) endpoint
 
 	// Check OTEL_EXPORTER_OTLP_ENDPOINT
-	otlpEndpoint := getEnvValue(envs, "OTEL_EXPORTER_OTLP_ENDPOINT")
+	otlpEndpoint := getEnvValue(envs, EnvOTelExporterOTLPEndpoint)
 	if otlpEndpoint != "" && !containsCloudWatchAgent(otlpEndpoint) {
 		return false
 	}
 
 	// Check OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-	tracesEndpoint := getEnvValue(envs, "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	tracesEndpoint := getEnvValue(envs, EnvOTelExporterOTLPTracesEndpoint)
 	if tracesEndpoint != "" && !containsCloudWatchAgent(tracesEndpoint) {
 		return false
 	}
 
 	// Check OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-	metricsEndpoint := getEnvValue(envs, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
+	metricsEndpoint := getEnvValue(envs, EnvOTelExporterOTLPMetricsEndpoint)
 	if metricsEndpoint != "" && !containsCloudWatchAgent(metricsEndpoint) {
 		return false
 	}
 
 	// Check OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
-	logsEndpoint := getEnvValue(envs, "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT")
+	logsEndpoint := getEnvValue(envs, EnvOTelExporterOTLPLogsEndpoint)
 	if logsEndpoint != "" && !containsCloudWatchAgent(logsEndpoint) {
 		return false
 	}
