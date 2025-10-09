@@ -4,6 +4,8 @@
 package instrumentation
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -23,8 +25,7 @@ var (
 	javaCommandWindows = []string{"CMD", "/c", "copy", "javaagent.jar", javaInstrMountPathWindows}
 )
 
-func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
-	// caller checks if there is at least one container.
+func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, allEnvs []corev1.EnvVar) (corev1.Pod, error) {
 	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
@@ -32,10 +33,14 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 		return pod, err
 	}
 
-	// inject Java instrumentation spec env vars.
+	// Check if ADOT SDK should be injected based on all environment variables and security context
+	if !shouldInjectADOTSDK(allEnvs, pod, container) {
+		return pod, fmt.Errorf("ADOT Java SDK injection skipped due to incompatible OTel configuration")
+	}
+
+	// inject Java instrumentation spec env vars with validation
 	for _, env := range javaSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
+		if shouldInjectEnvVar(allEnvs, env.Name) {
 			container.Env = append(container.Env, env)
 		}
 	}
@@ -81,5 +86,6 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 			}},
 		})
 	}
+
 	return pod, err
 }

@@ -628,7 +628,7 @@ func TestInjectNodeJS(t *testing.T) {
 				{
 					Name:    nodejsInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      nodejsVolumeName,
 						MountPath: nodejsInstrMountPath,
@@ -732,7 +732,7 @@ func TestInjectPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -881,7 +881,7 @@ func TestInjectJavaAndPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -1183,7 +1183,7 @@ func TestInjectJavaPythonAndDotNet(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -2082,6 +2082,203 @@ func TestChooseServiceName(t *testing.T) {
 			}, test.resources, test.index)
 
 			assert.Equal(t, test.expectedServiceName, serviceName)
+		})
+	}
+}
+
+// TestInjectWithEnvFrom tests that envFrom ConfigMap values are properly cached and validated
+func TestInjectWithEnvFrom(t *testing.T) {
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-envfrom",
+		},
+	}
+	err := k8sClient.Create(context.Background(), &ns)
+	require.NoError(t, err)
+
+	// Create ConfigMap with custom endpoint
+	cm := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "custom-endpoint-config",
+			Namespace: "test-envfrom",
+		},
+		Data: map[string]string{
+			"OTEL_EXPORTER_OTLP_ENDPOINT": "http://custom:4318",
+		},
+	}
+	err = k8sClient.Create(context.Background(), &cm)
+	require.NoError(t, err)
+
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Java: v1alpha1.Java{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4317",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Java: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+	}
+	inj := sdkInjector{
+		logger: logr.Discard(),
+		client: k8sClient,
+	}
+
+	tests := []struct {
+		name              string
+		pod               corev1.Pod
+		expectInjection   bool
+		expectInitCounter int
+	}{
+		{
+			name: "envFrom with custom endpoint - skip injection",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-envfrom",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "app",
+							Image: "app:latest",
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "custom-endpoint-config",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectInjection:   false,
+			expectInitCounter: 0,
+		},
+		{
+			name: "envFrom with custom endpoint + direct App Signals - inject",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-envfrom",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "app",
+							Image: "app:latest",
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "custom-endpoint-config",
+										},
+									},
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
+									Value: "true",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectInjection:   true,
+			expectInitCounter: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pod := inj.inject(context.Background(), insts, ns, test.pod)
+			assert.Equal(t, test.expectInitCounter, len(pod.Spec.InitContainers))
+			if test.expectInjection {
+				assert.Equal(t, javaInitContainerName, pod.Spec.InitContainers[0].Name)
+			}
+		})
+	}
+}
+
+func TestSkipInjection(t *testing.T) {
+	tests := []struct {
+		name string
+		pod  corev1.Pod
+	}{
+		{
+			name: "Skip when otc-container is found",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+						},
+						{
+							Name:  "otc-container",
+							Image: "otc-container:latest",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Skip if vendor collector image is found",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+						},
+						{
+							Name:  "collector",
+							Image: "public.ecr.aws/aws-observability/aws-otel-collector:latest",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Sdk: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inj := sdkInjector{
+				client: k8sClient,
+			}
+			pod := inj.inject(context.Background(), insts, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
+			_, err := json.MarshalIndent(pod, "", "  ")
+			assert.NoError(t, err)
+			assert.Equal(t, test.pod.Spec.Containers[0],
+				corev1.Container{
+					Name:  "application-name",
+					Image: "app:latest",
+				})
 		})
 	}
 }

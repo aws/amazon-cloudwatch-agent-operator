@@ -47,7 +47,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-nodejs",
 								MountPath: "/otel-auto-instrumentation-nodejs",
@@ -107,7 +107,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-nodejs",
 								MountPath: "/otel-auto-instrumentation-nodejs",
@@ -172,7 +172,12 @@ func TestInjectNodeJSSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0)
+			// Pass container's env vars for validation
+			allEnvs := []corev1.EnvVar{}
+			if len(test.pod.Spec.Containers) > 0 {
+				allEnvs = test.pod.Spec.Containers[0].Env
+			}
+			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0, allEnvs)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

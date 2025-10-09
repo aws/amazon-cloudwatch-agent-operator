@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -60,6 +61,21 @@ func configureAutoMonitor(ctx context.Context, autoMonitorConfigStr string, clie
 	var autoMonitorConfig *MonitorConfig
 	if err := json.Unmarshal([]byte(autoMonitorConfigStr), &autoMonitorConfig); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal auto-monitor config: %w", err)
+	}
+
+	resources, err := clientSet.Discovery().ServerResourcesForGroupVersion("opentelemetry.io/v1alpha1")
+	if err == nil {
+		for _, r := range resources.APIResources {
+			if r.Name == "instrumentations" {
+				setupLog.Info("W! auto-monitor is disabled due to the presence of opentelemetry.io/v1alpha1 group version")
+				return nil, nil
+			}
+		}
+	} else {
+		if !errors.IsNotFound(err) {
+			setupLog.Info(fmt.Sprintf("W! auto-monitor is disabled due to failures in retrieving server groups: %v", err))
+			return nil, nil
+		}
 	}
 
 	logger := ctrl.Log.WithName("auto_monitor")
