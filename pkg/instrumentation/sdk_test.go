@@ -732,7 +732,7 @@ func TestInjectPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -881,7 +881,7 @@ func TestInjectJavaAndPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -1183,7 +1183,7 @@ func TestInjectJavaPythonAndDotNet(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
