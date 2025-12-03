@@ -18,6 +18,22 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
 )
 
+func init() {
+	// Set the default validation scheme for tests
+	model.NameValidationScheme = model.UTF8Validation
+
+	// Set validation scheme on all relabel configs
+	for i := range relabelConfigs {
+		for j := range relabelConfigs[i].cfg {
+			relabelConfigs[i].cfg[j].NameValidationScheme = model.UTF8Validation
+		}
+	}
+	for i := range HashmodConfig.cfg {
+		HashmodConfig.cfg[i].NameValidationScheme = model.UTF8Validation
+	}
+	DefaultDropRelabelConfig.NameValidationScheme = model.UTF8Validation
+}
+
 var (
 	logger               = logf.Log.WithName("unit-tests")
 	defaultNumTargets    = 100

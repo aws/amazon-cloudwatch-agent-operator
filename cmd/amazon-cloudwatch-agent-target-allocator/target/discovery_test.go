@@ -7,11 +7,12 @@ import (
 	"context"
 	"errors"
 	"hash"
+	"log/slog"
 	"sort"
 	"testing"
 	"time"
 
-	gokitlog "github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -51,7 +52,7 @@ func TestDiscovery(t *testing.T) {
 	}
 	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.DefaultRegisterer, nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	defer func() { manager.Close() }()
@@ -290,7 +291,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	for _, tc := range tests {
@@ -326,7 +327,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 func TestDiscovery_NoConfig(t *testing.T) {
 	scu := &mockScrapeConfigUpdater{mockCfg: map[string]*promconfig.ScrapeConfig{}}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -373,7 +374,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	b.ResetTimer()

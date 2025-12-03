@@ -5,10 +5,10 @@ package watcher
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -59,7 +59,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "test",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
+							Port: ptrString("web"),
 						},
 					},
 				},
@@ -188,16 +188,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "bearer",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
-							Authorization: &monitoringv1.SafeAuthorization{
-								Type: "Bearer",
-								Credentials: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "bearer",
-									},
-									Key: "token",
-								},
-							},
+							Port: ptrString("web"),
 						},
 					},
 				},
@@ -386,6 +377,10 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 	}
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-prometheus",
+			Namespace: "test",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration("30s"),
@@ -393,7 +388,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true)
+	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -403,6 +398,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		k8sClient:              k8sClient,
 		informers:              informers,
 		configGenerator:        generator,
+		prom:                   prom,
 		serviceMonitorSelector: getSelector(nil),
 		podMonitorSelector:     getSelector(nil),
 		stopChannel:            make(chan struct{}),
@@ -416,4 +412,8 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
 	}
+}
+
+func ptrString(s string) *string {
+	return &s
 }

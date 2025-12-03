@@ -6,11 +6,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -89,8 +89,8 @@ func main() {
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
-	discovery.RegisterMetrics() // discovery manager metrics need to be enabled explicitly
+	discoveryLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	discoveryManager = discovery.NewManager(discoveryCtx, discoveryLogger, prometheus.DefaultRegisterer, nil)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)

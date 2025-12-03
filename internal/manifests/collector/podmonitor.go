@@ -55,7 +55,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "monitoring",
+						Port: ptrString("monitoring"),
 					},
 				}, metricsEndpointsFromConfig(params.Log, params.OtelCol)...),
 		},
@@ -68,4 +68,8 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloudWatchAgent) []monitoringv1.PodMetricsEndpoint {
 	metricsEndpoints := []monitoringv1.PodMetricsEndpoint{}
 	return metricsEndpoints
+}
+
+func ptrString(s string) *string {
+	return &s
 }
