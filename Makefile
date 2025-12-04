@@ -195,8 +195,12 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: goimports
-goimports:
-	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/goimports -w -local $(CW_AGENT_OPERATOR_IMPORT_PATH) || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports
+goimports: install-goimports
+	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/goimports -w -local $(CW_AGENT_OPERATOR_IMPORT_PATH)
+
+.PHONY: install-goimports
+install-goimports: $(LOCALBIN)
+	@test -s $(LOCALBIN)/goimports || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports@v0.33.0
 
 .PHONY: impi
 impi:
