@@ -28,6 +28,7 @@ import (
 
 func init() {
 	// Set the validation scheme to UTF8 for the new Prometheus library
+	//nolint:staticcheck // SA1019 - intentionally using deprecated NameValidationScheme for test compatibility
 	model.NameValidationScheme = model.UTF8Validation
 }
 
@@ -81,7 +82,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -162,7 +163,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -375,6 +376,10 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 	}
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration("30s"),
@@ -400,10 +405,19 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 
 // Remove relable configs fields from scrape configs for testing,
 // since these are mutated and tested down the line with the hook(s).
+// Also clear fields that have different defaults across Prometheus library versions.
 func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	for _, sc := range scs {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
+		// Clear fields that have different defaults across Prometheus library versions
+		sc.ScrapeProtocols = nil
+		sc.ScrapeNativeHistograms = nil
+		sc.AlwaysScrapeClassicHistograms = nil
+		sc.ConvertClassicHistogramsToNHCB = nil
+		sc.EnableCompression = false
+		sc.MetricNameValidationScheme = 0
+		sc.MetricNameEscapingScheme = ""
 	}
 }
 

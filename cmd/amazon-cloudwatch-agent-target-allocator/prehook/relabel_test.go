@@ -20,6 +20,7 @@ import (
 
 func init() {
 	// Set the validation scheme to UTF8 for the new Prometheus library
+	//nolint:staticcheck // SA1019 - intentionally using deprecated NameValidationScheme for test compatibility
 	model.NameValidationScheme = model.UTF8Validation
 }
 

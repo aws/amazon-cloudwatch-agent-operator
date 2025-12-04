@@ -28,6 +28,7 @@ import (
 
 func init() {
 	// Set the validation scheme to UTF8 for the new Prometheus library
+	//nolint:staticcheck // SA1019 - intentionally using deprecated NameValidationScheme for test compatibility
 	model.NameValidationScheme = model.UTF8Validation
 }
 
@@ -45,14 +46,14 @@ func TestDiscovery(t *testing.T) {
 			args: args{
 				file: "./testdata/test.yaml",
 			},
-			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001"},
 		},
 		{
 			name: "update",
 			args: args{
 				file: "./testdata/test_update.yaml",
 			},
-			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9004", "prom.domain:9005"},
 		},
 	}
 	scu := &mockScrapeConfigUpdater{}

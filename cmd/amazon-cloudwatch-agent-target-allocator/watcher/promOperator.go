@@ -231,16 +231,34 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		return nil, pmRetrieveErr
 	}
 
+	// Collect all namespaces from service monitors and pod monitors
+	namespaces := make(map[string]struct{})
+	for _, sm := range serviceMonitorInstances {
+		namespaces[sm.Namespace] = struct{}{}
+	}
+	for _, pm := range podMonitorInstances {
+		namespaces[pm.Namespace] = struct{}{}
+	}
+
+	// Use the first namespace found, or "default" if none
+	promNamespace := "default"
+	for ns := range namespaces {
+		promNamespace = ns
+		break
+	}
+
 	// Create a Prometheus object for the config generator
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "target-allocator",
-			Namespace: "default",
+			Namespace: promNamespace,
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration("30s"),
+				ScrapeTimeout:  monitoringv1.Duration("10s"),
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
