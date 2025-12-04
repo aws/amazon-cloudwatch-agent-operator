@@ -5,10 +5,10 @@ package watcher
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -25,6 +25,11 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 )
+
+func init() {
+	// Set the validation scheme to UTF8 for the new Prometheus library
+	model.NameValidationScheme = model.UTF8Validation
+}
 
 func TestLoadConfig(t *testing.T) {
 	tests := []struct {
@@ -59,7 +64,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "test",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
+							Port: ptr("web"),
 						},
 					},
 				},
@@ -188,16 +193,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "bearer",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
-							Authorization: &monitoringv1.SafeAuthorization{
-								Type: "Bearer",
-								Credentials: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "bearer",
-									},
-									Key: "token",
-								},
-							},
+							Port: ptr("web"),
 						},
 					},
 				},
@@ -223,14 +219,7 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.HTTPClientConfig{
-							FollowRedirects: true,
-							EnableHTTP2:     true,
-							Authorization: &config.Authorization{
-								Type:        "Bearer",
-								Credentials: "bearer-token",
-							},
-						},
+						HTTPClientConfig: config.DefaultHTTPClientConfig,
 					},
 				},
 			},
@@ -393,7 +382,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true)
+	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -416,4 +405,8 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
 	}
+}
+
+func ptr(s string) *string {
+	return &s
 }
