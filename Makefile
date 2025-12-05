@@ -200,7 +200,7 @@ goimports: install-goimports
 
 .PHONY: install-goimports
 install-goimports: $(LOCALBIN)
-	@test -s $(LOCALBIN)/goimports || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports@v0.33.0
+	@test -s $(LOCALBIN)/goimports || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports@v0.33
 
 .PHONY: impi
 impi:
