@@ -18,6 +18,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/target"
 )
 
+func init() {
+	// Set the validation scheme to UTF8 for the new Prometheus library
+	//nolint:staticcheck // SA1019 - intentionally using deprecated NameValidationScheme for test compatibility
+	model.NameValidationScheme = model.UTF8Validation
+}
+
 var (
 	logger               = logf.Log.WithName("unit-tests")
 	defaultNumTargets    = 100

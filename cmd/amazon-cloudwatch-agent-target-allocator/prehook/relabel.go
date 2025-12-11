@@ -24,16 +24,13 @@ func NewRelabelConfigTargetFilter(log logr.Logger) Hook {
 	}
 }
 
-// helper function converts from model.LabelSet to []labels.Label.
-func convertLabelToPromLabelSet(lbls model.LabelSet) []labels.Label {
-	newLabels := make([]labels.Label, len(lbls))
-	index := 0
+// helper function converts from model.LabelSet to labels.Labels.
+func convertLabelToPromLabelSet(lbls model.LabelSet) labels.Labels {
+	builder := labels.NewBuilder(labels.EmptyLabels())
 	for k, v := range lbls {
-		newLabels[index].Name = string(k)
-		newLabels[index].Value = string(v)
-		index++
+		builder.Set(string(k), string(v))
 	}
-	return newLabels
+	return builder.Labels()
 }
 
 func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
@@ -49,12 +46,12 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 		keepTarget := true
 		lset := convertLabelToPromLabelSet(tItem.Labels)
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			if newLset, keep := relabel.Process(lset, cfg); !keep {
+			newLset, keep := relabel.Process(lset, cfg)
+			if !keep {
 				keepTarget = false
 				break // inner loop
-			} else {
-				lset = newLset
 			}
+			lset = newLset
 		}
 
 		if !keepTarget {
@@ -85,6 +82,8 @@ func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config)
 		if str == "$(SHARD)" {
 			cfg[i].Regex = relabel.MustNewRegexp("0")
 		}
+		// Set the validation scheme for the new Prometheus library
+		cfg[i].NameValidationScheme = model.UTF8Validation
 	}
 
 	return cfg

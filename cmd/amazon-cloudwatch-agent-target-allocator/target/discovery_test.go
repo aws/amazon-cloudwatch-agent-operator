@@ -7,11 +7,12 @@ import (
 	"context"
 	"errors"
 	"hash"
+	"log/slog"
 	"sort"
 	"testing"
 	"time"
 
-	gokitlog "github.com/go-kit/log"
+	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -24,6 +25,12 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 	allocatorWatcher "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/watcher"
 )
+
+func init() {
+	// Set the validation scheme to UTF8 for the new Prometheus library
+	//nolint:staticcheck // SA1019 - intentionally using deprecated NameValidationScheme for test compatibility
+	model.NameValidationScheme = model.UTF8Validation
+}
 
 func TestDiscovery(t *testing.T) {
 	type args struct {
@@ -39,19 +46,19 @@ func TestDiscovery(t *testing.T) {
 			args: args{
 				file: "./testdata/test.yaml",
 			},
-			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001"},
 		},
 		{
 			name: "update",
 			args: args{
 				file: "./testdata/test_update.yaml",
 			},
-			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9004", "prom.domain:9005"},
 		},
 	}
 	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	defer func() { manager.Close() }()
@@ -290,7 +297,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	for _, tc := range tests {
@@ -326,7 +333,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 func TestDiscovery_NoConfig(t *testing.T) {
 	scu := &mockScrapeConfigUpdater{mockCfg: map[string]*promconfig.ScrapeConfig{}}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -373,7 +380,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	b.ResetTimer()

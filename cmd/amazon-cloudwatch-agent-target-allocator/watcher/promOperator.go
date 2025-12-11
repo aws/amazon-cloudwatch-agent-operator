@@ -6,11 +6,10 @@ package watcher
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -22,6 +21,7 @@ import (
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -58,8 +58,8 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		},
 	}
 
-	promOperatorLogger := level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowWarn())
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, true)
+	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom)
 
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func (w *PrometheusCRWatcher) Close() error {
 }
 
 func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Config, error) {
-	store := assets.NewStore(w.k8sClient.CoreV1(), w.k8sClient.CoreV1())
+	store := assets.NewStoreBuilder(w.k8sClient.CoreV1(), w.k8sClient.CoreV1())
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
@@ -231,15 +231,39 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		return nil, pmRetrieveErr
 	}
 
+	// Collect all namespaces from service monitors and pod monitors
+	namespaces := make(map[string]struct{})
+	for _, sm := range serviceMonitorInstances {
+		namespaces[sm.Namespace] = struct{}{}
+	}
+	for _, pm := range podMonitorInstances {
+		namespaces[pm.Namespace] = struct{}{}
+	}
+
+	// Use the first namespace found, or "default" if none
+	promNamespace := "default"
+	for ns := range namespaces {
+		promNamespace = ns
+		break
+	}
+
+	// Create a Prometheus object for the config generator
+	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "target-allocator",
+			Namespace: promNamespace,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				ScrapeInterval: monitoringv1.Duration("30s"),
+				ScrapeTimeout:  monitoringv1.Duration("10s"),
+			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
+		},
+	}
+
 	generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
-		ctx,
-		"30s",
-		"",
-		nil,
-		nil,
-		monitoringv1.TSDBSpec{},
-		nil,
-		nil,
+		prom,
 		serviceMonitorInstances,
 		podMonitorInstances,
 		map[string]*monitoringv1.Probe{},
@@ -280,17 +304,15 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 	ctx context.Context,
 	smName, smNamespace string,
 	endps []monitoringv1.Endpoint,
-	store *assets.Store,
+	store *assets.StoreBuilder,
 ) {
 	var err error
-	for i, endp := range endps {
-		objKey := fmt.Sprintf("serviceMonitor/%s/%s/%d", smNamespace, smName, i)
-
-		if err = store.AddSafeAuthorizationCredentials(ctx, smNamespace, endp.Authorization, objKey); err != nil {
+	for _, endp := range endps {
+		if err = store.AddSafeAuthorizationCredentials(ctx, smNamespace, endp.Authorization); err != nil {
 			break
 		}
 
-		if err = store.AddBasicAuth(ctx, smNamespace, endp.BasicAuth, objKey); err != nil {
+		if err = store.AddBasicAuth(ctx, smNamespace, endp.BasicAuth); err != nil {
 			break
 		}
 
@@ -300,12 +322,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 			}
 		}
 
-		if err = store.AddOAuth2(ctx, smNamespace, endp.OAuth2, objKey); err != nil {
-			break
-		}
-
-		smAuthKey := fmt.Sprintf("serviceMonitor/auth/%s/%s/%d", smNamespace, smName, i)
-		if err = store.AddSafeAuthorizationCredentials(ctx, smNamespace, endp.Authorization, smAuthKey); err != nil {
+		if err = store.AddOAuth2(ctx, smNamespace, endp.OAuth2); err != nil {
 			break
 		}
 	}
@@ -315,7 +332,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 	}
 }
 
-// addStoreAssetsForServiceMonitor adds authentication / authorization related information to the assets store,
+// addStoreAssetsForPodMonitor adds authentication / authorization related information to the assets store,
 // based on the service monitor and pod metrics endpoints specs.
 // This code borrows from
 // https://github.com/prometheus-operator/prometheus-operator/blob/06b5c4189f3f72737766d86103d049115c3aff48/pkg/prometheus/resource_selector.go#L314.
@@ -323,32 +340,25 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 	ctx context.Context,
 	pmName, pmNamespace string,
 	podMetricsEndps []monitoringv1.PodMetricsEndpoint,
-	store *assets.Store,
+	store *assets.StoreBuilder,
 ) {
 	var err error
-	for i, endp := range podMetricsEndps {
-		objKey := fmt.Sprintf("podMonitor/%s/%s/%d", pmNamespace, pmName, i)
-
-		if err = store.AddSafeAuthorizationCredentials(ctx, pmNamespace, endp.Authorization, objKey); err != nil {
+	for _, endp := range podMetricsEndps {
+		if err = store.AddSafeAuthorizationCredentials(ctx, pmNamespace, endp.Authorization); err != nil {
 			break
 		}
 
-		if err = store.AddBasicAuth(ctx, pmNamespace, endp.BasicAuth, objKey); err != nil {
+		if err = store.AddBasicAuth(ctx, pmNamespace, endp.BasicAuth); err != nil {
 			break
 		}
 
 		if endp.TLSConfig != nil {
-			if err = store.AddSafeTLSConfig(ctx, pmNamespace, &endp.TLSConfig.SafeTLSConfig); err != nil {
+			if err = store.AddSafeTLSConfig(ctx, pmNamespace, endp.TLSConfig); err != nil {
 				break
 			}
 		}
 
-		if err = store.AddOAuth2(ctx, pmNamespace, endp.OAuth2, objKey); err != nil {
-			break
-		}
-
-		smAuthKey := fmt.Sprintf("podMonitor/auth/%s/%s/%d", pmNamespace, pmName, i)
-		if err = store.AddSafeAuthorizationCredentials(ctx, pmNamespace, endp.Authorization, smAuthKey); err != nil {
+		if err = store.AddOAuth2(ctx, pmNamespace, endp.OAuth2); err != nil {
 			break
 		}
 	}
