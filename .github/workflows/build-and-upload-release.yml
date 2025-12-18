@@ -45,6 +45,10 @@ on:
         default: 'integration'
         type: string
 
+permissions:
+  id-token: write
+  contents: read
+  
 jobs:
   BuildAndUpload:
     uses: ./.github/workflows/build-and-upload.yml
