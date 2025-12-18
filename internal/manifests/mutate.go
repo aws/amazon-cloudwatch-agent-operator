@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ImmutableChangeErr = errors.New("immutable field change attempted")
+	ErrImmutableChange = errors.New("immutable field change attempted")
 )
 
 // MutateFuncFor returns a mutate function based on the
@@ -255,7 +255,7 @@ func mutateService(existing, desired *corev1.Service) error {
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+		return ErrImmutableChange
 	}
 	// Daemonset selector is immutable so we set this value only if
 	// a new object is going to be created
@@ -271,7 +271,7 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+		return ErrImmutableChange
 	}
 	// Deployment selector is immutable so we set this value only if
 	// a new object is going to be created
@@ -290,7 +290,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
-		return fmt.Errorf("%s is being changed, %w", field, ImmutableChangeErr)
+		return fmt.Errorf("%s is being changed, %w", field, ErrImmutableChange)
 	}
 	// StatefulSet selector is immutable so we set this value only if
 	// a new object is going to be created

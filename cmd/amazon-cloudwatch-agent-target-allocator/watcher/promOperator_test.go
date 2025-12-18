@@ -280,7 +280,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 5 * time.Millisecond
 
 	w := getTestPrometheusCRWatcher(t, nil, nil)
-	defer w.Close()
+	defer func() { _ = w.Close() }()
 	w.eventInterval = eventInterval
 
 	go func() {

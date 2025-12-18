@@ -312,7 +312,7 @@ func TestAutoAnnotationForManualAnnotationRemoval(t *testing.T) {
 	}
 
 	//Removing all annotations
-	deployment.ObjectMeta.Annotations = nil
+	deployment.Annotations = nil
 	_, err = clientSet.AppsV1().Deployments(uniqueNamespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
 		fmt.Printf("Error updating deployment: %v\n", err)

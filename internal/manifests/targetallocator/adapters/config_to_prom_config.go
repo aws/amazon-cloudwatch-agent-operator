@@ -247,7 +247,7 @@ func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabl
 		_, targetAllocatorExists := config["target_allocator"]
 
 		// otherwise, either the target_allocator or config section needs to be here
-		if !(promConfigExists || targetAllocatorExists) {
+		if !promConfigExists && !targetAllocatorExists {
 			return errors.New("either target allocator or prometheus config needs to be present")
 		}
 

@@ -177,8 +177,8 @@ func checkNameSpaceAnnotations(t *testing.T, clientSet *kubernetes.Clientset, ex
 		}
 
 		for _, annotation := range expectedAnnotations {
-			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", ns.ObjectMeta.Annotations, ns.Status, ns.Name)
-			if ns.ObjectMeta.Annotations[annotation] != "true" {
+			fmt.Printf("\n This is the annotation: %v and its status %v, namespace name: %v, \n", ns.Annotations, ns.Status, ns.Name)
+			if ns.Annotations[annotation] != "true" {
 				time.Sleep(timeBetweenRetries)
 				correct = false
 				break

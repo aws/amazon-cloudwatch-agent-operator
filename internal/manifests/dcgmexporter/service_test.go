@@ -55,7 +55,7 @@ func TestDesiredDcgmService(t *testing.T) {
 
 		actual, err := Service(params)
 		assert.Nil(t, err)
-		assert.Equal(t, expected.ObjectMeta.Name, actual.ObjectMeta.Name)
+		assert.Equal(t, expected.Name, actual.Name)
 		assert.Equal(t, expected.Spec.Type, actual.Spec.Type)
 		assert.Equal(t, expected.Spec.InternalTrafficPolicy, actual.Spec.InternalTrafficPolicy)
 		assert.Equal(t, expected.Spec.Ports, actual.Spec.Ports)
@@ -101,7 +101,7 @@ func TestDesiredDcgmService(t *testing.T) {
 
 		actual, err := Service(params)
 		assert.Nil(t, err)
-		assert.Equal(t, expected.ObjectMeta.Name, actual.ObjectMeta.Name)
+		assert.Equal(t, expected.Name, actual.Name)
 		assert.Equal(t, expected.Spec.Type, actual.Spec.Type)
 		assert.Equal(t, expected.Spec.InternalTrafficPolicy, actual.Spec.InternalTrafficPolicy)
 		assert.Equal(t, expected.Spec.Ports, actual.Spec.Ports)

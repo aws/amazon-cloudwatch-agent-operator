@@ -195,12 +195,14 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: goimports
-goimports:
-	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/goimports -w -local $(CW_AGENT_OPERATOR_IMPORT_PATH) || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports
+goimports: $(LOCALBIN)
+	@test -s $(LOCALBIN)/goimports || GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports@latest
+	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/goimports -w -local $(CW_AGENT_OPERATOR_IMPORT_PATH)
 
 .PHONY: impi
-impi:
-	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/impi --local $(CW_AGENT_OPERATOR_IMPORT_PATH) --scheme stdThirdPartyLocal || GOBIN=$(LOCALBIN) go install github.com/pavius/impi/cmd/impi@v0.0.3
+impi: $(LOCALBIN)
+	@test -s $(LOCALBIN)/impi || GOBIN=$(LOCALBIN) go install github.com/pavius/impi/cmd/impi@v0.0.3
+	@echo $(ALL_SRC) | xargs -n 10 $(LOCALBIN)/impi --local $(CW_AGENT_OPERATOR_IMPORT_PATH) --scheme stdThirdPartyLocal
 	@echo "Check import order/grouping finished"
 
 .PHONY: lint
@@ -237,7 +239,10 @@ checklicense: install-addlicense
 
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+# 	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	#Install from source for golangci-lint is not recommended based on https://golangci-lint.run/usage/install/#install-from-source so using binary
+	#installation
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(LOCALBIN) v2.4.0
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.

@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/parser"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
@@ -61,7 +60,7 @@ func isScraperReceiver(name string) bool {
 	return exists
 }
 
-func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
+func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *corev1.ServicePort {
 	var endpoint interface{}
 	switch {
 	// tcplog and udplog receivers hold the endpoint
@@ -116,7 +115,7 @@ func portFromEndpoint(endpoint string) (int32, error) {
 	r := regexp.MustCompile(":[0-9]+")
 
 	if r.MatchString(endpoint) {
-		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
+		port, err = strconv.ParseInt(strings.ReplaceAll(r.FindString(endpoint), ":", ""), 10, 32)
 
 		if err != nil {
 			return 0, err

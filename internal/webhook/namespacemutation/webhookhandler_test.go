@@ -83,8 +83,8 @@ func TestHandle(t *testing.T) {
 			// verify
 			assert.Equal(t, testCase.allowed, res.Allowed)
 			if !testCase.allowed {
-				assert.NotNil(t, res.AdmissionResponse.Result)
-				assert.Equal(t, testCase.expected, res.AdmissionResponse.Result.Code)
+				assert.NotNil(t, res.Result)
+				assert.Equal(t, testCase.expected, res.Result.Code)
 			}
 		})
 	}

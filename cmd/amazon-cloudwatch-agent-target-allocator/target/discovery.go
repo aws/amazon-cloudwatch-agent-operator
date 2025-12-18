@@ -140,6 +140,6 @@ func getScrapeConfigHash(jobToScrapeConfig map[string]*config.ScrapeConfig) (has
 			return nil, err
 		}
 	}
-	yamlEncoder.Close()
+	_ = yamlEncoder.Close()
 	return hash, err
 }
