@@ -46,10 +46,10 @@ func WaitForNewPodCreation(clientSet *kubernetes.Clientset, resource interface{}
 		})
 
 		for _, pod := range newPods.Items {
-			if pod.CreationTimestamp.Time.After(startTime) && pod.Status.Phase == v1.PodRunning {
+			if pod.CreationTimestamp.After(startTime) && pod.Status.Phase == v1.PodRunning {
 				fmt.Printf("Operator pod %s created after start time and is running\n", pod.Name)
 				return nil
-			} else if pod.CreationTimestamp.Time.After(startTime) {
+			} else if pod.CreationTimestamp.After(startTime) {
 				fmt.Printf("Operator pod %s created after start time but is not in running stage\n", pod.Name)
 			}
 		}

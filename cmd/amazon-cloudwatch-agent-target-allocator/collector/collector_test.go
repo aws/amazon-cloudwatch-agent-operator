@@ -159,20 +159,20 @@ func Test_closeChannel(t *testing.T) {
 	tests := []struct {
 		description    string
 		isCloseChannel bool
-		timeoutSeconds time.Duration
+		timeout        time.Duration
 	}{
 		{
 			// event is triggered by channel closing.
 			description:    "close_channel",
 			isCloseChannel: true,
 			// channel should be closed before this timeout occurs
-			timeoutSeconds: 10 * time.Second,
+			timeout: 10 * time.Second,
 		},
 		{
 			// event triggered by timeout.
 			description:    "watcher_timeout",
 			isCloseChannel: false,
-			timeoutSeconds: 0 * time.Second,
+			timeout:        0 * time.Second,
 		},
 	}
 
@@ -190,7 +190,7 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				ctx, cancel := context.WithTimeout(context.Background(), tc.timeoutSeconds)
+				ctx, cancel := context.WithTimeout(context.Background(), tc.timeout)
 				defer cancel()
 				if msg := runWatch(ctx, &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
 					terminated = true

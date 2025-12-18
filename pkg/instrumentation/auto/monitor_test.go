@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -690,9 +689,9 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				var config MonitorConfig = simpleConfig(true, true, none, none)
-				var k8sInterface kubernetes.Interface = clientset
-				var logger logr.Logger = testr.New(t)
+				config := simpleConfig(true, true, none, none)
+				k8sInterface := clientset
+				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 				updatedWorkload, err := wt.getWithClient(c, defaultNs, workload.GetName())
@@ -709,9 +708,9 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = simpleConfig(true, true, none, none)
-				var k8sInterface kubernetes.Interface = clientset
-				var logger logr.Logger = testr.New(t)
+				config := simpleConfig(true, true, none, none)
+				k8sInterface := clientset
+				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
@@ -732,9 +731,9 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(workload)
-				var config MonitorConfig = simpleConfig(true, false, none, none)
+				config := simpleConfig(true, false, none, none)
 				var k8sInterface kubernetes.Interface = clientset
-				var logger logr.Logger = testr.New(t)
+				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
@@ -752,9 +751,9 @@ func Test_OptOutByRemovingService(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = simpleConfig(true, false, none, none)
+				config := simpleConfig(true, false, none, none)
 				var k8sInterface kubernetes.Interface = clientset
-				var logger logr.Logger = testr.New(t)
+				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
@@ -783,9 +782,9 @@ func Test_OptOutByDisablingMonitorAllServices(t *testing.T) {
 
 				clientset := fake.NewSimpleClientset(service, workload)
 				c := fake2.NewFakeClient(service, workload)
-				var config MonitorConfig = simpleConfig(false, true, none, none)
+				config := simpleConfig(false, true, none, none)
 				var k8sInterface kubernetes.Interface = clientset
-				var logger logr.Logger = testr.New(t)
+				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
@@ -893,7 +892,7 @@ func Test_StartupRestartPods(t *testing.T) {
 	clientset := fake.NewSimpleClientset(objs...)
 	fakeClient := fake2.NewFakeClient(objs...)
 	var k8sInterface kubernetes.Interface = clientset
-	var logger logr.Logger = testr.New(t)
+	logger := testr.New(t)
 	m := NewMonitor(context.TODO(), config, k8sInterface, fakeClient, fakeClient, logger)
 	m.MutateAndPatchAll(context.TODO())
 	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})

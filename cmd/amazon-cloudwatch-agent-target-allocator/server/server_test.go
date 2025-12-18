@@ -1044,37 +1044,37 @@ func generateTestingCerts() (caBundlePath, caCertPath, caKeyPath, clientCertPath
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp CA cert file: %w", err)
 	}
-	defer caCertFile.Close()
+	defer func() { _ = caCertFile.Close() }()
 
 	caKeyFile, err := os.CreateTemp(tempDir, "ca-key-*.key")
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp CA key file: %w", err)
 	}
-	defer caKeyFile.Close()
+	defer func() { _ = caKeyFile.Close() }()
 
 	serverCertFile, err := os.CreateTemp(tempDir, "server-cert-*.crt")
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp server cert file: %w", err)
 	}
-	defer serverCertFile.Close()
+	defer func() { _ = serverCertFile.Close() }()
 
 	serverKeyFile, err := os.CreateTemp(tempDir, "server-key-*.key")
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp server key file: %w", err)
 	}
-	defer serverKeyFile.Close()
+	defer func() { _ = serverKeyFile.Close() }()
 
 	clientCertFile, err := os.CreateTemp(tempDir, "client-cert-*.crt")
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp client cert file: %w", err)
 	}
-	defer clientCertFile.Close()
+	defer func() { _ = clientCertFile.Close() }()
 
 	clientKeyFile, err := os.CreateTemp(tempDir, "client-key-*.key")
 	if err != nil {
 		return "", "", "", "", "", fmt.Errorf("error creating temp client key file: %w", err)
 	}
-	defer clientKeyFile.Close()
+	defer func() { _ = clientKeyFile.Close() }()
 
 	// Write the CA, server, and client certificates and keys to their respective files
 	caCertPEMBlock := &pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes}
@@ -1150,7 +1150,7 @@ func createMismatchedClientCert() (caPath string, tlsConfig *tls.Config, err err
 	if err != nil {
 		return "", nil, err
 	}
-	defer caFile.Close()
+	defer func() { _ = caFile.Close() }()
 	err = pem.Encode(caFile, &pem.Block{Type: "CERTIFICATE", Bytes: caBytes})
 	if err != nil {
 		return "", nil, err
@@ -1161,7 +1161,7 @@ func createMismatchedClientCert() (caPath string, tlsConfig *tls.Config, err err
 	if err != nil {
 		return "", nil, err
 	}
-	defer clientCertFile.Close()
+	defer func() { _ = clientCertFile.Close() }()
 	err = pem.Encode(clientCertFile, &pem.Block{Type: "CERTIFICATE", Bytes: clientCertBytes})
 	if err != nil {
 		return "", nil, err
@@ -1172,7 +1172,7 @@ func createMismatchedClientCert() (caPath string, tlsConfig *tls.Config, err err
 	if err != nil {
 		return "", nil, err
 	}
-	defer clientKeyFile.Close()
+	defer func() { _ = clientKeyFile.Close() }()
 	clientKeyBytes, err := x509.MarshalECPrivateKey(clientKey)
 	if err != nil {
 		return "", nil, err

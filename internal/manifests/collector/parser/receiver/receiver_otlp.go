@@ -100,10 +100,11 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 				ports = append(ports, protocol.defaultPorts...)
 			} else {
 				// infer protocol and appProtocol from protocol.name
-				if protocol.name == grpc {
+				switch protocol.name {
+				case grpc:
 					protocolPort.Protocol = corev1.ProtocolTCP
 					protocolPort.AppProtocol = &grpc
-				} else if protocol.name == http {
+				case http:
 					protocolPort.Protocol = corev1.ProtocolTCP
 					protocolPort.AppProtocol = &http
 				}

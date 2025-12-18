@@ -88,7 +88,7 @@ func reconcileDesiredObjectUIDs(ctx context.Context, kubeClient client.Client, l
 			op = result
 			return createOrUpdateErr
 		})
-		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
+		if crudErr != nil && errors.Is(crudErr, manifests.ErrImmutableChange) {
 			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
 			delErr := kubeClient.Delete(ctx, existing)
 			if delErr != nil {

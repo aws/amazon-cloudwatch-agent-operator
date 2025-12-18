@@ -112,15 +112,15 @@ func TestCreateInstrumentationAnnotator(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variables
 			if tt.envDisableAnnotation {
-				os.Setenv("DISABLE_AUTO_ANNOTATION", "true")
+				_ = os.Setenv("DISABLE_AUTO_ANNOTATION", "true")
 			} else {
-				os.Unsetenv("DISABLE_AUTO_ANNOTATION")
+				_ = os.Unsetenv("DISABLE_AUTO_ANNOTATION")
 			}
 
 			if tt.envDisableMonitor {
-				os.Setenv("DISABLE_AUTO_MONITOR", "true")
+				_ = os.Setenv("DISABLE_AUTO_MONITOR", "true")
 			} else {
-				os.Unsetenv("DISABLE_AUTO_MONITOR")
+				_ = os.Unsetenv("DISABLE_AUTO_MONITOR")
 			}
 
 			fakeClientset := fake.NewSimpleClientset()

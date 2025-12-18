@@ -85,13 +85,13 @@ func stringFlagOrEnv(p *string, name string, envName string, defaultValue string
 
 func setLangEnvVarsForResource(langStr string, resourceStr string, resource map[string]string) {
 	if cpu, ok := resource["cpu"]; ok {
-		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_CPU_"+resourceStr, cpu)
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_CPU_"+resourceStr, cpu)
 	}
 	if memory, ok := resource["memory"]; ok {
-		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_MEM_"+resourceStr, memory)
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_MEM_"+resourceStr, memory)
 	}
 	if enabled, ok := resource["enabled"]; ok {
-		os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_RUNTIME_ENABLED", enabled)
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_RUNTIME_ENABLED", enabled)
 	}
 }
 
@@ -173,10 +173,10 @@ func main() {
 	}
 
 	// set supported language instrumentation images in environment variable to be used for default instrumentation
-	os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
-	os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
-	os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
-	os.Setenv("AUTO_INSTRUMENTATION_NODEJS", autoInstrumentationNodeJS)
+	_ = os.Setenv("AUTO_INSTRUMENTATION_JAVA", autoInstrumentationJava)
+	_ = os.Setenv("AUTO_INSTRUMENTATION_PYTHON", autoInstrumentationPython)
+	_ = os.Setenv("AUTO_INSTRUMENTATION_DOTNET", autoInstrumentationDotNet)
+	_ = os.Setenv("AUTO_INSTRUMENTATION_NODEJS", autoInstrumentationNodeJS)
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
