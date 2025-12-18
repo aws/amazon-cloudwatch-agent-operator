@@ -64,9 +64,9 @@ jobs:
 
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '>1.25'
+          go-version: ">=1.25"
           cache: false
 
       - name: Configure AWS Credentials
@@ -156,9 +156,9 @@ jobs:
           repository: ${{inputs.repository}}
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '>1.25'
+          go-version: ">=1.25"
           cache: true
 
       - name: Configure AWS Credentials
@@ -283,9 +283,9 @@ jobs:
           repository: ${{inputs.repository}}
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '>1.25'
+          go-version: ">=1.25"
           cache: true
 
       - name: Configure AWS Credentials
