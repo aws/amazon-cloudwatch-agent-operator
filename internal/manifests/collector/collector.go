@@ -34,16 +34,24 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
-		manifests.Factory(Service),
-		manifests.Factory(HeadlessService),
-		manifests.Factory(MonitoringService),
 		manifests.Factory(Ingress),
 	}...)
+	if params.OtelCol.Spec.Service.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(Service))
+	}
+	if params.OtelCol.Spec.HeadlessService.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(HeadlessService))
+	}
+	if params.OtelCol.Spec.MonitoringService.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(MonitoringService))
+	}
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
 		} else {
-			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+			if params.OtelCol.Spec.Service.IsEnabled() {
+				manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+			}
 		}
 	}
 	for _, factory := range manifestFactories {

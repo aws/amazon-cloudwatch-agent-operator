@@ -211,6 +211,18 @@ type AmazonCloudWatchAgentSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+
+	// Service to override configuration of the generated Collector Service.
+	// +optional
+	Service ServiceSpec `json:"service,omitempty"`
+
+	// HeadlessService to override configuration of the generated Collector HeadlessService.
+	// +optional
+	HeadlessService ServiceSpec `json:"headlessService,omitempty"`
+
+	// MonitoringService to override configuration of the generated Collector MonitoringService.
+	// +optional
+	MonitoringService ServiceSpec `json:"monitoringService,omitempty"`
 }
 
 // AmazonCloudWatchAgentStatus defines the observed state of AmazonCloudWatchAgent.
@@ -258,6 +270,23 @@ type AmazonCloudWatchAgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []AmazonCloudWatchAgent `json:"items"`
+}
+
+type ServiceSpec struct {
+	// Enabled indicates whether the Service should be created.
+	// nil means not set (defaults to enabled for backward compatibility)
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Name to override the default Service name
+	// +optional
+	Name string `json:"name,omitempty"`
+}
+
+// IsEnabled returns true if the service should be created.
+// nil (not set) defaults to true for backward compatibility.
+func (s *ServiceSpec) IsEnabled() bool {
+	return s.Enabled == nil || *s.Enabled
 }
 
 func init() {
