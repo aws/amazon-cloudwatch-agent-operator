@@ -85,14 +85,22 @@ type collectD struct {
 	ServiceAddress string `json:"service_address,omitempty"`
 }
 
+// jmx is a presence-only type. The operator does not inspect JMX config contents,
+// it only checks != nil to decide whether to expose port 4314.
+// Custom UnmarshalJSON accepts both object and array forms since the agent
+// translator outputs JMX as an array.
+type jmx struct{}
+
+func (j *jmx) UnmarshalJSON([]byte) error {
+	return nil
+}
+
 type AppSignals struct {
 	TLS *TLS `json:"tls,omitempty"`
 }
 
 type emf struct {
 }
-
-type jmx struct{}
 
 type kubernetes struct {
 	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`

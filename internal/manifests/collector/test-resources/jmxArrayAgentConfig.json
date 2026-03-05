@@ -1,0 +1,10 @@
+{
+  "metrics": {
+    "metrics_collected": {
+      "jmx": [
+        {"endpoint": "localhost:8080", "jvm": {}},
+        {"endpoint": "localhost:8081", "kafka": {}}
+      ]
+    }
+  }
+}
