@@ -33,6 +33,7 @@ type Config struct {
 	autoInstrumentationJavaImage        string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	nodeExporterImage                   string
 	targetAllocatorImage                string
 	targetAllocatorConfigMapEntry       string
 	prometheusConfigMapEntry            string
@@ -68,6 +69,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		dcgmExporterImage:                   o.dcgmExporterImage,
 		neuronMonitorImage:                  o.neuronMonitorImage,
+		nodeExporterImage:                   o.nodeExporterImage,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
 		prometheusConfigMapEntry:            o.prometheusConfigMapEntry,
@@ -133,6 +135,11 @@ func (c *Config) DcgmExporterImage() string {
 // NeuronMonitorImage returns Neuron Monitor Exporter container image.
 func (c *Config) NeuronMonitorImage() string {
 	return c.neuronMonitorImage
+}
+
+// NodeExporterImage returns Node Exporter container image.
+func (c *Config) NodeExporterImage() string {
+	return c.nodeExporterImage
 }
 
 // TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.

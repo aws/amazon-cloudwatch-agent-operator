@@ -28,3 +28,8 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, "some-ta-config.yaml", cfg.TargetAllocatorConfigMapEntry())
 	assert.Equal(t, "some-prom-config.yaml", cfg.PrometheusConfigMapEntry())
 }
+
+func TestNodeExporterImageConfig(t *testing.T) {
+	cfg := config.New(config.WithNodeExporterImage("test-node-exporter-image"))
+	assert.Equal(t, "test-node-exporter-image", cfg.NodeExporterImage())
+}

@@ -30,6 +30,7 @@ type options struct {
 	otelCollectorConfigMapEntry         string
 	dcgmExporterImage                   string
 	neuronMonitorImage                  string
+	nodeExporterImage                   string
 	targetAllocatorImage                string
 	targetAllocatorConfigMapEntry       string
 	prometheusConfigMapEntry            string
@@ -123,6 +124,12 @@ func WithDcgmExporterImage(s string) Option {
 func WithNeuronMonitorImage(s string) Option {
 	return func(o *options) {
 		o.neuronMonitorImage = s
+	}
+}
+
+func WithNodeExporterImage(s string) Option {
+	return func(o *options) {
+		o.nodeExporterImage = s
 	}
 }
 

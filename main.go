@@ -19,8 +19,10 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -52,6 +54,7 @@ const (
 	autoInstrumentationNodeJSImageRepository = "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs"
 	dcgmExporterImageRepository              = "nvcr.io/nvidia/k8s/dcgm-exporter"
 	neuronMonitorImageRepository             = "public.ecr.aws/neuron"
+	nodeExporterImageRepository              = "quay.io/prometheus/node-exporter"
 	targetAllocatorImageRepository           = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent-target-allocator"
 )
 
@@ -134,6 +137,7 @@ func main() {
 		tlsOpt                       tlsConfig
 		dcgmExporterImage            string
 		neuronMonitorImage           string
+		nodeExporterImage            string
 		targetAllocatorImage         string
 	)
 
@@ -150,6 +154,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&nodeExporterImage, "node-exporter-image", "RELATED_IMAGE_NODE_EXPORTER", fmt.Sprintf("%s:%s", nodeExporterImageRepository, v.NodeExporter), "The default Node Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("%s:%s", targetAllocatorImageRepository, v.TargetAllocator), "The default AmazonCloudWatchAgent target allocator image. This image is used when no image is specified in the CustomResource.")
 	pflag.Parse()
 
@@ -190,6 +195,7 @@ func main() {
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
+		"node-exporter", nodeExporterImage,
 		"amazon-cloudwatch-agent-target-allocator", targetAllocatorImage,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -207,6 +213,7 @@ func main() {
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithDcgmExporterImage(dcgmExporterImage),
 		config.WithNeuronMonitorImage(neuronMonitorImage),
+		config.WithNodeExporterImage(nodeExporterImage),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 	)
 
@@ -283,6 +290,21 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NeuronMonitor")
 		os.Exit(1)
+	}
+
+	if crdExists(ctrl.GetConfigOrDie(), "cloudwatch.aws.amazon.com/v1alpha1", "nodeexporters") {
+		if err = controllers.NewNodeExporterReconciler(controllers.Params{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("NodeExporter"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "NodeExporter")
+			os.Exit(1)
+		}
+	} else {
+		setupLog.Info("NodeExporter CRD not found, skipping controller registration")
 	}
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
@@ -381,4 +403,25 @@ func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
 		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
 	}
 	cfg.CipherSuites = cipherSuiteIDs
+}
+
+// crdExists checks whether a CRD is registered in the cluster by querying the API discovery endpoint.
+// groupVersion should be like "cloudwatch.aws.amazon.com/v1alpha1" and resource like "nodeexporters".
+func crdExists(restCfg *rest.Config, groupVersion string, resource string) bool {
+	disc, err := discovery.NewDiscoveryClientForConfig(restCfg)
+	if err != nil {
+		setupLog.Error(err, "failed to create discovery client")
+		return false
+	}
+	resources, err := disc.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		// group/version not registered at all
+		return false
+	}
+	for _, r := range resources.APIResources {
+		if r.Name == resource {
+			return true
+		}
+	}
+	return false
 }

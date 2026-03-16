@@ -22,5 +22,6 @@ type Params struct {
 	OtelCol   v1alpha1.AmazonCloudWatchAgent
 	DcgmExp   v1alpha1.DcgmExporter
 	NeuronExp v1alpha1.NeuronMonitor
+	NodeExp   v1alpha1.NodeExporter
 	Config    config.Config
 }

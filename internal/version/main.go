@@ -22,6 +22,7 @@ var (
 	autoInstrumentationGo          string
 	dcgmExporter                   string
 	neuronMonitor                  string
+	nodeExporter                   string
 	targetAllocator                string
 )
 
@@ -40,6 +41,7 @@ type Version struct {
 	AutoInstrumentationNginx       string `json:"auto-instrumentation-nginx"`
 	DcgmExporter                   string `json:"dcgm-exporter-version"`
 	NeuronMonitor                  string `json:"neuron-monitor-version"`
+	NodeExporter                   string `json:"node-exporter-version"`
 	TargetAllocator                string `json:"target-allocator-version"`
 }
 
@@ -59,13 +61,14 @@ func Get() Version {
 		AutoInstrumentationNginx:       AutoInstrumentationNginx(),
 		DcgmExporter:                   DcgmExporter(),
 		NeuronMonitor:                  NeuronMonitor(),
+		NodeExporter:                   NodeExporter(),
 		TargetAllocator:                TargetAllocator(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v', NeuronMonitor='%v', TargetAllocator='%v')",
+		"Version(Operator='%v', BuildDate='%v', AmazonCloudWatchAgent='%v', Go='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v', DcgmExporter='%v', NeuronMonitor='%v', NodeExporter='%v', TargetAllocator='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.AmazonCloudWatchAgent,
@@ -79,6 +82,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationNginx,
 		v.DcgmExporter,
 		v.NeuronMonitor,
+		v.NodeExporter,
 		v.TargetAllocator,
 	)
 }
@@ -155,6 +159,14 @@ func NeuronMonitor() string {
 	if len(neuronMonitor) > 0 {
 		// this should always be set, as it's specified during the build
 		return neuronMonitor
+	}
+	return "0.0.0"
+}
+
+func NodeExporter() string {
+	if len(nodeExporter) > 0 {
+		// this should always be set, as it's specified during the build
+		return nodeExporter
 	}
 	return "0.0.0"
 }

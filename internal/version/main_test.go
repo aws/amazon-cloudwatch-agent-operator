@@ -50,3 +50,14 @@ func TestAutoInstrumentationNodeJSFallbackVersion(t *testing.T) {
 func TestAutoInstrumentationPythonFallbackVersion(t *testing.T) {
 	assert.Equal(t, "0.0.0", AutoInstrumentationPython())
 }
+
+func TestNodeExporterFallbackVersion(t *testing.T) {
+	assert.Equal(t, "0.0.0", NodeExporter())
+}
+
+func TestNodeExporterVersionFromBuild(t *testing.T) {
+	nodeExporter = "1.9.0"
+	defer func() { nodeExporter = "" }()
+	assert.Equal(t, "1.9.0", NodeExporter())
+	assert.Contains(t, Get().String(), "1.9.0")
+}
