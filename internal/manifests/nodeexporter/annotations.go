@@ -18,7 +18,7 @@ func Annotations(instance v1alpha1.NodeExporter) map[string]string {
 	annotations["k8s-app"] = ComponentNodeExporter
 
 	// allow override of prometheus annotations
-	if nil != instance.Annotations {
+	if instance.Annotations != nil {
 		for k, v := range instance.Annotations {
 			annotations[k] = v
 		}

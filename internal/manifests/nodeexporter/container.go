@@ -25,10 +25,10 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NodeExpo
 		image = cfg.NodeExporterImage()
 	}
 
-	// Default args for node-exporter
-	argsMap := exporter.Spec.Args
-	if argsMap == nil {
-		argsMap = map[string]string{}
+	// Default args for node-exporter; copy to avoid mutating the spec
+	argsMap := make(map[string]string, len(exporter.Spec.Args))
+	for k, v := range exporter.Spec.Args {
+		argsMap[k] = v
 	}
 	if _, ok := argsMap["path.rootfs"]; !ok {
 		argsMap["path.rootfs"] = "/host/root"
@@ -47,17 +47,12 @@ func Container(cfg config.Config, logger logr.Logger, exporter v1alpha1.NodeExpo
 		argsMap["web.config.file"] = fmt.Sprintf("%s/%s", configmapMountPath, NodeExporterWebConfigYaml)
 	}
 
-	// defines the output (sorted) array for final output
+	// ensure args are sorted so reconcile is not fooled by different map iteration ordering
 	var args []string
-	// ensure that the args are ordered when moved to container.Args,
-	// where iterating over a map does not guarantee, so that reconcile will not be fooled by different
-	// ordering in args.
-	var sortedArgs []string
 	for k, v := range argsMap {
-		sortedArgs = append(sortedArgs, fmt.Sprintf("--%s=%s", k, v))
+		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-	sort.Strings(sortedArgs)
-	args = append(args, sortedArgs...)
+	sort.Strings(args)
 
 	// Ports: 9100 with hostPort
 	ports := []corev1.ContainerPort{{

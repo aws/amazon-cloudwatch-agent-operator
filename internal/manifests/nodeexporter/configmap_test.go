@@ -62,8 +62,8 @@ func getParams() manifests.Params {
 		Config: config.New(config.WithNodeExporterImage("default-exporter")),
 		NodeExp: v1alpha1.NodeExporter{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "cloudwatch.aws.amazon.com",
-				APIVersion: "v1",
+				Kind:       "NodeExporter",
+				APIVersion: "cloudwatch.aws.amazon.com/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",

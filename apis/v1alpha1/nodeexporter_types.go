@@ -14,7 +14,6 @@ type NodeExporterSpec struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// NodeSelector to schedule Node Exporter pods.
-	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Args is the set of arguments to pass to the Node Exporter binary
@@ -41,7 +40,6 @@ type NodeExporterSpec struct {
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
 	// Toleration to schedule Node Exporter pods.
-	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Volumes represents which volumes to use in the underlying collector deployment(s).
@@ -96,12 +94,10 @@ type NodeExporterStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=nodeexp;nodeexps
 // +kubebuilder:subresource:status
-// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="Node Exporter Version"
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
-// +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
 // +operator-sdk:csv:customresourcedefinitions:displayName="Node Exporter"
 // This annotation provides a hint for OLM which resources are managed by NodeExporter kind.
 // It's not mandatory to list all resources.
