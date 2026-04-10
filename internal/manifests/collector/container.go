@@ -104,6 +104,8 @@ func Container(cfg config.Config, logger logr.Logger, agent v1alpha1.AmazonCloud
 			logger.Info("extensions not configured, skipping liveness probe creation")
 		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
 			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoService) {
+			logger.Info("no service in otel config, skipping liveness probe creation")
 		} else {
 			logger.Error(err, "cannot create liveness probe.")
 		}
