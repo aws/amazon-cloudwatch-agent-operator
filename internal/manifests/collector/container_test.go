@@ -216,3 +216,21 @@ service:
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
 }
+
+func TestContainerProbeNoService(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.AmazonCloudWatchAgent{
+		Spec: v1alpha1.AmazonCloudWatchAgentSpec{
+			OtelConfig: `extensions:
+  health_check:`,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Nil(t, c.LivenessProbe)
+	assert.NotEmpty(t, c.Name)
+}

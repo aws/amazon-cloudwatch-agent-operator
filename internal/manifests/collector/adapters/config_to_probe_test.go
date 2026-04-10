@@ -159,7 +159,7 @@ service: [hi]`,
 			desc: "NoService",
 			config: `extensions:
   health_check:`,
-			expectedErr: errNoService,
+			expectedErr: ErrNoService,
 		},
 	}
 
