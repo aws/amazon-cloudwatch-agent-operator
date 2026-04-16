@@ -1,4 +1,12 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.4.0 (2026-04-16)
+========================================================================
+Enhancements:
+* Handle no service error gracefully with OTel config
+* Add server port 4311 to cloudwatch-agent service by default
+* Go.mod dependency upgrades
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.3.3 (2026-03-23)
 ========================================================================
 Enhancements:
