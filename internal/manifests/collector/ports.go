@@ -126,7 +126,6 @@ func getContainerPorts(logger logr.Logger, cfg string, otelCfg string, specPorts
 func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaConfig) []corev1.ServicePort {
 	servicePortsMap := make(map[int32][]corev1.ServicePort)
 
-	getReceiverServicePort(logger, "", Server, corev1.ProtocolTCP, servicePortsMap)
 	getApplicationSignalsReceiversServicePorts(logger, config, servicePortsMap)
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
 	getLogsReceiversServicePorts(logger, config, servicePortsMap)
@@ -291,6 +290,7 @@ func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adap
 	if isAppSignalEnabledMetrics(config) || isAppSignalEnabledTraces(config) {
 		getReceiverServicePort(logger, "", AppSignalsGrpc, corev1.ProtocolTCP, servicePortsMap)
 		getReceiverServicePort(logger, "", AppSignalsHttp, corev1.ProtocolTCP, servicePortsMap)
+		getReceiverServicePort(logger, "", Server, corev1.ProtocolTCP, servicePortsMap)
 	}
 
 	if isAppSignalEnabledTraces(config) {

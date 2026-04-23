@@ -19,12 +19,6 @@ var metricContainerPort = corev1.ContainerPort{
 	Protocol:      corev1.ProtocolTCP,
 }
 
-var serverContainerPort = corev1.ContainerPort{
-	Name:          Server,
-	ContainerPort: 4311,
-	Protocol:      corev1.ProtocolTCP,
-}
-
 var emfContainerPort = []corev1.ContainerPort{
 	{
 		Name:          "emf-tcp",
@@ -90,7 +84,7 @@ service:
 			description:   "bad otel spec config",
 			specConfig:    "🦄",
 			specPorts:     nil,
-			expectedPorts: append(emfContainerPort, serverContainerPort),
+			expectedPorts: emfContainerPort,
 		},
 		{
 			description: "couldn't build ports from spec config",
@@ -102,13 +96,13 @@ service:
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
-			expectedPorts: append(emfContainerPort, serverContainerPort, metricContainerPort),
+			expectedPorts: append(emfContainerPort, metricContainerPort),
 		},
 		{
 			description: "ports in spec Config",
 			specConfig:  goodOtelConfig,
 			specPorts:   nil,
-			expectedPorts: append(emfContainerPort, serverContainerPort, corev1.ContainerPort{
+			expectedPorts: append(emfContainerPort, corev1.ContainerPort{
 				Name:          "examplereceiver",
 				ContainerPort: 12345,
 			}),
