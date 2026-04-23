@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   java-eks-e2e-test:
-    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-eks-test.yml@ce5d8f4a86568cc48c386fc156d56bc35b79ab33
+    uses: aws-observability/aws-application-signals-test-framework/.github/workflows/java-eks-test.yml@a4de9f9a4992e1f50f4d320c6bd670c9215a78a2
     secrets: inherit
     with:
       aws-region: us-east-1
