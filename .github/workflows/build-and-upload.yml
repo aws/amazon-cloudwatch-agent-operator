@@ -240,7 +240,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   push-release-ecr:
-    if: ${{ inputs.release }}
+    if: ${{ inputs.release && (needs.e2e-test.result == 'success' || needs.e2e-test.result == 'skipped') && needs.CreateManifest.result == 'success' && needs.MakeTABinary.result == 'success' }}
     needs: [ MakeTABinary, e2e-test, CreateManifest ]
     permissions:
       id-token: write
@@ -260,14 +260,19 @@ jobs:
 
       - name: Login to ECR
         id: login-ecr
-        if: steps.cached_binaries.outputs.cache-hit == false
         uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896 # v2.1.1
 
-      - name: Push image to release ECR
+      - name: Push operator image to release ECR
         run: |
           docker buildx imagetools create \
           -t ${{ env.ECR_OPERATOR_RELEASE_IMAGE }} \
           ${{ env.ECR_OPERATOR_STAGING_REPO }}:${{ inputs.tag }}
+
+      - name: Push target allocator image to release ECR
+        run: |
+          docker buildx imagetools create \
+          -t ${{ env.ECR_TARGET_ALLOCATOR_RELEASE_REPO }} \
+          ${{ env.ECR_TARGET_ALLOCATOR_STAGING_REPO }}:${{ inputs.tag }}
 
   CreateManifest:
     needs: [ MakeBinary, MakeTABinary ]
