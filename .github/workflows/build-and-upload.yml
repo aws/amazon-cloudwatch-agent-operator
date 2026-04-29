@@ -240,7 +240,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   push-release-ecr:
-    if: ${{ inputs.release && (needs.e2e-test.result == 'success' || needs.e2e-test.result == 'skipped') && needs.CreateManifest.result == 'success' && needs.MakeTABinary.result == 'success' }}
+    if: ${{ always() && inputs.release && (needs.e2e-test.result == 'success' || needs.e2e-test.result == 'skipped') && needs.CreateManifest.result == 'success' && needs.MakeTABinary.result == 'success' }}
     needs: [ MakeTABinary, e2e-test, CreateManifest ]
     permissions:
       id-token: write
