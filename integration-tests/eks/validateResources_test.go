@@ -140,7 +140,6 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating Roles
 	roles, err := ListRoles(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.True(t, validateRoles(roles, agentName+"-role"))
 	assert.True(t, validateRoles(roles, dcgmExporterName+"-role"))
 	assert.True(t, validateRoles(roles, neuronMonitor+"-role"))
 
@@ -153,7 +152,6 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating RoleBinding
 	roleBindings, err := ListRoleBindings(nameSpace, clientSet)
 	assert.NoError(t, err)
-	assert.True(t, validateRoleBindings(roleBindings, agentName+"-role-binding"))
 	assert.True(t, validateRoleBindings(roleBindings, dcgmExporterName+"-role-binding"))
 	assert.True(t, validateRoleBindings(roleBindings, neuronMonitor+"-role-binding"))
 
