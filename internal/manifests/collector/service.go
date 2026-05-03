@@ -29,7 +29,10 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 		return h, err
 	}
 
-	h.Name = naming.HeadlessService(params.OtelCol.Name)
+	h.Name = params.OtelCol.Spec.HeadlessService.Name
+	if h.Name == "" {
+		h.Name = naming.HeadlessService(params.OtelCol.Name)
+	}
 	h.Labels[headlessLabel] = headlessExists
 
 	// copy to avoid modifying params.OtelCol.Annotations
@@ -46,7 +49,10 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
-	name := naming.MonitoringService(params.OtelCol.Name)
+	name := params.OtelCol.Spec.MonitoringService.Name
+	if name == "" {
+		name = naming.MonitoringService(params.OtelCol.Name)
+	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
@@ -79,7 +85,10 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func Service(params manifests.Params) (*corev1.Service, error) {
-	name := naming.Service(params.OtelCol.Name)
+	name := params.OtelCol.Spec.Service.Name
+	if name == "" {
+		name = naming.Service(params.OtelCol.Name)
+	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentAmazonCloudWatchAgent, []string{})
 
 	ports := getContainerPorts(params.Log, params.OtelCol.Spec.Config, params.OtelCol.Spec.OtelConfig, params.OtelCol.Spec.Ports)
@@ -98,7 +107,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Service(params.OtelCol.Name),
+			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: params.OtelCol.Annotations,
