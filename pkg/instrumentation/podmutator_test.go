@@ -220,7 +220,8 @@ func TestMutatePod(t *testing.T) {
 								Name:      javaVolumeName,
 								MountPath: javaInstrMountPath,
 							}},
-							Resources: testResourceRequirements,
+							Resources:       testResourceRequirements,
+							SecurityContext: restrictedSecurityContext,
 						},
 					},
 					Containers: []corev1.Container{
@@ -408,7 +409,8 @@ func TestMutatePod(t *testing.T) {
 								Name:      javaVolumeName,
 								MountPath: javaInstrMountPath,
 							}},
-							Resources: testResourceRequirements,
+							Resources:       testResourceRequirements,
+							SecurityContext: restrictedSecurityContext,
 						},
 					},
 					Containers: []corev1.Container{
@@ -3407,6 +3409,7 @@ func TestMutatePod(t *testing.T) {
 								Name:      javaVolumeName,
 								MountPath: javaInstrMountPath,
 							}},
+							SecurityContext: restrictedSecurityContext,
 						},
 						{
 							Name:    nodejsInitContainerName,
@@ -4065,6 +4068,7 @@ func TestMutatePod(t *testing.T) {
 								Name:      javaVolumeName,
 								MountPath: javaInstrMountPath,
 							}},
+							SecurityContext: restrictedSecurityContext,
 						},
 						{
 							Name:    nodejsInitContainerName,
