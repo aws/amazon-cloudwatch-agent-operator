@@ -16,7 +16,8 @@ const (
 	// - neuron-monitor-service
 	// - kube-state-metrics
 	// - cloudwatch-agent-cluster-scraper-monitoring
-	serviceCountLinux = 8
+	// - node-exporter-service
+	serviceCountLinux = 9
 
 	// Services count on Windows:
 	// - cloudwatch-agent-windows
