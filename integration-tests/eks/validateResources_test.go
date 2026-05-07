@@ -25,22 +25,25 @@ import (
 )
 
 const (
-	nameSpace                         = "amazon-cloudwatch"
-	addOnName                         = "amazon-cloudwatch-observability"
-	agentName                         = "cloudwatch-agent"
-	agentNameWindows                  = "cloudwatch-agent-windows"
-	agentNameWindowsContainerInsights = "cloudwatch-agent-windows-container-insights"
-	operatorName                      = addOnName + "-controller-manager"
-	fluentBitName                     = "fluent-bit"
-	fluentBitNameWindows              = "fluent-bit-windows"
-	dcgmExporterName                  = "dcgm-exporter"
-	neuronMonitor                     = "neuron-monitor"
-	podNameRegex                      = "(" + agentName + "|" + agentNameWindows + "|" + agentNameWindowsContainerInsights + "|" + operatorName + "|" + fluentBitName + "|" + fluentBitNameWindows + ")-*"
-	serviceNameRegex                  = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + agentNameWindowsContainerInsights + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service|" + neuronMonitor + "-service"
+	nameSpace            = "amazon-cloudwatch"
+	addOnName            = "amazon-cloudwatch-observability"
+	agentName            = "cloudwatch-agent"
+	agentNameWindows     = "cloudwatch-agent-windows"
+	operatorName         = addOnName + "-controller-manager"
+	fluentBitName        = "fluent-bit"
+	fluentBitNameWindows = "fluent-bit-windows"
+	dcgmExporterName     = "dcgm-exporter"
+	neuronMonitor        = "neuron-monitor"
+	kubeStateMetricsName = "kube-state-metrics"
+	clusterScraperName   = "cloudwatch-agent-cluster-scraper"
+	nodeExporterName     = "node-exporter"
+	podNameRegex         = "(" + agentName + "|" + agentNameWindows + "|" + operatorName + "|" + fluentBitName + "|" + fluentBitNameWindows + "|" + kubeStateMetricsName + "|" + clusterScraperName + "|" + nodeExporterName + ")-*"
+	serviceNameRegex     = agentName + "(-headless|-monitoring)?|" + agentNameWindows + "(-headless|-monitoring)?|" + addOnName + "-webhook-service|" + dcgmExporterName + "-service|" + neuronMonitor + "-service|" + kubeStateMetricsName + "|" + clusterScraperName + "-monitoring|" + nodeExporterName + "-service"
+	daemonSetNameRegex   = agentName + "|" + agentNameWindows + "|" + fluentBitName + "|" + fluentBitNameWindows + "|" + dcgmExporterName + "|" + neuronMonitor + "|" + nodeExporterName
 )
 
 const (
-	deploymentCount = 1
+	deploymentCount = 3
 	podCount        = podCountLinux + podCountWindows
 	serviceCount    = serviceCountLinux + serviceCountWindows
 	daemonsetCount  = daemonsetCountLinux + daemonsetCountWindows
@@ -75,14 +78,8 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, pods.Items, podCount)
 	for _, pod := range pods.Items {
-		fmt.Println("pod name: " + pod.Name + " namespace:" + pod.Namespace)
+		t.Logf("pod name: %s namespace:%s", pod.Name, pod.Namespace)
 		assert.Contains(t, []v1.PodPhase{v1.PodRunning, v1.PodPending}, pod.Status.Phase)
-		// matches
-		// - cloudwatch-agent-*
-		// - cloudwatch-agent-windows-*
-		// - amazon-cloudwatch-observability-controller-manager-*
-		// - fluent-bit-*
-		// - fluent-bit-windows-*
 		if match, _ := regexp.MatchString(podNameRegex, pod.Name); !match {
 			assert.Fail(t, "Cluster Pods are not created correctly")
 		}
@@ -93,18 +90,7 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, services.Items, serviceCount)
 	for _, service := range services.Items {
-		fmt.Println("service name: " + service.Name + " namespace:" + service.Namespace)
-		// matches
-		// - amazon-cloudwatch-observability-webhook-service
-		// - cloudwatch-agent
-		// - cloudwatch-agent-headless
-		// - cloudwatch-agent-monitoring
-		// - cloudwatch-agent-windows
-		// - cloudwatch-agent-windows-headless
-		// - cloudwatch-agent-windows-monitoring
-		// - cloudwatch-agent-windows-container-insights-monitoring
-		// - dcgm-exporter-service
-		// - neuron-monitor-service
+		t.Logf("service name: %s namespace:%s", service.Name, service.Namespace)
 		if match, _ := regexp.MatchString(serviceNameRegex, service.Name); !match {
 			assert.Fail(t, "Cluster Service is not created correctly")
 		}
@@ -114,14 +100,12 @@ func TestOperatorOnEKs(t *testing.T) {
 	deployments, err := ListDeployments(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, deployment := range deployments.Items {
-		fmt.Println("deployment name: " + deployment.Name + " namespace:" + deployment.Namespace)
+		t.Logf("deployment name: %s namespace:%s", deployment.Name, deployment.Namespace)
 	}
 	assert.Len(t, deployments.Items, deploymentCount)
-	// matches
-	// - amazon-cloudwatch-observability-controller-manager
 	assert.Equal(t, addOnName+"-controller-manager", deployments.Items[0].Name)
 	for _, deploymentCondition := range deployments.Items[0].Status.Conditions {
-		fmt.Println("deployment condition type: " + deploymentCondition.Type)
+		t.Logf("deployment condition type: %v", deploymentCondition.Type)
 	}
 	assert.Equal(t, appsV1.DeploymentAvailable, deployments.Items[0].Status.Conditions[0].Type)
 
@@ -130,16 +114,8 @@ func TestOperatorOnEKs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, daemonSets.Items, daemonsetCount)
 	for _, daemonSet := range daemonSets.Items {
-		fmt.Println("daemonSet name: " + daemonSet.Name + " namespace:" + daemonSet.Namespace)
-		// matches
-		// - cloudwatch-agent
-		// - cloudwatch-agent-windows
-		// - cloudwatch-agent-windows-container-insights
-		// - fluent-bit
-		// - fluent-bit-windows
-		// - dcgm-exporter (this can be removed in the future)
-		// - neuron-monitor
-		if match, _ := regexp.MatchString(agentName+"|fluent-bit|dcgm-exporter|neuron-monitor", daemonSet.Name); !match {
+		t.Logf("daemonSet name: %s namespace:%s", daemonSet.Name, daemonSet.Namespace)
+		if match, _ := regexp.MatchString(daemonSetNameRegex, daemonSet.Name); !match {
 			assert.Fail(t, "DaemonSet is not created correctly")
 		}
 	}
@@ -148,13 +124,8 @@ func TestOperatorOnEKs(t *testing.T) {
 	serviceAccounts, err := ListServiceAccounts(nameSpace, clientSet)
 	assert.NoError(t, err)
 	for _, sa := range serviceAccounts.Items {
-		fmt.Println("serviceAccounts name: " + sa.Name + " namespace:" + sa.Namespace)
+		t.Logf("serviceAccounts name: %s namespace:%s", sa.Name, sa.Namespace)
 	}
-	// searches
-	// - amazon-cloudwatch-observability-controller-manager
-	// - cloudwatch-agent
-	// - dcgm-exporter-service-acct
-	// - neuron-monitor-service-acct
 	assert.True(t, validateServiceAccount(serviceAccounts, addOnName+"-controller-manager"))
 	assert.True(t, validateServiceAccount(serviceAccounts, agentName))
 	assert.True(t, validateServiceAccount(serviceAccounts, dcgmExporterName+"-service-acct"))
@@ -163,53 +134,45 @@ func TestOperatorOnEKs(t *testing.T) {
 	//Validating ClusterRoles
 	clusterRoles, err := ListClusterRoles(clientSet)
 	assert.NoError(t, err)
-	// searches
-	// - amazon-cloudwatch-observability-manager-role
-	// - cloudwatch-agent-role
 	assert.True(t, validateClusterRoles(clusterRoles, addOnName+"-manager-role"))
 	assert.True(t, validateClusterRoles(clusterRoles, agentName+"-role"))
 
 	//Validating Roles
 	roles, err := ListRoles(nameSpace, clientSet)
 	assert.NoError(t, err)
-	// searches
-	// - dcgm-exporter-role
-	// - neuron-monitor-role
 	assert.True(t, validateRoles(roles, dcgmExporterName+"-role"))
 	assert.True(t, validateRoles(roles, neuronMonitor+"-role"))
 
 	//Validating ClusterRoleBinding
 	clusterRoleBindings, err := ListClusterRoleBindings(clientSet)
 	assert.NoError(t, err)
-	// searches
-	// - amazon-cloudwatch-observability-manager-rolebinding
-	// - cloudwatch-agent-role-binding
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, addOnName+"-manager-rolebinding"))
 	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, agentName+"-role-binding"))
 
 	//Validating RoleBinding
 	roleBindings, err := ListRoleBindings(nameSpace, clientSet)
 	assert.NoError(t, err)
-	// searches
-	// - dcgm-exporter-role-binding
-	// - neuron-monitor-role-binding
 	assert.True(t, validateRoleBindings(roleBindings, dcgmExporterName+"-role-binding"))
 	assert.True(t, validateRoleBindings(roleBindings, neuronMonitor+"-role-binding"))
+
+	// Validating OTLP Container Insights RBAC
+	assert.True(t, validateServiceAccount(serviceAccounts, kubeStateMetricsName+"-service-acct"))
+	assert.True(t, validateServiceAccount(serviceAccounts, nodeExporterName+"-service-acct"))
+	assert.True(t, validateClusterRoles(clusterRoles, kubeStateMetricsName+"-cluster-role"))
+	assert.True(t, validateClusterRoleBindings(clusterRoleBindings, kubeStateMetricsName+"-cluster-role-binding"))
+	assert.True(t, validateRoles(roles, nodeExporterName+"-role"))
+	assert.True(t, validateRoleBindings(roleBindings, nodeExporterName+"-role-binding"))
 
 	//Validating MutatingWebhookConfiguration
 	mutatingWebhookConfigurations, err := ListMutatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Len(t, mutatingWebhookConfigurations.Items[0].Webhooks, 5)
-	// searches
-	// - amazon-cloudwatch-observability-mutating-webhook-configuration
 	assert.Equal(t, addOnName+"-mutating-webhook-configuration", mutatingWebhookConfigurations.Items[0].Name)
 
 	//Validating ValidatingWebhookConfiguration
 	validatingWebhookConfigurations, err := ListValidatingWebhookConfigurations(clientSet)
 	assert.NoError(t, err)
 	assert.Len(t, validatingWebhookConfigurations.Items[0].Webhooks, 4)
-	// searches
-	// - amazon-cloudwatch-observability-validating-webhook-configuration
 	assert.Equal(t, addOnName+"-validating-webhook-configuration", validatingWebhookConfigurations.Items[0].Name)
 }
 
