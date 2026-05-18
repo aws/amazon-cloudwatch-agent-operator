@@ -4,88 +4,24 @@
 package auto
 
 import (
-	"context"
-	"encoding/base64"
 	"strings"
-	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/go-logr/logr"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
-// languageDetector inspects container image configs from the registry to determine
-// the application runtime language. It reads ENV, CMD, and ENTRYPOINT from the
-// image manifest without pulling layers.
+// languageDetector determines the application runtime language from container
+// metadata available in the pod spec: image name, env vars, and command/args.
 type languageDetector struct {
-	logger   logr.Logger
-	keychain authn.Keychain
-	timeout  time.Duration
+	logger logr.Logger
 }
 
 func newLanguageDetector(logger logr.Logger) *languageDetector {
 	return &languageDetector{
-		logger:   logger,
-		keychain: authn.NewMultiKeychain(newECRKeychain(logger), authn.DefaultKeychain),
-		timeout:  5 * time.Second,
+		logger: logger,
 	}
-}
-
-// ecrKeychain uses the AWS SDK default credential chain (instance profile, IRSA, env vars)
-// to authenticate with Amazon ECR. This is the same credential chain customers configure
-// via aws configure / IAM roles when setting up EKS.
-type ecrKeychain struct {
-	logger logr.Logger
-}
-
-func newECRKeychain(logger logr.Logger) *ecrKeychain {
-	return &ecrKeychain{logger: logger}
-}
-
-func (k *ecrKeychain) Resolve(resource authn.Resource) (authn.Authenticator, error) {
-	registry := resource.RegistryStr()
-	if !strings.Contains(registry, ".dkr.ecr.") || !strings.Contains(registry, ".amazonaws.com") {
-		return authn.Anonymous, nil
-	}
-
-	sess, err := session.NewSession()
-	if err != nil {
-		k.logger.V(2).Info("could not create AWS session for ECR auth", "error", err)
-		return authn.Anonymous, nil
-	}
-
-	svc := ecr.New(sess)
-	result, err := svc.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
-	if err != nil {
-		k.logger.V(2).Info("could not get ECR authorization token", "error", err)
-		return authn.Anonymous, nil
-	}
-
-	if len(result.AuthorizationData) == 0 {
-		return authn.Anonymous, nil
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)
-	if err != nil {
-		return authn.Anonymous, nil
-	}
-
-	parts := strings.SplitN(string(decoded), ":", 2)
-	if len(parts) != 2 {
-		return authn.Anonymous, nil
-	}
-
-	return authn.FromConfig(authn.AuthConfig{
-		Username: parts[0],
-		Password: parts[1],
-	}), nil
 }
 
 // detectLanguages inspects all containers in a pod template and returns the set of
@@ -104,22 +40,12 @@ func (d *languageDetector) detectLanguages(podSpec *corev1.PodTemplateSpec) inst
 	return detected
 }
 
-// detectContainer fetches the image config from the registry and inspects it.
-// Falls back to pod-spec-only detection if the registry fetch fails.
+// detectContainer determines the language from pod-spec metadata only:
+// image name patterns, env vars, and command/args.
 func (d *languageDetector) detectContainer(container corev1.Container) instrumentation.Type {
-	// Try fetching real image config from registry
-	if cfg := d.fetchImageConfig(container.Image); cfg != nil {
-		if lang := d.detectFromConfig(cfg); lang != "" {
-			return lang
-		}
-	}
-
-	// Fallback: check image name for language patterns (handles private registries where config fetch fails)
 	if lang := d.detectFromImageName(container.Image); lang != "" {
 		return lang
 	}
-
-	// Fallback: check pod-spec-level env vars and commands
 	if lang := d.detectFromEnvVars(container.Env); lang != "" {
 		return lang
 	}
@@ -130,7 +56,6 @@ func (d *languageDetector) detectContainer(container corev1.Container) instrumen
 }
 
 // detectFromImageName checks the container image reference string for language indicators.
-// This is a heuristic fallback for when registry config fetch is not available.
 func (d *languageDetector) detectFromImageName(image string) instrumentation.Type {
 	lower := strings.ToLower(image)
 
@@ -181,73 +106,6 @@ func (d *languageDetector) detectFromImageName(image string) instrumentation.Typ
 	return ""
 }
 
-// fetchImageConfig retrieves the image config (ENV, CMD, ENTRYPOINT, Labels) from the
-// registry. Only fetches the manifest and config blob — no layer data is downloaded.
-func (d *languageDetector) fetchImageConfig(imageRef string) *v1.Config {
-	ref, err := name.ParseReference(imageRef)
-	if err != nil {
-		d.logger.V(2).Info("could not parse image reference", "image", imageRef, "error", err)
-		return nil
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), d.timeout)
-	defer cancel()
-
-	desc, err := remote.Get(ref,
-		remote.WithAuthFromKeychain(d.keychain),
-		remote.WithContext(ctx),
-	)
-	if err != nil {
-		d.logger.V(2).Info("could not fetch image descriptor", "image", imageRef, "error", err)
-		return nil
-	}
-
-	img, err := desc.Image()
-	if err != nil {
-		d.logger.V(2).Info("could not get image from descriptor", "image", imageRef, "error", err)
-		return nil
-	}
-
-	cfgFile, err := img.ConfigFile()
-	if err != nil {
-		d.logger.V(2).Info("could not read image config", "image", imageRef, "error", err)
-		return nil
-	}
-
-	return &cfgFile.Config
-}
-
-// detectFromConfig inspects the image config's ENV, ENTRYPOINT, CMD, and Labels.
-func (d *languageDetector) detectFromConfig(cfg *v1.Config) instrumentation.Type {
-	// Check image-level environment variables
-	if lang := d.detectFromImageEnv(cfg.Env); lang != "" {
-		return lang
-	}
-
-	// Check ENTRYPOINT and CMD
-	if lang := d.detectFromCommand(cfg.Entrypoint, cfg.Cmd); lang != "" {
-		return lang
-	}
-
-	return ""
-}
-
-// detectFromImageEnv checks environment variables from the image config (string slice format: "KEY=VALUE").
-func (d *languageDetector) detectFromImageEnv(envVars []string) instrumentation.Type {
-	for _, env := range envVars {
-		parts := strings.SplitN(env, "=", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		envName := strings.ToUpper(parts[0])
-		envValue := strings.ToLower(parts[1])
-
-		if lang := d.classifyEnv(envName, envValue); lang != "" {
-			return lang
-		}
-	}
-	return ""
-}
 
 // detectFromEnvVars checks environment variables from the pod spec (corev1.EnvVar format).
 func (d *languageDetector) detectFromEnvVars(envVars []corev1.EnvVar) instrumentation.Type {

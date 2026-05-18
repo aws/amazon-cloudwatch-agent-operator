@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
@@ -15,233 +14,6 @@ import (
 
 func newTestDetector() *languageDetector {
 	return &languageDetector{logger: logr.Discard()}
-}
-
-func TestDetectFromConfig_JavaImages(t *testing.T) {
-	d := newTestDetector()
-
-	tests := []struct {
-		name string
-		cfg  *v1.Config
-	}{
-		{
-			"openjdk with JAVA_HOME",
-			&v1.Config{
-				Env: []string{"JAVA_HOME=/usr/lib/jvm/java-17-openjdk", "PATH=/usr/lib/jvm/java-17-openjdk/bin:/usr/bin"},
-				Cmd: []string{"java", "-jar", "app.jar"},
-			},
-		},
-		{
-			"corretto with JAVA_TOOL_OPTIONS",
-			&v1.Config{
-				Env:        []string{"JAVA_TOOL_OPTIONS=-javaagent:/opt/agent.jar", "JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto"},
-				Entrypoint: []string{"java"},
-				Cmd:        []string{"-jar", "/app/service.jar"},
-			},
-		},
-		{
-			"tomcat with CATALINA_HOME",
-			&v1.Config{
-				Env:        []string{"CATALINA_HOME=/opt/tomcat", "PATH=/opt/tomcat/bin:/usr/bin"},
-				Entrypoint: []string{"catalina.sh"},
-				Cmd:        []string{"run"},
-			},
-		},
-		{
-			"spring boot with JVM_OPTS",
-			&v1.Config{
-				Env: []string{"JVM_OPTS=-Xmx512m -Xms256m"},
-				Cmd: []string{"java", "-jar", "/app/spring-app.jar"},
-			},
-		},
-		{
-			"java detected from entrypoint only",
-			&v1.Config{
-				Entrypoint: []string{"java"},
-				Cmd:        []string{"-jar", "app.jar"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromConfig(tt.cfg)
-			if result != instrumentation.TypeJava {
-				t.Errorf("detectFromConfig() = %q, want %q", result, instrumentation.TypeJava)
-			}
-		})
-	}
-}
-
-func TestDetectFromConfig_PythonImages(t *testing.T) {
-	d := newTestDetector()
-
-	tests := []struct {
-		name string
-		cfg  *v1.Config
-	}{
-		{
-			"python official image",
-			&v1.Config{
-				Env:        []string{"PYTHONPATH=/usr/local/lib/python3.11", "PYTHON_VERSION=3.11.9", "PYTHONDONTWRITEBYTECODE=1"},
-				Entrypoint: []string{"python3"},
-			},
-		},
-		{
-			"django with DJANGO_SETTINGS_MODULE",
-			&v1.Config{
-				Env: []string{"DJANGO_SETTINGS_MODULE=myapp.settings", "PYTHONUNBUFFERED=1"},
-				Cmd: []string{"gunicorn", "myapp.wsgi:application"},
-			},
-		},
-		{
-			"flask app",
-			&v1.Config{
-				Env: []string{"FLASK_APP=app.py"},
-				Cmd: []string{"flask", "run", "--host=0.0.0.0"},
-			},
-		},
-		{
-			"uvicorn from command only",
-			&v1.Config{
-				Cmd: []string{"uvicorn", "main:app", "--host", "0.0.0.0"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromConfig(tt.cfg)
-			if result != instrumentation.TypePython {
-				t.Errorf("detectFromConfig() = %q, want %q", result, instrumentation.TypePython)
-			}
-		})
-	}
-}
-
-func TestDetectFromConfig_NodeImages(t *testing.T) {
-	d := newTestDetector()
-
-	tests := []struct {
-		name string
-		cfg  *v1.Config
-	}{
-		{
-			"node official image",
-			&v1.Config{
-				Env:        []string{"NODE_VERSION=20.11.0", "NODE_ENV=production"},
-				Entrypoint: []string{"docker-entrypoint.sh"},
-				Cmd:        []string{"node"},
-			},
-		},
-		{
-			"node with NODE_OPTIONS",
-			&v1.Config{
-				Env: []string{"NODE_OPTIONS=--max-old-space-size=4096"},
-				Cmd: []string{"node", "server.js"},
-			},
-		},
-		{
-			"npm start",
-			&v1.Config{
-				Env: []string{"NPM_CONFIG_PREFIX=/home/node/.npm-global"},
-				Cmd: []string{"npm", "start"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromConfig(tt.cfg)
-			if result != instrumentation.TypeNodeJS {
-				t.Errorf("detectFromConfig() = %q, want %q", result, instrumentation.TypeNodeJS)
-			}
-		})
-	}
-}
-
-func TestDetectFromConfig_DotNetImages(t *testing.T) {
-	d := newTestDetector()
-
-	tests := []struct {
-		name string
-		cfg  *v1.Config
-	}{
-		{
-			"aspnet runtime",
-			&v1.Config{
-				Env:        []string{"ASPNETCORE_URLS=http://+:8080", "DOTNET_RUNNING_IN_CONTAINER=true"},
-				Entrypoint: []string{"dotnet"},
-				Cmd:        []string{"MyApp.dll"},
-			},
-		},
-		{
-			"dotnet SDK",
-			&v1.Config{
-				Env: []string{"DOTNET_ROOT=/usr/share/dotnet", "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true"},
-				Cmd: []string{"dotnet", "run"},
-			},
-		},
-		{
-			"dotnet from entrypoint only",
-			&v1.Config{
-				Entrypoint: []string{"dotnet", "MyService.dll"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromConfig(tt.cfg)
-			if result != instrumentation.TypeDotNet {
-				t.Errorf("detectFromConfig() = %q, want %q", result, instrumentation.TypeDotNet)
-			}
-		})
-	}
-}
-
-func TestDetectFromConfig_NoDetection(t *testing.T) {
-	d := newTestDetector()
-
-	tests := []struct {
-		name string
-		cfg  *v1.Config
-	}{
-		{
-			"generic shell entrypoint",
-			&v1.Config{
-				Entrypoint: []string{"/bin/sh", "-c"},
-				Cmd:        []string{"exec /app/start"},
-			},
-		},
-		{
-			"nginx",
-			&v1.Config{
-				Env:        []string{"NGINX_VERSION=1.25.4", "PATH=/usr/sbin:/usr/bin"},
-				Entrypoint: []string{"/docker-entrypoint.sh"},
-				Cmd:        []string{"nginx", "-g", "daemon off;"},
-			},
-		},
-		{
-			"empty config",
-			&v1.Config{},
-		},
-		{
-			"only generic env vars",
-			&v1.Config{
-				Env: []string{"APP_PORT=8080", "LOG_LEVEL=info", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromConfig(tt.cfg)
-			if result != "" {
-				t.Errorf("detectFromConfig() = %q, want empty (no detection)", result)
-			}
-		})
-	}
 }
 
 func TestClassifyEnv(t *testing.T) {
@@ -392,31 +164,48 @@ func TestDetectFromEnvVars_PodSpec(t *testing.T) {
 	}
 }
 
-func TestDetectFromImageEnv(t *testing.T) {
+func TestDetectContainer(t *testing.T) {
 	d := newTestDetector()
 
 	tests := []struct {
-		name     string
-		env      []string
-		expected instrumentation.Type
+		name      string
+		container corev1.Container
+		expected  instrumentation.Type
 	}{
-		{"java home", []string{"JAVA_HOME=/usr/lib/jvm/java-17"}, instrumentation.TypeJava},
-		{"python version", []string{"PYTHONPATH=/usr/local/lib/python3.11"}, instrumentation.TypePython},
-		{"node version", []string{"NODE_VERSION=20.11.0"}, instrumentation.TypeNodeJS},
-		{"dotnet root", []string{"DOTNET_ROOT=/usr/share/dotnet"}, instrumentation.TypeDotNet},
-		{"multiple envs - java first", []string{"APP_PORT=8080", "JAVA_HOME=/usr/lib/jvm"}, instrumentation.TypeJava},
-		{"no signal", []string{"APP_PORT=8080", "LOG_LEVEL=info"}, ""},
-		{"PYTHON_VERSION from base image", []string{"PATH=/usr/local/bin:/usr/bin", "PYTHON_VERSION=3.11.15", "PYTHON_SHA256=abc123"}, instrumentation.TypePython},
-		{"NODE_VERSION from base image", []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/bin", "NODE_VERSION=20.20.2", "YARN_VERSION=1.22.22"}, instrumentation.TypeNodeJS},
-		{"malformed env", []string{"NOEQUALSSIGN"}, ""},
-		{"empty", []string{}, ""},
+		{
+			name:      "detected from image name",
+			container: corev1.Container{Image: "amazoncorretto:17"},
+			expected:  instrumentation.TypeJava,
+		},
+		{
+			name: "detected from env var",
+			container: corev1.Container{
+				Image: "123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:latest",
+				Env:   []corev1.EnvVar{{Name: "JAVA_HOME", Value: "/usr/lib/jvm/java-17"}},
+			},
+			expected: instrumentation.TypeJava,
+		},
+		{
+			name: "detected from command",
+			container: corev1.Container{
+				Image:   "123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:latest",
+				Command: []string{"python3"},
+				Args:    []string{"app.py"},
+			},
+			expected: instrumentation.TypePython,
+		},
+		{
+			name:      "opaque image, no signals",
+			container: corev1.Container{Image: "123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:latest"},
+			expected:  "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := d.detectFromImageEnv(tt.env)
+			result := d.detectContainer(tt.container)
 			if result != tt.expected {
-				t.Errorf("detectFromImageEnv() = %q, want %q", result, tt.expected)
+				t.Errorf("detectContainer() = %q, want %q", result, tt.expected)
 			}
 		})
 	}
