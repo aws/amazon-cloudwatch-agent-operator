@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -75,10 +76,12 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
+		// don't use filepath.Join here because we want to keep the dot at the end
+		apacheConfDirDestinationPath := apacheConfDir + string(filepath.Separator) + "."
 		cloneContainer := container.DeepCopy()
 		cloneContainer.Name = apacheAgentCloneContainerName
-		cloneContainer.Command = []string{"/bin/sh", "-c"}
-		cloneContainer.Args = []string{"cp -r " + apacheConfDir + "/* " + apacheAgentConfDirFull}
+		cloneContainer.Command = []string{"cp", "-r", apacheConfDirDestinationPath, apacheAgentConfDirFull}
+		cloneContainer.Args = nil
 		cloneContainer.VolumeMounts = append(cloneContainer.VolumeMounts, corev1.VolumeMount{
 			Name:      apacheAgentConfigVolume,
 			MountPath: apacheAgentConfDirFull,
@@ -136,18 +139,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Name:    apacheAgentInitContainerName,
 			Image:   apacheSpec.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args: []string{
-				// Copy agent binaries to shared volume
-				"cp -r /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
-					// setup logging configuration from template
-					"export agentLogDir=$(echo \"" + apacheAgentDirFull + "/logs\" | sed 's,/,\\\\/,g') && " +
-					"cat " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml &&" +
-					// Create agent configuration file by pasting content of env var to a file
-					"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
-					"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
-					// Include a link to include Apache agent configuration file into httpd.conf
-					"echo 'Include " + getApacheConfDir(apacheSpec.ConfigPath) + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
-			},
+			// User-controlled value is passed as a positional arg (read as $1
+			// in the script) so it is never parsed by the shell.
+			Args: []string{apacheHttpdAgentScript, "--", getApacheConfDir(apacheSpec.ConfigPath)},
 			Env: []corev1.EnvVar{
 				{
 					Name:  apacheAttributesEnvVar,

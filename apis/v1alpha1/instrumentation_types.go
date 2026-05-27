@@ -233,8 +233,10 @@ type ApacheHttpd struct {
 	Version string `json:"version,omitempty"`
 
 	// Location of Apache HTTPD server configuration.
-	// Needed only if different from default "/usr/local/apache2/conf"
+	// Needed only if different from default "/usr/local/apache2/conf".
 	// +optional
+	// +kubebuilder:validation:Pattern=`^[A-Za-z0-9._/-]*$`
+	// +kubebuilder:validation:MaxLength=256
 	ConfigPath string `json:"configPath,omitempty"`
 
 	// Resources describes the compute resource requirements.
@@ -265,8 +267,10 @@ type Nginx struct {
 	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
 
 	// Location of Nginx configuration file.
-	// Needed only if different from default "/etx/nginx/nginx.conf"
+	// Needed only if different from default "/etx/nginx/nginx.conf".
 	// +optional
+	// +kubebuilder:validation:Pattern=`^[A-Za-z0-9._/-]*$`
+	// +kubebuilder:validation:MaxLength=256
 	ConfigFile string `json:"configFile,omitempty"`
 
 	// Resources describes the compute resource requirements.
