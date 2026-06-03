@@ -952,10 +952,6 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 }
 
 func Test_getServiceEventsEnvs(t *testing.T) {
-	endpointEnvs := []corev1.EnvVar{
-		{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
-		{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
-	}
 	tests := []struct {
 		name string
 		// env maps the AUTO_INSTRUMENTATION_JAVA_* suffix to its value; absent keys stay unset so
@@ -966,21 +962,19 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 		want []corev1.EnvVar
 	}{
 		{
-			name: "unset toggles - only endpoints emitted",
+			name: "unset toggles - nothing emitted",
 			env:  map[string]string{},
-			want: endpointEnvs,
+			want: nil,
 		},
 		{
 			name: "enabled=false opt-out emitted",
 			env:  map[string]string{"SERVICE_EVENTS_ENABLED": "false"},
-			want: append(append([]corev1.EnvVar{}, endpointEnvs...),
-				corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "false"}),
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "false"}},
 		},
 		{
 			name: "profiler_enabled=false emitted on its own",
 			env:  map[string]string{"SERVICE_EVENTS_PROFILER_ENABLED": "false"},
-			want: append(append([]corev1.EnvVar{}, endpointEnvs...),
-				corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"}),
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"}},
 		},
 		{
 			name: "all toggles emitted when set",
@@ -989,10 +983,11 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 				"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "true",
 				"SERVICE_EVENTS_PROFILER_ENABLED":            "false",
 			},
-			want: append(append([]corev1.EnvVar{}, endpointEnvs...),
-				corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
-				corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"},
-				corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"}),
+			want: []corev1.EnvVar{
+				{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -1000,7 +995,7 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 			for suffix, v := range tt.env {
 				t.Setenv("AUTO_INSTRUMENTATION_JAVA_"+suffix, v)
 			}
-			got := getServiceEventsEnvs(java, "cloudwatch-agent.amazon-cloudwatch", http)
+			got := getServiceEventsEnvs(java)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getServiceEventsEnvs() got = %v, want %v", got, tt.want)
 			}
@@ -1009,11 +1004,11 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 }
 
 func Test_getDynamicInstrumentationEnvs(t *testing.T) {
+	// The API URL is always emitted; the ENABLED toggle is emit-when-set.
 	apiURLEnv := corev1.EnvVar{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"}
 	tests := []struct {
 		name string
 		// env maps the AUTO_INSTRUMENTATION_JAVA_* suffix to its value; absent keys stay unset.
-		// The API URL is always emitted; the ENABLED toggle is emit-when-set.
 		env  map[string]string
 		want []corev1.EnvVar
 	}{
