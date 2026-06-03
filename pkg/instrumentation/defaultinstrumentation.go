@@ -137,6 +137,33 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 	}, nil
 }
 
+func getServiceEventsEnvs(langStr, cloudwatchAgentServiceEndpoint, exporterPrefix string) []corev1.EnvVar {
+	envs := []corev1.EnvVar{
+		{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/logs", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+		{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/metrics", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+	}
+	if enabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_SERVICE_EVENTS_ENABLED"); ok {
+		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: enabled})
+	}
+	if functionInstrumentEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED"); ok {
+		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: functionInstrumentEnabled})
+	}
+	if profilerEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_SERVICE_EVENTS_PROFILER_ENABLED"); ok {
+		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: profilerEnabled})
+	}
+	return envs
+}
+
+func getDynamicInstrumentationEnvs(langStr, cloudwatchAgentServiceEndpoint string) []corev1.EnvVar {
+	envs := []corev1.EnvVar{
+		{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: fmt.Sprintf("%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
+	}
+	if enabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_DYNAMIC_INSTRUMENTATION_ENABLED"); ok {
+		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED", Value: enabled})
+	}
+	return envs
+}
+
 func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exporterPrefix string, additionalEnvs map[string]string) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
@@ -160,6 +187,8 @@ func getJavaEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, expor
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: isJavaRuntimeEnabled},
 		}
 		envs = append(envs, appSignalsEnvs...)
+		envs = append(envs, getServiceEventsEnvs(java, cloudwatchAgentServiceEndpoint, exporterPrefix)...)
+		envs = append(envs, getDynamicInstrumentationEnvs(java, cloudwatchAgentServiceEndpoint)...)
 	} else {
 		envs = append(envs, corev1.EnvVar{
 			Name: "OTEL_TRACES_EXPORTER", Value: "none",
@@ -201,6 +230,8 @@ func getPythonEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 			{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 		}
+		envs = append(envs, getServiceEventsEnvs(python, cloudwatchAgentServiceEndpoint, exporterPrefix)...)
+		envs = append(envs, getDynamicInstrumentationEnvs(python, cloudwatchAgentServiceEndpoint)...)
 	}
 	return envs
 }
@@ -244,6 +275,8 @@ func getNodeJSEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 			{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 		}
+		envs = append(envs, getServiceEventsEnvs(nodeJS, cloudwatchAgentServiceEndpoint, exporterPrefix)...)
+		envs = append(envs, getDynamicInstrumentationEnvs(nodeJS, cloudwatchAgentServiceEndpoint)...)
 	}
 	return envs
 }

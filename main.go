@@ -105,6 +105,30 @@ func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
 	if runtimeMetrics, ok := cfg["runtime_metrics"]; ok {
 		setLangEnvVarsForResource(langStr, "", runtimeMetrics)
 	}
+	if serviceEvents, ok := cfg["service_events"]; ok {
+		setLangEnvVarsForServiceEvents(langStr, serviceEvents)
+	}
+	if dynamicInstrumentation, ok := cfg["dynamic_instrumentation"]; ok {
+		setLangEnvVarsForDynamicInstrumentation(langStr, dynamicInstrumentation)
+	}
+}
+
+func setLangEnvVarsForServiceEvents(langStr string, cfg map[string]string) {
+	if enabled, ok := cfg["enabled"]; ok && enabled != "" {
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_SERVICE_EVENTS_ENABLED", enabled)
+	}
+	if functionInstrumentEnabled, ok := cfg["function_instrument_enabled"]; ok && functionInstrumentEnabled != "" {
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", functionInstrumentEnabled)
+	}
+	if profilerEnabled, ok := cfg["profiler_enabled"]; ok && profilerEnabled != "" {
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_SERVICE_EVENTS_PROFILER_ENABLED", profilerEnabled)
+	}
+}
+
+func setLangEnvVarsForDynamicInstrumentation(langStr string, cfg map[string]string) {
+	if enabled, ok := cfg["enabled"]; ok && enabled != "" {
+		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_DYNAMIC_INSTRUMENTATION_ENABLED", enabled)
+	}
 }
 
 func main() {
@@ -154,7 +178,7 @@ func main() {
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
-	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}, "runtime_metrics": {"enabled": "true"}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}, "runtime_metrics": {"enabled": "true"}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}, "runtime_metrics": {"enabled": "true"}}, "nodejs": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}}}
+	autoInstrumentationConfig := map[string]map[string]map[string]string{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}, "runtime_metrics": {"enabled": "true"}, "service_events": {}, "dynamic_instrumentation": {}}, "python": {"limits": {"cpu": "500m", "memory": "32Mi"}, "requests": {"cpu": "50m", "memory": "32Mi"}, "runtime_metrics": {"enabled": "true"}, "service_events": {}, "dynamic_instrumentation": {}}, "dotnet": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}, "runtime_metrics": {"enabled": "true"}}, "nodejs": {"limits": {"cpu": "500m", "memory": "128Mi"}, "requests": {"cpu": "50m", "memory": "128Mi"}, "service_events": {}, "dynamic_instrumentation": {}}}
 	err := json.Unmarshal([]byte(autoInstrumentationConfigStr), &autoInstrumentationConfig)
 	if err != nil {
 		setupLog.Info(fmt.Sprintf("Using default values: %v", autoInstrumentationConfig))
