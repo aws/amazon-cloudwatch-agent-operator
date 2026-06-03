@@ -977,16 +977,21 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"}},
 		},
 		{
+			name: "function_instrument_enabled=true emitted on its own",
+			env:  map[string]string{"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "true"},
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"}},
+		},
+		{
 			name: "all toggles emitted when set",
 			env: map[string]string{
 				"SERVICE_EVENTS_ENABLED":                     "true",
-				"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "true",
-				"SERVICE_EVENTS_PROFILER_ENABLED":            "false",
+				"SERVICE_EVENTS_PROFILER_ENABLED":            "true",
+				"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "false",
 			},
 			want: []corev1.EnvVar{
 				{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
-				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"},
-				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "true"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "false"},
 			},
 		},
 	}
