@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
@@ -55,7 +56,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "monitoring",
+						Port: ptr.To("monitoring"),
 					},
 				}, metricsEndpointsFromConfig(params.Log, params.OtelCol)...),
 		},
@@ -69,3 +70,4 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloud
 	metricsEndpoints := []monitoringv1.PodMetricsEndpoint{}
 	return metricsEndpoints
 }
+
