@@ -990,8 +990,8 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 			},
 			want: []corev1.EnvVar{
 				{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
-				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "true"},
 				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "false"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "true"},
 			},
 		},
 	}
