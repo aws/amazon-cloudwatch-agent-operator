@@ -5,10 +5,10 @@ package watcher
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -59,7 +60,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "test",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
+							Port: ptr.To("web"),
 						},
 					},
 				},
@@ -121,18 +122,24 @@ func TestLoadConfig(t *testing.T) {
 					Endpoints: []monitoringv1.Endpoint{
 						{
 							Port: "web",
-							BasicAuth: &monitoringv1.BasicAuth{
-								Username: v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "basic-auth",
+							HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+								HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+									HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+										BasicAuth: &monitoringv1.BasicAuth{
+											Username: v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "basic-auth",
+												},
+												Key: "username",
+											},
+											Password: v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "basic-auth",
+												},
+												Key: "password",
+											},
+										},
 									},
-									Key: "username",
-								},
-								Password: v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "basic-auth",
-									},
-									Key: "password",
 								},
 							},
 						},
@@ -188,14 +195,20 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "bearer",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
-							Authorization: &monitoringv1.SafeAuthorization{
-								Type: "Bearer",
-								Credentials: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "bearer",
+							Port: ptr.To("web"),
+							HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+								HTTPConfig: monitoringv1.HTTPConfig{
+									HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+										Authorization: &monitoringv1.SafeAuthorization{
+											Type: "Bearer",
+											Credentials: &v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "bearer",
+												},
+												Key: "token",
+											},
+										},
 									},
-									Key: "token",
 								},
 							},
 						},
@@ -393,7 +406,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true)
+	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom)
 	if err != nil {
 		t.Fatal(t, err)
 	}
