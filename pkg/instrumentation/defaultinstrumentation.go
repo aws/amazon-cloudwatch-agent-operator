@@ -275,7 +275,7 @@ func getNodeJSEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 	if isAppSignalsEnabled {
 		envs = []corev1.EnvVar{
 			{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", exporterPrefix, cloudwatchAgentServiceEndpoint)},
+			{Name: "OTEL_TRACES_SAMPLER_ARG", Value: fmt.Sprintf("endpoint=%s://%s:2000", http, cloudwatchAgentServiceEndpoint)},
 			{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 			{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 			{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: fmt.Sprintf("%s://%s:4316/v1/traces", exporterPrefix, cloudwatchAgentServiceEndpoint)},

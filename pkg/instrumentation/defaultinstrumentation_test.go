@@ -282,7 +282,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Image: defaultNodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
@@ -630,7 +630,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Image: defaultNodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
