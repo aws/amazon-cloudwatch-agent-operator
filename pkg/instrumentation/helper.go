@@ -6,13 +6,13 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
