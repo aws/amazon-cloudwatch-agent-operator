@@ -72,6 +72,9 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -100,6 +103,9 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -151,6 +157,9 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -195,6 +204,9 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -223,6 +235,9 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -267,13 +282,16 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 				Image: defaultNodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent.amazon-cloudwatch:2000"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -402,6 +420,9 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -430,6 +451,9 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -481,6 +505,9 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -525,6 +552,9 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"}, //TODO: remove in favor of new name once safe
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED", Value: "true"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -553,6 +583,9 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_PYTHON_DISTRO", Value: "aws_distro"},
 					{Name: "OTEL_PYTHON_CONFIGURATOR", Value: "aws_configurator"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -597,13 +630,16 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 				Image: defaultNodeJSInstrumentationImage,
 				Env: []corev1.EnvVar{
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_ENABLED", Value: "true"},
-					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
+					{Name: "OTEL_TRACES_SAMPLER_ARG", Value: "endpoint=http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 					{Name: "OTEL_TRACES_SAMPLER", Value: "xray"},
 					{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 					{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/traces"},
 					{Name: "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
 					{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 					{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
+					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
+					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -910,6 +946,101 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 			}
 			if !reflect.DeepEqual(got.Spec.Java.Env, tt.want.Spec.Java.Env) {
 				t.Errorf("getDefaultInstrumentation() Java environment vars got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getServiceEventsEnvs(t *testing.T) {
+	tests := []struct {
+		name string
+		// env maps the AUTO_INSTRUMENTATION_JAVA_* suffix to its value; absent keys stay unset so
+		// os.LookupEnv returns ok=false. getServiceEventsEnvs emits a toggle whenever its backing env
+		// var is present (the empty-value-means-unset guard lives in main.go's setLangEnvVars, covered
+		// in main_test.go); these cases exercise the present/absent contract of this function.
+		env  map[string]string
+		want []corev1.EnvVar
+	}{
+		{
+			name: "unset toggles - nothing emitted",
+			env:  map[string]string{},
+			want: nil,
+		},
+		{
+			name: "enabled=false opt-out emitted",
+			env:  map[string]string{"SERVICE_EVENTS_ENABLED": "false"},
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "false"}},
+		},
+		{
+			name: "profiler_enabled=false emitted on its own",
+			env:  map[string]string{"SERVICE_EVENTS_PROFILER_ENABLED": "false"},
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "false"}},
+		},
+		{
+			name: "function_instrument_enabled=true emitted on its own",
+			env:  map[string]string{"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "true"},
+			want: []corev1.EnvVar{{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"}},
+		},
+		{
+			name: "all toggles emitted when set",
+			env: map[string]string{
+				"SERVICE_EVENTS_ENABLED":                     "true",
+				"SERVICE_EVENTS_PROFILER_ENABLED":            "true",
+				"SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED": "false",
+			},
+			want: []corev1.EnvVar{
+				{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "false"},
+				{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: "true"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for suffix, v := range tt.env {
+				t.Setenv("AUTO_INSTRUMENTATION_JAVA_"+suffix, v)
+			}
+			got := getServiceEventsEnvs(java)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getServiceEventsEnvs() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getDynamicInstrumentationEnvs(t *testing.T) {
+	// The API URL is always emitted; the ENABLED toggle is emit-when-set.
+	apiURLEnv := corev1.EnvVar{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"}
+	tests := []struct {
+		name string
+		// env maps the AUTO_INSTRUMENTATION_JAVA_* suffix to its value; absent keys stay unset.
+		env  map[string]string
+		want []corev1.EnvVar
+	}{
+		{
+			name: "unset toggle - only API URL emitted",
+			env:  map[string]string{},
+			want: []corev1.EnvVar{apiURLEnv},
+		},
+		{
+			name: "enabled=true emitted",
+			env:  map[string]string{"DYNAMIC_INSTRUMENTATION_ENABLED": "true"},
+			want: []corev1.EnvVar{apiURLEnv, {Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED", Value: "true"}},
+		},
+		{
+			name: "enabled=false opt-out emitted",
+			env:  map[string]string{"DYNAMIC_INSTRUMENTATION_ENABLED": "false"},
+			want: []corev1.EnvVar{apiURLEnv, {Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED", Value: "false"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for suffix, v := range tt.env {
+				t.Setenv("AUTO_INSTRUMENTATION_JAVA_"+suffix, v)
+			}
+			got := getDynamicInstrumentationEnvs(java, "cloudwatch-agent.amazon-cloudwatch")
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getDynamicInstrumentationEnvs() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
