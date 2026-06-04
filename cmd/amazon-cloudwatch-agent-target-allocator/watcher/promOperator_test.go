@@ -356,7 +356,7 @@ func TestRateLimit(t *testing.T) {
 // getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
 func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
-	mClient := fakemonitoringclient.NewSimpleClientset()
+	mClient := fakemonitoringclient.NewSimpleClientset() //nolint:staticcheck // NewClientset causes structured merge diff schema errors in tests
 	if sm != nil {
 		_, err := mClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), sm, metav1.CreateOptions{})
 		if err != nil {
