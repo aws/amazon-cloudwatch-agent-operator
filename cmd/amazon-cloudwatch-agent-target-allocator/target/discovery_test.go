@@ -52,7 +52,10 @@ func TestDiscovery(t *testing.T) {
 	}
 	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
+	reg := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	require.NoError(t, err)
+	d := discovery.NewManager(ctx, slog.Default(), reg, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	defer func() { manager.Close() }()

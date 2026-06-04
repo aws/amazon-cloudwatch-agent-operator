@@ -77,7 +77,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -164,7 +164,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -265,7 +265,7 @@ func TestLoadConfig(t *testing.T) {
 			}
 
 			got, err := w.LoadConfig(context.Background())
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 			assert.Equal(t, tt.want.ScrapeConfigs, got.ScrapeConfigs)
@@ -356,7 +356,7 @@ func TestRateLimit(t *testing.T) {
 // getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
 func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
-	mClient := fakemonitoringclient.NewClientset()
+	mClient := fakemonitoringclient.NewSimpleClientset()
 	if sm != nil {
 		_, err := mClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), sm, metav1.CreateOptions{})
 		if err != nil {
@@ -399,10 +399,15 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 	}
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration("30s"),
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
@@ -416,6 +421,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		k8sClient:              k8sClient,
 		informers:              informers,
 		configGenerator:        generator,
+		prom:                   prom,
 		serviceMonitorSelector: getSelector(nil),
 		podMonitorSelector:     getSelector(nil),
 		stopChannel:            make(chan struct{}),
@@ -424,9 +430,18 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 
 // Remove relable configs fields from scrape configs for testing,
 // since these are mutated and tested down the line with the hook(s).
+// Also normalizes library-default fields that change across prometheus versions.
 func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	for _, sc := range scs {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
+		sc.ScrapeProtocols = nil
+		sc.ScrapeNativeHistograms = nil
+		sc.AlwaysScrapeClassicHistograms = nil
+		sc.ConvertClassicHistogramsToNHCB = nil
+		sc.EnableCompression = false
+		sc.MetricNameValidationScheme = 0
+		sc.MetricNameEscapingScheme = ""
+		sc.ExtraScrapeMetrics = nil
 	}
 }

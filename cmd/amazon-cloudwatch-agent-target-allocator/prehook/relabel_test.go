@@ -28,12 +28,13 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Action:       "replace",
-					Separator:    ";",
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Replacement:  "$1",
-					TargetLabel:  "foo",
+					SourceLabels:         model.LabelNames{"i"},
+					Action:               "replace",
+					Separator:            ";",
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Replacement:          "$1",
+					TargetLabel:          "foo",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -41,11 +42,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -53,11 +55,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("bad.*match"),
-					Action:       "drop",
-					Separator:    ";",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("bad.*match"),
+					Action:               "drop",
+					Separator:            ";",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -65,11 +68,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"label_not_present"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"label_not_present"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -77,11 +81,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "drop",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "drop",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -89,11 +94,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"collector"},
-					Regex:        relabel.MustNewRegexp("(collector.*)"),
-					Separator:    ";",
-					Action:       "drop",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"collector"},
+					Regex:                relabel.MustNewRegexp("(collector.*)"),
+					Separator:            ";",
+					Action:               "drop",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -101,11 +107,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("bad.*match"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("bad.*match"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -113,11 +120,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"collector"},
-					Regex:        relabel.MustNewRegexp("collectors-n"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"collector"},
+					Regex:                relabel.MustNewRegexp("collectors-n"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -127,30 +135,33 @@ var (
 	HashmodConfig = relabelConfigObj{
 		cfg: []*relabel.Config{
 			{
-				SourceLabels: model.LabelNames{"i"},
-				Regex:        relabel.MustNewRegexp("(.*)"),
-				Separator:    ";",
-				Modulus:      1,
-				TargetLabel:  "tmp-0",
-				Action:       "hashmod",
-				Replacement:  "$1",
+				SourceLabels:         model.LabelNames{"i"},
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Separator:            ";",
+				Modulus:              1,
+				TargetLabel:          "tmp-0",
+				Action:               "hashmod",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
 			},
 
 			{
-				SourceLabels: model.LabelNames{"tmp-$(SHARD)"},
-				Regex:        relabel.MustNewRegexp("$(SHARD)"),
-				Separator:    ";",
-				Action:       "keep",
-				Replacement:  "$1",
+				SourceLabels:         model.LabelNames{"tmp-$(SHARD)"},
+				Regex:                relabel.MustNewRegexp("$(SHARD)"),
+				Separator:            ";",
+				Action:               "keep",
+				Replacement:          "$1",
+				NameValidationScheme: model.UTF8Validation,
 			},
 		},
 		isDrop: false,
 	}
 
 	DefaultDropRelabelConfig = relabel.Config{
-		SourceLabels: model.LabelNames{"i"},
-		Regex:        relabel.MustNewRegexp("(.*)"),
-		Action:       "drop",
+		SourceLabels:         model.LabelNames{"i"},
+		Regex:                relabel.MustNewRegexp("(.*)"),
+		Action:               "drop",
+		NameValidationScheme: model.UTF8Validation,
 	}
 )
 
