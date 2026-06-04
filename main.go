@@ -257,7 +257,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("AmazonCloudWatchAgent"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
+		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), //nolint:staticcheck // TODO: migrate to events.EventRecorder
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AmazonCloudWatchAgent")
 		os.Exit(1)
@@ -268,7 +268,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("DcgmExporter"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
+		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), //nolint:staticcheck // TODO: migrate to events.EventRecorder
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DcgmExporter")
 		os.Exit(1)
@@ -279,7 +279,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("NeuronMonitor"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"),
+		Recorder: mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), //nolint:staticcheck // TODO: migrate to events.EventRecorder
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NeuronMonitor")
 		os.Exit(1)
@@ -323,7 +323,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")), //nolint:staticcheck // TODO: migrate to events.EventRecorder
 				}),
 		})
 	} else {
