@@ -411,7 +411,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom)
+	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom, prometheus.WithEndpointSliceSupport())
 	if err != nil {
 		t.Fatal(t, err)
 	}

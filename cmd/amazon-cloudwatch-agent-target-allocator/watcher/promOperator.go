@@ -58,7 +58,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom)
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport())
 
 	if err != nil {
 		return nil, err
