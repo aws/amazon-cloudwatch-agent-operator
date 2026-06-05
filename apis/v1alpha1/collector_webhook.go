@@ -22,8 +22,8 @@ import (
 )
 
 var (
-	_ admission.CustomValidator = &CollectorWebhook{}
-	_ admission.CustomDefaulter = &CollectorWebhook{}
+	_ admission.Validator[*AmazonCloudWatchAgent] = &CollectorWebhook{}
+	_ admission.Defaulter[*AmazonCloudWatchAgent] = &CollectorWebhook{}
 )
 
 // +kubebuilder:webhook:path=/mutate-cloudwatch-aws-amazon-com-v1alpha1-amazoncloudwatchagent,mutating=true,failurePolicy=fail,groups=cloudwatch.aws.amazon.com,resources=amazoncloudwatchagents,verbs=create;update,versions=v1alpha1,name=mamazoncloudwatchagent.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -37,36 +37,20 @@ type CollectorWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	otelcol, ok := obj.(*AmazonCloudWatchAgent)
-	if !ok {
-		return fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
-	}
-	return c.defaulter(otelcol)
+func (c CollectorWebhook) Default(ctx context.Context, obj *AmazonCloudWatchAgent) error {
+	return c.defaulter(obj)
 }
 
-func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*AmazonCloudWatchAgent)
-	if !ok {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
-	}
-	return c.validate(otelcol)
+func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj *AmazonCloudWatchAgent) (admission.Warnings, error) {
+	return c.validate(obj)
 }
 
-func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*AmazonCloudWatchAgent)
-	if !ok {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", newObj)
-	}
-	return c.validate(otelcol)
+func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj *AmazonCloudWatchAgent) (admission.Warnings, error) {
+	return c.validate(newObj)
 }
 
-func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*AmazonCloudWatchAgent)
-	if !ok || otelcol == nil {
-		return nil, fmt.Errorf("expected an AmazonCloudWatchAgent, received %T", obj)
-	}
-	return c.validate(otelcol)
+func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj *AmazonCloudWatchAgent) (admission.Warnings, error) {
+	return c.validate(obj)
 }
 
 func (c CollectorWebhook) defaulter(r *AmazonCloudWatchAgent) error {
@@ -351,8 +335,7 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		scheme: mgr.GetScheme(),
 		cfg:    cfg,
 	}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&AmazonCloudWatchAgent{}).
+	return ctrl.NewWebhookManagedBy(mgr, &AmazonCloudWatchAgent{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()

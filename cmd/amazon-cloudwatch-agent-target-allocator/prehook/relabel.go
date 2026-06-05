@@ -25,15 +25,12 @@ func NewRelabelConfigTargetFilter(log logr.Logger) Hook {
 }
 
 // helper function converts from model.LabelSet to []labels.Label.
-func convertLabelToPromLabelSet(lbls model.LabelSet) []labels.Label {
-	newLabels := make([]labels.Label, len(lbls))
-	index := 0
+func convertLabelToPromLabelSet(lbls model.LabelSet) labels.Labels {
+	b := labels.NewBuilder(labels.EmptyLabels())
 	for k, v := range lbls {
-		newLabels[index].Name = string(k)
-		newLabels[index].Value = string(v)
-		index++
+		b.Set(string(k), string(v))
 	}
-	return newLabels
+	return b.Labels()
 }
 
 func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
@@ -46,18 +43,11 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 
 	// Note: jobNameKey != tItem.JobName (jobNameKey is hashed)
 	for jobNameKey, tItem := range targets {
-		keepTarget := true
 		lset := convertLabelToPromLabelSet(tItem.Labels)
-		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			if newLset, keep := relabel.Process(lset, cfg); !keep {
-				keepTarget = false
-				break // inner loop
-			} else {
-				lset = newLset
-			}
-		}
+		lb := labels.NewBuilder(lset)
+		keep := relabel.ProcessBuilder(lb, tf.relabelCfg[tItem.JobName]...)
 
-		if !keepTarget {
+		if !keep {
 			delete(targets, jobNameKey)
 		}
 	}

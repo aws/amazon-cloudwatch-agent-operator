@@ -29,7 +29,7 @@ spec:
       containers:
       - image: controller
         args:
-          - "--feature-gates=operator.autoinstrumentation.multi-instrumentation,operator.autoinstrumentation.multi-instrumentation.skip-container-validation"
+          - "--feature-gates=operator.autoinstrumentation.multiinstrumentation,operator.autoinstrumentation.multiinstrumentation.skipcontainervalidation"
         name: manager
         resources:
           requests:

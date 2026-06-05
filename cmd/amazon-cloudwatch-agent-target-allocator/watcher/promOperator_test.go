@@ -5,10 +5,10 @@ package watcher
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -59,7 +60,7 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "test",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
+							Port: ptr.To("web"),
 						},
 					},
 				},
@@ -76,7 +77,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -121,18 +122,24 @@ func TestLoadConfig(t *testing.T) {
 					Endpoints: []monitoringv1.Endpoint{
 						{
 							Port: "web",
-							BasicAuth: &monitoringv1.BasicAuth{
-								Username: v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "basic-auth",
+							HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+								HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+									HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+										BasicAuth: &monitoringv1.BasicAuth{
+											Username: v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "basic-auth",
+												},
+												Key: "username",
+											},
+											Password: v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "basic-auth",
+												},
+												Key: "password",
+											},
+										},
 									},
-									Key: "username",
-								},
-								Password: v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "basic-auth",
-									},
-									Key: "password",
 								},
 							},
 						},
@@ -157,7 +164,7 @@ func TestLoadConfig(t *testing.T) {
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
 							&kubeDiscovery.SDConfig{
-								Role: "endpointslice",
+								Role: "endpoints",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
@@ -188,14 +195,20 @@ func TestLoadConfig(t *testing.T) {
 					JobLabel: "bearer",
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port: "web",
-							Authorization: &monitoringv1.SafeAuthorization{
-								Type: "Bearer",
-								Credentials: &v1.SecretKeySelector{
-									LocalObjectReference: v1.LocalObjectReference{
-										Name: "bearer",
+							Port: ptr.To("web"),
+							HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+								HTTPConfig: monitoringv1.HTTPConfig{
+									HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+										Authorization: &monitoringv1.SafeAuthorization{
+											Type: "Bearer",
+											Credentials: &v1.SecretKeySelector{
+												LocalObjectReference: v1.LocalObjectReference{
+													Name: "bearer",
+												},
+												Key: "token",
+											},
+										},
 									},
-									Key: "token",
 								},
 							},
 						},
@@ -252,7 +265,7 @@ func TestLoadConfig(t *testing.T) {
 			}
 
 			got, err := w.LoadConfig(context.Background())
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 			assert.Equal(t, tt.want.ScrapeConfigs, got.ScrapeConfigs)
@@ -343,7 +356,7 @@ func TestRateLimit(t *testing.T) {
 // getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
 func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
-	mClient := fakemonitoringclient.NewSimpleClientset()
+	mClient := fakemonitoringclient.NewSimpleClientset() //nolint:staticcheck // NewClientset causes structured merge diff schema errors in tests
 	if sm != nil {
 		_, err := mClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), sm, metav1.CreateOptions{})
 		if err != nil {
@@ -386,14 +399,19 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 	}
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration("30s"),
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true)
+	generator, err := prometheus.NewConfigGenerator(slog.Default(), prom, prometheus.WithEndpointSliceSupport())
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -403,6 +421,7 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		k8sClient:              k8sClient,
 		informers:              informers,
 		configGenerator:        generator,
+		prom:                   prom,
 		serviceMonitorSelector: getSelector(nil),
 		podMonitorSelector:     getSelector(nil),
 		stopChannel:            make(chan struct{}),
@@ -411,9 +430,18 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 
 // Remove relable configs fields from scrape configs for testing,
 // since these are mutated and tested down the line with the hook(s).
+// Also normalizes library-default fields that change across prometheus versions.
 func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	for _, sc := range scs {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
+		sc.ScrapeProtocols = nil
+		sc.ScrapeNativeHistograms = nil
+		sc.AlwaysScrapeClassicHistograms = nil
+		sc.ConvertClassicHistogramsToNHCB = nil
+		sc.EnableCompression = false
+		sc.MetricNameValidationScheme = 0
+		sc.MetricNameEscapingScheme = ""
+		sc.ExtraScrapeMetrics = nil
 	}
 }

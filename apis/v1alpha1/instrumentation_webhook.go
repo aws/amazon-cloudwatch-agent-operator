@@ -26,9 +26,9 @@ const (
 )
 
 var (
-	_                                  admission.CustomValidator = &InstrumentationWebhook{}
-	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
-	initContainerDefaultLimitResources                           = corev1.ResourceList{
+	_                                  admission.Validator[*Instrumentation] = &InstrumentationWebhook{}
+	_                                  admission.Defaulter[*Instrumentation] = &InstrumentationWebhook{}
+	initContainerDefaultLimitResources                                       = corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("500m"),
 		corev1.ResourceMemory: resource.MustParse("128Mi"),
 	}
@@ -49,36 +49,20 @@ type InstrumentationWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	instrumentation, ok := obj.(*Instrumentation)
-	if !ok {
-		return fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
-	return w.defaulter(instrumentation)
+func (w InstrumentationWebhook) Default(ctx context.Context, obj *Instrumentation) error {
+	return w.defaulter(obj)
 }
 
-func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
-	if !ok {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
-	return w.validate(inst)
+func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj *Instrumentation) (admission.Warnings, error) {
+	return w.validate(obj)
 }
 
-func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	inst, ok := newObj.(*Instrumentation)
-	if !ok {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
-	}
-	return w.validate(inst)
+func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj *Instrumentation) (admission.Warnings, error) {
+	return w.validate(newObj)
 }
 
-func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
-	if !ok || inst == nil {
-		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
-	}
-	return w.validate(inst)
+func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj *Instrumentation) (admission.Warnings, error) {
+	return w.validate(obj)
 }
 
 func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
@@ -317,8 +301,7 @@ func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		mgr.GetScheme(),
 		cfg,
 	)
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&Instrumentation{}).
+	return ctrl.NewWebhookManagedBy(mgr, &Instrumentation{}).
 		WithValidator(ivw).
 		WithDefaulter(ivw).
 		Complete()

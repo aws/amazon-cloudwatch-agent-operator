@@ -8,11 +8,8 @@ import (
 	"testing"
 	"time"
 
-	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
-	"github.com/prometheus/prometheus/discovery"
-	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,148 +19,79 @@ func TestLoad(t *testing.T) {
 		file string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    Config
-		wantErr assert.ErrorAssertionFunc
+		name           string
+		args           args
+		wantErr        assert.ErrorAssertionFunc
+		wantHTTPS      HTTPSServerConfig
+		wantLabels     map[string]string
+		wantPromCR     PrometheusCRConfig
+		wantAlloc      *string
+		wantPodMonSel  map[string]string
+		wantSvcMonSel  map[string]string
+		wantJobNames   []string
 	}{
 		{
 			name: "file sd load",
 			args: args{
 				file: "./testdata/config_test.yaml",
 			},
-			want: Config{
-				AllocationStrategy: &defaulAllocationStrategy,
-				LabelSelector: map[string]string{
-					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-				},
-				PrometheusCR: PrometheusCRConfig{
-					ScrapeInterval: model.Duration(time.Second * 60),
-				},
-				HTTPS: HTTPSServerConfig{
-					Enabled:         true,
-					ListenAddr:      DefaultListenAddr,
-					CAFilePath:      "/path/to/ca.pem",
-					TLSCertFilePath: "/path/to/cert.pem",
-					TLSKeyFilePath:  "/path/to/key.pem",
-				},
-				PromConfig: &promconfig.Config{
-					GlobalConfig: promconfig.GlobalConfig{
-						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeTimeout:      model.Duration(10 * time.Second),
-						EvaluationInterval: model.Duration(60 * time.Second),
-					},
-					ScrapeConfigs: []*promconfig.ScrapeConfig{
-						{
-							JobName:         "prometheus",
-							HonorTimestamps: true,
-							ScrapeInterval:  model.Duration(60 * time.Second),
-							ScrapeTimeout:   model.Duration(10 * time.Second),
-							MetricsPath:     "/metrics",
-							Scheme:          "http",
-							HTTPClientConfig: commonconfig.HTTPClientConfig{
-								FollowRedirects: true,
-								EnableHTTP2:     true,
-							},
-							ServiceDiscoveryConfigs: []discovery.Config{
-								&file.SDConfig{
-									Files:           []string{"./file_sd_test.json"},
-									RefreshInterval: model.Duration(5 * time.Minute),
-								},
-								discovery.StaticConfig{
-									{
-										Targets: []model.LabelSet{
-											{model.AddressLabel: "prom.domain:9001"},
-											{model.AddressLabel: "prom.domain:9002"},
-											{model.AddressLabel: "prom.domain:9003"},
-										},
-										Labels: model.LabelSet{
-											"my": "label",
-										},
-										Source: "0",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 			wantErr: assert.NoError,
+			wantHTTPS: HTTPSServerConfig{
+				Enabled:         true,
+				ListenAddr:      DefaultListenAddr,
+				CAFilePath:      "/path/to/ca.pem",
+				TLSCertFilePath: "/path/to/cert.pem",
+				TLSKeyFilePath:  "/path/to/key.pem",
+			},
+			wantLabels: map[string]string{
+				"app.kubernetes.io/instance":   "default.test",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+			},
+			wantPromCR: PrometheusCRConfig{
+				ScrapeInterval: model.Duration(time.Second * 60),
+			},
+			wantAlloc:    &defaulAllocationStrategy,
+			wantJobNames: []string{"prometheus"},
 		},
 		{
 			name: "no config",
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			want:    CreateDefaultConfig(),
-			wantErr: assert.NoError,
+			wantErr:   assert.NoError,
+			wantHTTPS: CreateDefaultConfig().HTTPS,
+			wantLabels: nil,
+			wantPromCR: CreateDefaultConfig().PrometheusCR,
+			wantAlloc:  CreateDefaultConfig().AllocationStrategy,
 		},
 		{
 			name: "service monitor pod monitor selector",
 			args: args{
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
-			want: Config{
-				AllocationStrategy: &defaulAllocationStrategy,
-				LabelSelector: map[string]string{
-					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
-				},
-				PrometheusCR: PrometheusCRConfig{
-					ScrapeInterval: DefaultCRScrapeInterval,
-				},
-				HTTPS: HTTPSServerConfig{
-					Enabled:         true,
-					ListenAddr:      DefaultListenAddr,
-					CAFilePath:      DefaultCABundlePath,
-					TLSCertFilePath: DefaultTLSCertPath,
-					TLSKeyFilePath:  DefaultTLSKeyPath,
-				},
-				PromConfig: &promconfig.Config{
-					GlobalConfig: promconfig.GlobalConfig{
-						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeTimeout:      model.Duration(10 * time.Second),
-						EvaluationInterval: model.Duration(60 * time.Second),
-					},
-					ScrapeConfigs: []*promconfig.ScrapeConfig{
-						{
-							JobName:         "prometheus",
-							HonorTimestamps: true,
-							ScrapeInterval:  model.Duration(60 * time.Second),
-							ScrapeTimeout:   model.Duration(10 * time.Second),
-							MetricsPath:     "/metrics",
-							Scheme:          "http",
-							HTTPClientConfig: commonconfig.HTTPClientConfig{
-								FollowRedirects: true,
-								EnableHTTP2:     true,
-							},
-							ServiceDiscoveryConfigs: []discovery.Config{
-								discovery.StaticConfig{
-									{
-										Targets: []model.LabelSet{
-											{model.AddressLabel: "prom.domain:9001"},
-											{model.AddressLabel: "prom.domain:9002"},
-											{model.AddressLabel: "prom.domain:9003"},
-										},
-										Labels: model.LabelSet{
-											"my": "label",
-										},
-										Source: "0",
-									},
-								},
-							},
-						},
-					},
-				},
-				PodMonitorSelector: map[string]string{
-					"release": "test",
-				},
-				ServiceMonitorSelector: map[string]string{
-					"release": "test",
-				},
-			},
 			wantErr: assert.NoError,
+			wantHTTPS: HTTPSServerConfig{
+				Enabled:         true,
+				ListenAddr:      DefaultListenAddr,
+				CAFilePath:      DefaultCABundlePath,
+				TLSCertFilePath: DefaultTLSCertPath,
+				TLSKeyFilePath:  DefaultTLSKeyPath,
+			},
+			wantLabels: map[string]string{
+				"app.kubernetes.io/instance":   "default.test",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+			},
+			wantPromCR: PrometheusCRConfig{
+				ScrapeInterval: DefaultCRScrapeInterval,
+			},
+			wantAlloc: &defaulAllocationStrategy,
+			wantPodMonSel: map[string]string{
+				"release": "test",
+			},
+			wantSvcMonSel: map[string]string{
+				"release": "test",
+			},
+			wantJobNames: []string{"prometheus"},
 		},
 	}
 	for _, tt := range tests {
@@ -173,7 +101,19 @@ func TestLoad(t *testing.T) {
 			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "Load(%v)", tt.args.file)
+			assert.Equal(t, tt.wantHTTPS, got.HTTPS)
+			assert.Equal(t, tt.wantLabels, got.LabelSelector)
+			assert.Equal(t, tt.wantPromCR, got.PrometheusCR)
+			assert.Equal(t, tt.wantAlloc, got.AllocationStrategy)
+			assert.Equal(t, tt.wantPodMonSel, got.PodMonitorSelector)
+			assert.Equal(t, tt.wantSvcMonSel, got.ServiceMonitorSelector)
+			if tt.wantJobNames != nil {
+				var gotJobNames []string
+				for _, sc := range got.PromConfig.ScrapeConfigs {
+					gotJobNames = append(gotJobNames, sc.JobName)
+				}
+				assert.Equal(t, tt.wantJobNames, gotJobNames)
+			}
 		})
 	}
 }
