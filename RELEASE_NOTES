@@ -1,4 +1,15 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.5.0 (2026-06-05)
+========================================================================
+Enhancements:
+* [ApplicationSignals] Add Service Events and Dynamic Instrumentation environment variable injection
+* Refactor Apache/Nginx auto-instrumentation init containers
+* Go.mod dependency upgrades
+
+Bug Fixes:
+* Sync agent ClusterRole permissions with helm chart to fix RBAC issues
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.4.2 (2026-04-28)
 ========================================================================
 Enhancements:
