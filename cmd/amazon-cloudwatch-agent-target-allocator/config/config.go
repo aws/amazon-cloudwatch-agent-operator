@@ -119,9 +119,7 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
-	// Enable the Prometheus CR watcher when requested via the CLI flag. The YAML
-	// `prometheus_cr.enabled` value is loaded before this point, so OR the flag in
-	// rather than overwriting it: the watcher is enabled if either source sets it.
+	// OR the CLI flag into the YAML value so either source can enable the watcher.
 	prometheusCREnabled, err := getPrometheusCREnabled(flagSet)
 	if err != nil {
 		return err

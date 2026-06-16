@@ -29,6 +29,8 @@ import (
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 )
 
+const defaultCollectorNamespace = "amazon-cloudwatch"
+
 const minEventInterval = time.Second * 5
 
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
@@ -50,15 +52,15 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	// TODO: We should make these durations configurable
-	// The synthetic Prometheus object must carry a non-empty namespace: the
-	// prometheus-operator config generator calls store.ForNamespace(prom.Namespace)
-	// when generating the server configuration, which panics on an empty namespace
-	// ("namespace can't be empty"). Mirror the upstream opentelemetry-operator
-	// target-allocator by setting it to the collector/TA namespace, derived from the
-	// operator-injected OTELCOL_NAMESPACE downward-API env (fallback: amazon-cloudwatch).
+	// Namespace must be non-empty; the config generator panics otherwise.
 	collectorNamespace := os.Getenv("OTELCOL_NAMESPACE")
 	if collectorNamespace == "" {
-		collectorNamespace = "amazon-cloudwatch"
+		if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
+			collectorNamespace = string(ns)
+		} else {
+			collectorNamespace = defaultCollectorNamespace
+		}
+		logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", collectorNamespace)
 	}
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
@@ -68,11 +70,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 			},
-			// EvaluationInterval must be non-empty: the prometheus-operator config
-			// generator renders it verbatim as global.evaluation_interval, and the
-			// downstream prometheus config parser rejects an empty value with
-			// "empty duration string". The CWA TA does not evaluate rules, so mirror
-			// the scrape interval as a sane non-empty default.
+			// Must be non-empty; default to scrape interval.
 			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 		},
 	}
