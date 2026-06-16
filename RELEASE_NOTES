@@ -1,4 +1,10 @@
 ========================================================================
+Amazon CloudWatch Agent Operator (Unreleased)
+========================================================================
+Bug Fixes:
+* [TargetAllocator] Register the `--enable-prometheus-cr-watcher` CLI flag so the target-allocator no longer exits with "unknown flag" (CrashLoopBackOff) when the operator passes it for PrometheusCR.enabled. The flag is OR'd with the YAML `prometheus_cr.enabled` setting.
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.5.0 (2026-06-05)
 ========================================================================
 Enhancements:
