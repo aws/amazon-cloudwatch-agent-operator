@@ -88,11 +88,7 @@ func main() {
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	// Service Discovery metrics MUST be created and passed to the discovery
-	// manager. Each SD provider's NewDiscoverer fails when its DiscovererMetrics
-	// is nil, so passing a nil sdMetrics map makes every provider (including
-	// kubernetes_sd) fail to register, yielding zero discovered targets. Mirror
-	// the upstream opentelemetry-operator target-allocator.
+	// SD metrics must be non-nil; providers fail to register without them.
 	sdRegistry := prometheus.NewRegistry()
 	sdMetrics, sdMetricsErr := discovery.CreateAndRegisterSDMetrics(sdRegistry)
 	if sdMetricsErr != nil {
