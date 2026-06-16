@@ -28,7 +28,7 @@ func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return annotations
 }
@@ -51,9 +51,26 @@ func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return podAnnotations
+}
+
+// configHashInput returns the string whose sha256 is used as the pod-template
+// restart trigger. It folds the serialized Prometheus config into the agent
+// config so that a Prometheus-only change (written to a separate ConfigMap)
+// bumps the pod-template hash and triggers a rolling restart, matching the
+// behavior of an agent-config change. When no Prometheus config is set
+// (Spec.Prometheus.IsEmpty()), the input is byte-identical to the agent config
+// alone, so non-Prometheus agents are unaffected.
+func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
+	config := instance.Spec.Config
+	if !instance.Spec.Prometheus.IsEmpty() {
+		if promYaml, err := instance.Spec.Prometheus.Yaml(); err == nil {
+			config += promYaml
+		}
+	}
+	return config
 }
 
 func getConfigMapSHA(config string) string {

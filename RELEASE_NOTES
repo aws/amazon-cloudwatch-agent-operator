@@ -1,4 +1,12 @@
 ========================================================================
+Amazon CloudWatch Agent Operator (Unreleased)
+========================================================================
+Bug Fixes:
+* Roll agent pods when the Prometheus config changes: the pod-template config
+  hash now folds in the serialized Spec.Prometheus, so a Prometheus-only change
+  triggers a rolling restart (previously only Spec.Config changes did)
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.5.0 (2026-06-05)
 ========================================================================
 Enhancements:
