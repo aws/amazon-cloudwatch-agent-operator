@@ -144,6 +144,14 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
+	prometheusCREnabled, err := getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+	// The configmap only carries prometheus_cr settings (scrape_interval/selectors),
+	// never "enabled"; the operator signals CR watching exclusively via this flag.
+	target.PrometheusCR.Enabled = target.PrometheusCR.Enabled || prometheusCREnabled
+
 	return nil
 }
 

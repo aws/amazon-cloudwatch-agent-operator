@@ -34,6 +34,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(targetAllocatorName, errorHandling)
 	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable the Prometheus CR (ServiceMonitor/PodMonitor) discovery watcher.")
 	flagSet.Bool(reloadConfigFlagName, false, "Enable automatic configuration reloading. This functionality is deprecated and will be removed in a future release.")
 	flagSet.Bool(httpsEnabledFlagName, true, "Enable HTTPS additional server")
 	flagSet.String(listenAddrHttpsFlagName, ":8443", "The address where this service serves over HTTPS.")
@@ -56,6 +57,10 @@ func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
 
 func getConfigReloadEnabled(flagSet *pflag.FlagSet) (bool, error) {
 	return flagSet.GetBool(reloadConfigFlagName)
+}
+
+func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
+	return flagSet.GetBool(prometheusCREnabledFlagName)
 }
 
 func getHttpsListenAddr(flagSet *pflag.FlagSet) (string, error) {

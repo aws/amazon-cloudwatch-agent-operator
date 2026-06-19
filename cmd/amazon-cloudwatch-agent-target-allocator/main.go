@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -88,7 +89,18 @@ func main() {
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	discoveryManager = discovery.NewManager(discoveryCtx, nil, prometheus.NewRegistry(), nil)
+	// The discovery manager requires registered SD metrics; passing nil causes
+	// every SD provider (e.g. kubernetes_sd) to fail creation and silently
+	// resolve zero targets. A real logger is passed so any SD failure surfaces
+	// instead of going to the manager's default no-op logger.
+	discoveryRegistry := prometheus.NewRegistry()
+	sdMetrics, sdMetricsErr := discovery.CreateAndRegisterSDMetrics(discoveryRegistry)
+	if sdMetricsErr != nil {
+		setupLog.Error(sdMetricsErr, "Unable to register service discovery metrics")
+		os.Exit(1)
+	}
+	discoveryLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	discoveryManager = discovery.NewManager(discoveryCtx, discoveryLogger, discoveryRegistry, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)
