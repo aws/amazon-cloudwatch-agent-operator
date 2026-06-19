@@ -1,0 +1,136 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# build-ta-test.yml — manually build the Target Allocator from THIS branch and
+# push it to a test ECR repo, so it can be deployed for PodMonitor/ServiceMonitor
+# testing via:
+#
+#   USE_CUSTOM_IMAGES=true TA_TAG=<tag> ./scripts/deploy-all.sh
+#
+# Why this exists: enabling otelContainerInsights / prometheusCR makes the
+# operator launch the Target Allocator with `--enable-prometheus-cr-watcher`.
+# The pinned PUBLIC target-allocator:1.0.0 image predates that flag and
+# CrashLoops with `unknown flag`. The TA source on this branch DOES support it,
+# so we build it here. This is intentionally decoupled from the release/e2e
+# machinery in build-and-upload.yml — it only builds + pushes a test image.
+#
+# Prerequisites (one-time, in the GitHub repo settings):
+#   - Secret  AWS_ASSUME_ROLE : an IAM role ARN this repo's OIDC can assume,
+#       with ECR push perms (ecr:GetAuthorizationToken, ecr:BatchCheckLayer*,
+#       ecr:PutImage, ecr:InitiateLayerUpload, ecr:UploadLayerPart,
+#       ecr:CompleteLayerUpload) for the target repo.
+#   - The ECR repo (default below) must already exist in the account/region.
+
+name: Build TA Test Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ecr_repo:
+        description: 'ECR repository path (without registry host)'
+        required: true
+        default: 'wenepra/cwagent-test/cloudwatch-agent-target-allocator'
+        type: string
+      tag:
+        description: 'Image tag to push'
+        required: true
+        default: 'test'
+        type: string
+      account_id:
+        description: 'AWS account ID that owns the ECR repo'
+        required: true
+        default: '037647485236'
+        type: string
+      region:
+        description: 'AWS region of the ECR repo'
+        required: true
+        default: 'us-west-2'
+        type: string
+      platforms:
+        description: 'Target platforms (m5.large test nodes are amd64)'
+        required: true
+        default: 'linux/amd64'
+        type: string
+
+env:
+  AWS_ASSUME_ROLE: ${{ secrets.AWS_ASSUME_ROLE }}
+
+jobs:
+  build-ta:
+    name: 'Build & push Target Allocator test image'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '>=1.25'
+          cache: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ env.AWS_ASSUME_ROLE }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896 # v2.1.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
+      - name: Build TA binaries (per requested arch)
+        # The TA Dockerfile copies a prebuilt bin/targetallocator_${TARGETARCH},
+        # so build every arch named in the platforms input before docker build.
+        run: |
+          set -euo pipefail
+          go mod download
+          mkdir -p cmd/amazon-cloudwatch-agent-target-allocator/bin
+          IFS=',' read -ra PLATS <<< "${{ inputs.platforms }}"
+          for p in "${PLATS[@]}"; do
+            arch="${p##*/}"   # linux/amd64 -> amd64
+            echo ">> building targetallocator for ${arch}"
+            GOARCH="${arch}" ARCH="${arch}" make targetallocator
+          done
+          ls -la cmd/amazon-cloudwatch-agent-target-allocator/bin/
+
+      - name: Build & push Target Allocator image
+        uses: docker/build-push-action@0a97817b6ade9f46837855d676c4cca3a2471fc9 # v4.2.1
+        with:
+          file: ./cmd/amazon-cloudwatch-agent-target-allocator/Dockerfile
+          context: ./cmd/amazon-cloudwatch-agent-target-allocator
+          push: true
+          platforms: ${{ inputs.platforms }}
+          tags: |
+            ${{ inputs.account_id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ inputs.ecr_repo }}:${{ inputs.tag }}
+            ${{ inputs.account_id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ inputs.ecr_repo }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Summary
+        run: |
+          IMG="${{ inputs.account_id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ inputs.ecr_repo }}:${{ inputs.tag }}"
+          {
+            echo "### Target Allocator test image pushed"
+            echo ""
+            echo "\`${IMG}\`"
+            echo ""
+            echo "Deploy it:"
+            echo "\`\`\`"
+            echo "USE_CUSTOM_IMAGES=true TA_TAG=${{ inputs.tag }} \\"
+            echo "  TA_REPO=${{ inputs.ecr_repo }} \\"
+            echo "  CLUSTER_NAME=podmon-test REGION=${{ inputs.region }} \\"
+            echo "  ./scripts/deploy-all.sh"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
