@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
@@ -99,9 +100,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-				//disable setting security context in init container due to issue with runAsNonRoot conflict
-				//https://github.com/open-telemetry/opentelemetry-operator/issues/2272
-				//pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
+
+				// Set a minimal restricted-compliant securityContext without runAsNonRoot/runAsUser
+				// to avoid the runAsNonRoot conflict (https://github.com/open-telemetry/opentelemetry-operator/issues/2272)
+				// while still satisfying the restricted Pod Security Standard.
+				pod = i.setInitContainerRestrictedSecurityContext(pod, javaInitContainerName)
 			}
 		}
 	}
@@ -297,6 +300,23 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 		}
 	}
 
+	return pod
+}
+
+func (i *sdkInjector) setInitContainerRestrictedSecurityContext(pod corev1.Pod, instrInitContainerName string) corev1.Pod {
+	for idx, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name == instrInitContainerName {
+			pod.Spec.InitContainers[idx].SecurityContext = &corev1.SecurityContext{
+				AllowPrivilegeEscalation: ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+		}
+	}
 	return pod
 }
 
