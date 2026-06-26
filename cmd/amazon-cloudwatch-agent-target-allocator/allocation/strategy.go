@@ -38,6 +38,14 @@ var (
 		Name: "cloudwatch_agent_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
+	// targetsUnassigned records targets that could not be placed on any collector
+	// (e.g. per-node strategy: target has no node label, or no collector runs on
+	// the target's node). Such targets are retained and re-evaluated on the next
+	// collector change, but are not scraped until they can be assigned.
+	targetsUnassigned = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "cloudwatch_agent_allocator_targets_unassigned",
+		Help: "Number of targets that could not be assigned to a collector.",
+	})
 )
 
 type AllocationOption func(Allocator)
@@ -49,6 +57,26 @@ type Filter interface {
 func WithFilter(filter Filter) AllocationOption {
 	return func(allocator Allocator) {
 		allocator.SetFilter(filter)
+	}
+}
+
+// fallbackStrategySetter is implemented by allocators that support a fallback
+// placement strategy for targets the primary strategy cannot assign.
+type fallbackStrategySetter interface {
+	SetFallbackStrategy(name string)
+}
+
+// WithFallbackStrategy configures a fallback placement strategy by name. It is a
+// no-op for an empty name or for allocators that don't support a fallback
+// (only per-node does today).
+func WithFallbackStrategy(name string) AllocationOption {
+	return func(allocator Allocator) {
+		if name == "" {
+			return
+		}
+		if setter, ok := allocator.(fallbackStrategySetter); ok {
+			setter.SetFallbackStrategy(name)
+		}
 	}
 }
 
@@ -92,9 +120,12 @@ var _ consistent.Member = Collector{}
 
 // Collector Creates a struct that holds Collector information.
 // This struct will be parsed into endpoint with Collector and jobs info.
+// NodeName is the Kubernetes node the collector pod runs on; it is used by the
+// per-node allocation strategy to match targets to the collector on their node.
 // This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
 	Name       string
+	NodeName   string
 	NumTargets int
 }
 
@@ -106,12 +137,16 @@ func (c Collector) String() string {
 	return c.Name
 }
 
-func NewCollector(name string) *Collector {
-	return &Collector{Name: name}
+func NewCollector(name, node string) *Collector {
+	return &Collector{Name: name, NodeName: node}
 }
 
 func init() {
 	err := Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	if err != nil {
+		panic(err)
+	}
+	err = Register(perNodeStrategyName, newPerNodeAllocator)
 	if err != nil {
 		panic(err)
 	}

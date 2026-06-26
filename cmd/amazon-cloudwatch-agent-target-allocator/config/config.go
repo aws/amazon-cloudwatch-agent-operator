@@ -50,6 +50,7 @@ type Config struct {
 	LabelSelector          map[string]string     `yaml:"label_selector,omitempty"`
 	PromConfig             *promconfig.Config    `yaml:"config"`
 	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
+	FallbackAllocationStrategy *string           `yaml:"allocation_fallback_strategy,omitempty"`
 	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
 	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
@@ -76,6 +77,16 @@ func (c Config) GetAllocationStrategy() string {
 		return *c.AllocationStrategy
 	}
 	return DefaultAllocationStrategy
+}
+
+// GetAllocationFallbackStrategy returns the strategy used to place targets that
+// the primary strategy cannot assign (e.g. per-node targets with no node match).
+// Empty means no fallback (such targets are left unassigned).
+func (c Config) GetAllocationFallbackStrategy() string {
+	if c.FallbackAllocationStrategy != nil {
+		return *c.FallbackAllocationStrategy
+	}
+	return ""
 }
 
 func (c Config) GetTargetsFilterStrategy() string {

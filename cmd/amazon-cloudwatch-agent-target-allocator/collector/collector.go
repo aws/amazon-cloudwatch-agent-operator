@@ -65,8 +65,11 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}
 	for i := range pods.Items {
 		pod := pods.Items[i]
-		if pod.GetObjectMeta().GetDeletionTimestamp() == nil {
-			collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
+		// Only register a collector once its pod is scheduled (NodeName set); an
+		// unscheduled pod has no node, so the per-node strategy could not match
+		// targets to it. It is picked up later via the Modified watch event.
+		if pod.GetObjectMeta().GetDeletionTimestamp() == nil && pod.Spec.NodeName != "" {
+			collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 		}
 	}
 	fn(collectorMap)
@@ -117,8 +120,15 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 			}
 
 			switch event.Type { //nolint:exhaustive
-			case watch.Added:
-				collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
+			case watch.Added, watch.Modified:
+				// Register/refresh the collector only once its pod is scheduled
+				// (NodeName set). Handling Modified captures the node when a pod that
+				// was Added while still unscheduled is later assigned to a node, so the
+				// per-node strategy can match this collector's node without needing a
+				// Target Allocator restart after agent (re)scheduling.
+				if pod.Spec.NodeName != "" {
+					collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
+				}
 			case watch.Deleted:
 				delete(collectorMap, pod.Name)
 			}
