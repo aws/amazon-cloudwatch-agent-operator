@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -175,6 +176,15 @@ func TestDesiredService(t *testing.T) {
 		assert.Nil(t, actual)
 
 	})
+
+	t.Run("should use custom service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.Service = v1alpha1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-service"}
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.Equal(t, "custom-service", actual.Name)
+	})
 }
 
 func TestHeadlessService(t *testing.T) {
@@ -184,6 +194,14 @@ func TestHeadlessService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
+	})
+
+	t.Run("should use custom headless service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.HeadlessService = v1alpha1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-headless-service"}
+		actual, err := HeadlessService(params)
+		assert.NoError(t, err)
+		assert.Equal(t, "custom-headless-service", actual.Name)
 	})
 }
 
@@ -218,6 +236,14 @@ func TestMonitoringService(t *testing.T) {
 
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
+	})
+
+	t.Run("should use custom monitoring service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.MonitoringService = v1alpha1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-monitoring-service"}
+		actual, err := MonitoringService(params)
+		assert.NoError(t, err)
+		assert.Equal(t, "custom-monitoring-service", actual.Name)
 	})
 }
 
