@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conflicting-deployment
+  labels:
+    app: conflicting-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: conflicting-app
+  template:
+    metadata:
+      labels:
+        app: conflicting-app
+    spec:
+      containers:
+      - name: conflicting-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: conflicting-service
+spec:
+  selector:
+    app: conflicting-app
+  ports:
+  - port: 80
+    targetPort: 80
