@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -88,7 +89,13 @@ func main() {
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	discoveryManager = discovery.NewManager(discoveryCtx, nil, prometheus.NewRegistry(), nil)
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	if err != nil {
+		setupLog.Error(err, "Unable to register service discovery metrics")
+		os.Exit(1)
+	}
+	discoveryManager = discovery.NewManager(discoveryCtx, slog.New(slog.DiscardHandler), registry, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)

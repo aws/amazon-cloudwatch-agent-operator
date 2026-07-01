@@ -7,7 +7,7 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
