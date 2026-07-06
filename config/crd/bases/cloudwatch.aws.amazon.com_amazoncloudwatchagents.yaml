@@ -2973,6 +2973,19 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              headlessService:
+                description: HeadlessService to override configuration of the generated
+                  Collector HeadlessService.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled indicates whether the Service should be created.
+                      nil means not set (defaults to enabled for backward compatibility)
+                    type: boolean
+                  name:
+                    description: Name to override the default Service name
+                    type: string
+                type: object
               hostNetwork:
                 description: HostNetwork indicates if the pod should run in the host
                   networking namespace.
@@ -4809,6 +4822,19 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
+              monitoringService:
+                description: MonitoringService to override configuration of the generated
+                  Collector MonitoringService.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled indicates whether the Service should be created.
+                      nil means not set (defaults to enabled for backward compatibility)
+                    type: boolean
+                  name:
+                    description: Name to override the default Service name
+                    type: string
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -5473,6 +5499,19 @@ spec:
                           PodSecurityContext, the value specified in SecurityContext takes precedence.
                         type: string
                     type: object
+                type: object
+              service:
+                description: Service to override configuration of the generated Collector
+                  Service.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled indicates whether the Service should be created.
+                      nil means not set (defaults to enabled for backward compatibility)
+                    type: boolean
+                  name:
+                    description: Name to override the default Service name
+                    type: string
                 type: object
               serviceAccount:
                 description: |-
