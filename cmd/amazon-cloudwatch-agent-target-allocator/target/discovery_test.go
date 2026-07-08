@@ -294,7 +294,10 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
+	reg := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	require.NoError(t, err)
+	d := discovery.NewManager(ctx, slog.Default(), reg, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	for _, tc := range tests {
@@ -330,7 +333,10 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 func TestDiscovery_NoConfig(t *testing.T) {
 	scu := &mockScrapeConfigUpdater{mockCfg: map[string]*promconfig.ScrapeConfig{}}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
+	reg := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	require.NoError(t, err)
+	d := discovery.NewManager(ctx, slog.Default(), reg, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -377,7 +383,10 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
-	d := discovery.NewManager(ctx, slog.Default(), prometheus.NewRegistry(), nil)
+	reg := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
+	require.NoError(b, err)
+	d := discovery.NewManager(ctx, slog.Default(), reg, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 
 	b.ResetTimer()
