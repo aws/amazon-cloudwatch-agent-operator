@@ -87,6 +87,11 @@ type collectD struct {
 
 type AppSignals struct {
 	TLS *TLS `json:"tls,omitempty"`
+	// HostedIn is the Application Signals environment / cluster name the CloudWatch agent
+	// resolves into (set by the Helm chart from .Values.clusterName). Read-only here: the
+	// operator uses it to inject k8s.cluster.name into instrumented pods so the SDK resolves
+	// the same Environment the agent does. Does NOT affect the agent config itself.
+	HostedIn string `json:"hosted_in,omitempty"`
 }
 
 type emf struct {
@@ -158,4 +163,19 @@ func (c *CwaConfig) GetApplicationSignalsTracesConfig() *AppSignals {
 		return c.Traces.TracesCollected.AppSignals
 	}
 	return nil
+}
+
+// GetClusterName returns the cluster name the CloudWatch agent resolves Application Signals
+// into, taken from application_signals.hosted_in (logs or traces) in the agent config — the
+// SAME value the agent uses. Returns "" if not present. Read-only; does not modify the agent
+// config. The operator injects this as k8s.cluster.name on instrumented pods so the SDK
+// (ServiceEvents / Dynamic Instrumentation) resolves the same Environment as AppSignals.
+func (c *CwaConfig) GetClusterName() string {
+	if as := c.GetApplicationSignalsMetricsConfig(); as != nil && as.HostedIn != "" {
+		return as.HostedIn
+	}
+	if as := c.GetApplicationSignalsTracesConfig(); as != nil && as.HostedIn != "" {
+		return as.HostedIn
+	}
+	return ""
 }
