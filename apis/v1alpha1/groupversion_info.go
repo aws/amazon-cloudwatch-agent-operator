@@ -16,6 +16,7 @@ var (
 	GroupVersion = schema.GroupVersion{Group: "cloudwatch.aws.amazon.com", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
+	//nolint:staticcheck // SA1019: types self-register via SchemeBuilder.Register() in init().
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
