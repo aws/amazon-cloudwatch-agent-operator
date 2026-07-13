@@ -87,7 +87,7 @@ func TestGetInstrumentationInstanceJMX(t *testing.T) {
 				{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
 				{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 				{Name: "OTEL_TRACES_EXPORTER", Value: "none"},
-				{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4314/v1/metrics"},
+				{Name: "OTEL_AWS_JMX_EXPORTER_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4314/v1/metrics"},
 				{Name: "OTEL_JMX_TARGET_SYSTEM", Value: "jvm,tomcat"},
 			},
 		},
@@ -2752,7 +2752,7 @@ func TestMutatePod(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "otel/apache-httpd:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
