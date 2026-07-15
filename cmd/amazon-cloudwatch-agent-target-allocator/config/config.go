@@ -42,21 +42,21 @@ const (
 )
 
 type Config struct {
-	ListenAddr             string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig          *rest.Config          `yaml:"-"`
-	RootLogger             logr.Logger           `yaml:"-"`
-	ReloadConfig           bool                  `yaml:"-"`
-	LabelSelector          map[string]string     `yaml:"label_selector,omitempty"`
-	PromConfig             *promconfig.Config    `yaml:"config"`
-	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
-	FallbackAllocationStrategy *string           `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
-	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
-	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	HTTPS                  HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config          `yaml:"-"`
+	RootLogger                 logr.Logger           `yaml:"-"`
+	ReloadConfig               bool                  `yaml:"-"`
+	LabelSelector              map[string]string     `yaml:"label_selector,omitempty"`
+	PromConfig                 *promconfig.Config    `yaml:"config"`
+	AllocationStrategy         *string               `yaml:"allocation_strategy,omitempty"`
+	FallbackAllocationStrategy *string               `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             *string               `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector         map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector     map[string]string     `yaml:"service_monitor_selector,omitempty"`
+	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
