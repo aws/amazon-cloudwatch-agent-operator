@@ -214,3 +214,61 @@ func Test_closeChannel(t *testing.T) {
 		})
 	}
 }
+
+
+// Test_runWatch_UnscheduledThenScheduled verifies an unscheduled collector pod
+// (empty NodeName) is skipped when Added, then registered with its node once a
+// Modified event reports the assignment. This is the DaemonSet-rollout fix: the
+// per-node strategy must pick up a collector's node without a TA restart.
+func Test_runWatch_UnscheduledThenScheduled(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+
+	var wg sync.WaitGroup
+	actual := make(map[string]*allocation.Collector)
+	go runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {
+		actual = colMap
+		wg.Done()
+	})
+
+	// Added while unscheduled (no NodeName): must be skipped.
+	wg.Add(1)
+	p := pod("test-pod1")
+	p.Spec.NodeName = ""
+	created, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+	assert.NoError(t, err)
+	wg.Wait()
+	assert.Empty(t, actual, "unscheduled pod (no NodeName) must not be registered")
+
+	// Scheduled later: a Modified event carrying the node must register it.
+	wg.Add(1)
+	created.Spec.NodeName = "test-pod1-node"
+	_, err = kubeClient.k8sClient.CoreV1().Pods("test-ns").Update(context.Background(), created, metav1.UpdateOptions{})
+	assert.NoError(t, err)
+	wg.Wait()
+
+	assert.Equal(t, map[string]*allocation.Collector{
+		"test-pod1": {Name: "test-pod1", NodeName: "test-pod1-node"},
+	}, actual)
+}
+
+
+// Test_runWatch_NonPodEventRestarts verifies runWatch restarts (returns) when an
+// event carries an object that is not a Pod, rather than panicking on the type
+// assertion.
+func Test_runWatch_NonPodEventRestarts(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+
+	events := make(chan watch.Event, 1)
+	events <- watch.Event{Type: watch.Added, Object: &v1.ConfigMap{}}
+	msg := runWatch(context.Background(), &kubeClient, events, map[string]*allocation.Collector{},
+		func(map[string]*allocation.Collector) {})
+	assert.Equal(t, "", msg)
+}
