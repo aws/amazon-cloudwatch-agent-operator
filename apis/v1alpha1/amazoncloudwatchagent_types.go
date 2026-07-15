@@ -366,6 +366,13 @@ type AmazonCloudWatchAgentTargetAllocatorPrometheusCR struct {
 	// ServiceMonitor's meta labels. The requirements are ANDed.
 	// +optional
 	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
+	// ScraperRole partitions ServiceMonitor/PodMonitor discovery across CloudWatch agents by the
+	// "cloudwatch.aws/scraper" annotation on the monitor CR. "cluster-scraper" selects only monitors
+	// annotated cloudwatch.aws/scraper: cluster-scraper; empty (default) selects only monitors that are
+	// not so annotated. This lets a heavy/singleton monitor be routed to the central cluster-scraper
+	// agent while all others stay on the per-node agent.
+	// +optional
+	ScraperRole string `json:"scraperRole,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the AmazonCloudWatchAgent's

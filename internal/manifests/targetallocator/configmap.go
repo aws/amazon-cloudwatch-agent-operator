@@ -80,6 +80,10 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["pod_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
 	}
 
+	if len(params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScraperRole) > 0 {
+		taConfig["scraper_role"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScraperRole
+	}
+
 	if len(prometheusCRConfig) > 0 {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
