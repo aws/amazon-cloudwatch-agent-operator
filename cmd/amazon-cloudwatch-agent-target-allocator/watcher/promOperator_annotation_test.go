@@ -5,14 +5,16 @@ package watcher
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 // TestAnnotationRoleMatches verifies the annotation-based routing partition: the cluster-scraper
@@ -57,49 +59,75 @@ func TestAnnotationRoleMatches(t *testing.T) {
 	}
 }
 
+// TestSelectsMonitor covers PrometheusCRWatcher.selectsMonitor for both scraper roles, and asserts
+// the cluster-scraper agent logs each monitor it claims (the override event) while the per-node
+// agent logs nothing.
+func TestSelectsMonitor(t *testing.T) {
+	routed := map[string]string{ScraperAnnotationKey: clusterScraperRole}
+	none := map[string]string{}
 
-// TestLoadConfigAnnotationRouting verifies the routing filter is actually applied
-// during monitor discovery in LoadConfig: a Target Allocator only emits scrape
-// jobs for the monitors its scraperRole owns, and skips the rest.
-func TestLoadConfigAnnotationRouting(t *testing.T) {
-	annotated := map[string]string{ScraperAnnotationKey: clusterScraperRole}
-
-	sm := func(ann map[string]string) *monitoringv1.ServiceMonitor {
-		return &monitoringv1.ServiceMonitor{
-			ObjectMeta: metav1.ObjectMeta{Name: "simple", Namespace: "test", Annotations: ann},
-			Spec: monitoringv1.ServiceMonitorSpec{
-				JobLabel:  "test",
-				Endpoints: []monitoringv1.Endpoint{{Port: "web"}},
-			},
-		}
-	}
-	pm := func(ann map[string]string) *monitoringv1.PodMonitor {
-		return &monitoringv1.PodMonitor{
-			ObjectMeta: metav1.ObjectMeta{Name: "simple", Namespace: "test", Annotations: ann},
-			Spec: monitoringv1.PodMonitorSpec{
-				JobLabel:            "test",
-				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{{Port: ptr.To("web")}},
-			},
-		}
-	}
-
-	tests := []struct {
-		name     string
-		role     string
-		smAnn    map[string]string
-		pmAnn    map[string]string
-		wantJobs int
+	cases := []struct {
+		name        string
+		role        string
+		annotations map[string]string
+		wantSelect  bool
+		wantLog     bool
 	}{
-		{"default role skips cluster-scraper monitors", "", annotated, annotated, 0},
-		{"cluster-scraper role skips unannotated monitors", clusterScraperRole, nil, nil, 0},
-		{"cluster-scraper role keeps annotated monitors", clusterScraperRole, annotated, annotated, 2},
-		{"default role keeps unannotated monitors", "", nil, nil, 2},
+		{"cluster-scraper claims routed (logs override)", clusterScraperRole, routed, true, true},
+		{"cluster-scraper skips unannotated", clusterScraperRole, none, false, false},
+		{"default claims unannotated (no log)", "", none, true, false},
+		{"default skips routed", "", routed, false, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var logs []string
+			logger := funcr.New(func(prefix, args string) { logs = append(logs, args) }, funcr.Options{})
+			w := &PrometheusCRWatcher{logger: logger, scraperRole: tc.role}
+
+			got := w.selectsMonitor("PodMonitor", "ns", "mon", tc.annotations)
+			assert.Equal(t, tc.wantSelect, got, "selectsMonitor result")
+
+			logged := strings.Join(logs, "\n")
+			if tc.wantLog {
+				assert.Contains(t, logged, "cluster-scraper", "expected an override log mentioning cluster-scraper")
+				assert.Contains(t, logged, "mon", "override log should identify the monitor")
+			} else {
+				assert.Empty(t, logs, "no override log expected for role=%q select=%v", tc.role, got)
+			}
+		})
+	}
+}
+
+// TestLoadConfigScraperRouting exercises the annotation filter through the real LoadConfig path
+// (matching TestLoadConfig's harness): an annotated ServiceMonitor is discovered by the
+// cluster-scraper role and excluded by the default role.
+func TestLoadConfigScraperRouting(t *testing.T) {
+	newAnnotatedSM := func() *monitoringv1.ServiceMonitor {
+		return &monitoringv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "routed",
+				Namespace:   "test",
+				Annotations: map[string]string{ScraperAnnotationKey: clusterScraperRole},
+			},
+			Spec: monitoringv1.ServiceMonitorSpec{
+				Endpoints: []monitoringv1.Endpoint{{Port: "metrics"}},
+			},
+		}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := getTestPrometheusCRWatcher(t, sm(tt.smAnn), pm(tt.pmAnn))
-			w.scraperRole = tt.role
+	cases := []struct {
+		name         string
+		role         string
+		wantSelected bool
+	}{
+		{"cluster-scraper claims annotated monitor", clusterScraperRole, true},
+		{"default role excludes annotated monitor", "", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := getTestPrometheusCRWatcher(t, newAnnotatedSM(), nil)
+			w.logger = logr.Discard()
+			w.scraperRole = tc.role
 			for _, informer := range w.informers {
 				informer.Start(w.stopChannel)
 			}
@@ -111,7 +139,16 @@ func TestLoadConfigAnnotationRouting(t *testing.T) {
 
 			got, err := w.LoadConfig(context.Background())
 			require.NoError(t, err)
-			assert.Len(t, got.ScrapeConfigs, tt.wantJobs)
+
+			var found bool
+			for _, sc := range got.ScrapeConfigs {
+				if strings.Contains(sc.JobName, "routed") {
+					found = true
+					break
+				}
+			}
+			assert.Equalf(t, tc.wantSelected, found,
+				"annotated monitor discovered=%v, want %v for scraperRole=%q", found, tc.wantSelected, tc.role)
 		})
 	}
 }

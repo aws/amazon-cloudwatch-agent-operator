@@ -80,6 +80,7 @@ label_selector:
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
 pod_monitor_selector:
   release: my-instance
+scraper_role: cluster-scraper
 service_monitor_selector:
   release: my-instance
 `,
@@ -91,6 +92,7 @@ service_monitor_selector:
 		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
 			"release": "my-instance",
 		}
+		instance.Spec.TargetAllocator.PrometheusCR.ScraperRole = "cluster-scraper"
 		cfg := config.New()
 		params := manifests.Params{
 			OtelCol: instance,

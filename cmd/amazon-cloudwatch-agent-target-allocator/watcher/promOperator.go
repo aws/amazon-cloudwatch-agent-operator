@@ -146,6 +146,22 @@ func annotationRoleMatches(scraperRole string, annotations map[string]string) bo
 	return !routed
 }
 
+// selectsMonitor reports whether a discovered ServiceMonitor/PodMonitor belongs to this Target
+// Allocator's scraper role (see annotationRoleMatches). When this allocator is the cluster-scraper,
+// it logs each monitor it claims, because that monitor was explicitly overridden onto the
+// cluster-scraper via the cloudwatch.aws/scraper annotation.
+func (w *PrometheusCRWatcher) selectsMonitor(kind, namespace, name string, annotations map[string]string) bool {
+	if !annotationRoleMatches(w.scraperRole, annotations) {
+		return false
+	}
+	if w.scraperRole == clusterScraperRole {
+		w.logger.Info("routing monitor to cluster-scraper via annotation",
+			"kind", kind, "namespace", namespace, "name", name,
+			"annotation", ScraperAnnotationKey+"="+clusterScraperRole)
+	}
+	return true
+}
+
 // getInformers returns a map of informers for the given resources.
 func getInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
 	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
@@ -255,7 +271,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
 		// Annotation-based routing: skip monitors that belong to the other agent's scraper role.
-		if !annotationRoleMatches(w.scraperRole, monitor.GetAnnotations()) {
+		if !w.selectsMonitor("ServiceMonitor", monitor.Namespace, monitor.Name, monitor.GetAnnotations()) {
 			return
 		}
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
@@ -270,7 +286,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(w.podMonitorSelector, func(pm interface{}) {
 		monitor := pm.(*monitoringv1.PodMonitor)
 		// Annotation-based routing: skip monitors that belong to the other agent's scraper role.
-		if !annotationRoleMatches(w.scraperRole, monitor.GetAnnotations()) {
+		if !w.selectsMonitor("PodMonitor", monitor.Namespace, monitor.Name, monitor.GetAnnotations()) {
 			return
 		}
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
