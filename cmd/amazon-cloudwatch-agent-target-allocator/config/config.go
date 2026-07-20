@@ -119,6 +119,13 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
+	// OR the CLI flag into the YAML value so either source can enable the watcher.
+	prometheusCREnabled, err := getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+	target.PrometheusCR.Enabled = target.PrometheusCR.Enabled || prometheusCREnabled
+
 	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
 	if err != nil {
 		return err

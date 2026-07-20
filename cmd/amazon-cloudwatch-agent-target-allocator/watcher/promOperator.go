@@ -21,12 +21,15 @@ import (
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 )
+
+const defaultCollectorNamespace = "amazon-cloudwatch"
 
 const minEventInterval = time.Second * 5
 
@@ -49,11 +52,26 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	// TODO: We should make these durations configurable
+	// Namespace must be non-empty; the config generator panics otherwise.
+	collectorNamespace := os.Getenv("OTELCOL_NAMESPACE")
+	if collectorNamespace == "" {
+		if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
+			collectorNamespace = string(ns)
+		} else {
+			collectorNamespace = defaultCollectorNamespace
+		}
+		logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", collectorNamespace)
+	}
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: collectorNamespace,
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 			},
+			// Must be non-empty; default to scrape interval.
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 		},
 	}
 
