@@ -187,16 +187,18 @@ func (w *PrometheusCRWatcher) crdExists(ctx context.Context, crdName string) (bo
 // the notification handler, and records it for use by LoadConfig. It is
 // idempotent: calling it for an already-running informer is a no-op.
 func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEvents chan struct{}) error {
-	w.informersMtx.Lock()
-	defer w.informersMtx.Unlock()
-
-	if _, running := w.informers[resourceName]; running {
-		return nil
-	}
-
 	gvr, ok := monitoringResources[resourceName]
 	if !ok {
 		return fmt.Errorf("unknown monitoring resource %q", resourceName)
+	}
+
+	// Fast path: already running. Checked under a short read lock so we never hold
+	// informersMtx across the (potentially slow) cache sync below.
+	w.informersMtx.RLock()
+	_, running := w.informers[resourceName]
+	w.informersMtx.RUnlock()
+	if running {
+		return nil
 	}
 
 	informer, err := informers.NewInformersForResource(w.newMonitoringFactory(), gvr)
@@ -206,15 +208,51 @@ func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEv
 
 	stopCh := make(chan struct{})
 	informer.Start(stopCh)
-	if ok := cache.WaitForNamedCacheSync(resourceName, stopCh, informer.HasSynced); !ok {
+
+	// Wait for the cache to sync WITHOUT holding informersMtx, and abort the wait
+	// if the watcher is shutting down. A CRD's initial LIST can be slow or rejected
+	// (exactly the condition this resilience change tolerates); holding the lock
+	// here would block LoadConfig and, worse, deadlock Close() — which needs the
+	// same lock — until SIGKILL. Selecting on w.stopChannel lets Close() always
+	// interrupt an in-flight sync.
+	synced := make(chan bool, 1)
+	go func() {
+		synced <- cache.WaitForNamedCacheSync(resourceName, stopCh, informer.HasSynced)
+	}()
+	select {
+	case ok := <-synced:
+		if !ok {
+			close(stopCh)
+			return fmt.Errorf("failed to sync %s informer cache", resourceName)
+		}
+	case <-w.stopChannel:
+		// Shutting down: stop the informer and abandon the start (not an error).
+		// Closing stopCh also unblocks the WaitForNamedCacheSync goroutine.
 		close(stopCh)
-		return fmt.Errorf("failed to sync %s informer cache", resourceName)
+		return nil
 	}
 
 	informer.AddEventHandler(notifyHandler(notifyEvents))
 
+	w.informersMtx.Lock()
+	// If the watcher closed while we were syncing, don't register a live informer:
+	// Close() has already drained the stop channels and would never stop this one.
+	select {
+	case <-w.stopChannel:
+		w.informersMtx.Unlock()
+		close(stopCh)
+		return nil
+	default:
+	}
+	// If another goroutine already started this resource, discard ours.
+	if _, running := w.informers[resourceName]; running {
+		w.informersMtx.Unlock()
+		close(stopCh)
+		return nil
+	}
 	w.informers[resourceName] = informer
 	w.informerStopChannels[resourceName] = stopCh
+	w.informersMtx.Unlock()
 
 	// A new resource type just became available; trigger a config reload.
 	notify(notifyEvents)
@@ -387,6 +425,10 @@ func (w *PrometheusCRWatcher) rateLimitedEventSender(upstreamEvents chan Event, 
 }
 
 func (w *PrometheusCRWatcher) Close() error {
+	// Signal shutdown first so any in-flight startMonitorInformer aborts its cache
+	// sync and will not register a new informer after this point.
+	close(w.stopChannel)
+
 	// Stop any per-type monitoring informers (each has its own stop channel).
 	w.informersMtx.Lock()
 	for name, stopCh := range w.informerStopChannels {
@@ -396,8 +438,6 @@ func (w *PrometheusCRWatcher) Close() error {
 	}
 	w.informersMtx.Unlock()
 
-	// Stop the CRD watch and release Watch's blocking read.
-	close(w.stopChannel)
 	return nil
 }
 

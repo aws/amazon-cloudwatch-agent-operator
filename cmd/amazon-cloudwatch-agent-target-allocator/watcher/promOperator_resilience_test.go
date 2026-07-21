@@ -10,6 +10,7 @@ import (
 	"time"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -154,5 +155,50 @@ func TestNotifyHandlerSignalsOnAllEvents(t *testing.T) {
 				t.Fatalf("%s handler did not signal a reload", tc)
 			}
 		})
+	}
+}
+
+
+// TestCloseInterruptsInFlightSync verifies that Close() returns promptly even
+// when an informer is still syncing against a slow/hung apiserver LIST. This is
+// the shutdown path the CRD-resilience change must tolerate: a CRD's initial
+// LIST is slow or rejected, so WaitForNamedCacheSync is still blocked when the
+// process is asked to shut down. Close() must not wait for that sync (which
+// could otherwise hang until SIGKILL).
+func TestCloseInterruptsInFlightSync(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, true, false)
+
+	// Make the ServiceMonitor LIST block, simulating a slow/hung apiserver so the
+	// informer never finishes its initial cache sync.
+	fakeMon := w.kubeMonitoringClient.(*fakemonitoringclient.Clientset)
+	release := make(chan struct{})
+	defer close(release)
+	fakeMon.PrependReactor("list", "servicemonitors",
+		func(action clienttesting.Action) (bool, runtime.Object, error) {
+			<-release
+			return false, nil, nil
+		})
+
+	// Start the informer; it will block waiting for the (never-completing) sync.
+	startReturned := make(chan struct{})
+	go func() {
+		_ = w.startMonitorInformer(monitoringv1.ServiceMonitorName, make(chan struct{}, 1))
+		close(startReturned)
+	}()
+
+	// Let it reach the sync wait.
+	time.Sleep(300 * time.Millisecond)
+
+	// Close() must return promptly regardless of the in-flight sync.
+	closed := make(chan struct{})
+	go func() {
+		_ = w.Close()
+		close(closed)
+	}()
+
+	select {
+	case <-closed:
+	case <-time.After(3 * time.Second):
+		t.Fatal("Close() hung while an informer was still syncing against a slow apiserver LIST")
 	}
 }
