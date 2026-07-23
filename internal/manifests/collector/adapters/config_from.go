@@ -7,6 +7,7 @@ package adapters
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 )
@@ -101,7 +102,25 @@ type AppSignals struct {
 type emf struct {
 }
 
+// jmx marks the presence of the jmx section in the agent configuration. The
+// CloudWatch agent accepts this section as either a single object or an array
+// of objects (one entry per JMX target), so unmarshalling must tolerate both.
+// The operator only cares about presence, not contents.
 type jmx struct{}
+
+// UnmarshalJSON accepts both the object and array forms of the jmx section.
+func (j *jmx) UnmarshalJSON(data []byte) error {
+	var value any
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	switch value.(type) {
+	case map[string]any, []any:
+		return nil
+	default:
+		return fmt.Errorf("invalid jmx configuration: expected object or array, got %T", value)
+	}
+}
 
 type kubernetes struct {
 	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`

@@ -532,6 +532,15 @@ func TestJMXGetContainerPorts(t *testing.T) {
 	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
 }
 
+func TestJMXArrayGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/jmxAgentArrayConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 1, len(containerPorts))
+	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
+	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
 func TestJMXContainerInsightsGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/jmxContainerInsightsConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
