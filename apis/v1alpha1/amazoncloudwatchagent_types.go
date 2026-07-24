@@ -372,6 +372,7 @@ type AmazonCloudWatchAgentTargetAllocatorPrometheusCR struct {
 	// not so annotated. This lets a heavy/singleton monitor be routed to the central cluster-scraper
 	// agent while all others stay on the per-node agent.
 	// +optional
+	// +kubebuilder:validation:Enum=cluster-scraper
 	ScraperRole string `json:"scraperRole,omitempty"`
 }
 

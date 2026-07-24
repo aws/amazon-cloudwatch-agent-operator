@@ -6846,6 +6846,8 @@ spec:
                           "cloudwatch.aws/scraper" annotation on the monitor CR. "cluster-scraper" selects only monitors
                           annotated cloudwatch.aws/scraper: cluster-scraper; empty (default) selects only monitors that are
                           not so annotated.
+                        enum:
+                        - cluster-scraper
                         type: string
                       serviceMonitorSelector:
                         additionalProperties:
