@@ -358,6 +358,11 @@ func (pn *perNodeAllocator) SetCollectors(collectors map[string]*Collector) {
 
 	CollectorsAllocatable.WithLabelValues(perNodeStrategyName).Set(float64(len(collectors)))
 	if len(collectors) == 0 {
+		// Intentional parity with consistentHashingAllocator: on a transient drop
+		// to zero collectors (e.g. a full DaemonSet restart) keep the existing node
+		// index and target mappings rather than clearing them. Clearing would drop
+		// every target during that window; the state is corrected on the next
+		// non-empty SetCollectors.
 		pn.log.Info("No collector instances present")
 		return
 	}
