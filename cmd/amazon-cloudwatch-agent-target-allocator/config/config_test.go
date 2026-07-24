@@ -163,3 +163,12 @@ func TestValidateConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllocationFallbackStrategy(t *testing.T) {
+	// Unset: no fallback.
+	assert.Equal(t, "", Config{}.GetAllocationFallbackStrategy())
+
+	// Set: returns the configured value.
+	strategy := "consistent-hashing"
+	assert.Equal(t, strategy, Config{FallbackAllocationStrategy: &strategy}.GetAllocationFallbackStrategy())
+}

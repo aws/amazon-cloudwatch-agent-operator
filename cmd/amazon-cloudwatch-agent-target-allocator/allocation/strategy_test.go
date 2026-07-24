@@ -78,11 +78,11 @@ func Benchmark_Setting(b *testing.B) {
 }
 
 func TestCollectorDiff(t *testing.T) {
-	collector0 := NewCollector("collector-0")
-	collector1 := NewCollector("collector-1")
-	collector2 := NewCollector("collector-2")
-	collector3 := NewCollector("collector-3")
-	collector4 := NewCollector("collector-4")
+	collector0 := NewCollector("collector-0", "")
+	collector1 := NewCollector("collector-1", "")
+	collector2 := NewCollector("collector-2", "")
+	collector3 := NewCollector("collector-3", "")
+	collector4 := NewCollector("collector-4", "")
 	type args struct {
 		current map[string]*Collector
 		new     map[string]*Collector
@@ -121,5 +121,25 @@ func TestCollectorDiff(t *testing.T) {
 				t.Errorf("DiffMaps() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+
+// TestWithFallbackStrategy covers the option's no-op branches: an empty name,
+// and an allocator that does not support a fallback strategy.
+func TestWithFallbackStrategy(t *testing.T) {
+	// Empty name is a no-op: the per-node fallback stays disabled.
+	a, err := New(perNodeStrategyName, logger, WithFallbackStrategy(""))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if pn := a.(*perNodeAllocator); pn.fallbackHasher != nil {
+		t.Error("empty fallback name must leave the fallback disabled")
+	}
+
+	// An allocator that does not implement fallbackStrategySetter (consistent
+	// hashing) silently ignores the option.
+	if _, err := New(consistentHashingStrategyName, logger, WithFallbackStrategy(consistentHashingStrategyName)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

@@ -1,0 +1,14 @@
+# Regression fixture: a scrape job that omits scrape_protocols.
+# The TA config-load path must default scrape_protocols so the agent does not
+# reject the config with "scrape_protocols cannot be empty".
+config:
+  scrape_configs:
+    - job_name: prometheus-sample-app
+      kubernetes_sd_configs:
+        - role: pod
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          regex: prometheus-sample-app
+          action: keep
+        - target_label: label1
+          replacement: value1
