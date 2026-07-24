@@ -40,6 +40,10 @@ const defaultCollectorNamespace = "amazon-cloudwatch"
 
 const minEventInterval = time.Second * 5
 
+// crdCheckTimeout bounds each startup CustomResourceDefinition existence check so
+// a wedged apiserver cannot block the Watch startup loop indefinitely.
+const crdCheckTimeout = 10 * time.Second
+
 // monitoringResources maps the prometheus-operator resource name to the
 // GroupVersionResource used to build its informer.
 var monitoringResources = map[string]schema.GroupVersionResource{
@@ -378,7 +382,9 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 	// Start informers for CRDs that already exist. Absent CRDs are simply
 	// skipped here; the CRD watch below starts them if/when they appear.
 	for crdName, resourceName := range crdNameToResource {
-		exists, err := w.crdExists(context.Background(), crdName)
+		ctx, cancel := context.WithTimeout(context.Background(), crdCheckTimeout)
+		exists, err := w.crdExists(ctx, crdName)
+		cancel()
 		if err != nil {
 			// Surface the error but keep going — a transient API error must not
 			// take down the allocator. The CRD watch will recover the informer.
