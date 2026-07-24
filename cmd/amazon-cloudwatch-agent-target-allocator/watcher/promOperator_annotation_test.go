@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 )
 
 // TestAnnotationRoleMatches verifies the annotation-based routing partition: the cluster-scraper
@@ -103,39 +105,71 @@ func TestSelectsMonitor(t *testing.T) {
 // (matching TestLoadConfig's harness): an annotated ServiceMonitor is discovered by the
 // cluster-scraper role and excluded by the default role.
 func TestLoadConfigScraperRouting(t *testing.T) {
-	newAnnotatedSM := func() *monitoringv1.ServiceMonitor {
+	const monName = "routed"
+	newSM := func(annotated bool) *monitoringv1.ServiceMonitor {
+		ann := map[string]string{}
+		if annotated {
+			ann[ScraperAnnotationKey] = clusterScraperRole
+		}
 		return &monitoringv1.ServiceMonitor{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        "routed",
-				Namespace:   "test",
-				Annotations: map[string]string{ScraperAnnotationKey: clusterScraperRole},
-			},
-			Spec: monitoringv1.ServiceMonitorSpec{
-				Endpoints: []monitoringv1.Endpoint{{Port: "metrics"}},
-			},
+			ObjectMeta: metav1.ObjectMeta{Name: monName, Namespace: "test", Annotations: ann},
+			Spec:       monitoringv1.ServiceMonitorSpec{Endpoints: []monitoringv1.Endpoint{{Port: "metrics"}}},
+		}
+	}
+	newPM := func(annotated bool) *monitoringv1.PodMonitor {
+		ann := map[string]string{}
+		if annotated {
+			ann[ScraperAnnotationKey] = clusterScraperRole
+		}
+		return &monitoringv1.PodMonitor{
+			ObjectMeta: metav1.ObjectMeta{Name: monName, Namespace: "test", Annotations: ann},
+			Spec:       monitoringv1.PodMonitorSpec{PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{{Port: ptr.To("metrics")}}},
 		}
 	}
 
+	// PodMonitor discovery mirrors ServiceMonitor, so both kinds are exercised
+	// through LoadConfig for both roles, annotated and unannotated.
 	cases := []struct {
 		name         string
+		kind         string // "ServiceMonitor" or "PodMonitor"
+		annotated    bool
 		role         string
 		wantSelected bool
 	}{
-		{"cluster-scraper claims annotated monitor", clusterScraperRole, true},
-		{"default role excludes annotated monitor", "", false},
+		{"cluster-scraper claims annotated ServiceMonitor", "ServiceMonitor", true, clusterScraperRole, true},
+		{"default excludes annotated ServiceMonitor", "ServiceMonitor", true, "", false},
+		{"default claims unannotated ServiceMonitor", "ServiceMonitor", false, "", true},
+		{"cluster-scraper excludes unannotated ServiceMonitor", "ServiceMonitor", false, clusterScraperRole, false},
+		{"cluster-scraper claims annotated PodMonitor", "PodMonitor", true, clusterScraperRole, true},
+		{"default excludes annotated PodMonitor", "PodMonitor", true, "", false},
+		{"default claims unannotated PodMonitor", "PodMonitor", false, "", true},
+		{"cluster-scraper excludes unannotated PodMonitor", "PodMonitor", false, clusterScraperRole, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			w := getTestPrometheusCRWatcher(t, newAnnotatedSM(), nil)
+			var sm *monitoringv1.ServiceMonitor
+			var pm *monitoringv1.PodMonitor
+			if tc.kind == "ServiceMonitor" {
+				sm = newSM(tc.annotated)
+			} else {
+				pm = newPM(tc.annotated)
+			}
+
+			w := getTestPrometheusCRWatcher(t, sm, pm)
 			w.logger = logr.Discard()
 			w.scraperRole = tc.role
+			defer func() { _ = w.Close() }()
+
 			for _, informer := range w.informers {
 				informer.Start(w.stopChannel)
 			}
+			// Bounded sync wait instead of an unbounded HasSynced spin loop, so a
+			// stuck informer fails fast rather than hanging until CI kills it.
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 			for _, informer := range w.informers {
-				for !informer.HasSynced() {
-					time.Sleep(50 * time.Millisecond)
-				}
+				require.True(t, cache.WaitForCacheSync(ctx.Done(), informer.HasSynced),
+					"informer cache did not sync before timeout")
 			}
 
 			got, err := w.LoadConfig(context.Background())
@@ -143,13 +177,14 @@ func TestLoadConfigScraperRouting(t *testing.T) {
 
 			var found bool
 			for _, sc := range got.ScrapeConfigs {
-				if strings.Contains(sc.JobName, "routed") {
+				if strings.Contains(sc.JobName, monName) {
 					found = true
 					break
 				}
 			}
 			assert.Equalf(t, tc.wantSelected, found,
-				"annotated monitor discovered=%v, want %v for scraperRole=%q", found, tc.wantSelected, tc.role)
+				"%s discovered=%v, want %v (annotated=%v, scraperRole=%q)",
+				tc.kind, found, tc.wantSelected, tc.annotated, tc.role)
 		})
 	}
 }
