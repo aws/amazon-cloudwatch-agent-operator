@@ -149,6 +149,7 @@ type PrometheusCRWatcher struct {
 	metadataClient       metadata.Interface
 	eventInterval        time.Duration
 	stopChannel          chan struct{}
+	closeOnce            sync.Once
 	configGenerator      *prometheus.ConfigGenerator
 	prom                 *monitoringv1.Prometheus
 	kubeConfigPath       string
@@ -318,7 +319,7 @@ func (w *PrometheusCRWatcher) watchCRDs(notifyEvents chan struct{}) {
 	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
 	factory := metadatainformer.NewSharedInformerFactory(w.metadataClient, allocatorconfig.DefaultResyncTime)
 	crdInformer := factory.ForResource(crdGVR).Informer()
-	_, _ = crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	if _, err := crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			name, ok := crdObjectName(obj)
 			if !ok {
@@ -346,7 +347,11 @@ func (w *PrometheusCRWatcher) watchCRDs(notifyEvents chan struct{}) {
 			w.stopMonitorInformer(resourceName, notifyEvents)
 			w.logger.Info("prometheus-cr: CRD removed, stopped informer and dropped targets", "crd", name, "resource", resourceName)
 		},
-	})
+	}); err != nil {
+		// A failed registration means CRD create/delete would go unobserved; log it
+		// so a dead CRD watch is visible rather than silently wiring up no handler.
+		w.logger.Error(err, "prometheus-cr: failed to register CRD informer event handler; runtime CRD add/remove will not be observed")
+	}
 	factory.Start(w.stopChannel)
 }
 
@@ -445,18 +450,22 @@ func (w *PrometheusCRWatcher) rateLimitedEventSender(upstreamEvents chan Event, 
 }
 
 func (w *PrometheusCRWatcher) Close() error {
-	// Signal shutdown first so any in-flight startMonitorInformer aborts its cache
-	// sync and will not register a new informer after this point.
-	close(w.stopChannel)
+	// sync.Once so a second Close() is a safe no-op rather than a panic on the
+	// already-closed stopChannel.
+	w.closeOnce.Do(func() {
+		// Signal shutdown first so any in-flight startMonitorInformer aborts its cache
+		// sync and will not register a new informer after this point.
+		close(w.stopChannel)
 
-	// Stop any per-type monitoring informers (each has its own stop channel).
-	w.informersMtx.Lock()
-	for name, stopCh := range w.informerStopChannels {
-		close(stopCh)
-		delete(w.informerStopChannels, name)
-		delete(w.informers, name)
-	}
-	w.informersMtx.Unlock()
+		// Stop any per-type monitoring informers (each has its own stop channel).
+		w.informersMtx.Lock()
+		for name, stopCh := range w.informerStopChannels {
+			close(stopCh)
+			delete(w.informerStopChannels, name)
+			delete(w.informers, name)
+		}
+		w.informersMtx.Unlock()
+	})
 
 	return nil
 }
