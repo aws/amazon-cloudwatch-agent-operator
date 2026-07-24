@@ -155,7 +155,10 @@ func (w *PrometheusCRWatcher) selectsMonitor(kind, namespace, name string, annot
 		return false
 	}
 	if w.scraperRole == clusterScraperRole {
-		w.logger.Info("routing monitor to cluster-scraper via annotation",
+		// V(1): LoadConfig reruns on every reconcile, so this fires per claimed
+		// monitor each cycle — keep it at debug verbosity to avoid log spam on
+		// large annotated sets.
+		w.logger.V(1).Info("routing monitor to cluster-scraper via annotation",
 			"kind", kind, "namespace", namespace, "name", name,
 			"annotation", ScraperAnnotationKey+"="+clusterScraperRole)
 	}

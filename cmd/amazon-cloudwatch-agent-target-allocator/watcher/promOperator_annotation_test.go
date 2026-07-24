@@ -81,7 +81,8 @@ func TestSelectsMonitor(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			var logs []string
-			logger := funcr.New(func(prefix, args string) { logs = append(logs, args) }, funcr.Options{})
+			// Verbosity 1 so the V(1) cluster-scraper routing log is captured.
+			logger := funcr.New(func(prefix, args string) { logs = append(logs, args) }, funcr.Options{Verbosity: 1})
 			w := &PrometheusCRWatcher{logger: logger, scraperRole: tc.role}
 
 			got := w.selectsMonitor("PodMonitor", "ns", "mon", tc.annotations)
