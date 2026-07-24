@@ -42,20 +42,22 @@ const (
 )
 
 type Config struct {
-	ListenAddr             string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig          *rest.Config          `yaml:"-"`
-	RootLogger             logr.Logger           `yaml:"-"`
-	ReloadConfig           bool                  `yaml:"-"`
-	LabelSelector          map[string]string     `yaml:"label_selector,omitempty"`
-	PromConfig             *promconfig.Config    `yaml:"config"`
-	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
-	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
-	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	HTTPS                  HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config          `yaml:"-"`
+	RootLogger                 logr.Logger           `yaml:"-"`
+	ReloadConfig               bool                  `yaml:"-"`
+	LabelSelector              map[string]string     `yaml:"label_selector,omitempty"`
+	PromConfig                 *promconfig.Config    `yaml:"config"`
+	AllocationStrategy         *string               `yaml:"allocation_strategy,omitempty"`
+	FallbackAllocationStrategy *string               `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             *string               `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector         map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector     map[string]string     `yaml:"service_monitor_selector,omitempty"`
+	ScraperRole                string                `yaml:"scraper_role,omitempty"`
+	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -76,6 +78,16 @@ func (c Config) GetAllocationStrategy() string {
 		return *c.AllocationStrategy
 	}
 	return DefaultAllocationStrategy
+}
+
+// GetAllocationFallbackStrategy returns the strategy used to place targets that
+// the primary strategy cannot assign (e.g. per-node targets with no node match).
+// Empty means no fallback (such targets are left unassigned).
+func (c Config) GetAllocationFallbackStrategy() string {
+	if c.FallbackAllocationStrategy != nil {
+		return *c.FallbackAllocationStrategy
+	}
+	return ""
 }
 
 func (c Config) GetTargetsFilterStrategy() string {
@@ -118,6 +130,13 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	if err != nil {
 		return err
 	}
+
+	// OR the CLI flag into the YAML value so either source can enable the watcher.
+	prometheusCREnabled, err := getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+	target.PrometheusCR.Enabled = target.PrometheusCR.Enabled || prometheusCREnabled
 
 	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
 	if err != nil {
