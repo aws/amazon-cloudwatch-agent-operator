@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	metadatafake "k8s.io/client-go/metadata/fake"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/ptr"
 )
@@ -375,6 +376,21 @@ func crdFor(resourceName string) *apiextensionsv1.CustomResourceDefinition {
 	}
 }
 
+// crdMetaFor builds the metadata-only view of a CRD for the fake metadata client
+// backing the CRD watch. TypeMeta must carry the CRD GVK so the fake tracker maps
+// it to the customresourcedefinitions resource the informer lists on.
+func crdMetaFor(resourceName string) *metav1.PartialObjectMetadata {
+	return &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName + "." + monitoringv1.SchemeGroupVersion.Group,
+		},
+	}
+}
+
 func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor, smCRD, pmCRD bool) *PrometheusCRWatcher {
 	mClient := fakemonitoringclient.NewSimpleClientset() //nolint:staticcheck // NewClientset causes structured merge diff schema errors in tests
 	if sm != nil {
@@ -398,6 +414,20 @@ func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMo
 		crdObjects = append(crdObjects, crdFor(monitoringv1.PodMonitorName))
 	}
 	crdClient := apiextensionsfake.NewSimpleClientset(crdObjects...)
+
+	// Metadata-only fake backing the CRD watch, populated with the same present CRDs.
+	metaScheme := metadatafake.NewTestScheme()
+	if err := metav1.AddMetaToScheme(metaScheme); err != nil {
+		t.Fatal(t, err)
+	}
+	var crdMetaObjects []runtime.Object
+	if smCRD {
+		crdMetaObjects = append(crdMetaObjects, crdMetaFor(monitoringv1.ServiceMonitorName))
+	}
+	if pmCRD {
+		crdMetaObjects = append(crdMetaObjects, crdMetaFor(monitoringv1.PodMonitorName))
+	}
+	metadataClient := metadatafake.NewSimpleMetadataClient(metaScheme, crdMetaObjects...)
 
 	k8sClient := fake.NewSimpleClientset()
 	_, err := k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
@@ -444,6 +474,7 @@ func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMo
 		kubeMonitoringClient:   mClient,
 		k8sClient:              k8sClient,
 		crdClient:              crdClient,
+		metadataClient:         metadataClient,
 		informers:              map[string]*informers.ForResource{},
 		informerStopChannels:   map[string]chan struct{}{},
 		configGenerator:        generator,
@@ -545,10 +576,10 @@ func TestWatchStartsInformerWhenCRDCreated(t *testing.T) {
 		return len(runningInformers(w)) > 0
 	}, 200*time.Millisecond, 20*time.Millisecond)
 
-	// Create the ServiceMonitor CRD after startup.
-	_, err := w.crdClient.ApiextensionsV1().CustomResourceDefinitions().Create(
-		context.Background(), crdFor(monitoringv1.ServiceMonitorName), metav1.CreateOptions{})
-	require.NoError(t, err)
+	// Create the ServiceMonitor CRD after startup (metadata-only CRD watch).
+	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
+	require.NoError(t, w.metadataClient.(*metadatafake.FakeMetadataClient).Tracker().Create(
+		crdGVR, crdMetaFor(monitoringv1.ServiceMonitorName), ""))
 
 	require.Eventually(t, func() bool {
 		return runningInformers(w)[monitoringv1.ServiceMonitorName]
@@ -592,7 +623,7 @@ func TestStopMonitorInformerDropsType(t *testing.T) {
 // TestCRDObjectName verifies the CRD-name extraction used by the CRD watch,
 // including the delete tombstone wrapper.
 func TestCRDObjectName(t *testing.T) {
-	crd := crdFor(monitoringv1.ServiceMonitorName)
+	crd := crdMetaFor(monitoringv1.ServiceMonitorName)
 	name, ok := crdObjectName(crd)
 	require.True(t, ok)
 	assert.Equal(t, "servicemonitors.monitoring.coreos.com", name)

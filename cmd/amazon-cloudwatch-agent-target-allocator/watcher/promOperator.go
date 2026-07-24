@@ -23,13 +23,14 @@ import (
 	"gopkg.in/yaml.v2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	apiextensionsinformers "k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
+	"k8s.io/client-go/metadata/metadatainformer"
 	"k8s.io/client-go/tools/cache"
 
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
@@ -67,6 +68,14 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	crdClient, err := apiextensionsclient.NewForConfig(cfg.ClusterConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Metadata-only client for the CRD watch: it caches just object metadata
+	// (name), not each CustomResourceDefinition's full spec/OpenAPI schema, so
+	// memory stays flat on clusters with many (large) CRDs.
+	metadataClient, err := metadata.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +124,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		kubeMonitoringClient:   mClient,
 		k8sClient:              clientset,
 		crdClient:              crdClient,
+		metadataClient:         metadataClient,
 		informers:              map[string]*informers.ForResource{},
 		informerStopChannels:   map[string]chan struct{}{},
 		stopChannel:            make(chan struct{}),
@@ -132,6 +142,7 @@ type PrometheusCRWatcher struct {
 	kubeMonitoringClient monitoringclient.Interface
 	k8sClient            kubernetes.Interface
 	crdClient            apiextensionsclient.Interface
+	metadataClient       metadata.Interface
 	eventInterval        time.Duration
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
@@ -278,14 +289,16 @@ func (w *PrometheusCRWatcher) stopMonitorInformer(resourceName string, notifyEve
 	notify(notifyEvents)
 }
 
-// crdObjectName extracts the CustomResourceDefinition name from an informer
-// event object, tolerating the tombstone wrapper delivered on some deletes.
+// crdObjectName extracts the CustomResourceDefinition name from a metadata
+// informer event object, tolerating the tombstone wrapper delivered on some
+// deletes. The metadata informer delivers *metav1.PartialObjectMetadata (name
+// only), not the full CustomResourceDefinition.
 func crdObjectName(obj interface{}) (string, bool) {
 	switch t := obj.(type) {
-	case *apiextensionsv1.CustomResourceDefinition:
+	case *metav1.PartialObjectMetadata:
 		return t.Name, true
 	case cache.DeletedFinalStateUnknown:
-		if crd, ok := t.Obj.(*apiextensionsv1.CustomResourceDefinition); ok {
+		if crd, ok := t.Obj.(*metav1.PartialObjectMetadata); ok {
 			return crd.Name, true
 		}
 	}
@@ -298,8 +311,9 @@ func crdObjectName(obj interface{}) (string, bool) {
 // existing CRDs on its initial sync, so CRDs present at startup are handled here
 // too (startMonitorInformer is idempotent).
 func (w *PrometheusCRWatcher) watchCRDs(notifyEvents chan struct{}) {
-	factory := apiextensionsinformers.NewSharedInformerFactory(w.crdClient, allocatorconfig.DefaultResyncTime)
-	crdInformer := factory.Apiextensions().V1().CustomResourceDefinitions().Informer()
+	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
+	factory := metadatainformer.NewSharedInformerFactory(w.metadataClient, allocatorconfig.DefaultResyncTime)
+	crdInformer := factory.ForResource(crdGVR).Informer()
 	_, _ = crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			name, ok := crdObjectName(obj)

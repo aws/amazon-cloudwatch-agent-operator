@@ -18,6 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	metadatafake "k8s.io/client-go/metadata/fake"
 	clienttesting "k8s.io/client-go/testing"
 )
 
@@ -123,10 +124,14 @@ func TestWatchIgnoresUntrackedCRD(t *testing.T) {
 
 	go func() { _ = w.Watch(make(chan Event, 1), make(chan error, 1)) }()
 
-	_, err := w.crdClient.ApiextensionsV1().CustomResourceDefinitions().Create(
-		context.Background(),
-		&apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"}},
-		metav1.CreateOptions{})
+	// The CRD watch is metadata-only; add an untracked CRD to the metadata tracker
+	// so the informer delivers it and we can assert it starts no monitoring informer.
+	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
+	err := w.metadataClient.(*metadatafake.FakeMetadataClient).Tracker().Create(crdGVR,
+		&metav1.PartialObjectMetadata{
+			TypeMeta:   metav1.TypeMeta{APIVersion: apiextensionsv1.SchemeGroupVersion.String(), Kind: "CustomResourceDefinition"},
+			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
+		}, "")
 	require.NoError(t, err)
 
 	require.Never(t, func() bool {
