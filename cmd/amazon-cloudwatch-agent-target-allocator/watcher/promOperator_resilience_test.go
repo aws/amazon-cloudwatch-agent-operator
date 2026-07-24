@@ -207,3 +207,39 @@ func TestCloseInterruptsInFlightSync(t *testing.T) {
 		t.Fatal("Close() hung while an informer was still syncing against a slow apiserver LIST")
 	}
 }
+
+
+// TestWatchStopsInformerWhenCRDDeleted covers the delete path end to end: with a
+// tracked CRD present at startup its informer is running; deleting that CRD via
+// the metadata client must drive the CRD watch's DeleteFunc, stopping the
+// informer and dropping its targets — no restart required.
+func TestWatchStopsInformerWhenCRDDeleted(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, true, false) // ServiceMonitor CRD present
+	w.eventInterval = 5 * time.Millisecond
+	defer func() { _ = w.Close() }()
+
+	go func() { _ = w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+
+	// Present-at-startup CRD => its informer starts.
+	require.Eventually(t, func() bool {
+		return runningInformers(w)[monitoringv1.ServiceMonitorName]
+	}, 5*time.Second, 10*time.Millisecond)
+
+	// Delete the CRD from the metadata tracker; DeleteFunc must stop the informer.
+	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
+	tracker := w.metadataClient.(*metadatafake.FakeMetadataClient).Tracker()
+	require.NoError(t, tracker.Delete(crdGVR, "", crdFor(monitoringv1.ServiceMonitorName).Name))
+
+	require.Eventually(t, func() bool {
+		return !runningInformers(w)[monitoringv1.ServiceMonitorName]
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
+// TestCloseIdempotent verifies Close() is safe to call more than once: the
+// sync.Once guard makes a second call a no-op instead of panicking on the
+// already-closed stop channel.
+func TestCloseIdempotent(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
+	require.NoError(t, w.Close())
+	require.NotPanics(t, func() { _ = w.Close() })
+}
