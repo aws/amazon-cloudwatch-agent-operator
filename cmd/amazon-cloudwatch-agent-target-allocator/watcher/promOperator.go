@@ -138,6 +138,13 @@ const (
 // Allocator, based on its scraperRole. cluster-scraper role selects only monitors annotated
 // cloudwatch.aws/scraper: cluster-scraper; the default role (empty) selects only monitors that are
 // not so annotated, so the two roles partition monitors with no overlap and no gap.
+// annotationRoleMatches reports whether a monitor with the given annotations
+// belongs to scraperRole. Routing is intentionally BINARY today: the
+// cluster-scraper role claims monitors annotated cloudwatch.aws/scraper:
+// cluster-scraper, and every other role (the default per-node agent) claims the
+// rest. NOTE: before a third role is introduced (e.g. a "gpu-scraper"), this must
+// become an explicit role-to-annotation-value match — otherwise any unrecognized
+// role would silently fall through to the per-node bucket here.
 func annotationRoleMatches(scraperRole string, annotations map[string]string) bool {
 	routed := annotations[ScraperAnnotationKey] == clusterScraperRole
 	if scraperRole == clusterScraperRole {
