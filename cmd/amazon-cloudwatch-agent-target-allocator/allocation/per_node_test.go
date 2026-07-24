@@ -430,3 +430,23 @@ func TestPerNodeWarnsOnceWhenNoFallback(t *testing.T) {
 	}
 	assert.Equal(t, 1, warnings, "no-fallback warning must be logged exactly once")
 }
+
+
+// TestPerNodeTwoCollectorsSameNodeTieBreak verifies that when two collectors
+// report the same node (e.g. a transient maxSurge DaemonSet rollout), the node
+// is owned deterministically by the smaller pod name, not by map iteration
+// order, so target placement doesn't flap.
+func TestPerNodeTwoCollectorsSameNodeTieBreak(t *testing.T) {
+	// Run several times: SetCollectors iterates a map (random order), so a flaky
+	// last-write-wins would eventually pick the larger name.
+	for i := 0; i < 50; i++ {
+		c := newPerNodeTestAllocator()
+		c.SetCollectors(map[string]*Collector{
+			"collector-b": NewCollector("collector-b", "node-a"),
+			"collector-a": NewCollector("collector-a", "node-a"),
+		})
+		owner := c.collectorByNode["node-a"]
+		require.NotNil(t, owner)
+		assert.Equal(t, "collector-a", owner.Name, "smaller pod name must deterministically own the shared node")
+	}
+}

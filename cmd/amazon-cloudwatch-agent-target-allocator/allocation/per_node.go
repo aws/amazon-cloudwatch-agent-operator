@@ -256,9 +256,17 @@ func (pn *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Rebuild the node index from the current collector set.
 	pn.collectorByNode = make(map[string]*Collector)
 	for _, c := range pn.collectors {
-		if c.NodeName != "" {
-			pn.collectorByNode[c.NodeName] = c
+		if c.NodeName == "" {
+			continue
 		}
+		// Deterministic tie-break: normally there is one collector (DaemonSet pod)
+		// per node, but a maxSurge rollout can briefly place two pods on the same
+		// node. Keep the one with the smaller pod name so node ownership — and thus
+		// target placement — doesn't flap with map iteration order.
+		if existing, ok := pn.collectorByNode[c.NodeName]; ok && existing.Name <= c.Name {
+			continue
+		}
+		pn.collectorByNode[c.NodeName] = c
 	}
 
 	// Log the node->collector index so it's clear which node each agent owns.
