@@ -68,6 +68,10 @@ type perNodeAllocator struct {
 	// collectors used to place targets that cannot be matched to a node.
 	fallbackHasher *consistent.Consistent
 
+	// warnedNoFallback ensures the "per-node has no fallback" warning is logged
+	// at most once (guarded by the same lock as the allocation state).
+	warnedNoFallback bool
+
 	log logr.Logger
 
 	filter Filter
@@ -176,6 +180,12 @@ func (pn *perNodeAllocator) addTargetToTargetItems(tg *target.Item) placement {
 				"target", strings.Join(tg.TargetURL, ","), "job", tg.JobName, "node", nodeName, "collector", fallbackCol.Name, "reason", reason)
 			return placedByFallback
 		}
+	}
+	if pn.fallbackHasher == nil && !pn.warnedNoFallback {
+		pn.warnedNoFallback = true
+		pn.log.Info("per-node: no fallback strategy configured; targets that cannot be matched to a " +
+			"node-local collector (e.g. targets with no node label) will be left UNASSIGNED and never " +
+			"scraped. Configure a \"consistent-hashing\" fallback to place them.")
 	}
 	pn.log.V(1).Info("per-node: target left UNASSIGNED (no node-local collector and no usable fallback)",
 		"target", strings.Join(tg.TargetURL, ","), "job", tg.JobName, "node", nodeName)

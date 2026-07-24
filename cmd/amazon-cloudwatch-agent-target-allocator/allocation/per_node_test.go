@@ -4,8 +4,10 @@
 package allocation
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/go-logr/logr/funcr"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -393,4 +395,38 @@ func TestPerNodeHandleTargetsSkipsAlreadyTracked(t *testing.T) {
 
 	assert.Len(t, c.TargetItems(), 1, "already-tracked target must not be added twice")
 	assert.Equal(t, 0, c.Collectors()["collector-a"].NumTargets, "guarded target must not be (re)assigned")
+}
+
+
+// TestPerNodeWarnsOnceWhenNoFallback verifies that a per-node allocator with no
+// fallback logs the "no fallback strategy configured" warning exactly once (not
+// per target) and leaves node-less targets unassigned.
+func TestPerNodeWarnsOnceWhenNoFallback(t *testing.T) {
+	var msgs []string
+	capLogger := funcr.New(func(prefix, args string) { msgs = append(msgs, args) }, funcr.Options{})
+
+	c := newPerNodeAllocator(capLogger).(*perNodeAllocator)
+	c.SetCollectors(map[string]*Collector{
+		"collector-a": NewCollector("collector-a", "node-a"),
+	})
+
+	// Two node-less targets: with no fallback both stay unassigned, and the
+	// warning must fire exactly once.
+	n1 := nodeTarget("job1", "10.0.0.9:8080", "")
+	n2 := nodeTarget("job1", "10.0.0.10:8080", "")
+	c.SetTargets(map[string]*target.Item{n1.Hash(): n1, n2.Hash(): n2})
+
+	for _, ti := range c.TargetItems() {
+		if ti.Hash() == n1.Hash() || ti.Hash() == n2.Hash() {
+			assert.Equal(t, "", ti.CollectorName, "node-less target must be unassigned without a fallback")
+		}
+	}
+
+	warnings := 0
+	for _, m := range msgs {
+		if strings.Contains(m, "no fallback strategy configured") {
+			warnings++
+		}
+	}
+	assert.Equal(t, 1, warnings, "no-fallback warning must be logged exactly once")
 }
