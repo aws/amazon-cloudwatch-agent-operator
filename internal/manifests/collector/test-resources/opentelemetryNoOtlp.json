@@ -1,0 +1,10 @@
+{
+  "opentelemetry": {
+    "collect": {
+      "container_insights": {},
+      "prometheus": {
+        "config_path": "/etc/prometheus/prometheus.yaml"
+      }
+    }
+  }
+}

@@ -38,9 +38,10 @@ func ConfigFromJSONString(configStr string) (map[string]interface{}, error) {
 }
 
 type CwaConfig struct {
-	Metrics *Metrics `json:"metrics,omitempty"`
-	Logs    *Logs    `json:"logs,omitempty"`
-	Traces  *Traces  `json:"traces,omitempty"`
+	Metrics       *Metrics       `json:"metrics,omitempty"`
+	Logs          *Logs          `json:"logs,omitempty"`
+	Traces        *Traces        `json:"traces,omitempty"`
+	Opentelemetry *Opentelemetry `json:"opentelemetry,omitempty"`
 }
 
 type Metrics struct {
@@ -53,6 +54,14 @@ type Logs struct {
 
 type Traces struct {
 	TracesCollected *TracesCollected `json:"traces_collected,omitempty"`
+}
+
+type Opentelemetry struct {
+	Collect *OpentelemetryCollect `json:"collect,omitempty"`
+}
+
+type OpentelemetryCollect struct {
+	OTLP *otlp `json:"otlp,omitempty"`
 }
 
 type MetricsCollected struct {

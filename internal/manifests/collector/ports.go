@@ -130,6 +130,7 @@ func getServicePortsFromCWAgentConfig(logger logr.Logger, config *adapters.CwaCo
 	getMetricsReceiversServicePorts(logger, config, servicePortsMap)
 	getLogsReceiversServicePorts(logger, config, servicePortsMap)
 	getTracesReceiversServicePorts(logger, config, servicePortsMap)
+	getOpentelemetryReceiversServicePorts(logger, config, servicePortsMap)
 
 	return PortMapToServicePortList(servicePortsMap)
 }
@@ -272,7 +273,6 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
 		getReceiverServicePort(logger, config.Traces.TracesCollected.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
-
 	}
 	//Xray
 	if config.Traces.TracesCollected.XRay != nil {
@@ -284,6 +284,20 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 		getReceiverServicePort(logger, serviceAddress, XrayProxy, corev1.ProtocolTCP, servicePortsMap)
 	}
 	return tracesPorts
+}
+
+func getOpentelemetryReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
+	if config.Opentelemetry == nil || config.Opentelemetry.Collect == nil {
+		return
+	}
+
+	//OTLP
+	if config.Opentelemetry.Collect.OTLP != nil {
+		//GRPC
+		getReceiverServicePort(logger, config.Opentelemetry.Collect.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		//HTTP
+		getReceiverServicePort(logger, config.Opentelemetry.Collect.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+	}
 }
 
 func getApplicationSignalsReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
