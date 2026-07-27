@@ -625,7 +625,6 @@ func TestNginxInitContainerMissing(t *testing.T) {
 	}
 }
 
-
 // TestNginx_ConfigFile_PositionalArg_NoSplice exercises the P431312609
 // hardening: the user-controlled Nginx.ConfigFile value must reach BOTH the
 // clone and attach init containers only as a positional argument ($1), never

@@ -69,7 +69,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -161,7 +161,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/opt/customPath"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/opt/customPath"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -254,7 +254,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -352,7 +352,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -462,7 +462,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
@@ -570,7 +570,6 @@ func TestApacheInitContainerMissing(t *testing.T) {
 		})
 	}
 }
-
 
 // TestApacheHttpd_ConfigPath_PositionalArg_NoSplice exercises the P431312609
 // hardening: the user-controlled ApacheHttpd.ConfigPath value must reach the
