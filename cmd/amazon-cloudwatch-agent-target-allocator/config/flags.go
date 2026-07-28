@@ -34,7 +34,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(targetAllocatorName, errorHandling)
 	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
-	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable watching of Prometheus Operator custom resources (ServiceMonitor/PodMonitor) to dynamically generate scrape configs.")
+	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable watching of Prometheus Operator custom resources (ServiceMonitor/PodMonitor) to dynamically generate scrape configs. Enable-only: this flag is OR-ed with prometheus_cr.enabled from the config file, so passing =false cannot disable a watcher the config file enables.")
 	flagSet.Bool(reloadConfigFlagName, false, "Enable automatic configuration reloading. This functionality is deprecated and will be removed in a future release.")
 	flagSet.Bool(httpsEnabledFlagName, true, "Enable HTTPS additional server")
 	flagSet.String(listenAddrHttpsFlagName, ":8443", "The address where this service serves over HTTPS.")
