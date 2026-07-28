@@ -6,6 +6,7 @@ package collector
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -26,7 +27,7 @@ const (
 )
 
 var (
-	ns                   = os.Getenv("OTELCOL_NAMESPACE")
+	ns                   = strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE"))
 	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "amazon_cloudwatch_agent_allocator_collectors_discovered",
 		Help: "Number of collectors discovered.",
