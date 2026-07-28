@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -33,6 +34,23 @@ const defaultCollectorNamespace = "amazon-cloudwatch"
 
 const minEventInterval = time.Second * 5
 
+// serviceAccountNamespacePath is a variable so tests can redirect the read.
+var serviceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+
+func resolveCollectorNamespace(logger logr.Logger) string {
+	if ns := strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE")); ns != "" {
+		return ns
+	}
+	namespace := defaultCollectorNamespace
+	if data, err := os.ReadFile(serviceAccountNamespacePath); err == nil {
+		if ns := strings.TrimSpace(string(data)); ns != "" {
+			namespace = ns
+		}
+	}
+	logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", namespace)
+	return namespace
+}
+
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
@@ -53,15 +71,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 
 	// TODO: We should make these durations configurable
 	// Namespace must be non-empty; the config generator panics otherwise.
-	collectorNamespace := os.Getenv("OTELCOL_NAMESPACE")
-	if collectorNamespace == "" {
-		if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
-			collectorNamespace = string(ns)
-		} else {
-			collectorNamespace = defaultCollectorNamespace
-		}
-		logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", collectorNamespace)
-	}
+	collectorNamespace := resolveCollectorNamespace(logger)
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: collectorNamespace,
