@@ -6,7 +6,6 @@ package collector
 import (
 	"crypto/sha256"
 	"fmt"
-	"log/slog"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
@@ -63,8 +62,12 @@ func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
 	if !instance.Spec.Prometheus.IsEmpty() {
 		promYaml, err := instance.Spec.Prometheus.Yaml()
 		if err != nil {
-			// Static sentinel; Yaml() over map[string]interface{} rarely fails in practice.
-			slog.Warn("failed to serialize Spec.Prometheus for config hash", "error", err)
+			// Unreachable from the CRD path: Config.Object only ever holds JSON-decoded
+			// types, all of which gopkg.in/yaml.v3 encodes. Deliberately a constant: two
+			// different unserializable specs hash equal, so a Prometheus-only change would
+			// not roll pods while the error persists. Hash stability across operator
+			// restarts depends on gopkg.in/yaml.v3 (v3.0.1) sorting map keys
+			// (encode.go:189, and :242 for the inline-map branch).
 			config += "\x00prometheus-serialize-error"
 		} else {
 			config += "\x00" + promYaml // null byte prevents collision between config suffix and promYAML prefix
