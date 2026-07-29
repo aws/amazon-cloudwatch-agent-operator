@@ -41,7 +41,7 @@ type CwaConfig struct {
 	Metrics       *Metrics       `json:"metrics,omitempty"`
 	Logs          *Logs          `json:"logs,omitempty"`
 	Traces        *Traces        `json:"traces,omitempty"`
-	Opentelemetry *Opentelemetry `json:"opentelemetry,omitempty"`
+	OpenTelemetry *OpenTelemetry `json:"opentelemetry,omitempty"`
 }
 
 type Metrics struct {
@@ -56,7 +56,7 @@ type Traces struct {
 	TracesCollected *TracesCollected `json:"traces_collected,omitempty"`
 }
 
-type Opentelemetry struct {
+type OpenTelemetry struct {
 	Collect *OpentelemetryCollect `json:"collect,omitempty"`
 }
 

@@ -287,16 +287,16 @@ func getTracesReceiversServicePorts(logger logr.Logger, config *adapters.CwaConf
 }
 
 func getOpentelemetryReceiversServicePorts(logger logr.Logger, config *adapters.CwaConfig, servicePortsMap map[int32][]corev1.ServicePort) {
-	if config.Opentelemetry == nil || config.Opentelemetry.Collect == nil {
+	if config.OpenTelemetry == nil || config.OpenTelemetry.Collect == nil {
 		return
 	}
 
 	//OTLP
-	if config.Opentelemetry.Collect.OTLP != nil {
+	if config.OpenTelemetry.Collect.OTLP != nil {
 		//GRPC
-		getReceiverServicePort(logger, config.Opentelemetry.Collect.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
+		getReceiverServicePort(logger, config.OpenTelemetry.Collect.OTLP.GRPCEndpoint, OtlpGrpc, corev1.ProtocolTCP, servicePortsMap)
 		//HTTP
-		getReceiverServicePort(logger, config.Opentelemetry.Collect.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
+		getReceiverServicePort(logger, config.OpenTelemetry.Collect.OTLP.HTTPEndpoint, OtlpHttp, corev1.ProtocolTCP, servicePortsMap)
 	}
 }
 

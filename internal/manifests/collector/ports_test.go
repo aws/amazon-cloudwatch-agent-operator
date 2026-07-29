@@ -443,7 +443,7 @@ func TestOpentelemetryNoOtlpGetContainerPorts(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/opentelemetryNoOtlp.json")
 	config, err := adapters.ConfigStructFromJSONString(cfg)
 	assert.NoError(t, err)
-	assert.Nil(t, config.Opentelemetry.Collect.OTLP)
+	assert.Nil(t, config.OpenTelemetry.Collect.OTLP)
 	assert.Empty(t, getContainerPorts(logger, cfg, "", []corev1.ServicePort{}))
 }
 
