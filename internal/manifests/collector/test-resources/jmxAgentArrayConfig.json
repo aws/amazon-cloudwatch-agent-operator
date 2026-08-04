@@ -3,7 +3,6 @@
     "metrics_collected": {
       "jmx": [
         {
-          "endpoint": "localhost:9999",
           "jvm": {
             "measurement": [
               "jvm.memory.heap.used"
@@ -11,7 +10,6 @@
           }
         },
         {
-          "endpoint": "localhost:9998",
           "kafka-consumer": {
             "measurement": [
               "kafka.consumer.fetch-rate"

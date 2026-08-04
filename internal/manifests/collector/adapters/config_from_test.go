@@ -34,7 +34,7 @@ func TestConfigStructFromJSONStringJMXObject(t *testing.T) {
 }
 
 func TestConfigStructFromJSONStringJMXArray(t *testing.T) {
-	config, err := adapters.ConfigStructFromJSONString(`{"metrics":{"metrics_collected":{"jmx":[{"endpoint":"localhost:9999","jvm":{}},{"endpoint":"localhost:9998","kafka-consumer":{}}]}}}`)
+	config, err := adapters.ConfigStructFromJSONString(`{"metrics":{"metrics_collected":{"jmx":[{"jvm":{}},{"kafka-consumer":{}}]}}}`)
 	assert.NoError(t, err)
 	assert.NotNil(t, config.Metrics.MetricsCollected.JMX)
 }
