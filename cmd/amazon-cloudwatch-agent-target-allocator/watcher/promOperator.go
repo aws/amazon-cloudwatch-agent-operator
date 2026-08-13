@@ -34,8 +34,10 @@ const defaultCollectorNamespace = "amazon-cloudwatch"
 
 const minEventInterval = time.Second * 5
 
+const defaultServiceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+
 // serviceAccountNamespacePath is a variable so tests can redirect the read.
-var serviceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+var serviceAccountNamespacePath = defaultServiceAccountNamespacePath
 
 func resolveCollectorNamespace(logger logr.Logger) string {
 	if ns := strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE")); ns != "" {
