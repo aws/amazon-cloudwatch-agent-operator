@@ -7,6 +7,7 @@ package adapters
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 )
@@ -38,9 +39,10 @@ func ConfigFromJSONString(configStr string) (map[string]interface{}, error) {
 }
 
 type CwaConfig struct {
-	Metrics *Metrics `json:"metrics,omitempty"`
-	Logs    *Logs    `json:"logs,omitempty"`
-	Traces  *Traces  `json:"traces,omitempty"`
+	Metrics       *Metrics       `json:"metrics,omitempty"`
+	Logs          *Logs          `json:"logs,omitempty"`
+	Traces        *Traces        `json:"traces,omitempty"`
+	OpenTelemetry *OpenTelemetry `json:"opentelemetry,omitempty"`
 }
 
 type Metrics struct {
@@ -53,6 +55,14 @@ type Logs struct {
 
 type Traces struct {
 	TracesCollected *TracesCollected `json:"traces_collected,omitempty"`
+}
+
+type OpenTelemetry struct {
+	Collect *OpentelemetryCollect `json:"collect,omitempty"`
+}
+
+type OpentelemetryCollect struct {
+	OTLP *otlp `json:"otlp,omitempty"`
 }
 
 type MetricsCollected struct {
@@ -92,7 +102,25 @@ type AppSignals struct {
 type emf struct {
 }
 
+// jmx marks the presence of the jmx section in the agent configuration. The
+// CloudWatch agent accepts this section as either a single object or an array
+// of objects (one entry per JMX target), so unmarshalling must tolerate both.
+// The operator only cares about presence, not contents.
 type jmx struct{}
+
+// UnmarshalJSON accepts both the object and array forms of the jmx section.
+func (j *jmx) UnmarshalJSON(data []byte) error {
+	var value any
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	switch value.(type) {
+	case map[string]any, []any:
+		return nil
+	default:
+		return fmt.Errorf("invalid jmx configuration: expected object or array, got %T", value)
+	}
+}
 
 type kubernetes struct {
 	EnhancedContainerInsights bool `json:"enhanced_container_insights,omitempty"`

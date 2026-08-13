@@ -1657,7 +1657,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 							Name:    apacheAgentInitContainerName,
 							Image:   "img:1",
 							Command: []string{"/bin/sh", "-c"},
-							Args: []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
+							Args:    []string{apacheHttpdAgentScript, "--", "/usr/local/apache2/conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,

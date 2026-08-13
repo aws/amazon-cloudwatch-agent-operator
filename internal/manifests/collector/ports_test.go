@@ -10,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 )
 
 func TestStatsDGetContainerPorts(t *testing.T) {
@@ -400,6 +402,51 @@ func TestValidOTLPLogsAndMetricsPort(t *testing.T) {
 	checkPorts(t, wantPorts, containerPorts)
 }
 
+func TestOpentelemetryOtlpGetContainerPorts(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/opentelemetryOtlp.json")
+	wantPorts := []corev1.ContainerPort{
+		{
+			Name:          OtlpGrpc + "-1234",
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(1234),
+		},
+		{
+			Name:          OtlpHttp + "-2345",
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(2345),
+		},
+	}
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	checkPorts(t, wantPorts, containerPorts)
+}
+
+func TestOpentelemetryOtlpDefaultGetContainerPorts(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/opentelemetryOtlpDefault.json")
+	wantPorts := []corev1.ContainerPort{
+		{
+			Name:          OtlpGrpc,
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(4317),
+		},
+		{
+			Name:          OtlpHttp,
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(4318),
+		},
+	}
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	checkPorts(t, wantPorts, containerPorts)
+}
+
+// None of the other opentelemetry.collect sources listen on a port.
+func TestOpentelemetryNoOtlpGetContainerPorts(t *testing.T) {
+	cfg := getStringFromFile("./test-resources/opentelemetryNoOtlp.json")
+	config, err := adapters.ConfigStructFromJSONString(cfg)
+	assert.NoError(t, err)
+	assert.Nil(t, config.OpenTelemetry.Collect.OTLP)
+	assert.Empty(t, getContainerPorts(logger, cfg, "", []corev1.ServicePort{}))
+}
+
 func TestValidJSONAndValidOtelConfig(t *testing.T) {
 	cfg := getStringFromFile("./test-resources/applicationSignals.json")
 	otelCfg := getStringFromFile("./test-resources/otelConfigs/otlpOtelConfig.yaml")
@@ -478,6 +525,15 @@ func TestIsDuplicatePort(t *testing.T) {
 
 func TestJMXGetContainerPorts(t *testing.T) {
 	cfg := getJSONStringFromFile("./test-resources/jmxAgentConfig.json")
+	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
+	assert.Equal(t, 1, len(containerPorts))
+	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)
+	assert.Equal(t, JmxHttp, containerPorts[JmxHttp].Name)
+	assert.Equal(t, corev1.ProtocolTCP, containerPorts[JmxHttp].Protocol)
+}
+
+func TestJMXArrayGetContainerPorts(t *testing.T) {
+	cfg := getJSONStringFromFile("./test-resources/jmxAgentArrayConfig.json")
 	containerPorts := getContainerPorts(logger, cfg, "", []corev1.ServicePort{})
 	assert.Equal(t, 1, len(containerPorts))
 	assert.Equal(t, int32(4314), containerPorts[JmxHttp].ContainerPort)

@@ -19,16 +19,16 @@ func TestLoad(t *testing.T) {
 		file string
 	}
 	tests := []struct {
-		name           string
-		args           args
-		wantErr        assert.ErrorAssertionFunc
-		wantHTTPS      HTTPSServerConfig
-		wantLabels     map[string]string
-		wantPromCR     PrometheusCRConfig
-		wantAlloc      *string
-		wantPodMonSel  map[string]string
-		wantSvcMonSel  map[string]string
-		wantJobNames   []string
+		name          string
+		args          args
+		wantErr       assert.ErrorAssertionFunc
+		wantHTTPS     HTTPSServerConfig
+		wantLabels    map[string]string
+		wantPromCR    PrometheusCRConfig
+		wantAlloc     *string
+		wantPodMonSel map[string]string
+		wantSvcMonSel map[string]string
+		wantJobNames  []string
 	}{
 		{
 			name: "file sd load",
@@ -58,8 +58,8 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			wantErr:   assert.NoError,
-			wantHTTPS: CreateDefaultConfig().HTTPS,
+			wantErr:    assert.NoError,
+			wantHTTPS:  CreateDefaultConfig().HTTPS,
 			wantLabels: nil,
 			wantPromCR: CreateDefaultConfig().PrometheusCR,
 			wantAlloc:  CreateDefaultConfig().AllocationStrategy,

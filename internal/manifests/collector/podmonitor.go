@@ -70,4 +70,3 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.AmazonCloud
 	metricsEndpoints := []monitoringv1.PodMetricsEndpoint{}
 	return metricsEndpoints
 }
-

@@ -26,3 +26,20 @@ func TestEmptyString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, res, 0)
 }
+
+func TestConfigStructFromJSONStringJMXObject(t *testing.T) {
+	config, err := adapters.ConfigStructFromJSONString(`{"metrics":{"metrics_collected":{"jmx":{"jvm":{"measurement":["jvm.memory.heap.used"]}}}}}`)
+	assert.NoError(t, err)
+	assert.NotNil(t, config.Metrics.MetricsCollected.JMX)
+}
+
+func TestConfigStructFromJSONStringJMXArray(t *testing.T) {
+	config, err := adapters.ConfigStructFromJSONString(`{"metrics":{"metrics_collected":{"jmx":[{"jvm":{}},{"kafka-consumer":{}}]}}}`)
+	assert.NoError(t, err)
+	assert.NotNil(t, config.Metrics.MetricsCollected.JMX)
+}
+
+func TestConfigStructFromJSONStringJMXInvalidType(t *testing.T) {
+	_, err := adapters.ConfigStructFromJSONString(`{"metrics":{"metrics_collected":{"jmx":"invalid"}}}`)
+	assert.Error(t, err)
+}

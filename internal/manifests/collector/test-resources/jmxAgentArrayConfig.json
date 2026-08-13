@@ -1,0 +1,22 @@
+{
+  "metrics": {
+    "metrics_collected": {
+      "jmx": [
+        {
+          "jvm": {
+            "measurement": [
+              "jvm.memory.heap.used"
+            ]
+          }
+        },
+        {
+          "kafka-consumer": {
+            "measurement": [
+              "kafka.consumer.fetch-rate"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
