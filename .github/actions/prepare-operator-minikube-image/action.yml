@@ -1,0 +1,80 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Prepares the operator image inside the running minikube for the integration
+# tests. Two modes:
+#   * source (default): build the image from the checked-out source (`make container`)
+#   * digest: pull the EXACT released image by immutable digest and load it,
+#     so the same test suite validates the artifact we are releasing.
+#
+# Outputs `img-arg`, the `make deploy` IMG= override to use (empty in source mode).
+name: Prepare operator image in minikube
+description: Build the operator from source, or pull+load a released image by digest.
+
+inputs:
+  operator-image-uri:
+    description: 'ECR repo URI of the released operator image (digest mode). Empty => build from source.'
+    required: false
+    default: ''
+  operator-image-digest:
+    description: 'Immutable sha256:... digest to validate (digest mode).'
+    required: false
+    default: ''
+  region:
+    description: 'AWS region for ECR login (digest mode).'
+    required: false
+    default: 'us-west-2'
+  aws-role:
+    description: 'IAM role ARN to assume for ECR pull (digest mode).'
+    required: false
+    default: ''
+
+outputs:
+  img-arg:
+    description: 'make deploy IMG= override (empty in source mode).'
+    value: ${{ steps.resolve.outputs.img-arg }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build image from source
+      if: ${{ inputs.operator-image-digest == '' }}
+      shell: bash
+      run: |
+        eval $(minikube docker-env)
+        make container
+        docker images
+
+    - name: Configure AWS credentials
+      if: ${{ inputs.operator-image-digest != '' }}
+      uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+      with:
+        role-to-assume: ${{ inputs.aws-role }}
+        aws-region: ${{ inputs.region }}
+
+    - name: Login to ECR
+      if: ${{ inputs.operator-image-digest != '' }}
+      uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896 # v2.1.1
+
+    - name: Pull released image by digest and load into minikube
+      if: ${{ inputs.operator-image-digest != '' }}
+      shell: bash
+      env:
+        LOCAL_IMG: aws/cloudwatch-agent-operator:release-validation
+      run: |
+        set -euo pipefail
+        RELEASED="${{ inputs.operator-image-uri }}@${{ inputs.operator-image-digest }}"
+        echo "Validating released operator image: ${RELEASED}"
+        docker pull "${RELEASED}"
+        docker tag "${RELEASED}" "${LOCAL_IMG}"
+        minikube image load "${LOCAL_IMG}"
+
+    - name: Resolve deploy IMG arg
+      id: resolve
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.operator-image-digest }}" ]; then
+          echo "img-arg=IMG=aws/cloudwatch-agent-operator:release-validation" >> "$GITHUB_OUTPUT"
+        else
+          echo "img-arg=" >> "$GITHUB_OUTPUT"
+        fi

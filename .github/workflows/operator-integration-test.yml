@@ -11,6 +11,36 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      operator-image-uri:
+        description: 'ECR repo URI of a released operator image to validate by digest (leave empty to build from source)'
+        required: false
+        type: string
+        default: ''
+      operator-image-digest:
+        description: 'Digest of the released operator image'
+        required: false
+        type: string
+        default: ''
+      region:
+        description: 'AWS region for ECR login (digest mode)'
+        required: false
+        type: string
+        default: 'us-west-2'
+  workflow_call:
+    inputs:
+      operator-image-uri:
+        required: false
+        type: string
+        default: ''
+      operator-image-digest:
+        required: false
+        type: string
+        default: ''
+      region:
+        required: false
+        type: string
+        default: 'us-west-2'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
@@ -44,15 +74,18 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          make deploy ${{ steps.opimg.outputs.img-arg }}
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
 
@@ -252,15 +285,18 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          make deploy ${{ steps.opimg.outputs.img-arg }}
 
       - name: Test Annotations
         run: |
@@ -305,15 +341,18 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          make deploy ${{ steps.opimg.outputs.img-arg }}
 
       - name: Test Annotations
         run: |
@@ -358,15 +397,18 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          make deploy ${{ steps.opimg.outputs.img-arg }}
 
       - name: Test Annotations
         run: |
@@ -411,15 +453,18 @@ jobs:
         run: |
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Deploy operator to minikube
         run: |
-          make deploy
+          make deploy ${{ steps.opimg.outputs.img-arg }}
 
       - name: Test Annotations
         run: |
