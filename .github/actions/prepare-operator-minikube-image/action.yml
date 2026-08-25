@@ -1,19 +1,15 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
-# Prepares the operator image inside the running minikube for the integration
-# tests. Two modes:
-#   * source (default): build the image from the checked-out source (`make container`)
-#   * digest: pull the EXACT released image by immutable digest and load it,
-#     so the same test suite validates the artifact we are releasing.
-#
-# Outputs `img-arg`, the `make deploy` IMG= override to use (empty in source mode).
-name: Prepare operator image in minikube
-description: Build the operator from source, or pull+load a released image by digest.
+# Gets the operator image into minikube and deploys it. Source mode builds from
+# source (real versions baked). Digest mode pulls the released image by digest
+# and overrides instrumentation images from versions.txt (like Helm/addon do).
+name: Prepare and deploy operator in minikube
+description: Build from source or pull a released digest, load into minikube, deploy, and (digest mode) set real instrumentation images.
 
 inputs:
   operator-image-uri:
-    description: 'ECR repo URI of the released operator image (digest mode). Empty => build from source.'
+    description: 'ECR repo URI of a released operator image to validate by digest. Empty => build from source.'
     required: false
     default: ''
   operator-image-digest:
@@ -28,11 +24,6 @@ inputs:
     description: 'IAM role ARN to assume for ECR pull (digest mode).'
     required: false
     default: ''
-
-outputs:
-  img-arg:
-    description: 'make deploy IMG= override (empty in source mode).'
-    value: ${{ steps.resolve.outputs.img-arg }}
 
 runs:
   using: composite
@@ -69,12 +60,32 @@ runs:
         docker tag "${RELEASED}" "${LOCAL_IMG}"
         minikube image load "${LOCAL_IMG}"
 
-    - name: Resolve deploy IMG arg
-      id: resolve
+    - name: Deploy operator
       shell: bash
       run: |
+        set -euo pipefail
         if [ -n "${{ inputs.operator-image-digest }}" ]; then
-          echo "img-arg=IMG=aws/cloudwatch-agent-operator:release-validation" >> "$GITHUB_OUTPUT"
+          make deploy IMG=aws/cloudwatch-agent-operator:release-validation
         else
-          echo "img-arg=" >> "$GITHUB_OUTPUT"
+          make deploy
         fi
+
+    # Released images default instrumentation refs to 0.0.0; supply the real,
+    # published images.
+    - name: Override instrumentation images from source
+      if: ${{ inputs.operator-image-digest != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        ver()  { grep "^$1=" versions.txt | cut -d '=' -f2; }
+        repo() { grep "${1}ImageRepository" main.go | head -1 | cut -d '"' -f2; }
+        kubectl set env deployment/cloudwatch-controller-manager -n amazon-cloudwatch \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA=$(repo autoInstrumentationJava):$(ver aws-otel-java-instrumentation) \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON=$(repo autoInstrumentationPython):$(ver aws-otel-python-instrumentation) \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET=$(repo autoInstrumentationDotNet):$(ver aws-otel-dotnet-instrumentation) \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS=$(repo autoInstrumentationNodeJS):$(ver aws-otel-nodejs-instrumentation)
+        kubectl rollout status deployment/cloudwatch-controller-manager -n amazon-cloudwatch --timeout=180s
+
+    - name: Wait for operator ready
+      shell: bash
+      run: kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch --timeout=180s
