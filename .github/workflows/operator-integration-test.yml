@@ -261,6 +261,17 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
+      # CWQS-2726 (temporary): on failure, dump pod state/events/operator logs to
+      # find why injected/agent pods don't reach Running. Remove once diagnosed.
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
+
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
     runs-on: ubuntu-latest
@@ -317,6 +328,15 @@ jobs:
           sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
 
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
+
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
     runs-on: ubuntu-latest
@@ -372,6 +392,15 @@ jobs:
           go test -v -run TestNodeJSOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
 
   StatefulsetAnnotationsTest:
     name: StatefulsetAnnotationsTest
@@ -430,6 +459,15 @@ jobs:
 
 
 
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
+
   NamespaceAnnotationsTest:
     name: NamespaceAnnotationsTest
     runs-on: ubuntu-latest
@@ -481,3 +519,12 @@ jobs:
           go test -v -run TestNodeJSOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
