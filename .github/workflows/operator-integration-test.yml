@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: Operator Integration Test
+# Release-image-validation dispatches pass a correlation-id; those runs get a
+# title carrying it so the checker can find the exact run it triggered. 
+run-name: ${{ inputs.correlation-id != '' && format('operator-image-validation [{0}]', inputs.correlation-id) || 'Operator Integration Test' }}
 on:
   push:
     branches:
@@ -22,6 +25,11 @@ on:
         required: false
         type: string
         default: ''
+      correlation-id:
+        description: 'Unique per-dispatch id used to correlate this run back to its trigger'
+        required: false
+        type: string
+        default: ''
       region:
         description: 'AWS region for ECR login (digest mode)'
         required: false
@@ -34,6 +42,10 @@ on:
         type: string
         default: ''
       operator-image-digest:
+        required: false
+        type: string
+        default: ''
+      correlation-id:
         required: false
         type: string
         default: ''
