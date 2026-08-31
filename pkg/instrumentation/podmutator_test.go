@@ -32,7 +32,7 @@ const (
 )
 
 func TestGetInstrumentationInstanceFromNameSpaceDefault(t *testing.T) {
-	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, nil, false)
+	defaultInst, _ := getDefaultInstrumentation(&adapters.CwaConfig{}, "", nil, false)
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default-namespace",

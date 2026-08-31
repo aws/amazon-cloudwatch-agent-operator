@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -414,7 +415,11 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 			pm.Logger.Error(err, "unable to retrieve cloudwatch agent config for instrumentation")
 		}
 
-		return getDefaultInstrumentation(config, additionalEnvs, isWindowsPod)
+		// K8S_MODE (EKS | ROSA | K8S) is set on the operator by the Helm chart from
+		// .Values.k8sMode; it drives the eks: vs k8s: Environment prefix, mirroring the
+		// CloudWatch agent's KubernetesMode. Empty (e.g. non-K8s) → no platform claimed.
+		k8sMode := os.Getenv("K8S_MODE")
+		return getDefaultInstrumentation(config, k8sMode, additionalEnvs, isWindowsPod)
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
