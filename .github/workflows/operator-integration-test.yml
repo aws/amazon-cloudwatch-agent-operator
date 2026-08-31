@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: Operator Integration Test
+# Release-image-validation dispatches pass a correlation-id; those runs get a
+# title carrying it so the checker can find the exact run it triggered. 
+run-name: ${{ inputs.correlation-id != '' && format('operator-image-validation [{0}]', inputs.correlation-id) || 'Operator Integration Test' }}
 on:
   push:
     branches:
@@ -11,6 +14,45 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      operator-image-uri:
+        description: 'ECR repo URI of a released operator image to validate by digest (leave empty to build from source)'
+        required: false
+        type: string
+        default: ''
+      operator-image-digest:
+        description: 'Digest of the released operator image'
+        required: false
+        type: string
+        default: ''
+      correlation-id:
+        description: 'Unique per-dispatch id used to correlate this run back to its trigger'
+        required: false
+        type: string
+        default: ''
+      region:
+        description: 'AWS region for ECR login (digest mode)'
+        required: false
+        type: string
+        default: 'us-west-2'
+  workflow_call:
+    inputs:
+      operator-image-uri:
+        required: false
+        type: string
+        default: ''
+      operator-image-digest:
+        required: false
+        type: string
+        default: ''
+      correlation-id:
+        required: false
+        type: string
+        default: ''
+      region:
+        required: false
+        type: string
+        default: 'us-west-2'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
@@ -44,17 +86,14 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
-          kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Test case for cloudwatch agent pod creation
         run: |
@@ -228,6 +267,16 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
+      # Check pod state/events/operator logs for any failure.
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
+
   DeploymentAnnotationsTest:
     name: DeploymentAnnotationsTest
     runs-on: ubuntu-latest
@@ -252,15 +301,14 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Test Annotations
         run: |
@@ -280,6 +328,15 @@ jobs:
           go test -v -run TestNodeJSOnlyDeployment ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAnnotationsOnMultipleResources ./integration-tests/manifests/annotations -timeout 30m
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
 
   DaemonsetAnnotationsTest:
     name: DaemonsetAnnotationsTest
@@ -305,15 +362,14 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Test Annotations
         run: |
@@ -333,6 +389,15 @@ jobs:
           go test -v -run TestNodeJSOnlyDaemonSet ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAutoAnnotationForManualAnnotationRemoval ./integration-tests/manifests/annotations -timeout 30m
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
 
   StatefulsetAnnotationsTest:
     name: StatefulsetAnnotationsTest
@@ -358,15 +423,14 @@ jobs:
           sleep 10
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Test Annotations
         run: |
@@ -387,6 +451,15 @@ jobs:
           go test -v -run TestOnlyNonAnnotatedAppsShouldBeRestarted ./integration-tests/manifests/annotations -timeout 30m
 
 
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
 
   NamespaceAnnotationsTest:
     name: NamespaceAnnotationsTest
@@ -411,15 +484,14 @@ jobs:
         run: |
           kubectl get pods -A
 
-      - name: Build image
-        run: |
-          eval $(minikube docker-env)
-          make container
-          docker images
-
-      - name: Deploy operator to minikube
-        run: |
-          make deploy
+      - name: Prepare operator image
+        id: opimg
+        uses: ./.github/actions/prepare-operator-minikube-image
+        with:
+          operator-image-uri: ${{ inputs.operator-image-uri }}
+          operator-image-digest: ${{ inputs.operator-image-digest }}
+          region: ${{ inputs.region }}
+          aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
 
       - name: Test Annotations
         run: |
@@ -436,3 +508,12 @@ jobs:
           go test -v -run TestNodeJSOnlyNamespace ./integration-tests/manifests/annotations -timeout 30m
           sleep 5
           go test -v -run TestAlreadyAutoAnnotatedResourceShouldNotRestart ./integration-tests/manifests/annotations -timeout 30m
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide || true
+          kubectl describe pods -n default || true
+          kubectl describe pods -n amazon-cloudwatch || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=200 || true
