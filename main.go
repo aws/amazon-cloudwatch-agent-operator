@@ -120,9 +120,6 @@ func setLangEnvVarsForServiceEvents(langStr string, cfg map[string]string) {
 	if functionInstrumentEnabled, ok := cfg["function_instrument_enabled"]; ok && functionInstrumentEnabled != "" {
 		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", functionInstrumentEnabled)
 	}
-	if profilerEnabled, ok := cfg["profiler_enabled"]; ok && profilerEnabled != "" {
-		_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_SERVICE_EVENTS_PROFILER_ENABLED", profilerEnabled)
-	}
 }
 
 func setLangEnvVarsForDynamicInstrumentation(langStr string, cfg map[string]string) {
