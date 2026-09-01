@@ -129,6 +129,13 @@ type Collector struct {
 	NumTargets int
 }
 
+// Hash identifies a Collector by name only. This is safe for per-node's
+// collectorByNode index even though a NodeName change would produce no diff:
+// unscheduled pods (empty NodeName) are skipped by the collector watch until they
+// are scheduled, and a scheduled pod's spec.NodeName is immutable — so a Modified
+// event on the same pod never changes NodeName. (See collector.runWatch and
+// Test_runWatch_UnscheduledThenScheduled.) If that invariant ever changes, hash
+// Name+NodeName here so the node index rebuilds on a node change.
 func (c Collector) Hash() string {
 	return c.Name
 }

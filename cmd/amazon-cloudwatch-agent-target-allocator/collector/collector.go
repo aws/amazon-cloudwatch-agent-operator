@@ -121,12 +121,21 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 
 			switch event.Type { //nolint:exhaustive
 			case watch.Added, watch.Modified:
-				// Register/refresh the collector only once its pod is scheduled
-				// (NodeName set). Handling Modified captures the node when a pod that
-				// was Added while still unscheduled is later assigned to a node, so the
-				// per-node strategy can match this collector's node without needing a
-				// Target Allocator restart after agent (re)scheduling.
-				if pod.Spec.NodeName != "" {
+				// Drop a pod as soon as it is marked for deletion, matching the
+				// DeletionTimestamp check on the initial List. A terminating agent is
+				// shutting down and must not keep ownership of its node's targets until
+				// the Deleted event lands: releasing it immediately lets those targets be
+				// re-placed (on the node's replacement agent, or via the fallback)
+				// instead of going unscraped for the rest of the grace period.
+				//
+				// Otherwise register/refresh the collector, but only once its pod is
+				// scheduled (NodeName set). Handling Modified captures the node when a
+				// pod that was Added while still unscheduled is later assigned to a node,
+				// so the per-node strategy can match this collector's node without
+				// needing a Target Allocator restart after agent (re)scheduling.
+				if pod.GetObjectMeta().GetDeletionTimestamp() != nil {
+					delete(collectorMap, pod.Name)
+				} else if pod.Spec.NodeName != "" {
 					collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 				}
 			case watch.Deleted:

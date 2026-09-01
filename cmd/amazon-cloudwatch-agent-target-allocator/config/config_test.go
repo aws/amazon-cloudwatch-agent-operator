@@ -19,16 +19,16 @@ func TestLoad(t *testing.T) {
 		file string
 	}
 	tests := []struct {
-		name           string
-		args           args
-		wantErr        assert.ErrorAssertionFunc
-		wantHTTPS      HTTPSServerConfig
-		wantLabels     map[string]string
-		wantPromCR     PrometheusCRConfig
-		wantAlloc      *string
-		wantPodMonSel  map[string]string
-		wantSvcMonSel  map[string]string
-		wantJobNames   []string
+		name          string
+		args          args
+		wantErr       assert.ErrorAssertionFunc
+		wantHTTPS     HTTPSServerConfig
+		wantLabels    map[string]string
+		wantPromCR    PrometheusCRConfig
+		wantAlloc     *string
+		wantPodMonSel map[string]string
+		wantSvcMonSel map[string]string
+		wantJobNames  []string
 	}{
 		{
 			name: "file sd load",
@@ -58,8 +58,8 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			wantErr:   assert.NoError,
-			wantHTTPS: CreateDefaultConfig().HTTPS,
+			wantErr:    assert.NoError,
+			wantHTTPS:  CreateDefaultConfig().HTTPS,
 			wantLabels: nil,
 			wantPromCR: CreateDefaultConfig().PrometheusCR,
 			wantAlloc:  CreateDefaultConfig().AllocationStrategy,
@@ -162,4 +162,23 @@ func TestValidateConfig(t *testing.T) {
 			assert.Equal(t, tc.expectedErr, err)
 		})
 	}
+}
+
+func TestGetAllocationFallbackStrategy(t *testing.T) {
+	// Unset with the default (consistent-hashing) strategy: no fallback.
+	assert.Equal(t, "", Config{}.GetAllocationFallbackStrategy())
+
+	// Set: returns the configured value.
+	strategy := "consistent-hashing"
+	assert.Equal(t, strategy, Config{FallbackAllocationStrategy: &strategy}.GetAllocationFallbackStrategy())
+
+	// Unset with the per-node strategy: defaults to consistent-hashing so
+	// node-less targets are not silently left unscraped.
+	perNode := PerNodeAllocationStrategy
+	assert.Equal(t, DefaultPerNodeFallbackStrategy,
+		Config{AllocationStrategy: &perNode}.GetAllocationFallbackStrategy())
+
+	// Explicitly empty with per-node: an opt-out, fallback stays disabled.
+	none := ""
+	assert.Equal(t, "", Config{AllocationStrategy: &perNode, FallbackAllocationStrategy: &none}.GetAllocationFallbackStrategy())
 }

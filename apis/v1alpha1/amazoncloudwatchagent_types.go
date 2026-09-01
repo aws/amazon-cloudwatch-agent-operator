@@ -301,7 +301,7 @@ type AmazonCloudWatchAgentTargetAllocator struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current option is consistent-hashing.
+	// The options are consistent-hashing and per-node.
 	// +optional
 	AllocationStrategy AmazonCloudWatchAgentTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.

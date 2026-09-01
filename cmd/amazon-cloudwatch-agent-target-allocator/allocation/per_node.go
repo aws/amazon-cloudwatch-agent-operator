@@ -46,7 +46,11 @@ const (
 // is configured (SetFallbackStrategy("consistent-hashing")); otherwise they are
 // retained in targetItems but assigned to no collector, re-evaluated on every
 // collector change, and surfaced via the
-// cloudwatch_agent_allocator_targets_unassigned gauge.
+// cloudwatch_agent_allocator_targets_unassigned gauge. The Target Allocator
+// config defaults the fallback to consistent-hashing whenever the per-node
+// strategy is selected (see config.Config.GetAllocationFallbackStrategy), so
+// running per-node with no fallback — and therefore with targets that are never
+// scraped — requires explicitly setting allocation_fallback_strategy to "".
 type perNodeAllocator struct {
 	// m protects collectors, targetItems, targetItemsPerJobPerCollector,
 	// collectorByNode and fallbackHasher for concurrent use.
@@ -67,6 +71,10 @@ type perNodeAllocator struct {
 	// fallbackHasher, when non-nil, is a consistent-hashing ring over all
 	// collectors used to place targets that cannot be matched to a node.
 	fallbackHasher *consistent.Consistent
+
+	// warnedNoFallback ensures the "per-node has no fallback" warning is logged
+	// at most once (guarded by the same lock as the allocation state).
+	warnedNoFallback bool
 
 	log logr.Logger
 
@@ -177,6 +185,12 @@ func (pn *perNodeAllocator) addTargetToTargetItems(tg *target.Item) placement {
 			return placedByFallback
 		}
 	}
+	if pn.fallbackHasher == nil && !pn.warnedNoFallback {
+		pn.warnedNoFallback = true
+		pn.log.Info("per-node: no fallback strategy configured; targets that cannot be matched to a " +
+			"node-local collector (e.g. targets with no node label) will be left UNASSIGNED and never " +
+			"scraped. Remove allocation_fallback_strategy to get the \"consistent-hashing\" default.")
+	}
 	pn.log.V(1).Info("per-node: target left UNASSIGNED (no node-local collector and no usable fallback)",
 		"target", strings.Join(tg.TargetURL, ","), "job", tg.JobName, "node", nodeName)
 	return unplaced
@@ -246,9 +260,17 @@ func (pn *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Rebuild the node index from the current collector set.
 	pn.collectorByNode = make(map[string]*Collector)
 	for _, c := range pn.collectors {
-		if c.NodeName != "" {
-			pn.collectorByNode[c.NodeName] = c
+		if c.NodeName == "" {
+			continue
 		}
+		// Deterministic tie-break: normally there is one collector (DaemonSet pod)
+		// per node, but a maxSurge rollout can briefly place two pods on the same
+		// node. Keep the one with the smaller pod name so node ownership — and thus
+		// target placement — doesn't flap with map iteration order.
+		if existing, ok := pn.collectorByNode[c.NodeName]; ok && existing.Name <= c.Name {
+			continue
+		}
+		pn.collectorByNode[c.NodeName] = c
 	}
 
 	// Log the node->collector index so it's clear which node each agent owns.
@@ -340,6 +362,11 @@ func (pn *perNodeAllocator) SetCollectors(collectors map[string]*Collector) {
 
 	CollectorsAllocatable.WithLabelValues(perNodeStrategyName).Set(float64(len(collectors)))
 	if len(collectors) == 0 {
+		// Intentional parity with consistentHashingAllocator: on a transient drop
+		// to zero collectors (e.g. a full DaemonSet restart) keep the existing node
+		// index and target mappings rather than clearing them. Clearing would drop
+		// every target during that window; the state is corrected on the next
+		// non-empty SetCollectors.
 		pn.log.Info("No collector instances present")
 		return
 	}
