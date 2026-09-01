@@ -39,6 +39,14 @@ const (
 	DefaultTLSKeyPath                         = DefaultCertMountPath + "/server.key"
 	DefaultTLSCertPath                        = DefaultCertMountPath + "/server.crt"
 	DefaultCABundlePath                       = DefaultClientCertMountPath + "/tls-ca.crt"
+
+	// PerNodeAllocationStrategy mirrors the allocation package's per-node
+	// strategy name, which is unexported there.
+	PerNodeAllocationStrategy = "per-node"
+	// DefaultPerNodeFallbackStrategy is the fallback strategy applied when the
+	// per-node strategy is configured without an explicit
+	// allocation_fallback_strategy, so node-less targets are still scraped.
+	DefaultPerNodeFallbackStrategy = DefaultAllocationStrategy
 )
 
 type Config struct {
@@ -81,10 +89,19 @@ func (c Config) GetAllocationStrategy() string {
 
 // GetAllocationFallbackStrategy returns the strategy used to place targets that
 // the primary strategy cannot assign (e.g. per-node targets with no node match).
-// Empty means no fallback (such targets are left unassigned).
+//
+// When the per-node strategy is in use and no fallback is configured, it defaults
+// to consistent-hashing: without a fallback, targets that carry no node label are
+// retained but never scraped, which is not a safe default for a hand-written
+// config (the operator-generated config always sets the fallback explicitly).
+// Set allocation_fallback_strategy to an empty string to opt out and leave such
+// targets unassigned. Empty means no fallback.
 func (c Config) GetAllocationFallbackStrategy() string {
 	if c.FallbackAllocationStrategy != nil {
 		return *c.FallbackAllocationStrategy
+	}
+	if c.GetAllocationStrategy() == PerNodeAllocationStrategy {
+		return DefaultPerNodeFallbackStrategy
 	}
 	return ""
 }

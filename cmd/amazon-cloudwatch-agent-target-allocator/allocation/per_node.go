@@ -46,7 +46,11 @@ const (
 // is configured (SetFallbackStrategy("consistent-hashing")); otherwise they are
 // retained in targetItems but assigned to no collector, re-evaluated on every
 // collector change, and surfaced via the
-// cloudwatch_agent_allocator_targets_unassigned gauge.
+// cloudwatch_agent_allocator_targets_unassigned gauge. The Target Allocator
+// config defaults the fallback to consistent-hashing whenever the per-node
+// strategy is selected (see config.Config.GetAllocationFallbackStrategy), so
+// running per-node with no fallback — and therefore with targets that are never
+// scraped — requires explicitly setting allocation_fallback_strategy to "".
 type perNodeAllocator struct {
 	// m protects collectors, targetItems, targetItemsPerJobPerCollector,
 	// collectorByNode and fallbackHasher for concurrent use.
@@ -185,7 +189,7 @@ func (pn *perNodeAllocator) addTargetToTargetItems(tg *target.Item) placement {
 		pn.warnedNoFallback = true
 		pn.log.Info("per-node: no fallback strategy configured; targets that cannot be matched to a " +
 			"node-local collector (e.g. targets with no node label) will be left UNASSIGNED and never " +
-			"scraped. Configure a \"consistent-hashing\" fallback to place them.")
+			"scraped. Remove allocation_fallback_strategy to get the \"consistent-hashing\" default.")
 	}
 	pn.log.V(1).Info("per-node: target left UNASSIGNED (no node-local collector and no usable fallback)",
 		"target", strings.Join(tg.TargetURL, ","), "job", tg.JobName, "node", nodeName)
