@@ -10,6 +10,19 @@ import (
 	"github.com/prometheus/common/model"
 )
 
+// nodeLabels are the discovery meta-labels that identify the node a target
+// resides on. They mirror the upstream OpenTelemetry target allocator's
+// per-node node-label set. See:
+// https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config
+const (
+	nodeNameLabelPod      model.LabelName = "__meta_kubernetes_pod_node_name"
+	nodeNameLabelNode     model.LabelName = "__meta_kubernetes_node_name"
+	nodeNameLabelEndpoint model.LabelName = "__meta_kubernetes_endpoint_node_name"
+
+	endpointSliceTargetKindLabel model.LabelName = "__meta_kubernetes_endpointslice_address_target_kind"
+	endpointSliceTargetNameLabel model.LabelName = "__meta_kubernetes_endpointslice_address_target_name"
+)
+
 // LinkJSON This package contains common structs and methods that relate to scrape targets.
 type LinkJSON struct {
 	Link string `json:"_link"`
@@ -26,6 +39,25 @@ type Item struct {
 
 func (t *Item) Hash() string {
 	return t.hash
+}
+
+// GetNodeName returns the Kubernetes node a target resides on, derived from its
+// service-discovery meta labels. Pod targets (PodMonitor, role: pod) always carry
+// a node; endpoint targets (ServiceMonitor, role: endpoints/endpointslice) only
+// carry one when the endpoint is backed by a pod on a node. Returns "" when no
+// node can be determined (e.g. non-pod / external endpoints), in which case the
+// per-node strategy leaves the target unassigned.
+func (t *Item) GetNodeName() string {
+	for _, labelName := range []model.LabelName{nodeNameLabelPod, nodeNameLabelNode, nodeNameLabelEndpoint} {
+		if val := t.Labels[labelName]; val != "" {
+			return string(val)
+		}
+	}
+
+	if t.Labels[endpointSliceTargetKindLabel] != "Node" {
+		return ""
+	}
+	return string(t.Labels[endpointSliceTargetNameLabel])
 }
 
 // NewItem Creates a new target item.

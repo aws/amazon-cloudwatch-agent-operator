@@ -17,6 +17,7 @@ func TestGetFlagSet(t *testing.T) {
 	// Check if each flag exists
 	assert.NotNil(t, fs.Lookup(configFilePathFlagName), "Flag %s not found", configFilePathFlagName)
 	assert.NotNil(t, fs.Lookup(kubeConfigPathFlagName), "Flag %s not found", kubeConfigPathFlagName)
+	assert.NotNil(t, fs.Lookup(prometheusCREnabledFlagName), "Flag %s not found", prometheusCREnabledFlagName)
 }
 
 func TestFlagGetters(t *testing.T) {
@@ -44,6 +45,18 @@ func TestFlagGetters(t *testing.T) {
 			flagArgs:      []string{"--" + reloadConfigFlagName, "true"},
 			expectedValue: true,
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getConfigReloadEnabled(fs) },
+		},
+		{
+			name:          "GetPrometheusCREnabled",
+			flagArgs:      []string{"--" + prometheusCREnabledFlagName},
+			expectedValue: true,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getPrometheusCREnabled(fs) },
+		},
+		{
+			name:          "GetPrometheusCREnabledDefault",
+			flagArgs:      []string{},
+			expectedValue: false,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getPrometheusCREnabled(fs) },
 		},
 		{
 			name:        "InvalidFlag",
