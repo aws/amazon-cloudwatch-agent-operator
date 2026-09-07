@@ -28,13 +28,36 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up Docker Buildx
+      # Explicit buildx setup pins the BuildKit driver image via the pinned
+      # action release, avoiding the implicit
+      # 'moby/buildkit:buildx-stable-1' pull that 'docker buildx build'
+      # otherwise triggers. Match the pin used by build-and-upload.yml.
+      if: ${{ inputs.operator-image-digest == '' }}
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
     - name: Build image from source
+      # Build against the host Docker daemon (using the buildx builder set up
+      # above) and then push the image into minikube explicitly, mirroring the
+      # digest-validation path below. Previously this step ran
+      # 'eval $(minikube docker-env) && make container', which forced
+      # 'docker buildx build' to bootstrap its own builder inside minikube's
+      # containerd; that path re-pulls moby/buildkit:buildx-stable-1 and has
+      # been unreliable (docker inspect returns 404 after a "successful"
+      # manifest fetch), breaking the entire integ-test matrix.
       if: ${{ inputs.operator-image-digest == '' }}
       shell: bash
       run: |
-        eval $(minikube docker-env)
+        set -euo pipefail
         make container
-        docker images
+        # Compute the tag the Makefile just produced. Mirrors the Makefile's
+        # own default (IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}) so that a
+        # bumped versions.txt is picked up without workflow edits.
+        VERSION=$(grep -v '^#' versions.txt | awk -F= '/^operator=/{print $2; exit}')
+        IMG="aws/cloudwatch-agent-operator:${VERSION}"
+        docker images "$IMG"
+        minikube image load "$IMG"
+        minikube image ls | grep cloudwatch-agent-operator || true
 
     - name: Configure AWS credentials
       if: ${{ inputs.operator-image-digest != '' }}
