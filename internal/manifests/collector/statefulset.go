@@ -20,6 +20,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
+	podLabels := PodLabels(params.OtelCol, labels)
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,7 +36,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{

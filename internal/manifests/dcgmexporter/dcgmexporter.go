@@ -19,6 +19,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	var manifestFactories []manifests.K8sManifestFactory
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
 		manifests.FactoryWithoutError(DaemonSet),
+		manifests.FactoryWithoutError(PodDisruptionBudget),
 		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.Factory(Service),

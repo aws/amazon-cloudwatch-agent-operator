@@ -56,6 +56,21 @@ func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	return podAnnotations
 }
 
+// PodLabels merges user-provided Spec.PodLabels on top of the operator-managed
+// labels. Operator-managed selector labels cannot be overridden and are
+// preserved verbatim from `base`.
+func PodLabels(instance v1alpha1.AmazonCloudWatchAgent, base map[string]string) map[string]string {
+	merged := map[string]string{}
+	// user-provided labels first, then operator-managed labels overwrite reserved keys
+	for k, v := range instance.Spec.PodLabels {
+		merged[k] = v
+	}
+	for k, v := range base {
+		merged[k] = v
+	}
+	return merged
+}
+
 func getConfigMapSHA(config string) string {
 	h := sha256.Sum256([]byte(config))
 	return fmt.Sprintf("%x", h)
