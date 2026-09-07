@@ -111,4 +111,31 @@ runs:
 
     - name: Wait for operator ready
       shell: bash
-      run: kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch --timeout=180s
+      run: |
+        set -euo pipefail
+        # 'kubectl wait --for=condition=Ready pod --all' succeeds immediately
+        # when zero pods exist, which is exactly the state right after
+        # 'make deploy' (the ReplicaSet may not have created the pod yet).
+        # Wait on the deployment rollout instead — it tracks desired vs
+        # available replicas and has no zero-object race.
+        kubectl rollout status deployment/cloudwatch-controller-manager -n amazon-cloudwatch --timeout=180s
+
+        # The mutating/validating webhooks are served by the operator pod via
+        # the cloudwatch-webhook-service. A Ready pod does not guarantee the
+        # Endpoints object is programmed (kube-proxy/endpoint controller lag),
+        # which manifests as 'connection refused' when the first CR is applied.
+        # Poll until the webhook service has at least one endpoint address.
+        for i in $(seq 1 36); do
+          addrs=$(kubectl get endpoints cloudwatch-webhook-service -n amazon-cloudwatch \
+            -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
+          if [ -n "$addrs" ]; then
+            echo "Webhook service endpoints ready: $addrs"
+            exit 0
+          fi
+          echo "Waiting for webhook service endpoints... ($i/36)"
+          sleep 5
+        done
+        echo "::error::cloudwatch-webhook-service never got endpoints"
+        kubectl get endpoints -n amazon-cloudwatch || true
+        kubectl get pods -n amazon-cloudwatch -o wide || true
+        exit 1
