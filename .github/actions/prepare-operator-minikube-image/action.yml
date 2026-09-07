@@ -120,22 +120,34 @@ runs:
         # available replicas and has no zero-object race.
         kubectl rollout status deployment/cloudwatch-controller-manager -n amazon-cloudwatch --timeout=180s
 
-        # The mutating/validating webhooks are served by the operator pod via
-        # the cloudwatch-webhook-service. A Ready pod does not guarantee the
-        # Endpoints object is programmed (kube-proxy/endpoint controller lag),
-        # which manifests as 'connection refused' when the first CR is applied.
-        # Poll until the webhook service has at least one endpoint address.
+        # The manager Deployment carries no readiness probe and the binary's
+        # /readyz is a plain ping that does not gate on the webhook TLS
+        # server being bound. A Ready pod and populated Endpoints therefore
+        # do not guarantee admission calls will succeed. The only reliable
+        # readiness signal is exercising the webhook itself: a server-side
+        # dry-run create passes through the mutating+validating admission
+        # chain without persisting anything.
+        cat > /tmp/webhook-probe-cr.yaml <<'EOF'
+        apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+        kind: AmazonCloudWatchAgent
+        metadata:
+          name: webhook-readiness-probe
+          namespace: amazon-cloudwatch
+        spec:
+          mode: statefulset
+          config: '{"logs":{"metrics_collected":{"application_signals":{}}}}'
+        EOF
         for i in $(seq 1 36); do
-          addrs=$(kubectl get endpoints cloudwatch-webhook-service -n amazon-cloudwatch \
-            -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
-          if [ -n "$addrs" ]; then
-            echo "Webhook service endpoints ready: $addrs"
+          if kubectl apply --dry-run=server -f /tmp/webhook-probe-cr.yaml > /dev/null 2>&1; then
+            echo "Webhook admission chain is serving (attempt $i)"
             exit 0
           fi
-          echo "Waiting for webhook service endpoints... ($i/36)"
+          echo "Waiting for webhook to serve admission requests... ($i/36)"
           sleep 5
         done
-        echo "::error::cloudwatch-webhook-service never got endpoints"
+        echo "::error::operator webhook never became ready"
+        kubectl apply --dry-run=server -f /tmp/webhook-probe-cr.yaml || true
         kubectl get endpoints -n amazon-cloudwatch || true
         kubectl get pods -n amazon-cloudwatch -o wide || true
+        kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=100 || true
         exit 1
