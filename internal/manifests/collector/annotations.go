@@ -6,6 +6,7 @@ package collector
 import (
 	"crypto/sha256"
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
@@ -28,7 +29,7 @@ func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return annotations
 }
@@ -51,9 +52,25 @@ func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return podAnnotations
+}
+
+// configHashInput returns the combined config string used for the pod-template restart hash.
+func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
+	config := instance.Spec.Config
+	if !instance.Spec.Prometheus.IsEmpty() {
+		promYaml, err := instance.Spec.Prometheus.Yaml()
+		if err != nil {
+			// Static sentinel; Yaml() over map[string]interface{} rarely fails in practice.
+			slog.Warn("failed to serialize Spec.Prometheus for config hash", "error", err)
+			config += "\x00prometheus-serialize-error"
+		} else {
+			config += "\x00" + promYaml // null byte prevents collision between config suffix and promYAML prefix
+		}
+	}
+	return config
 }
 
 func getConfigMapSHA(config string) string {

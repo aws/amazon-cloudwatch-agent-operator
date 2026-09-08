@@ -163,3 +163,22 @@ func TestValidateConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllocationFallbackStrategy(t *testing.T) {
+	// Unset with the default (consistent-hashing) strategy: no fallback.
+	assert.Equal(t, "", Config{}.GetAllocationFallbackStrategy())
+
+	// Set: returns the configured value.
+	strategy := "consistent-hashing"
+	assert.Equal(t, strategy, Config{FallbackAllocationStrategy: &strategy}.GetAllocationFallbackStrategy())
+
+	// Unset with the per-node strategy: defaults to consistent-hashing so
+	// node-less targets are not silently left unscraped.
+	perNode := PerNodeAllocationStrategy
+	assert.Equal(t, DefaultPerNodeFallbackStrategy,
+		Config{AllocationStrategy: &perNode}.GetAllocationFallbackStrategy())
+
+	// Explicitly empty with per-node: an opt-out, fallback stays disabled.
+	none := ""
+	assert.Equal(t, "", Config{AllocationStrategy: &perNode, FallbackAllocationStrategy: &none}.GetAllocationFallbackStrategy())
+}
