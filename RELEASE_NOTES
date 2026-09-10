@@ -1,21 +1,4 @@
 ========================================================================
-Amazon CloudWatch Agent Operator v3.8.0 (unreleased)
-========================================================================
-New Features:
-* Add PodLabels support to AmazonCloudWatchAgent spec
-* Add PodAnnotations, PodLabels, TopologySpreadConstraints, PriorityClassName, and PodDisruptionBudget support to DcgmExporter spec
-* Add PodAnnotations, PodLabels, TopologySpreadConstraints, PriorityClassName, and PodDisruptionBudget support to NeuronMonitor spec
-
-Bug Fixes:
-* AmazonCloudWatchAgent DaemonSet now applies spec.topologySpreadConstraints (previously only applied to Deployment and StatefulSet)
-
-Notes:
-* DcgmExporter and NeuronMonitor DaemonSet pod templates now carry an operator-managed `amazon-cloudwatch-agent-operator-config/sha256` annotation. This means the DaemonSet will roll once on operator upgrade (as the annotation first appears) and thereafter whenever `spec.metricsConfig` or `spec.monitorConfig` changes. Previously those DaemonSets set no pod annotations and did not roll on config changes.
-* Pod disruption budgets provisioned for DcgmExporter and NeuronMonitor workloads will not protect pods from node drains. `kubectl drain` skips DaemonSet-managed pods, and the eviction API treats DaemonSet pods differently from Deployment/StatefulSet pods. The field is emitted for parity with other configuration surfaces (e.g. EKS addon defaults).
-* AmazonCloudWatchAgent `spec.podDisruptionBudget` remains applied only in deployment and statefulset modes; in daemonset mode the field is accepted by the CRD but no PodDisruptionBudget is emitted. This is deliberate: the defaulting webhook populates the field on every CR, so daemonset-mode emission would create PDB objects for all existing daemonset agents on operator upgrade. Documented in the field's godoc.
-* Unsetting `spec.podDisruptionBudget` on an existing DcgmExporter or NeuronMonitor CR does not currently prune the previously-created PDB — the operator only creates/updates desired objects for these CRs, it does not prune stale ones. Delete and recreate the CR, or delete the PDB manually. (This matches the pre-existing behavior for the AmazonCloudWatchAgent CR too.)
-
-========================================================================
 Amazon CloudWatch Agent Operator v3.7.0 (2026-08-04)
 ========================================================================
 Enhancements:
