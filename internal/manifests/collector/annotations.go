@@ -28,7 +28,7 @@ func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return annotations
 }
@@ -51,9 +51,29 @@ func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return podAnnotations
+}
+
+// configHashInput returns the combined config string used for the pod-template restart hash.
+func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
+	config := instance.Spec.Config
+	if !instance.Spec.Prometheus.IsEmpty() {
+		promYaml, err := instance.Spec.Prometheus.Yaml()
+		if err != nil {
+			// Unreachable from the CRD path: Config.Object only ever holds JSON-decoded
+			// types, all of which gopkg.in/yaml.v3 encodes. Deliberately a constant: two
+			// different unserializable specs hash equal, so a Prometheus-only change would
+			// not roll pods while the error persists. Hash stability across operator
+			// restarts depends on gopkg.in/yaml.v3 (v3.0.1) sorting map keys
+			// (encode.go:189, and :242 for the inline-map branch).
+			config += "\x00prometheus-serialize-error"
+		} else {
+			config += "\x00" + promYaml // null byte prevents collision between config suffix and promYAML prefix
+		}
+	}
+	return config
 }
 
 func getConfigMapSHA(config string) string {

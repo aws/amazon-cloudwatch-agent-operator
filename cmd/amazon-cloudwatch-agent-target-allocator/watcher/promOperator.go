@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -21,6 +22,7 @@ import (
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -28,7 +30,28 @@ import (
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 )
 
+const defaultCollectorNamespace = "amazon-cloudwatch"
+
 const minEventInterval = time.Second * 5
+
+const defaultServiceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+
+// serviceAccountNamespacePath is a variable so tests can redirect the read.
+var serviceAccountNamespacePath = defaultServiceAccountNamespacePath
+
+func resolveCollectorNamespace(logger logr.Logger) string {
+	if ns := strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE")); ns != "" {
+		return ns
+	}
+	namespace := defaultCollectorNamespace
+	if data, err := os.ReadFile(serviceAccountNamespacePath); err == nil {
+		if ns := strings.TrimSpace(string(data)); ns != "" {
+			namespace = ns
+		}
+	}
+	logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", namespace)
+	return namespace
+}
 
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
@@ -49,11 +72,18 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	// TODO: We should make these durations configurable
+	// Namespace must be non-empty; the config generator panics otherwise.
+	collectorNamespace := resolveCollectorNamespace(logger)
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: collectorNamespace,
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 			},
+			// Must be non-empty; default to scrape interval.
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 		},
 	}
 
