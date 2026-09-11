@@ -34,6 +34,16 @@ var testResourceRequirements = corev1.ResourceRequirements{
 	},
 }
 
+var restrictedSecurityContext = &corev1.SecurityContext{
+	AllowPrivilegeEscalation: new(false),
+	Capabilities: &corev1.Capabilities{
+		Drop: []corev1.Capability{"ALL"},
+	},
+	SeccompProfile: &corev1.SeccompProfile{
+		Type: corev1.SeccompProfileTypeRuntimeDefault,
+	},
+}
+
 func TestSDKInjection(t *testing.T) {
 	ns := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -529,7 +539,8 @@ func TestInjectJava(t *testing.T) {
 						Name:      javaVolumeName,
 						MountPath: javaInstrMountPath,
 					}},
-					Resources: testResourceRequirements,
+					Resources:       testResourceRequirements,
+					SecurityContext: restrictedSecurityContext,
 				},
 			},
 			Containers: []corev1.Container{
@@ -580,6 +591,106 @@ func TestInjectJava(t *testing.T) {
 			},
 		},
 	}, pod)
+}
+
+func TestInjectJavaSecurityContext(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Java: v1alpha1.Java{
+				Image:     "img:1",
+				Resources: testResourceRequirements,
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4317",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Java: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+	}
+
+	for _, tt := range []struct {
+		name        string
+		containerSC *corev1.SecurityContext
+		expected    *corev1.SecurityContext
+	}{
+		{
+			name:        "no securityContext on the instrumented container",
+			containerSC: nil,
+			expected:    restrictedSecurityContext,
+		},
+		{
+			name: "runAsNonRoot and runAsUser are dropped, other fields are kept",
+			containerSC: &corev1.SecurityContext{
+				RunAsNonRoot:             new(true),
+				RunAsUser:                new(int64(1000)),
+				RunAsGroup:               new(int64(3000)),
+				AllowPrivilegeEscalation: new(false),
+				ReadOnlyRootFilesystem:   new(true),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+				SELinuxOptions: &corev1.SELinuxOptions{Level: "s0:c123,c456"},
+			},
+			expected: &corev1.SecurityContext{
+				RunAsGroup:               new(int64(3000)),
+				AllowPrivilegeEscalation: new(false),
+				ReadOnlyRootFilesystem:   new(true),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+				SELinuxOptions: &corev1.SELinuxOptions{Level: "s0:c123,c456"},
+			},
+		},
+		{
+			name: "restricted fields are defaulted when the container omits them",
+			containerSC: &corev1.SecurityContext{
+				ReadOnlyRootFilesystem: new(true),
+			},
+			expected: &corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			inj := sdkInjector{
+				logger: logr.Discard(),
+			}
+			originalSC := tt.containerSC.DeepCopy()
+			pod := inj.inject(context.Background(), insts,
+				corev1.Namespace{},
+				corev1.Pod{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:            "app",
+								Image:           "app:latest",
+								SecurityContext: tt.containerSC,
+							},
+						},
+					},
+				})
+
+			require.Len(t, pod.Spec.InitContainers, 1)
+			assert.Equal(t, tt.expected, pod.Spec.InitContainers[0].SecurityContext)
+			// The instrumented container's securityContext must not be modified, which
+			// a pointer shared with the init container would allow.
+			assert.Equal(t, originalSC, pod.Spec.Containers[0].SecurityContext)
+		})
+	}
 }
 
 func TestInjectNodeJS(t *testing.T) {
@@ -876,7 +987,8 @@ func TestInjectJavaAndPython(t *testing.T) {
 						Name:      javaVolumeName,
 						MountPath: javaInstrMountPath,
 					}},
-					Resources: testResourceRequirements,
+					Resources:       testResourceRequirements,
+					SecurityContext: restrictedSecurityContext,
 				},
 				{
 					Name:    pythonInitContainerName,
@@ -1178,7 +1290,8 @@ func TestInjectJavaPythonAndDotNet(t *testing.T) {
 						Name:      javaVolumeName,
 						MountPath: javaInstrMountPath,
 					}},
-					Resources: testResourceRequirements,
+					Resources:       testResourceRequirements,
+					SecurityContext: restrictedSecurityContext,
 				},
 				{
 					Name:    pythonInitContainerName,
