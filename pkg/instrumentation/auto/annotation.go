@@ -231,7 +231,7 @@ func newMutatorBuilder(typeSet instrumentation.TypeSet) *mutatorBuilder {
 func buildMutations(instType instrumentation.Type) (instrumentation.AnnotationMutation, instrumentation.AnnotationMutation) {
 	annotations := buildAnnotations(instType)
 	return instrumentation.NewInsertAnnotationMutation(annotations),
-		instrumentation.NewRemoveAnnotationMutation(maps.Keys(annotations))
+		instrumentation.NewRemoveAnnotationMutation(annotations)
 }
 
 // buildAnnotations creates an annotation map of the inject and auto-annotate keys.

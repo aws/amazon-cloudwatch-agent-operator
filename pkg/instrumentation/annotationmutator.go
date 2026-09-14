@@ -35,7 +35,7 @@ func NewInsertAnnotationMutation(annotations map[string]string) AnnotationMutati
 }
 
 type removeAnnotationMutation struct {
-	remove []string
+	remove map[string]string
 }
 
 func (m *removeAnnotationMutation) Mutate(annotations map[string]string) map[string]string {
@@ -43,7 +43,7 @@ func (m *removeAnnotationMutation) Mutate(annotations map[string]string) map[str
 	if !m.shouldMutate(annotations) {
 		return mutatedAnnotations
 	}
-	for _, key := range m.remove {
+	for key := range m.remove {
 		if value, ok := annotations[key]; ok {
 			delete(annotations, key)
 			mutatedAnnotations[key] = value
@@ -52,18 +52,22 @@ func (m *removeAnnotationMutation) Mutate(annotations map[string]string) map[str
 	return mutatedAnnotations
 }
 
+// shouldMutate reports whether every managed key is present AND still carries the value the operator
+// injected. A key present with a different value (e.g. an explicit "false" opt-out set by the user) means
+// the annotation is not operator-owned, so the mutation must not remove it.
 func (m *removeAnnotationMutation) shouldMutate(annotations map[string]string) bool {
-	for _, key := range m.remove {
-		if _, ok := annotations[key]; !ok {
+	for key, managedValue := range m.remove {
+		if value, ok := annotations[key]; !ok || value != managedValue {
 			return false
 		}
 	}
 	return true
 }
 
-// NewRemoveAnnotationMutation creates a new mutation that removes annotations. All provided annotation keys
-// must be present for it to attempt to remove them.
-func NewRemoveAnnotationMutation(annotations []string) AnnotationMutation {
+// NewRemoveAnnotationMutation creates a new mutation that removes annotations. It only removes the provided
+// keys when all of them are present and each still carries the value it maps to (the value the operator
+// injected), so user-authored values are never destroyed.
+func NewRemoveAnnotationMutation(annotations map[string]string) AnnotationMutation {
 	return &removeAnnotationMutation{remove: annotations}
 }
 
