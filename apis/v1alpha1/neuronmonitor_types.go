@@ -77,6 +77,36 @@ type NeuronMonitorSpec struct {
 	// If specified, indicates the pod's scheduling constraints
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// PodAnnotations is the set of annotations that will be attached to Neuron Monitor pods.
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// PodLabels is the set of labels that will be attached to Neuron Monitor pods.
+	// Operator-managed labels cannot be overridden and are silently ignored if
+	// provided here. The reserved set includes every `app.kubernetes.io/*` key
+	// the operator writes: managed-by, instance, part-of, component, name, and
+	// version.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
+	// TopologySpreadConstraints embedded Kubernetes pod configuration option,
+	// controls how Neuron Monitor pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains.
+	// See https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// If specified, indicates the pod's priority. If not specified, the pod priority
+	// will be default or zero if there is no default.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the NeuronMonitor workload.
+	//
+	// Note: NeuronMonitor runs as a DaemonSet. Kubernetes `kubectl drain` skips
+	// DaemonSet-managed pods, and the eviction API does not gate DaemonSet pods
+	// the same way it does Deployment/StatefulSet pods. A PDB here is emitted
+	// for parity with other configuration surfaces (e.g. EKS addon defaults)
+	// but will not protect DaemonSet pods from node drains.
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 // NeuronMonitorStatus defines the observed state of NeuronMonitor.

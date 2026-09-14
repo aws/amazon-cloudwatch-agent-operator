@@ -20,6 +20,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
+	podLabels := PodLabels(params.OtelCol, labels)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Collector(params.OtelCol.Name),
@@ -33,21 +34,22 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccountName(params.OtelCol),
-					InitContainers:     params.OtelCol.Spec.InitContainers,
-					Containers:         append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:            Volumes(params.Config, params.OtelCol),
-					Tolerations:        params.OtelCol.Spec.Tolerations,
-					NodeSelector:       params.OtelCol.Spec.NodeSelector,
-					HostNetwork:        params.OtelCol.Spec.HostNetwork,
-					DNSPolicy:          getDNSPolicy(params.OtelCol),
-					SecurityContext:    params.OtelCol.Spec.PodSecurityContext,
-					PriorityClassName:  params.OtelCol.Spec.PriorityClassName,
-					Affinity:           params.OtelCol.Spec.Affinity,
+					ServiceAccountName:        ServiceAccountName(params.OtelCol),
+					InitContainers:            params.OtelCol.Spec.InitContainers,
+					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:                   Volumes(params.Config, params.OtelCol),
+					Tolerations:               params.OtelCol.Spec.Tolerations,
+					NodeSelector:              params.OtelCol.Spec.NodeSelector,
+					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					DNSPolicy:                 getDNSPolicy(params.OtelCol),
+					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:         params.OtelCol.Spec.PriorityClassName,
+					Affinity:                  params.OtelCol.Spec.Affinity,
+					TopologySpreadConstraints: params.OtelCol.Spec.TopologySpreadConstraints,
 				},
 			},
 			UpdateStrategy: params.OtelCol.Spec.UpdateStrategy,

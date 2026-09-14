@@ -117,6 +117,13 @@ type AmazonCloudWatchAgentSpec struct {
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the AmazonCloudWatchAgent workload.
 	//
+	// Only applied in deployment and statefulset modes. In daemonset mode the
+	// operator does not emit a PodDisruptionBudget and this field is ignored:
+	// PDBs do not protect DaemonSet pods from node drains (kubectl drain
+	// skips DaemonSet-managed pods), and the defaulting webhook populates
+	// this field on every CR, so emitting it in daemonset mode would create
+	// PDB objects for all existing daemonset agents on operator upgrade.
+	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for
@@ -143,6 +150,14 @@ type AmazonCloudWatchAgentSpec struct {
 	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// PodLabels is the set of labels that will be attached to
+	// Collector pods (Deployment / DaemonSet / StatefulSet pod template).
+	// Operator-managed labels cannot be overridden and are silently ignored
+	// if provided here. The reserved set includes every
+	// `app.kubernetes.io/*` key the operator writes:
+	// managed-by, instance, part-of, component, name, and version.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator AmazonCloudWatchAgentTargetAllocator `json:"targetAllocator,omitempty"`

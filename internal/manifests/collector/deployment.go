@@ -20,6 +20,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
+	podLabels := PodLabels(params.OtelCol, labels)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,7 +37,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Strategy: params.OtelCol.Spec.DeploymentUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
