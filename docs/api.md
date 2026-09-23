@@ -13535,6 +13535,19 @@ Default: "30s"<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>scraperRole</b></td>
+        <td>enum</td>
+        <td>
+          ScraperRole partitions ServiceMonitor/PodMonitor discovery across CloudWatch agents by the
+"cloudwatch.aws.amazon.com/scraper" annotation on the monitor CR. "cluster-scraper" selects only monitors
+annotated cloudwatch.aws.amazon.com/scraper: cluster-scraper; empty (default) selects only monitors that are
+not so annotated. This lets a heavy/singleton monitor be routed to the central cluster-scraper
+agent while all others stay on the per-node agent.<br/>
+          <br/>
+            <i>Enum</i>: cluster-scraper<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>serviceMonitorSelector</b></td>
         <td>map[string]string</td>
         <td>
