@@ -11422,9 +11422,9 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation.
-The current option is consistent-hashing.<br/>
+The options are consistent-hashing and per-node.<br/>
           <br/>
-            <i>Enum</i>: consistent-hashing<br/>
+            <i>Enum</i>: consistent-hashing, per-node<br/>
         </td>
         <td>false</td>
       </tr><tr>
