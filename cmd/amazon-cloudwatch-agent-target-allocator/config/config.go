@@ -63,6 +63,7 @@ type Config struct {
 	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector         map[string]string     `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector     map[string]string     `yaml:"service_monitor_selector,omitempty"`
+	ScraperRole                string                `yaml:"scraper_role,omitempty"`
 	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
 	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
