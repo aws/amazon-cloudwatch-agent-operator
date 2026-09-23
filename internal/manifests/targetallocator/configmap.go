@@ -51,7 +51,18 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["config"] = prometheusConfig
 	}
 
-	taConfig["allocation_strategy"] = v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyConsistentHashing
+	// Use the strategy from the CR if set, defaulting to consistent-hashing to
+	// preserve prior behavior. When per-node is selected, configure a
+	// consistent-hashing fallback so targets without a resolvable node (e.g.
+	// non-pod ServiceMonitor endpoints) are still allocated rather than dropped.
+	allocationStrategy := params.OtelCol.Spec.TargetAllocator.AllocationStrategy
+	if allocationStrategy == "" {
+		allocationStrategy = v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyConsistentHashing
+	}
+	taConfig["allocation_strategy"] = allocationStrategy
+	if allocationStrategy == v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyPerNode {
+		taConfig["allocation_fallback_strategy"] = v1alpha1.AmazonCloudWatchAgentTargetAllocatorAllocationStrategyConsistentHashing
+	}
 
 	if len(params.OtelCol.Spec.TargetAllocator.FilterStrategy) > 0 {
 		taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy
