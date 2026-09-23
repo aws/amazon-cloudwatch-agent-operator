@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -21,8 +22,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	metadatafake "k8s.io/client-go/metadata/fake"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/ptr"
 )
@@ -252,17 +257,12 @@ func TestLoadConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := getTestPrometheusCRWatcher(t, tt.serviceMonitor, tt.podMonitor)
-			for _, informer := range w.informers {
-				// Start informers in order to populate cache.
-				informer.Start(w.stopChannel)
-			}
+			defer func() { _ = w.Close() }()
 
-			// Wait for informers to sync.
-			for _, informer := range w.informers {
-				for !informer.HasSynced() {
-					time.Sleep(50 * time.Millisecond)
-				}
-			}
+			// Start both informers via the per-type lifecycle (both CRDs present).
+			notifyEvents := make(chan struct{}, 1)
+			require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
+			require.NoError(t, w.startMonitorInformer(monitoringv1.PodMonitorName, notifyEvents))
 
 			got, err := w.LoadConfig(context.Background())
 			require.NoError(t, err)
@@ -305,11 +305,15 @@ func TestRateLimit(t *testing.T) {
 	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), serviceMonitor, metav1.CreateOptions{})
 	require.NoError(t, err)
 
-	// wait for cache sync first
-	for _, informer := range w.informers {
-		success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
-		require.True(t, success)
-	}
+	// wait for the watcher to start the ServiceMonitor informer and finish its
+	// startup loop (both CRDs present => both informers running) so the
+	// rate-limited event sender is active before we measure event timing.
+	require.Eventually(t, func() bool {
+		w.informersMtx.RLock()
+		defer w.informersMtx.RUnlock()
+		sm, ok := w.informers[monitoringv1.ServiceMonitorName]
+		return ok && sm.HasSynced() && len(w.informers) == 2
+	}, 5*time.Second, 10*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		_, createErr := w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
@@ -353,9 +357,41 @@ func TestRateLimit(t *testing.T) {
 
 }
 
-// getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
-// and test secrets.
+// getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with
+// fake clients and test secrets. Both the ServiceMonitor and PodMonitor CRDs are
+// registered in the fake apiextensions client, so the watcher behaves as if both
+// CRDs are present. Use getTestPrometheusCRWatcherWithCRDs to control CRD presence.
 func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
+	return getTestPrometheusCRWatcherWithCRDs(t, sm, pm, true, true)
+}
+
+// crdFor builds a minimal CustomResourceDefinition object for the given
+// monitoring resource (e.g. "servicemonitors"), matching the names the watcher
+// keys on.
+func crdFor(resourceName string) *apiextensionsv1.CustomResourceDefinition {
+	return &apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName + "." + monitoringv1.SchemeGroupVersion.Group,
+		},
+	}
+}
+
+// crdMetaFor builds the metadata-only view of a CRD for the fake metadata client
+// backing the CRD watch. TypeMeta must carry the CRD GVK so the fake tracker maps
+// it to the customresourcedefinitions resource the informer lists on.
+func crdMetaFor(resourceName string) *metav1.PartialObjectMetadata {
+	return &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName + "." + monitoringv1.SchemeGroupVersion.Group,
+		},
+	}
+}
+
+func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor, smCRD, pmCRD bool) *PrometheusCRWatcher {
 	mClient := fakemonitoringclient.NewSimpleClientset() //nolint:staticcheck // NewClientset causes structured merge diff schema errors in tests
 	if sm != nil {
 		_, err := mClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), sm, metav1.CreateOptions{})
@@ -369,6 +405,29 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 			t.Fatal(t, err)
 		}
 	}
+
+	var crdObjects []runtime.Object
+	if smCRD {
+		crdObjects = append(crdObjects, crdFor(monitoringv1.ServiceMonitorName))
+	}
+	if pmCRD {
+		crdObjects = append(crdObjects, crdFor(monitoringv1.PodMonitorName))
+	}
+	crdClient := apiextensionsfake.NewSimpleClientset(crdObjects...)
+
+	// Metadata-only fake backing the CRD watch, populated with the same present CRDs.
+	metaScheme := metadatafake.NewTestScheme()
+	if err := metav1.AddMetaToScheme(metaScheme); err != nil {
+		t.Fatal(t, err)
+	}
+	var crdMetaObjects []runtime.Object
+	if smCRD {
+		crdMetaObjects = append(crdMetaObjects, crdMetaFor(monitoringv1.ServiceMonitorName))
+	}
+	if pmCRD {
+		crdMetaObjects = append(crdMetaObjects, crdMetaFor(monitoringv1.PodMonitorName))
+	}
+	metadataClient := metadatafake.NewSimpleMetadataClient(metaScheme, crdMetaObjects...)
 
 	k8sClient := fake.NewSimpleClientset()
 	_, err := k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
@@ -392,12 +451,6 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		t.Fatal(t, err)
 	}
 
-	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
-	informers, err := getInformers(factory)
-	if err != nil {
-		t.Fatal(t, err)
-	}
-
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -417,9 +470,13 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 	}
 
 	return &PrometheusCRWatcher{
+		logger:                 logr.Discard(),
 		kubeMonitoringClient:   mClient,
 		k8sClient:              k8sClient,
-		informers:              informers,
+		crdClient:              crdClient,
+		metadataClient:         metadataClient,
+		informers:              map[string]*informers.ForResource{},
+		informerStopChannels:   map[string]chan struct{}{},
 		configGenerator:        generator,
 		prom:                   prom,
 		serviceMonitorSelector: getSelector(nil),
@@ -444,4 +501,140 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 		sc.MetricNameEscapingScheme = ""
 		sc.ExtraScrapeMetrics = nil
 	}
+}
+
+// runningInformers returns the set of monitoring resource names whose informers
+// are currently active.
+func runningInformers(w *PrometheusCRWatcher) map[string]bool {
+	w.informersMtx.RLock()
+	defer w.informersMtx.RUnlock()
+	out := map[string]bool{}
+	for name := range w.informers {
+		out[name] = true
+	}
+	return out
+}
+
+// TestWatchStartsHealthyWithoutCRDs verifies the TA does not error when neither
+// the ServiceMonitor nor PodMonitor CRD exists: Watch returns no error, no
+// informers are started, and LoadConfig yields a config with no scrape jobs.
+func TestWatchStartsHealthyWithoutCRDs(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
+	w.eventInterval = 5 * time.Millisecond
+	defer func() { _ = w.Close() }()
+
+	watchDone := make(chan error, 1)
+	go func() { watchDone <- w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+
+	// Give the CRD watch time to sync and (not) start anything.
+	require.Never(t, func() bool {
+		return len(runningInformers(w)) > 0
+	}, 200*time.Millisecond, 20*time.Millisecond)
+
+	cfg, err := w.LoadConfig(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, cfg.ScrapeConfigs)
+
+	// Watch must still be running (resilient), not have returned an error.
+	select {
+	case err := <-watchDone:
+		t.Fatalf("Watch exited unexpectedly with: %v", err)
+	default:
+	}
+}
+
+// TestWatchPerTypeIndependence verifies that with only the ServiceMonitor CRD
+// present, the SM informer starts and the PM informer does not.
+func TestWatchPerTypeIndependence(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, true, false)
+	w.eventInterval = 5 * time.Millisecond
+	defer func() { _ = w.Close() }()
+
+	go func() { _ = w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+
+	require.Eventually(t, func() bool {
+		return runningInformers(w)[monitoringv1.ServiceMonitorName]
+	}, 5*time.Second, 10*time.Millisecond)
+
+	// PodMonitor CRD is absent, so its informer must never start.
+	require.Never(t, func() bool {
+		return runningInformers(w)[monitoringv1.PodMonitorName]
+	}, 200*time.Millisecond, 20*time.Millisecond)
+}
+
+// TestWatchStartsInformerWhenCRDCreated verifies the TA begins watching a type
+// when its CRD is created at runtime — no restart required.
+func TestWatchStartsInformerWhenCRDCreated(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
+	w.eventInterval = 5 * time.Millisecond
+	defer func() { _ = w.Close() }()
+
+	go func() { _ = w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+
+	// Nothing running initially.
+	require.Never(t, func() bool {
+		return len(runningInformers(w)) > 0
+	}, 200*time.Millisecond, 20*time.Millisecond)
+
+	// Create the ServiceMonitor CRD after startup (metadata-only CRD watch).
+	crdGVR := apiextensionsv1.SchemeGroupVersion.WithResource("customresourcedefinitions")
+	require.NoError(t, w.metadataClient.(*metadatafake.FakeMetadataClient).Tracker().Create(
+		crdGVR, crdMetaFor(monitoringv1.ServiceMonitorName), ""))
+
+	require.Eventually(t, func() bool {
+		return runningInformers(w)[monitoringv1.ServiceMonitorName]
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
+// TestStopMonitorInformerDropsType verifies the stop path used when a CRD is
+// removed at runtime: the informer is stopped, dropped from the active set (so
+// LoadConfig no longer emits its targets), and a reload is signalled. This is
+// the logic invoked by the CRD watch's DeleteFunc; it is exercised directly so
+// the assertion does not depend on fake-clientset delete-watch delivery.
+func TestStopMonitorInformerDropsType(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, true, false)
+	defer func() { _ = w.Close() }()
+
+	notifyEvents := make(chan struct{}, 1)
+	require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
+	require.True(t, runningInformers(w)[monitoringv1.ServiceMonitorName])
+	// drain the start notification
+	select {
+	case <-notifyEvents:
+	default:
+	}
+
+	w.stopMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents)
+
+	assert.False(t, runningInformers(w)[monitoringv1.ServiceMonitorName], "informer should be stopped and dropped")
+	// a reload must be signalled so the dropped type's targets are removed
+	select {
+	case <-notifyEvents:
+	default:
+		t.Fatal("expected a reload notification after stopping the informer")
+	}
+
+	// LoadConfig must succeed and emit no scrape jobs once the type is dropped.
+	cfg, err := w.LoadConfig(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, cfg.ScrapeConfigs)
+}
+
+// TestCRDObjectName verifies the CRD-name extraction used by the CRD watch,
+// including the delete tombstone wrapper.
+func TestCRDObjectName(t *testing.T) {
+	crd := crdMetaFor(monitoringv1.ServiceMonitorName)
+	name, ok := crdObjectName(crd)
+	require.True(t, ok)
+	assert.Equal(t, "servicemonitors.monitoring.coreos.com", name)
+	if _, tracked := crdNameToResource[name]; !tracked {
+		t.Fatalf("CRD name %q is not mapped to a monitoring resource", name)
+	}
+
+	name, ok = crdObjectName(cache.DeletedFinalStateUnknown{Key: "k", Obj: crd})
+	require.True(t, ok)
+	assert.Equal(t, "servicemonitors.monitoring.coreos.com", name)
+
+	_, ok = crdObjectName("not-a-crd")
+	assert.False(t, ok)
 }
