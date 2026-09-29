@@ -95,7 +95,7 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, buildErr
 	}
 
-	if !enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log) {
+	if !enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log, instance.Name+"-service") {
 		log.Info("enhanced_container_insights or accelerated_compute_metrics is disabled")
 		for _, obj := range desiredObjects {
 			if err := r.Delete(ctx, obj, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {

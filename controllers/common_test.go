@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,10 +19,24 @@ import (
 func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
 	ctx := context.Background()
 	logger := logf.Log.WithName("unit-tests")
+	dcgmOtelConfig := `
+receivers:
+  prometheus/dcgm:
+    config:
+      scrape_configs:
+        - job_name: dcgm-exporter
+          static_configs:
+            - targets: [dcgm-exporter-service:9400]
+service:
+  pipelines:
+    metrics/dcgm:
+      receivers: [prometheus/dcgm]
+`
 	testCases := []struct {
-		name     string
-		config   string
-		expected bool
+		name       string
+		config     string
+		otelConfig string
+		expected   bool
 	}{
 		{
 			name:     "disabledEnhancedContainerInsights",
@@ -58,6 +73,30 @@ func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
 			config:   `"logs":{"metrics_collected":{"kubernetes":{"enhanced_container_insights":false, "accelerated_compute_metrics":true}}}}`,
 			expected: false,
 		},
+		{
+			name:       "otelPipelineScrapesService",
+			config:     `{}`,
+			otelConfig: dcgmOtelConfig,
+			expected:   true,
+		},
+		{
+			name:       "otelPipelineScrapesOtherService",
+			config:     `{}`,
+			otelConfig: strings.ReplaceAll(dcgmOtelConfig, "dcgm-exporter-service", "neuron-monitor-service"),
+			expected:   false,
+		},
+		{
+			name:       "otelReceiverNotInPipeline",
+			config:     `{}`,
+			otelConfig: strings.ReplaceAll(dcgmOtelConfig, "receivers: [prometheus/dcgm]", "receivers: [otlp]"),
+			expected:   false,
+		},
+		{
+			name:       "otelMalformed",
+			config:     `{}`,
+			otelConfig: "service: [",
+			expected:   false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -65,11 +104,12 @@ func TestEnabledAcceleratedComputeByAgentConfig(t *testing.T) {
 			return v1alpha1.AmazonCloudWatchAgent{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: v1alpha1.AmazonCloudWatchAgentSpec{
-					Config: tc.config,
+					Config:     tc.config,
+					OtelConfig: tc.otelConfig,
 				},
 			}
 		}
-		actual := enabledAcceleratedComputeByAgentConfig(ctx, nil, logger)
+		actual := enabledAcceleratedComputeByAgentConfig(ctx, nil, logger, "dcgm-exporter-service")
 		assert.Equal(t, tc.expected, actual)
 	}
 }
