@@ -154,7 +154,19 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 	}
 
 	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
+	taSpec := r.Spec.TargetAllocator
+	// per-node assigns each target to the collector on the target's node, so it
+	// needs exactly one collector per node: a DaemonSet. Matches upstream.
+	if taSpec.Enabled && taSpec.AllocationStrategy == AmazonCloudWatchAgentTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
+		return warnings, fmt.Errorf("target allocation strategy %s is only supported in mode %s, got %s",
+			AmazonCloudWatchAgentTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet, r.Spec.Mode)
+	}
+	// Two non-StatefulSet setups are supported and do not warn: per-node on a
+	// DaemonSet, and an agent with a ServiceMonitor/PodMonitor scraper role (the
+	// cluster-scraper), which only claims the monitors routed to it.
+	supportedNonStatefulSet := (taSpec.AllocationStrategy == AmazonCloudWatchAgentTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode == ModeDaemonSet) ||
+		taSpec.PrometheusCR.ScraperRole != ""
+	if taSpec.Enabled && r.Spec.Mode != ModeStatefulSet && !supportedNonStatefulSet {
 		warnings = append(warnings, fmt.Sprintf("The Amazon CloudWatch Agent mode is set to %s, we do not recommend enabling Target Allocator when not running as a StatefulSet", r.Spec.Mode))
 	}
 
