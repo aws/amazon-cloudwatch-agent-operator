@@ -18,6 +18,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
 	metadatafake "k8s.io/client-go/metadata/fake"
 	clienttesting "k8s.io/client-go/testing"
 )
@@ -240,4 +242,72 @@ func TestCloseIdempotent(t *testing.T) {
 	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
 	require.NoError(t, w.Close())
 	require.NotPanics(t, func() { _ = w.Close() })
+}
+
+// TestWatchStartsInformerWhenCRDCheckForbidden covers a Target Allocator that
+// cannot read customresourcedefinitions: the CRD check returns Forbidden, but
+// the CRDs exist, so discovery must still start.
+func TestWatchStartsInformerWhenCRDCheckForbidden(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, true, true)
+	w.eventInterval = 5 * time.Millisecond
+	defer func() { _ = w.Close() }()
+
+	forbidCRDAccess(w)
+
+	go func() { _ = w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+
+	require.Eventually(t, func() bool {
+		w.informersMtx.RLock()
+		defer w.informersMtx.RUnlock()
+		_, sm := w.informers[monitoringv1.ServiceMonitorName]
+		_, pm := w.informers[monitoringv1.PodMonitorName]
+		return sm && pm
+	}, 5*time.Second, 20*time.Millisecond, "informers not started after a Forbidden CRD check")
+}
+
+// TestWatchForbiddenCRDCheckDoesNotBlockWhenCRDAbsent checks that when the CRD
+// check is Forbidden and a monitor resource is not served, Watch keeps running
+// and Close still returns promptly.
+func TestWatchForbiddenCRDCheckDoesNotBlockWhenCRDAbsent(t *testing.T) {
+	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
+	w.eventInterval = 5 * time.Millisecond
+
+	forbidCRDAccess(w)
+	fakeMon := w.kubeMonitoringClient.(*fakemonitoringclient.Clientset)
+	fakeMon.PrependReactor("list", "*", func(action clienttesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewNotFound(schema.GroupResource{Group: "monitoring.coreos.com", Resource: action.GetResource().Resource}, "")
+	})
+
+	watchDone := make(chan error, 1)
+	go func() { watchDone <- w.Watch(make(chan Event, 1), make(chan error, 1)) }()
+	select {
+	case err := <-watchDone:
+		t.Fatalf("Watch exited unexpectedly with: %v", err)
+	case <-time.After(300 * time.Millisecond):
+	}
+
+	closed := make(chan struct{})
+	go func() { _ = w.Close(); close(closed) }()
+	select {
+	case <-closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close did not return while a background informer start was pending")
+	}
+}
+
+// forbidCRDAccess makes every customresourcedefinitions read return Forbidden,
+// both the direct CRD check and the metadata client behind the CRD watch, as
+// for a Target Allocator ServiceAccount without that permission.
+func forbidCRDAccess(w *PrometheusCRWatcher) {
+	forbidden := func(action clienttesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewForbidden(
+			schema.GroupResource{Group: "apiextensions.k8s.io", Resource: "customresourcedefinitions"}, "", fmt.Errorf("denied"))
+	}
+	w.crdClient.(*apiextensionsfake.Clientset).PrependReactor("*", "customresourcedefinitions", forbidden)
+	meta := w.metadataClient.(*metadatafake.FakeMetadataClient)
+	meta.PrependReactor("*", "customresourcedefinitions", forbidden)
+	meta.PrependWatchReactor("customresourcedefinitions", func(action clienttesting.Action) (bool, watch.Interface, error) {
+		_, _, err := forbidden(action)
+		return true, nil, err
+	})
 }
