@@ -403,9 +403,23 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		exists, err := w.crdExists(ctx, crdName)
 		cancel()
 		if err != nil {
-			// Surface the error but keep going — a transient API error must not
-			// take down the allocator. The CRD watch will recover the informer.
-			w.logger.Error(err, "prometheus-cr: failed to check for CRD, deferring to CRD watch", "crd", crdName)
+			// The check failed for a reason other than "not found", e.g. the
+			// ServiceAccount cannot read customresourcedefinitions. The CRD watch
+			// would hit the same error and never recover, so start the informer
+			// anyway: if the CRD exists, discovery works; if it does not, the
+			// informer keeps retrying. Started in the background so a CRD that is
+			// really absent cannot block startup.
+			w.logger.Info("prometheus-cr: WARNING could not check for CRD, starting its informer anyway; "+
+				"grant get/list/watch on apiextensions.k8s.io customresourcedefinitions to the Target Allocator "+
+				"so CRDs installed or removed later are detected",
+				"crd", crdName, "error", err.Error())
+			go func(crdName, resourceName string) {
+				if startErr := w.startMonitorInformer(resourceName, notifyEvents); startErr != nil {
+					w.logger.Error(startErr, "prometheus-cr: failed to start informer after CRD check error", "crd", crdName)
+					return
+				}
+				w.logger.Info("prometheus-cr: started informer after CRD check error", "crd", crdName, "resource", resourceName)
+			}(crdName, resourceName)
 			continue
 		}
 		if !exists {
