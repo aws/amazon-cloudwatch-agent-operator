@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fake2 "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/instrumentationguard"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 )
 
@@ -906,7 +907,101 @@ func Test_StartupRestartPods(t *testing.T) {
 	assert.Equal(t, buildAnnotations(instrumentation.TypePython), customSelectedDeployment.Spec.Template.GetAnnotations())
 }
 
+// Test_MutateObject_PreservesDisabledInjection is the auto-monitor interaction regression test for
+// the instrumentation guard. The guard is detect-only, so acting on its finding means a human
+// setting inject-<lang>: "false" on the workload's pod template - and auto-monitor must leave every
+// one of those annotations alone, whether or not the workload is still selected by a service and
+// whether or not RestartPods is enabled, and must not touch the guard's silencing annotation on the
+// workload's own metadata. If this test fails, disabling injection does not stick and auto-monitor
+// re-instruments a crash-looping workload the customer just rescued.
+func Test_MutateObject_PreservesDisabledInjection(t *testing.T) {
+	variants := []struct {
+		name string
+		// autoAnnotated adds the auto-annotate-<lang> markers that make the inject annotations
+		// look operator-owned, which is the ownership caveat the guard relies on being handled.
+		autoAnnotated bool
+		// serviceSelects decides whether auto-monitor still wants this workload instrumented.
+		serviceSelects bool
+	}{
+		{name: "service selected", serviceSelects: true},
+		{name: "service selected, auto-annotate markers present", autoAnnotated: true, serviceSelects: true},
+		{name: "not service selected"},
+		{name: "not service selected, auto-annotate markers present", autoAnnotated: true},
+	}
+	restartModes := []struct {
+		name        string
+		restartPods bool
+	}{
+		{name: "restart pods", restartPods: true},
+		{name: "no restart", restartPods: false},
+	}
+
+	for _, workload := range workloadTypes {
+		t.Run(workload.name, func(t *testing.T) {
+			for _, variant := range variants {
+				t.Run(variant.name, func(t *testing.T) {
+					for _, restart := range restartModes {
+						t.Run(restart.name, func(t *testing.T) {
+							templateAnnotations := map[string]string{}
+							for language := range instrumentation.SupportedTypes {
+								templateAnnotations[instrumentation.InjectAnnotationKey(language)] = "false"
+								if variant.autoAnnotated {
+									templateAnnotations[AnnotateKey(language)] = defaultAnnotationValue
+								}
+							}
+
+							workloadLabels := map[string]string{"app": "guarded"}
+							obj := workload.create("workload", defaultNs, workloadLabels, templateAnnotations)
+							record := guardRecordAnnotation(t)
+							obj.SetAnnotations(map[string]string{instrumentationguard.RecordAnnotationKey: record})
+
+							ctx := context.TODO()
+							clientset := fake.NewSimpleClientset()
+							fakeClient := fake2.NewFakeClient()
+							monitor := NewMonitor(ctx, simpleConfig(true, restart.restartPods, none, none), clientset, fakeClient, fakeClient, testr.New(t))
+
+							serviceSelector := map[string]string{"app": "unrelated"}
+							if variant.serviceSelects {
+								serviceSelector = workloadLabels
+							}
+							_, err := clientset.CoreV1().Services(defaultNs).Create(ctx, newTestService("svc", defaultNs, serviceSelector), metav1.CreateOptions{})
+							assert.NoError(t, err)
+							err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys > 0 })
+							assert.NoError(t, err)
+
+							monitor.MutateObject(obj, obj)
+
+							for language := range instrumentation.SupportedTypes {
+								key := instrumentation.InjectAnnotationKey(language)
+								assert.Equal(t, "false", getPodTemplate(obj).GetAnnotations()[key],
+									"auto-monitor changed %s, which was deliberately set to false", key)
+							}
+							assert.Equal(t, record, obj.GetAnnotations()[instrumentationguard.RecordAnnotationKey],
+								"auto-monitor modified the instrumentation guard record on the workload metadata")
+						})
+					}
+				})
+			}
+		})
+	}
+}
+
 // Helper functions
+
+// guardRecordAnnotation returns the value of the annotation that silences the instrumentation
+// guard for a workload whose auto-instrumentation was turned off by hand.
+func guardRecordAnnotation(t *testing.T) string {
+	t.Helper()
+	rec := &instrumentationguard.Record{
+		BackedOutAt:  metav1.NewTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+		Reason:       "pod default/workload-abc123: container app restarted 3 times",
+		FailedImages: map[instrumentation.Type]string{instrumentation.TypeJava: "java-image:1"},
+		Previous:     map[string]*string{instrumentation.InjectAnnotationKey(instrumentation.TypeJava): nil},
+	}
+	encoded, err := rec.Marshal()
+	assert.NoError(t, err)
+	return encoded
+}
 
 func createNamespace(t *testing.T, clientset *fake.Clientset, ctx context.Context, namespaceName string) *corev1.Namespace {
 	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}
