@@ -99,9 +99,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-				//disable setting security context in init container due to issue with runAsNonRoot conflict
-				//https://github.com/open-telemetry/opentelemetry-operator/issues/2272
-				//pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
+
+				pod = i.setJavaInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
 			}
 		}
 	}
@@ -293,7 +292,47 @@ func isOtcContainer(container corev1.Container) bool {
 func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext, instrInitContainerName string) corev1.Pod {
 	for i, initContainer := range pod.Spec.InitContainers {
 		if initContainer.Name == instrInitContainerName {
-			pod.Spec.InitContainers[i].SecurityContext = securityContext
+			// Copy, so later edits to the init container's context cannot leak into the
+			// instrumented container through a shared pointer.
+			pod.Spec.InitContainers[i].SecurityContext = securityContext.DeepCopy()
+		}
+	}
+
+	return pod
+}
+
+// setJavaInitContainerSecurityContext derives the Java init container's securityContext from the
+// instrumented container, keeping user-specified fields such as readOnlyRootFilesystem or
+// seLinuxOptions, but dropping runAsNonRoot/runAsUser: the Java agent image runs as root and would
+// otherwise conflict with them (https://github.com/open-telemetry/opentelemetry-operator/issues/2272).
+// Fields required by the restricted Pod Security Standard are defaulted when the instrumented
+// container leaves them unset, so injection stays valid in namespaces enforcing "restricted".
+func (i *sdkInjector) setJavaInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext, instrInitContainerName string) corev1.Pod {
+	initSecurityContext := securityContext.DeepCopy()
+	if initSecurityContext == nil {
+		initSecurityContext = &corev1.SecurityContext{}
+	}
+
+	initSecurityContext.RunAsNonRoot = nil
+	initSecurityContext.RunAsUser = nil
+
+	if initSecurityContext.AllowPrivilegeEscalation == nil {
+		initSecurityContext.AllowPrivilegeEscalation = new(false)
+	}
+	if initSecurityContext.Capabilities == nil {
+		initSecurityContext.Capabilities = &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		}
+	}
+	if initSecurityContext.SeccompProfile == nil {
+		initSecurityContext.SeccompProfile = &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		}
+	}
+
+	for idx, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name == instrInitContainerName {
+			pod.Spec.InitContainers[idx].SecurityContext = initSecurityContext.DeepCopy()
 		}
 	}
 
