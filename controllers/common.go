@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v2"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,8 +163,11 @@ func pruneStaleObjects(ctx context.Context, kubeClient client.Client, logger log
 	return errors.Join(pruneErrs...)
 }
 
-func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger) bool {
+func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger, service string) bool {
 	agentResource := getAmazonCloudWatchAgentResource(ctx, c)
+	if otelConfigScrapesService(agentResource.Spec.OtelConfig, service, log) {
+		return true
+	}
 	// missing feature flag means it's on by default
 	featureConfigExists := strings.Contains(agentResource.Spec.Config, acceleratedComputeMetrics)
 	conf, err := adapters.ConfigStructFromJSONString(agentResource.Spec.Config)
@@ -178,6 +182,32 @@ func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client
 		} else {
 			// enhanced container insights is disabled
 			return false
+		}
+	}
+	return false
+}
+
+// otelConfigScrapesService reports whether a receiver used by a pipeline scrapes service.
+func otelConfigScrapesService(otelConfig string, service string, log logr.Logger) bool {
+	if otelConfig == "" {
+		return false
+	}
+	conf, err := adapters.ConfigFromString(otelConfig)
+	if err != nil {
+		log.Error(err, "Failed to unmarshall agent OTEL configuration")
+		return false
+	}
+	receivers, _ := conf["receivers"].(map[interface{}]interface{})
+	serviceConf, _ := conf["service"].(map[interface{}]interface{})
+	pipelines, _ := serviceConf["pipelines"].(map[interface{}]interface{})
+	for _, p := range pipelines {
+		pipeline, _ := p.(map[interface{}]interface{})
+		names, _ := pipeline["receivers"].([]interface{})
+		for _, name := range names {
+			receiver, err := yaml.Marshal(receivers[name])
+			if err == nil && strings.Contains(string(receiver), service) {
+				return true
+			}
 		}
 	}
 	return false
