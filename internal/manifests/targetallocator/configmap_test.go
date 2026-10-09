@@ -80,6 +80,7 @@ label_selector:
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
 pod_monitor_selector:
   release: my-instance
+scraper_role: cluster-scraper
 service_monitor_selector:
   release: my-instance
 `,
@@ -91,6 +92,7 @@ service_monitor_selector:
 		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
 			"release": "my-instance",
 		}
+		instance.Spec.TargetAllocator.PrometheusCR.ScraperRole = "cluster-scraper"
 		cfg := config.New()
 		params := manifests.Params{
 			OtelCol: instance,
@@ -144,6 +146,81 @@ prometheus_cr:
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
+	})
+	t.Run("should emit per-node strategy with consistent-hashing fallback", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
+
+		expectedData := map[string]string{
+			"targetallocator.yaml": `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: per-node
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: amazon-cloudwatch-agent
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
+  app.kubernetes.io/part-of: amazon-cloudwatch-agent
+`,
+		}
+		instance := collectorInstance()
+		instance.Spec.TargetAllocator.AllocationStrategy = "per-node"
+		cfg := config.New()
+		params := manifests.Params{
+			OtelCol: instance,
+			Config:  cfg,
+			Log:     logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-target-allocator", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+
+	t.Run("should emit scraper_role when set on the prometheusCR", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "amazon-cloudwatch-agent-target-allocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-target-allocator"
+
+		expectedData := map[string]string{
+			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: amazon-cloudwatch-agent
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
+  app.kubernetes.io/part-of: amazon-cloudwatch-agent
+scraper_role: cluster-scraper
+`,
+		}
+		instance := collectorInstance()
+		instance.Spec.TargetAllocator.PrometheusCR.ScraperRole = "cluster-scraper"
+		cfg := config.New()
+		params := manifests.Params{
+			OtelCol: instance,
+			Config:  cfg,
+			Log:     logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-target-allocator", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
 	})
 
 }

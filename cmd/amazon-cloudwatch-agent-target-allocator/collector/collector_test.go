@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,6 +59,9 @@ func pod(name string) *v1.Pod {
 			Namespace: "test-ns",
 			Labels:    labelSet,
 		},
+		Spec: v1.PodSpec{
+			NodeName: name + "-node",
+		},
 	}
 }
 
@@ -86,13 +90,16 @@ func Test_runWatch(t *testing.T) {
 			},
 			want: map[string]*allocation.Collector{
 				"test-pod1": {
-					Name: "test-pod1",
+					Name:     "test-pod1",
+					NodeName: "test-pod1-node",
 				},
 				"test-pod2": {
-					Name: "test-pod2",
+					Name:     "test-pod2",
+					NodeName: "test-pod2-node",
 				},
 				"test-pod3": {
-					Name: "test-pod3",
+					Name:     "test-pod3",
+					NodeName: "test-pod3-node",
 				},
 			},
 		},
@@ -120,7 +127,8 @@ func Test_runWatch(t *testing.T) {
 			},
 			want: map[string]*allocation.Collector{
 				"test-pod1": {
-					Name: "test-pod1",
+					Name:     "test-pod1",
+					NodeName: "test-pod1-node",
 				},
 			},
 		},
@@ -206,4 +214,98 @@ func Test_closeChannel(t *testing.T) {
 			assert.False(t, terminated)
 		})
 	}
+}
+
+// Test_runWatch_UnscheduledThenScheduled verifies an unscheduled collector pod
+// (empty NodeName) is skipped when Added, then registered with its node once a
+// Modified event reports the assignment. This is the DaemonSet-rollout fix: the
+// per-node strategy must pick up a collector's node without a TA restart.
+func Test_runWatch_UnscheduledThenScheduled(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+
+	var wg sync.WaitGroup
+	actual := make(map[string]*allocation.Collector)
+	go runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {
+		actual = colMap
+		wg.Done()
+	})
+
+	// Added while unscheduled (no NodeName): must be skipped.
+	wg.Add(1)
+	p := pod("test-pod1")
+	p.Spec.NodeName = ""
+	created, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+	assert.NoError(t, err)
+	wg.Wait()
+	assert.Empty(t, actual, "unscheduled pod (no NodeName) must not be registered")
+
+	// Scheduled later: a Modified event carrying the node must register it.
+	wg.Add(1)
+	created.Spec.NodeName = "test-pod1-node"
+	_, err = kubeClient.k8sClient.CoreV1().Pods("test-ns").Update(context.Background(), created, metav1.UpdateOptions{})
+	assert.NoError(t, err)
+	wg.Wait()
+
+	assert.Equal(t, map[string]*allocation.Collector{
+		"test-pod1": {Name: "test-pod1", NodeName: "test-pod1-node"},
+	}, actual)
+}
+
+// Test_runWatch_TerminatingPodReleased verifies a collector pod that is marked
+// for deletion is dropped on the Modified event carrying its DeletionTimestamp,
+// rather than keeping ownership of its node's targets until the Deleted event
+// lands. This matches the DeletionTimestamp check on the initial List.
+func Test_runWatch_TerminatingPodReleased(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+
+	p := pod("test-pod1")
+	terminating := p.DeepCopy()
+	now := metav1.Now()
+	terminating.DeletionTimestamp = &now
+
+	events := make(chan watch.Event, 2)
+	events <- watch.Event{Type: watch.Added, Object: p}
+	events <- watch.Event{Type: watch.Modified, Object: terminating}
+	close(events)
+
+	var updates []map[string]*allocation.Collector
+	runWatch(context.Background(), &kubeClient, events, map[string]*allocation.Collector{},
+		func(colMap map[string]*allocation.Collector) {
+			snapshot := make(map[string]*allocation.Collector, len(colMap))
+			for k, v := range colMap {
+				snapshot[k] = v
+			}
+			updates = append(updates, snapshot)
+		})
+
+	require.Len(t, updates, 2)
+	assert.Equal(t, map[string]*allocation.Collector{
+		"test-pod1": {Name: "test-pod1", NodeName: "test-pod1-node"},
+	}, updates[0], "scheduled pod must be registered on Added")
+	assert.Empty(t, updates[1], "pod marked for deletion must be released, not held until Deleted")
+}
+
+// Test_runWatch_NonPodEventRestarts verifies runWatch restarts (returns) when an
+// event carries an object that is not a Pod, rather than panicking on the type
+// assertion.
+func Test_runWatch_NonPodEventRestarts(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+
+	events := make(chan watch.Event, 1)
+	events <- watch.Event{Type: watch.Added, Object: &v1.ConfigMap{}}
+	msg := runWatch(context.Background(), &kubeClient, events, map[string]*allocation.Collector{},
+		func(map[string]*allocation.Collector) {})
+	assert.Equal(t, "", msg)
 }

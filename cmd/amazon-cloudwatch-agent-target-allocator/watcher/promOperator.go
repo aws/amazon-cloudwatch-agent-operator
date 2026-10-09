@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -21,6 +22,7 @@ import (
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -28,7 +30,28 @@ import (
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 )
 
+const defaultCollectorNamespace = "amazon-cloudwatch"
+
 const minEventInterval = time.Second * 5
+
+const defaultServiceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+
+// serviceAccountNamespacePath is a variable so tests can redirect the read.
+var serviceAccountNamespacePath = defaultServiceAccountNamespacePath
+
+func resolveCollectorNamespace(logger logr.Logger) string {
+	if ns := strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE")); ns != "" {
+		return ns
+	}
+	namespace := defaultCollectorNamespace
+	if data, err := os.ReadFile(serviceAccountNamespacePath); err == nil {
+		if ns := strings.TrimSpace(string(data)); ns != "" {
+			namespace = ns
+		}
+	}
+	logger.Info("OTELCOL_NAMESPACE not set, resolved namespace", "namespace", namespace)
+	return namespace
+}
 
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
@@ -49,11 +72,18 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 	}
 
 	// TODO: We should make these durations configurable
+	// Namespace must be non-empty; the config generator panics otherwise.
+	collectorNamespace := resolveCollectorNamespace(logger)
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: collectorNamespace,
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 			},
+			// Must be non-empty; default to scrape interval.
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 		},
 	}
 
@@ -80,6 +110,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		kubeConfigPath:         cfg.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
 		podMonitorSelector:     podMonSelector,
+		scraperRole:            cfg.ScraperRole,
 	}, nil
 }
 
@@ -96,6 +127,7 @@ type PrometheusCRWatcher struct {
 
 	serviceMonitorSelector labels.Selector
 	podMonitorSelector     labels.Selector
+	scraperRole            string
 }
 
 func getSelector(s map[string]string) labels.Selector {
@@ -103,6 +135,53 @@ func getSelector(s map[string]string) labels.Selector {
 		return labels.NewSelector()
 	}
 	return labels.SelectorFromSet(s)
+}
+
+// ScraperAnnotationKey and clusterScraperRole implement annotation-based routing of
+// ServiceMonitor/PodMonitor CRs across CloudWatch agents. A monitor annotated
+// cloudwatch.aws.amazon.com/scraper: cluster-scraper is scraped only by the cluster-scraper agent's Target
+// Allocator; all others are scraped only by the per-node agent's Target Allocator.
+const (
+	ScraperAnnotationKey = "cloudwatch.aws.amazon.com/scraper"
+	clusterScraperRole   = "cluster-scraper"
+)
+
+// annotationRoleMatches reports whether a monitor with the given annotations
+// belongs to scraperRole. The cluster-scraper role claims monitors annotated
+// cloudwatch.aws.amazon.com/scraper: cluster-scraper; the default role (empty) claims only
+// monitors that are not so annotated — so the two roles partition monitors with
+// no overlap and no gap.
+//
+// Routing is intentionally BINARY today: every role other than cluster-scraper
+// (i.e. the default per-node agent) claims the rest. NOTE: before a third role is
+// introduced (e.g. a "gpu-scraper"), this must become an explicit
+// role-to-annotation-value match — otherwise any unrecognized role would
+// silently fall through to the per-node bucket here.
+func annotationRoleMatches(scraperRole string, annotations map[string]string) bool {
+	routed := annotations[ScraperAnnotationKey] == clusterScraperRole
+	if scraperRole == clusterScraperRole {
+		return routed
+	}
+	return !routed
+}
+
+// selectsMonitor reports whether a discovered ServiceMonitor/PodMonitor belongs to this Target
+// Allocator's scraper role (see annotationRoleMatches). When this allocator is the cluster-scraper,
+// it logs each monitor it claims, because that monitor was explicitly overridden onto the
+// cluster-scraper via the cloudwatch.aws.amazon.com/scraper annotation.
+func (w *PrometheusCRWatcher) selectsMonitor(kind, namespace, name string, annotations map[string]string) bool {
+	if !annotationRoleMatches(w.scraperRole, annotations) {
+		return false
+	}
+	if w.scraperRole == clusterScraperRole {
+		// V(1): LoadConfig reruns on every reconcile, so this fires per claimed
+		// monitor each cycle — keep it at debug verbosity to avoid log spam on
+		// large annotated sets.
+		w.logger.V(1).Info("routing monitor to cluster-scraper via annotation",
+			"kind", kind, "namespace", namespace, "name", name,
+			"annotation", ScraperAnnotationKey+"="+clusterScraperRole)
+	}
+	return true
 }
 
 // getInformers returns a map of informers for the given resources.
@@ -213,6 +292,10 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
+		// Annotation-based routing: skip monitors that belong to the other agent's scraper role.
+		if !w.selectsMonitor("ServiceMonitor", monitor.Namespace, monitor.Name, monitor.GetAnnotations()) {
+			return
+		}
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
 		w.addStoreAssetsForServiceMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.Endpoints, store)
 		serviceMonitorInstances[key] = monitor
@@ -224,6 +307,10 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
 	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(w.podMonitorSelector, func(pm interface{}) {
 		monitor := pm.(*monitoringv1.PodMonitor)
+		// Annotation-based routing: skip monitors that belong to the other agent's scraper role.
+		if !w.selectsMonitor("PodMonitor", monitor.Namespace, monitor.Name, monitor.GetAnnotations()) {
+			return
+		}
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
 		w.addStoreAssetsForPodMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.PodMetricsEndpoints, store)
 		podMonitorInstances[key] = monitor
