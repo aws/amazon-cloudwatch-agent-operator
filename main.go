@@ -17,6 +17,8 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -24,6 +26,7 @@ import (
 	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -33,6 +36,7 @@ import (
 	otelv1alpha1 "github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/controllers"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
+	"github.com/aws/amazon-cloudwatch-agent-operator/internal/instrumentationguard"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/version"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
@@ -159,6 +163,10 @@ func main() {
 		dcgmExporterImage            string
 		neuronMonitorImage           string
 		targetAllocatorImage         string
+		guardMode                    string
+		guardRestartThreshold        int32
+		guardWindow                  time.Duration
+		guardImagePullPatience       time.Duration
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -172,6 +180,10 @@ func main() {
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	pflag.StringVar(&autoMonitorConfigStr, "auto-monitor-config", "", "The configuration for auto-monitor.")
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
+	pflag.StringVar(&guardMode, "instrumentation-guard-mode", "dry-run", "Whether the instrumentation guard runs: off | dry-run. The guard is detect-only, so dry-run - reporting a broken auto-instrumented pod in a Kubernetes Event on the workload that owns it - is as far as it goes; it never changes a workload and never deletes a pod. off registers no controller.")
+	pflag.Int32Var(&guardRestartThreshold, "instrumentation-guard-restart-threshold", 3, "The container restart count at which the instrumentation guard considers an auto-instrumented pod broken.")
+	pflag.DurationVar(&guardWindow, "instrumentation-guard-window", 10*time.Minute, "How long after a pod starts the instrumentation guard attributes a failure to auto-instrumentation.")
+	pflag.DurationVar(&guardImagePullPatience, "instrumentation-guard-image-pull-patience", 5*time.Minute, "How long an auto-instrumentation init container may sit unable to pull its image before the instrumentation guard calls the pod broken. A pull failure gets more patience than a failed copy, because it is often a transient registry problem rather than a broken image.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("%s:%s", targetAllocatorImageRepository, v.TargetAllocator), "The default AmazonCloudWatchAgent target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -205,6 +217,21 @@ func main() {
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
+	// Built after the logger is installed so an invalid setting is actually reported before os.Exit.
+	guardCfg := instrumentationguard.DefaultConfig()
+	guardCfg.Mode, err = instrumentationguard.ParseMode(guardMode)
+	if err != nil {
+		setupLog.Error(err, "invalid instrumentation guard configuration")
+		os.Exit(1)
+	}
+	guardCfg.RestartThreshold = guardRestartThreshold
+	guardCfg.Window = guardWindow
+	guardCfg.ImagePullPatience = guardImagePullPatience
+	if err = guardCfg.Validate(); err != nil {
+		setupLog.Error(err, "invalid instrumentation guard configuration")
+		os.Exit(1)
+	}
+
 	logger.Info("Starting the Amazon CloudWatch Agent Operator",
 		"amazon-cloudwatch-agent-operator", v.Operator,
 		"cloudwatch-agent", agentImage,
@@ -215,6 +242,10 @@ func main() {
 		"dcgm-exporter", dcgmExporterImage,
 		"neuron-monitor", neuronMonitorImage,
 		"amazon-cloudwatch-agent-target-allocator", targetAllocatorImage,
+		"instrumentation-guard-mode", guardCfg.Mode,
+		"instrumentation-guard-restart-threshold", guardCfg.RestartThreshold,
+		"instrumentation-guard-window", guardCfg.Window,
+		"instrumentation-guard-image-pull-patience", guardCfg.ImagePullPatience,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -265,6 +296,18 @@ func main() {
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
+			// Only auto-instrumented pods are cached: the instrumentation guard is the sole
+			// consumer of Pods through the manager's client, and caching every pod in the
+			// cluster would be prohibitively expensive. The label selector decides which pods
+			// are cached, which is what makes watching a cluster of ~40,000 pods viable at all;
+			// the transform strips each cached pod to the metadata and status the guard reads,
+			// which is what makes the ones it does cache cheap.
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.Pod{}: {
+					Label:     labels.SelectorFromSet(labels.Set{instrumentation.LabelAutoInstrumented: "true"}),
+					Transform: instrumentationguard.TrimPodForCache,
+				},
+			},
 		},
 	}
 
@@ -309,6 +352,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if guardCfg.Mode != instrumentationguard.ModeOff {
+		if err = instrumentationguard.SetupWithManager(mgr, guardCfg, mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")); err != nil { //nolint:staticcheck // TODO: migrate to events.EventRecorder
+			setupLog.Error(err, "unable to create controller", "controller", "InstrumentationGuard")
+			os.Exit(1)
+		}
+	}
+
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	instrumentationAnnotator := auto.CreateInstrumentationAnnotator(autoMonitorConfigStr, autoAnnotationConfigStr, ctx, mgr.GetClient(), mgr.GetAPIReader(), setupLog)
@@ -343,12 +393,23 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
+		podMutators := []podmutation.PodMutator{
+			sidecar.NewMutator(logger, cfg, mgr.GetClient()),
+			instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")), //nolint:staticcheck // TODO: migrate to events.EventRecorder
+		}
+		if guardCfg.Mode != instrumentationguard.ModeOff {
+			// The stamp mutator exists only to feed the instrumentation guard: it adds the
+			// auto-instrumented label the guard watches on and sets terminationMessagePolicy so
+			// the guard can read crash output out of pod status. With the guard off neither has a
+			// reader, so registering it would leave a label and a changed container field on
+			// every injected pod for a feature that is not running. off is a kill switch.
+			//
+			// Must run after the instrumentation mutator: it reads the init containers that
+			// mutator adds to decide which languages were injected.
+			podMutators = append(podMutators, instrumentation.NewStampMutator())
+		}
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
-				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator")), //nolint:staticcheck // TODO: migrate to events.EventRecorder
-				}),
+			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(), podMutators),
 		})
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")

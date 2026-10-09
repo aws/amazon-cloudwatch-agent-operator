@@ -1,0 +1,25 @@
+File "/otel-auto-instrumentation-python/opentelemetry/instrumentation/requests/__init__.py", line 155, in instrumented_send
+    return wrapped_send(self, request, **kwargs)
+  File "/otel-auto-instrumentation-python/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/otel-auto-instrumentation-python/requests/adapters.py", line 622, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=4318): Max retries exceeded with url: /v1/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xffff8a183f70>: Failed to establish a new connection: [Errno 111] Connection refused'))
+APP STARTED OK
+exit=0
+Error in sitecustomize; set PYTHONVERBOSE for traceback:
+ImportError: cannot import name 'EntryPoints' from 'importlib.metadata' (/usr/local/lib/python3.9/importlib/metadata.py)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/otel-auto-instrumentation-python/urllib3/__init__.py", line 15, in <module>
+    from ._base_connection import _TYPE_BODY
+  File "/otel-auto-instrumentation-python/urllib3/_base_connection.py", line 10, in <module>
+    bytes, typing.IO[typing.Any], typing.Iterable[bytes | str], str
+TypeError: unsupported operand type(s) for |: 'type' and 'type'
+Failed to get k8s token: [Errno 2] No such file or directory: '/var/run/secrets/kubernetes.io/serviceaccount/token'
+AwsEksResourceDetector failed: [Errno 2] No such file or directory: '/var/run/secrets/kubernetes.io/serviceaccount/token'
+AwsEcsResourceDetector failed: Missing ECS_CONTAINER_METADATA_URI therefore process is not on ECS.
+Exception  in detector <opentelemetry.sdk.extension.aws.resource.ec2.AwsEc2ResourceDetector object at 0xffff8be5c220>, ignoring
+AwsEc2ResourceDetector failed: <urlopen error timed out>
+Configuration of configurator not loaded, aws_configurator already loaded
+Exception while exporting metrics HTTPConnectionPool(host='localhost', port=4318): Max retries exceeded 
