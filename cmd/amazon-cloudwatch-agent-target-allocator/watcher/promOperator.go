@@ -64,6 +64,22 @@ func resolveCollectorNamespace(logger logr.Logger) string {
 // a wedged apiserver cannot block the Watch startup loop indefinitely.
 const crdCheckTimeout = 10 * time.Second
 
+// Defaults for starting a monitor informer. A start that has not synced within
+// defaultSyncTimeout gives up and is retried after a backoff that starts at
+// defaultStartRetryInterval and doubles up to defaultMaxStartRetryInterval, so a
+// type that cannot be listed (CRD not yet Established, missing list/watch, or a
+// CRD that is not actually installed) never holds a goroutine for the pod lifetime.
+const (
+	// Must be well above client-go's 100ms cache-sync poll period.
+	defaultSyncTimeout           = 2 * time.Minute
+	defaultStartRetryInterval    = 10 * time.Second
+	defaultMaxStartRetryInterval = 5 * time.Minute
+	// defaultMaxBlindStartAttempts bounds starts made when CRD presence cannot be
+	// checked (the CRD check is Forbidden): after this many failed attempts the
+	// type is left stopped, since the CRD is most likely not installed.
+	defaultMaxBlindStartAttempts = 3
+)
+
 // monitoringResources maps the prometheus-operator resource name to the
 // GroupVersionResource used to build its informer.
 var monitoringResources = map[string]schema.GroupVersionResource{
@@ -150,6 +166,11 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		kubeConfigPath:         cfg.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
 		podMonitorSelector:     podMonSelector,
+		starting:               map[string]struct{}{},
+		syncTimeout:            defaultSyncTimeout,
+		startRetryInterval:     defaultStartRetryInterval,
+		maxStartRetryInterval:  defaultMaxStartRetryInterval,
+		maxBlindStartAttempts:  defaultMaxBlindStartAttempts,
 	}, nil
 }
 
@@ -174,6 +195,19 @@ type PrometheusCRWatcher struct {
 
 	serviceMonitorSelector labels.Selector
 	podMonitorSelector     labels.Selector
+
+	// startMtx guards starting: the monitor types with a start in flight, so
+	// concurrent triggers (startup, CRD add/update, retries) never stack.
+	startMtx sync.Mutex
+	starting map[string]struct{}
+
+	// upstreamErrors receives start failures; set by Watch.
+	upstreamErrors chan error
+
+	syncTimeout           time.Duration
+	startRetryInterval    time.Duration
+	maxStartRetryInterval time.Duration
+	maxBlindStartAttempts int
 }
 
 func getSelector(s map[string]string) labels.Selector {
@@ -212,12 +246,22 @@ func (w *PrometheusCRWatcher) crdExists(ctx context.Context, crdName string) (bo
 
 // startMonitorInformer builds and starts the informer for a single monitoring
 // resource (ServiceMonitor or PodMonitor), waits for its cache to sync, wires up
-// the notification handler, and records it for use by LoadConfig. It is
-// idempotent: calling it for an already-running informer is a no-op.
-func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEvents chan struct{}) error {
+// the notification handler, and records it for use by LoadConfig. It reports
+// started=true only when it registered a new informer: an already-running
+// informer, a watcher that closed during the sync, or a concurrent start that
+// won the race all return started=false with no error. A cache that does not
+// sync within w.syncTimeout returns an error. It blocks for up to the sync
+// timeout, so callers that must not block use ensureMonitorInformer.
+func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEvents chan struct{}) (bool, error) {
 	gvr, ok := monitoringResources[resourceName]
 	if !ok {
-		return fmt.Errorf("unknown monitoring resource %q", resourceName)
+		return false, fmt.Errorf("unknown monitoring resource %q", resourceName)
+	}
+
+	select {
+	case <-w.stopChannel:
+		return false, nil
+	default:
 	}
 
 	// Fast path: already running. Checked under a short read lock so we never hold
@@ -226,38 +270,43 @@ func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEv
 	_, running := w.informers[resourceName]
 	w.informersMtx.RUnlock()
 	if running {
-		return nil
+		return false, nil
 	}
 
 	informer, err := informers.NewInformersForResource(w.newMonitoringFactory(), gvr)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	stopCh := make(chan struct{})
 	informer.Start(stopCh)
 
-	// Wait for the cache to sync WITHOUT holding informersMtx, and abort the wait
-	// if the watcher is shutting down. A CRD's initial LIST can be slow or rejected
-	// (exactly the condition this resilience change tolerates); holding the lock
-	// here would block LoadConfig and, worse, deadlock Close() — which needs the
-	// same lock — until SIGKILL. Selecting on w.stopChannel lets Close() always
-	// interrupt an in-flight sync.
+	// Wait for the cache to sync WITHOUT holding informersMtx, bounded by
+	// w.syncTimeout, and abort the wait if the watcher is shutting down. Holding
+	// the lock here would block LoadConfig and deadlock Close(), which needs the
+	// same lock. Closing stopCh on every early return stops the informer's
+	// reflector and unblocks the WaitForNamedCacheSync goroutine.
+	syncStop := make(chan struct{})
 	synced := make(chan bool, 1)
 	go func() {
-		synced <- cache.WaitForNamedCacheSync(resourceName, stopCh, informer.HasSynced)
+		synced <- cache.WaitForNamedCacheSync(resourceName, syncStop, informer.HasSynced)
 	}()
+	timeout := time.NewTimer(w.syncTimeout)
+	defer timeout.Stop()
 	select {
 	case ok := <-synced:
 		if !ok {
 			close(stopCh)
-			return fmt.Errorf("failed to sync %s informer cache", resourceName)
+			return false, fmt.Errorf("failed to sync %s informer cache", resourceName)
 		}
-	case <-w.stopChannel:
-		// Shutting down: stop the informer and abandon the start (not an error).
-		// Closing stopCh also unblocks the WaitForNamedCacheSync goroutine.
+	case <-timeout.C:
+		close(syncStop)
 		close(stopCh)
-		return nil
+		return false, fmt.Errorf("%s informer cache did not sync within %s", resourceName, w.syncTimeout)
+	case <-w.stopChannel:
+		close(syncStop)
+		close(stopCh)
+		return false, nil
 	}
 
 	informer.AddEventHandler(notifyHandler(notifyEvents))
@@ -269,14 +318,14 @@ func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEv
 	case <-w.stopChannel:
 		w.informersMtx.Unlock()
 		close(stopCh)
-		return nil
+		return false, nil
 	default:
 	}
 	// If another goroutine already started this resource, discard ours.
 	if _, running := w.informers[resourceName]; running {
 		w.informersMtx.Unlock()
 		close(stopCh)
-		return nil
+		return false, nil
 	}
 	w.informers[resourceName] = informer
 	w.informerStopChannels[resourceName] = stopCh
@@ -284,7 +333,89 @@ func (w *PrometheusCRWatcher) startMonitorInformer(resourceName string, notifyEv
 
 	// A new resource type just became available; trigger a config reload.
 	notify(notifyEvents)
-	return nil
+	return true, nil
+}
+
+// ensureMonitorInformer starts the informer for resourceName in the background
+// and never blocks the caller. At most one start per type is in flight, so the
+// startup loop, CRD add/update events and resyncs can all call it freely. A
+// failed start is reported on upstreamErrors and retried with capped backoff
+// until it succeeds, the informer is running, the CRD is deleted, or the watcher
+// closes. reason is included in log lines to show what triggered the start.
+func (w *PrometheusCRWatcher) ensureMonitorInformer(resourceName, crdName, reason string, notifyEvents chan struct{}) {
+	w.startMtx.Lock()
+	if _, inFlight := w.starting[resourceName]; inFlight {
+		w.startMtx.Unlock()
+		return
+	}
+	w.starting[resourceName] = struct{}{}
+	w.startMtx.Unlock()
+
+	go func() {
+		defer func() {
+			w.startMtx.Lock()
+			delete(w.starting, resourceName)
+			w.startMtx.Unlock()
+		}()
+		backoff := w.startRetryInterval
+		for attempt := 1; ; attempt++ {
+			started, err := w.startMonitorInformer(resourceName, notifyEvents)
+			if err == nil {
+				if started {
+					w.logger.Info("prometheus-cr: started informer", "crd", crdName, "resource", resourceName, "trigger", reason)
+				}
+				return
+			}
+			w.reportError(fmt.Errorf("prometheus-cr: starting %s informer: %w", resourceName, err))
+
+			present, known := w.crdPresence(crdName)
+			switch {
+			case known && !present:
+				// The CRD is gone; the CRD watch starts the informer again if it returns.
+				w.logger.Error(err, "prometheus-cr: failed to start informer; CRD no longer present, not retrying",
+					"crd", crdName, "resource", resourceName, "trigger", reason)
+				return
+			case !known && attempt >= w.maxBlindStartAttempts:
+				// CRD presence cannot be checked (e.g. Forbidden) and every attempt
+				// failed, so the CRD is most likely not installed. Stop rather than
+				// retry a LIST on an unserved resource for the pod lifetime.
+				w.logger.Error(err, "prometheus-cr: failed to start informer and cannot check for its CRD; giving up",
+					"crd", crdName, "resource", resourceName, "trigger", reason, "attempts", attempt)
+				return
+			}
+			w.logger.Error(err, "prometheus-cr: failed to start informer, will retry",
+				"crd", crdName, "resource", resourceName, "trigger", reason, "attempt", attempt, "retryIn", backoff.String())
+
+			select {
+			case <-w.stopChannel:
+				return
+			case <-time.After(backoff):
+			}
+			if backoff *= 2; backoff > w.maxStartRetryInterval {
+				backoff = w.maxStartRetryInterval
+			}
+		}
+	}()
+}
+
+// reportError sends err on upstreamErrors without blocking.
+func (w *PrometheusCRWatcher) reportError(err error) {
+	if w.upstreamErrors == nil {
+		return
+	}
+	select {
+	case w.upstreamErrors <- err:
+	default:
+	}
+}
+
+// crdPresence checks whether the CRD exists. known is false when the check
+// itself failed (for example Forbidden), in which case present is meaningless.
+func (w *PrometheusCRWatcher) crdPresence(crdName string) (present, known bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), crdCheckTimeout)
+	defer cancel()
+	exists, err := w.crdExists(ctx, crdName)
+	return exists, err == nil
 }
 
 // stopMonitorInformer stops the informer for a single monitoring resource (its
@@ -341,11 +472,21 @@ func (w *PrometheusCRWatcher) watchCRDs(notifyEvents chan struct{}) {
 			if !tracked {
 				return
 			}
-			if err := w.startMonitorInformer(resourceName, notifyEvents); err != nil {
-				w.logger.Error(err, "prometheus-cr: failed to start informer after CRD became available", "crd", name)
+			w.ensureMonitorInformer(resourceName, name, "crd-added", notifyEvents)
+		},
+		// Resyncs and CRD changes arrive as updates. Starting is idempotent and
+		// non-blocking, so each one doubles as a retry for a type that is not
+		// running yet.
+		UpdateFunc: func(_, newObj interface{}) {
+			name, ok := crdObjectName(newObj)
+			if !ok {
 				return
 			}
-			w.logger.Info("prometheus-cr: CRD available, started informer", "crd", name, "resource", resourceName)
+			resourceName, tracked := crdNameToResource[name]
+			if !tracked {
+				return
+			}
+			w.ensureMonitorInformer(resourceName, name, "crd-resync", notifyEvents)
 		},
 		DeleteFunc: func(obj interface{}) {
 			name, ok := crdObjectName(obj)
@@ -395,9 +536,11 @@ func notifyHandler(notifyEvents chan struct{}) cache.ResourceEventHandlerFuncs {
 func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
 	// this channel needs to be buffered because notifications are asynchronous and neither producers nor consumers wait
 	notifyEvents := make(chan struct{}, 1)
+	w.upstreamErrors = upstreamErrors
 
-	// Start informers for CRDs that already exist. Absent CRDs are simply
-	// skipped here; the CRD watch below starts them if/when they appear.
+	// Start informers for CRDs that already exist. Every start runs in the
+	// background (ensureMonitorInformer), so a type that cannot sync never stops
+	// the other type, the CRD watch or the event pump below from starting.
 	for crdName, resourceName := range crdNameToResource {
 		ctx, cancel := context.WithTimeout(context.Background(), crdCheckTimeout)
 		exists, err := w.crdExists(ctx, crdName)
@@ -405,32 +548,21 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		if err != nil {
 			// The check failed for a reason other than "not found", e.g. the
 			// ServiceAccount cannot read customresourcedefinitions. The CRD watch
-			// would hit the same error and never recover, so start the informer
-			// anyway: if the CRD exists, discovery works; if it does not, the
-			// informer keeps retrying. Started in the background so a CRD that is
-			// really absent cannot block startup.
+			// would hit the same error, so start the informer anyway: if the CRD
+			// exists, discovery works. If it does not, each attempt gives up after
+			// the sync timeout and is retried with capped backoff.
 			w.logger.Info("prometheus-cr: WARNING could not check for CRD, starting its informer anyway; "+
 				"grant get/list/watch on apiextensions.k8s.io customresourcedefinitions to the Target Allocator "+
 				"so CRDs installed or removed later are detected",
 				"crd", crdName, "error", err.Error())
-			go func(crdName, resourceName string) {
-				if startErr := w.startMonitorInformer(resourceName, notifyEvents); startErr != nil {
-					w.logger.Error(startErr, "prometheus-cr: failed to start informer after CRD check error", "crd", crdName)
-					return
-				}
-				w.logger.Info("prometheus-cr: started informer after CRD check error", "crd", crdName, "resource", resourceName)
-			}(crdName, resourceName)
+			w.ensureMonitorInformer(resourceName, crdName, "crd-check-error", notifyEvents)
 			continue
 		}
 		if !exists {
 			w.logger.Info("prometheus-cr: CRD not present at startup, deferring informer until it is created", "crd", crdName)
 			continue
 		}
-		if startErr := w.startMonitorInformer(resourceName, notifyEvents); startErr != nil {
-			w.logger.Error(startErr, "prometheus-cr: failed to start informer for present CRD, deferring to CRD watch", "crd", crdName)
-			continue
-		}
-		w.logger.Info("prometheus-cr: started informer for present CRD", "crd", crdName, "resource", resourceName)
+		w.ensureMonitorInformer(resourceName, crdName, "present-at-startup", notifyEvents)
 	}
 
 	// React to CRDs being created/deleted at runtime with no restart.

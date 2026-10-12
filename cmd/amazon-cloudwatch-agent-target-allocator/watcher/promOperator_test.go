@@ -261,8 +261,10 @@ func TestLoadConfig(t *testing.T) {
 
 			// Start both informers via the per-type lifecycle (both CRDs present).
 			notifyEvents := make(chan struct{}, 1)
-			require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
-			require.NoError(t, w.startMonitorInformer(monitoringv1.PodMonitorName, notifyEvents))
+			_, startErr := w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents)
+			require.NoError(t, startErr)
+			_, startErr = w.startMonitorInformer(monitoringv1.PodMonitorName, notifyEvents)
+			require.NoError(t, startErr)
 
 			got, err := w.LoadConfig(context.Background())
 			require.NoError(t, err)
@@ -476,6 +478,11 @@ func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMo
 		crdClient:              crdClient,
 		metadataClient:         metadataClient,
 		informers:              map[string]*informers.ForResource{},
+		starting:               map[string]struct{}{},
+		syncTimeout:            defaultSyncTimeout,
+		startRetryInterval:     defaultStartRetryInterval,
+		maxStartRetryInterval:  defaultMaxStartRetryInterval,
+		maxBlindStartAttempts:  defaultMaxBlindStartAttempts,
 		informerStopChannels:   map[string]chan struct{}{},
 		configGenerator:        generator,
 		prom:                   prom,
@@ -596,7 +603,8 @@ func TestStopMonitorInformerDropsType(t *testing.T) {
 	defer func() { _ = w.Close() }()
 
 	notifyEvents := make(chan struct{}, 1)
-	require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
+	_, startErr := w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents)
+	require.NoError(t, startErr)
 	require.True(t, runningInformers(w)[monitoringv1.ServiceMonitorName])
 	// drain the start notification
 	select {

@@ -31,7 +31,8 @@ func TestStartMonitorInformerIdempotent(t *testing.T) {
 	defer func() { _ = w.Close() }()
 
 	notifyEvents := make(chan struct{}, 1)
-	require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
+	_, startErr := w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents)
+	require.NoError(t, startErr)
 	// drain the reload notification emitted by the first (real) start
 	select {
 	case <-notifyEvents:
@@ -39,7 +40,8 @@ func TestStartMonitorInformerIdempotent(t *testing.T) {
 	}
 
 	// Second call must be a no-op.
-	require.NoError(t, w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents))
+	_, startErr = w.startMonitorInformer(monitoringv1.ServiceMonitorName, notifyEvents)
+	require.NoError(t, startErr)
 	require.True(t, runningInformers(w)[monitoringv1.ServiceMonitorName])
 	select {
 	case <-notifyEvents:
@@ -54,7 +56,7 @@ func TestStartMonitorInformerUnknownResource(t *testing.T) {
 	w := getTestPrometheusCRWatcherWithCRDs(t, nil, nil, false, false)
 	defer func() { _ = w.Close() }()
 
-	err := w.startMonitorInformer("widgets", make(chan struct{}, 1))
+	_, err := w.startMonitorInformer("widgets", make(chan struct{}, 1))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown monitoring resource")
 	assert.Empty(t, runningInformers(w))
@@ -188,7 +190,7 @@ func TestCloseInterruptsInFlightSync(t *testing.T) {
 	// Start the informer; it will block waiting for the (never-completing) sync.
 	startReturned := make(chan struct{})
 	go func() {
-		_ = w.startMonitorInformer(monitoringv1.ServiceMonitorName, make(chan struct{}, 1))
+		_, _ = w.startMonitorInformer(monitoringv1.ServiceMonitorName, make(chan struct{}, 1))
 		close(startReturned)
 	}()
 
