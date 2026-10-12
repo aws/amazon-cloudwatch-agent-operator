@@ -30,6 +30,9 @@ type DcgmExporterSpec struct {
 	// MetricsConfig is the raw CSV to be used as metric configuration.
 	// +required
 	MetricsConfig string `json:"metricsConfig,omitempty"`
+	// MetricsConfigFrom reads the metrics CSV from another source instead of MetricsConfig.
+	// +optional
+	MetricsConfigFrom *MetricsConfigSource `json:"metricsConfigFrom,omitempty"`
 	// TlsConfig is the raw YAML to be used as the exporter TLS configuration.
 	// +optional
 	TlsConfig string `json:"tlsConfig,omitempty"`
@@ -97,6 +100,24 @@ type DcgmExporterSpec struct {
 	//
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
+}
+
+// MetricsConfigSource selects where the DCGM Exporter metrics CSV is read from.
+type MetricsConfigSource struct {
+	// ConfigMapKeyRef selects a key of an existing ConfigMap in the same namespace that holds the metrics CSV.
+	// It replaces MetricsConfig, and the exporter pods are restarted when the selected key changes. If the
+	// ConfigMap or key does not exist or is empty, MetricsConfig is used, but when optional is not true the
+	// metrics already applied are kept. Remove MetricsConfigFrom to go back to MetricsConfig.
+	// +optional
+	ConfigMapKeyRef *v1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+}
+
+// MetricsConfigMapKeyRef returns the ConfigMap key selected by MetricsConfigFrom, or nil.
+func (s DcgmExporterSpec) MetricsConfigMapKeyRef() *v1.ConfigMapKeySelector {
+	if s.MetricsConfigFrom == nil {
+		return nil
+	}
+	return s.MetricsConfigFrom.ConfigMapKeyRef
 }
 
 // DcgmExporterStatus defines the observed state of DcgmExporter.

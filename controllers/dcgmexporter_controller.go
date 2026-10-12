@@ -6,6 +6,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,6 +18,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/config"
@@ -90,6 +94,36 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	params := r.getParams(instance)
+	var configMapWarning string
+	if selector := instance.Spec.MetricsConfigMapKeyRef(); selector != nil {
+		configMap := &corev1.ConfigMap{}
+		err := r.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: selector.Name}, configMap)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+		data := configMap.Data[selector.Key]
+		if strings.TrimSpace(data) == "" {
+			switch optional := selector.Optional != nil && *selector.Optional; {
+			case optional && apierrors.IsNotFound(err):
+				log.V(1).Info("Optional metrics ConfigMap not found; using metricsConfig", "configMap", selector.Name)
+			case optional:
+				configMapWarning = fmt.Sprintf("key %q of ConfigMap %q not found or empty; using metricsConfig", selector.Key, selector.Name)
+			default:
+				// Keep the metrics already applied, if any, until the required ConfigMap is back; other changes still apply.
+				applied := &corev1.ConfigMap{}
+				err := r.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: dcgmexporter.DcgmConfigMapName}, applied)
+				if client.IgnoreNotFound(err) != nil {
+					return ctrl.Result{}, err
+				}
+				data = applied.Data[dcgmexporter.DcgmMetricsIncludedCsv]
+				configMapWarning = fmt.Sprintf("key %q of ConfigMap %q not found or empty; keeping the applied metrics", selector.Key, selector.Name)
+				if strings.TrimSpace(data) == "" {
+					configMapWarning = fmt.Sprintf("key %q of ConfigMap %q not found or empty; using metricsConfig", selector.Key, selector.Name)
+				}
+			}
+		}
+		params.DcgmMetricsConfigMapData = data
+	}
 	desiredObjects, buildErr := BuildDcgmExporter(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
@@ -110,6 +144,9 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+	if configMapWarning != "" {
+		r.recorder.Event(&instance, corev1.EventTypeWarning, "MetricsConfigMapNotFound", configMapWarning)
 	}
 
 	err = reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
@@ -140,7 +177,24 @@ func (r *DcgmExporterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&appsv1.DaemonSet{})
+		Owns(&appsv1.DaemonSet{}).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(r.exportersUsingConfigMap))
 
 	return builder.Complete(r)
+}
+
+// exportersUsingConfigMap requeues the DcgmExporters whose metricsConfigFrom selects configMap.
+func (r *DcgmExporterReconciler) exportersUsingConfigMap(ctx context.Context, configMap client.Object) []reconcile.Request {
+	exporters := &v1alpha1.DcgmExporterList{}
+	if err := r.List(ctx, exporters, client.InNamespace(configMap.GetNamespace())); err != nil {
+		r.log.Error(err, "failed to list DcgmExporters", "namespace", configMap.GetNamespace())
+		return nil
+	}
+	var requests []reconcile.Request
+	for i := range exporters.Items {
+		if selector := exporters.Items[i].Spec.MetricsConfigMapKeyRef(); selector != nil && selector.Name == configMap.GetName() {
+			requests = append(requests, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&exporters.Items[i])})
+		}
+	}
+	return requests
 }

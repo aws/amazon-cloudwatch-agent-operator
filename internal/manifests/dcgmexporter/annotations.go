@@ -10,6 +10,8 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
 
+const configSHAAnnotation = "amazon-cloudwatch-agent-operator-config/sha256"
+
 // Annotations return the annotations for DcgmExporter workload metadata.
 func Annotations(instance v1alpha1.DcgmExporter) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
@@ -24,7 +26,7 @@ func Annotations(instance v1alpha1.DcgmExporter) map[string]string {
 		}
 	}
 	// make sure sha256 for configMap is always calculated
-	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.MetricsConfig)
+	annotations[configSHAAnnotation] = getConfigMapSHA(instance.Spec.MetricsConfig)
 
 	return annotations
 }
@@ -46,7 +48,7 @@ func PodAnnotations(instance v1alpha1.DcgmExporter) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.MetricsConfig)
+	podAnnotations[configSHAAnnotation] = getConfigMapSHA(instance.Spec.MetricsConfig)
 
 	return podAnnotations
 }
