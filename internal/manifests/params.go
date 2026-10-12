@@ -23,4 +23,7 @@ type Params struct {
 	DcgmExp   v1alpha1.DcgmExporter
 	NeuronExp v1alpha1.NeuronMonitor
 	Config    config.Config
+
+	// DcgmMetricsConfigMapData is the content of the key selected by DcgmExp.Spec.MetricsConfigFrom.
+	DcgmMetricsConfigMapData string
 }

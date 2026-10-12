@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/tools/record"
@@ -95,5 +96,37 @@ func getParams() manifests.Params {
 		},
 		Log:      logf.Log.WithName("unit-tests"),
 		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func TestMetricsConfig(t *testing.T) {
+	defaults := "DCGM_FI_DEV_GPU_UTIL, gauge, GPU utilization (in %).\n"
+	custom := "DCGM_FI_DEV_SM_CLOCK, gauge, SM clock frequency (in MHz).\n"
+	keyRef := &v1alpha1.MetricsConfigSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{Name: "my-metrics"},
+		Key:                  "gpu.csv",
+	}}
+	testCases := []struct {
+		name       string
+		configFrom *v1alpha1.MetricsConfigSource
+		data       string
+		expected   string
+	}{
+		{name: "no metricsConfigFrom", data: custom, expected: defaults},
+		{name: "ConfigMap replaces metricsConfig", configFrom: keyRef, data: custom, expected: custom},
+		{name: "missing ConfigMap data keeps metricsConfig", configFrom: keyRef, expected: defaults},
+		{name: "blank ConfigMap data keeps metricsConfig", configFrom: keyRef, data: "\n  \n", expected: defaults},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			params := manifests.Params{
+				DcgmExp: v1alpha1.DcgmExporter{Spec: v1alpha1.DcgmExporterSpec{
+					MetricsConfig:     defaults,
+					MetricsConfigFrom: tc.configFrom,
+				}},
+				DcgmMetricsConfigMapData: tc.data,
+			}
+			assert.Equal(t, tc.expected, MetricsConfig(params))
+		})
 	}
 }

@@ -11,9 +11,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 )
@@ -198,4 +203,23 @@ func TestEnabledAcceleratedComputeByAgentConfigListError(t *testing.T) {
 	enabled, err := enabledAcceleratedComputeByAgentConfig(context.Background(), nil, logf.Log.WithName("unit-tests"), "amazon-cloudwatch", "dcgm-exporter-service")
 	assert.Error(t, err)
 	assert.False(t, enabled)
+}
+
+func TestDcgmExportersUsingConfigMap(t *testing.T) {
+	scheme := runtime.NewScheme()
+	assert.NoError(t, v1alpha1.AddToScheme(scheme))
+	selector := func(name string) *v1alpha1.MetricsConfigSource {
+		return &v1alpha1.MetricsConfigSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: name}, Key: "gpu.csv"}}
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&v1alpha1.DcgmExporter{ObjectMeta: metav1.ObjectMeta{Name: "uses", Namespace: "amazon-cloudwatch"}, Spec: v1alpha1.DcgmExporterSpec{MetricsConfigFrom: selector("my-metrics")}},
+		&v1alpha1.DcgmExporter{ObjectMeta: metav1.ObjectMeta{Name: "other", Namespace: "amazon-cloudwatch"}, Spec: v1alpha1.DcgmExporterSpec{MetricsConfigFrom: selector("other-metrics")}},
+		&v1alpha1.DcgmExporter{ObjectMeta: metav1.ObjectMeta{Name: "inline", Namespace: "amazon-cloudwatch"}},
+		&v1alpha1.DcgmExporter{ObjectMeta: metav1.ObjectMeta{Name: "uses", Namespace: "other"}, Spec: v1alpha1.DcgmExporterSpec{MetricsConfigFrom: selector("my-metrics")}},
+	).Build()
+	r := &DcgmExporterReconciler{Client: c, log: logf.Log}
+
+	configMap := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "my-metrics", Namespace: "amazon-cloudwatch"}}
+	assert.Equal(t, []reconcile.Request{{NamespacedName: types.NamespacedName{Namespace: "amazon-cloudwatch", Name: "uses"}}},
+		r.exportersUsingConfigMap(context.Background(), configMap))
 }
