@@ -6,7 +6,6 @@ package collector
 import (
 	"context"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -20,6 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/allocation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/collectornamespace"
 )
 
 const (
@@ -27,7 +27,6 @@ const (
 )
 
 var (
-	ns                   = strings.TrimSpace(os.Getenv("OTELCOL_NAMESPACE"))
 	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "amazon_cloudwatch_agent_allocator_collectors_discovered",
 		Help: "Number of collectors discovered.",
@@ -38,6 +37,9 @@ type Client struct {
 	log       logr.Logger
 	k8sClient kubernetes.Interface
 	close     chan struct{}
+	// namespace scopes the agent pod watch. It must not be empty: client-go
+	// treats "" as all namespaces.
+	namespace string
 }
 
 func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
@@ -46,10 +48,12 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 		return &Client{}, err
 	}
 
+	log := logger.WithValues("component", "amazon-cloudwatch-agent-target-allocator")
 	return &Client{
-		log:       logger.WithValues("component", "amazon-cloudwatch-agent-target-allocator"),
+		log:       log,
 		k8sClient: clientset,
 		close:     make(chan struct{}),
+		namespace: collectornamespace.Resolve(log),
 	}, nil
 }
 
@@ -59,7 +63,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
-	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
+	pods, err := k.k8sClient.CoreV1().Pods(k.namespace).List(ctx, opts)
 	if err != nil {
 		k.log.Error(err, "Pod failure")
 		os.Exit(1)
@@ -83,7 +87,7 @@ func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, coll
 	// add timeout to the context before calling Watch
 	ctx, cancel := context.WithTimeout(ctx, watcherTimeout)
 	defer cancel()
-	watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
+	watcher, err := k.k8sClient.CoreV1().Pods(k.namespace).Watch(ctx, opts)
 	if err != nil {
 		k.log.Error(err, "unable to create collector pod watcher")
 		return false

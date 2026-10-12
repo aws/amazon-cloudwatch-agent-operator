@@ -4,8 +4,6 @@
 package watcher
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -17,39 +15,6 @@ import (
 
 	allocatorconfig "github.com/aws/amazon-cloudwatch-agent-operator/cmd/amazon-cloudwatch-agent-target-allocator/config"
 )
-
-func TestResolveCollectorNamespace(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		env      string
-		fileBody *string
-		want     string
-	}{
-		{"env var set", "my-env-ns", nil, "my-env-ns"},
-		{"env var set with whitespace", "  my-env-ns\n", nil, "my-env-ns"},
-		{"env whitespace only falls through to file", "   \n", ptrStr("file-ns"), "file-ns"},
-		{"env empty, file set", "", ptrStr("file-ns"), "file-ns"},
-		{"env empty, file trailing newline", "", ptrStr("file-ns\n"), "file-ns"},
-		{"env empty, file whitespace only", "", ptrStr("  \n\t"), defaultCollectorNamespace},
-		{"both missing falls back to default", "", nil, defaultCollectorNamespace},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("OTELCOL_NAMESPACE", tc.env)
-			orig := serviceAccountNamespacePath
-			t.Cleanup(func() { serviceAccountNamespacePath = orig })
-			if tc.fileBody == nil {
-				serviceAccountNamespacePath = filepath.Join(t.TempDir(), "does-not-exist")
-			} else {
-				p := filepath.Join(t.TempDir(), "namespace")
-				require.NoError(t, os.WriteFile(p, []byte(*tc.fileBody), 0o600))
-				serviceAccountNamespacePath = p
-			}
-			assert.Equal(t, tc.want, resolveCollectorNamespace(logr.Discard()))
-		})
-	}
-}
-
-func ptrStr(s string) *string { return &s }
 
 func TestNewPrometheusCRWatcherDefaultsEvaluationInterval(t *testing.T) {
 	t.Setenv("OTELCOL_NAMESPACE", "eval-ns")
