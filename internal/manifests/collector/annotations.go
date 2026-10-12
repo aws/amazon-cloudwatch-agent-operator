@@ -71,21 +71,24 @@ func PodLabels(instance v1alpha1.AmazonCloudWatchAgent, base map[string]string) 
 	return merged
 }
 
-// configHashInput returns the combined config string used for the pod-template restart hash.
+// configHashInput returns the combined config string used for the pod-template
+// restart hash: Spec.Config plus, when Prometheus is configured, the Prometheus
+// ConfigMap data as rendered for the agent. Using the rendered data means a
+// change to any of its inputs (Spec.Prometheus, Spec.TargetAllocator.Enabled,
+// the instance name, the EnableTargetAllocatorRewrite feature gate) rolls the
+// pods. Spec.Config is used as-is for the agent config so that agents without
+// Prometheus keep the same hash as before.
 func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
 	config := instance.Spec.Config
 	if !instance.Spec.Prometheus.IsEmpty() {
-		promYaml, err := instance.Spec.Prometheus.Yaml()
+		promData, err := renderPrometheusConfig(instance)
 		if err != nil {
-			// Unreachable from the CRD path: Config.Object only ever holds JSON-decoded
-			// types, all of which gopkg.in/yaml.v3 encodes. Deliberately a constant: two
-			// different unserializable specs hash equal, so a Prometheus-only change would
-			// not roll pods while the error persists. Hash stability across operator
-			// restarts depends on gopkg.in/yaml.v3 (v3.0.1) sorting map keys
-			// (encode.go:189, and :242 for the inline-map branch).
-			config += "\x00prometheus-serialize-error"
+			// ConfigMaps() fails on the same error, so no ConfigMap is written
+			// and there is nothing new for the pods to pick up. A constant keeps
+			// the hash stable until the spec renders again.
+			config += "\x00prometheus-render-error"
 		} else {
-			config += "\x00" + promYaml // null byte prevents collision between config suffix and promYAML prefix
+			config += "\x00" + promData // null byte prevents collision between config suffix and the Prometheus data prefix
 		}
 	}
 	return config
