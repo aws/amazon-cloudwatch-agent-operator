@@ -6,6 +6,7 @@ package auto
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,8 +17,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fake2 "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -668,6 +671,30 @@ func TestMonitor_MutateObject_Namespace(t *testing.T) {
 	}
 }
 
+// watchStarted returns a channel that is closed once the informer's watch on resource is registered with the fake
+// clientset. Objects deleted before that are never delivered to the informer.
+func watchStarted(clientset *fake.Clientset, resource string) <-chan struct{} {
+	started := make(chan struct{})
+	var once sync.Once
+	clientset.PrependWatchReactor(resource, func(action clienttesting.Action) (bool, watch.Interface, error) {
+		w, err := clientset.Tracker().Watch(action.GetResource(), action.GetNamespace())
+		if err != nil {
+			return false, nil, err
+		}
+		once.Do(func() { close(started) })
+		return true, w, nil
+	})
+	return started
+}
+
+func waitForWatch(t *testing.T, started <-chan struct{}) {
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for the informer watch")
+	}
+}
+
 func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
 	return wait.PollUntilContextTimeout(
 		context.TODO(),     // parent context
@@ -707,6 +734,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				workload := wt.create("workload", defaultNs, labels, annotations)
 
 				clientset := fake.NewSimpleClientset(service, workload)
+				servicesWatched := watchStarted(clientset, "services")
 				c := fake2.NewFakeClient(service, workload)
 				config := simpleConfig(true, true, none, none)
 				k8sInterface := clientset
@@ -714,14 +742,14 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
+				waitForWatch(t, servicesWatched)
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
-				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
-				assert.NoError(t, err)
-
-				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
-				assert.NoError(t, err)
-				assert.Equal(t, userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
+				// the informer drops the Service from its store before the delete handler patches the workload
+				assert.Eventually(t, func() bool {
+					updatedWorkload, getErr := wt.get(clientset, defaultNs, workload.GetName())
+					return getErr == nil && assert.ObjectsAreEqual(userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
+				}, 5*time.Second, 10*time.Millisecond)
 			})
 
 			t.Run("auto restart false, delete and then restart operator", func(t *testing.T) {
@@ -750,6 +778,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				workload := wt.create("workload", defaultNs, labels, originalAnnotations)
 
 				clientset := fake.NewSimpleClientset(service, workload)
+				servicesWatched := watchStarted(clientset, "services")
 				c := fake2.NewFakeClient(service, workload)
 				config := simpleConfig(true, false, none, none)
 				var k8sInterface kubernetes.Interface = clientset
@@ -757,6 +786,7 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
+				waitForWatch(t, servicesWatched)
 				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
 				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
@@ -788,7 +818,7 @@ func Test_OptOutByDisablingMonitorAllServices(t *testing.T) {
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
 				monitor.MutateAndPatchAll(context.TODO())
 
-				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
+				updatedWorkload, err := wt.getWithClient(c, defaultNs, workload.GetName())
 				assert.NoError(t, err)
 				assert.Equal(t, userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
 
@@ -895,12 +925,12 @@ func Test_StartupRestartPods(t *testing.T) {
 	logger := testr.New(t)
 	m := NewMonitor(context.TODO(), config, k8sInterface, fakeClient, fakeClient, logger)
 	m.MutateAndPatchAll(context.TODO())
-	updatedMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), matchingDeployment.Name, metav1.GetOptions{})
+	err := fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(matchingDeployment), matchingDeployment)
 	assert.NoError(t, err)
-	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), updatedMatchingDeployment.Spec.Template.GetAnnotations())
-	updatedNonMatchingDeployment, err := m.k8sInterface.AppsV1().Deployments(defaultNs).Get(context.TODO(), nonMatchingDeployment.Name, metav1.GetOptions{})
+	assert.Equal(t, buildAnnotations(instrumentation.TypeJava), matchingDeployment.Spec.Template.GetAnnotations())
+	err = fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(nonMatchingDeployment), nonMatchingDeployment)
 	assert.NoError(t, err)
-	assert.Empty(t, updatedNonMatchingDeployment.Spec.Template.GetAnnotations())
+	assert.Empty(t, nonMatchingDeployment.Spec.Template.GetAnnotations())
 	err = fakeClient.Get(context.TODO(), client.ObjectKeyFromObject(customSelectedDeployment), customSelectedDeployment)
 	assert.NoError(t, err)
 	assert.Equal(t, buildAnnotations(instrumentation.TypePython), customSelectedDeployment.Spec.Template.GetAnnotations())
