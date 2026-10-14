@@ -10,16 +10,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/naming"
 )
 
 func Service(params manifests.Params) (*corev1.Service, error) {
-	name := naming.Service(params.DcgmExp.Name)
-	if len(name) == 0 {
-		name = ComponentDcgmExporter
-	}
+	name := serviceBaseName(params.DcgmExp)
 	labels := manifestutils.Labels(params.DcgmExp.ObjectMeta, name, params.DcgmExp.Spec.Image, ComponentDcgmExporter, []string{})
 	//this label is used by scraper config in the agent.
 	labels["k8s-app"] = "dcgm-exporter-service"
@@ -43,7 +41,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-service", name),
+			Name:        ServiceName(params.DcgmExp),
 			Namespace:   params.DcgmExp.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
@@ -55,4 +53,17 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			Ports:                 ports,
 		},
 	}, nil
+}
+
+// ServiceName returns the name of the Service that exposes the exporter's metrics.
+func ServiceName(exporter v1alpha1.DcgmExporter) string {
+	return fmt.Sprintf("%s-service", serviceBaseName(exporter))
+}
+
+func serviceBaseName(exporter v1alpha1.DcgmExporter) string {
+	name := naming.Service(exporter.Name)
+	if len(name) == 0 {
+		return ComponentDcgmExporter
+	}
+	return name
 }

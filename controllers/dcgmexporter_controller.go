@@ -95,8 +95,14 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, buildErr
 	}
 
-	if !enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log) {
-		log.Info("enhanced_container_insights or accelerated_compute_metrics is disabled")
+	service := dcgmexporter.ServiceName(instance)
+	enabled, err := enabledAcceleratedComputeByAgentConfig(ctx, r.Client, log, instance.Namespace, service)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !enabled {
+		log.Info("Removing exporter: no AmazonCloudWatchAgent in the namespace enables accelerated compute metrics or scrapes the exporter Service from an otelConfig pipeline",
+			"namespace", instance.Namespace, "service", service)
 		for _, obj := range desiredObjects {
 			if err := r.Delete(ctx, obj, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete resources", "resource", obj)
@@ -106,7 +112,7 @@ func (r *DcgmExporterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
+	err = reconcileDesiredObjects(ctx, r.Client, log, &params.DcgmExp, params.Scheme, desiredObjects...)
 	return dcgmexporterStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
