@@ -28,7 +28,7 @@ func Annotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return annotations
 }
@@ -51,7 +51,7 @@ func PodAnnotations(instance v1alpha1.AmazonCloudWatchAgent) map[string]string {
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["amazon-cloudwatch-agent-operator-config/sha256"] = getConfigMapSHA(configHashInput(instance))
 
 	return podAnnotations
 }
@@ -69,6 +69,29 @@ func PodLabels(instance v1alpha1.AmazonCloudWatchAgent, base map[string]string) 
 		merged[k] = v
 	}
 	return merged
+}
+
+// configHashInput returns the combined config string used for the pod-template
+// restart hash: Spec.Config plus, when Prometheus is configured, the Prometheus
+// ConfigMap data as rendered for the agent. Using the rendered data means a
+// change to any of its inputs (Spec.Prometheus, Spec.TargetAllocator.Enabled,
+// the instance name, the EnableTargetAllocatorRewrite feature gate) rolls the
+// pods. Spec.Config is used as-is for the agent config so that agents without
+// Prometheus keep the same hash as before.
+func configHashInput(instance v1alpha1.AmazonCloudWatchAgent) string {
+	config := instance.Spec.Config
+	if !instance.Spec.Prometheus.IsEmpty() {
+		promData, err := renderPrometheusConfig(instance)
+		if err != nil {
+			// ConfigMaps() fails on the same error, so no ConfigMap is written
+			// and there is nothing new for the pods to pick up. A constant keeps
+			// the hash stable until the spec renders again.
+			config += "\x00prometheus-render-error"
+		} else {
+			config += "\x00" + promData // null byte prevents collision between config suffix and the Prometheus data prefix
+		}
+	}
+	return config
 }
 
 func getConfigMapSHA(config string) string {
