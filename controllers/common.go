@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,8 +29,6 @@ import (
 
 const (
 	acceleratedComputeMetrics = "accelerated_compute_metrics"
-	amazonCloudWatchNamespace = "amazon-cloudwatch"
-	amazonCloudWatchAgentName = "cloudwatch-agent"
 )
 
 func isNamespaceScoped(obj client.Object) bool {
@@ -162,34 +161,106 @@ func pruneStaleObjects(ctx context.Context, kubeClient client.Client, logger log
 	return errors.Join(pruneErrs...)
 }
 
-func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger) bool {
-	agentResource := getAmazonCloudWatchAgentResource(ctx, c)
-	// missing feature flag means it's on by default
-	featureConfigExists := strings.Contains(agentResource.Spec.Config, acceleratedComputeMetrics)
-	conf, err := adapters.ConfigStructFromJSONString(agentResource.Spec.Config)
+// enabledAcceleratedComputeByAgentConfig reports whether an AmazonCloudWatchAgent in namespace collects from the exporter behind service.
+func enabledAcceleratedComputeByAgentConfig(ctx context.Context, c client.Client, log logr.Logger, namespace string, service string) (bool, error) {
+	listed, err := listAmazonCloudWatchAgents(ctx, c, namespace)
+	if err != nil {
+		return false, err
+	}
+	// The exporters run on Linux nodes, so Windows agents cannot collect from them.
+	var agents []v1alpha1.AmazonCloudWatchAgent
+	for _, agent := range listed {
+		if agent.Spec.NodeSelector[corev1.LabelOSStable] != "windows" {
+			agents = append(agents, agent)
+		}
+	}
+	// An explicit accelerated_compute_metrics: false on any agent disables the exporter for the namespace.
+	for _, agent := range agents {
+		if _, optedOut := acceleratedComputeByAgentJSON(agent.Spec.Config, log); optedOut {
+			return false, nil
+		}
+	}
+	for _, agent := range agents {
+		enabled, _ := acceleratedComputeByAgentJSON(agent.Spec.Config, log)
+		if enabled || otelConfigScrapesService(agent.Spec.OtelConfig, service, log) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// acceleratedComputeByAgentJSON reports whether the agent JSON config enables accelerated compute through
+// enhanced Container Insights, and whether it opts out with accelerated_compute_metrics: false.
+func acceleratedComputeByAgentJSON(config string, log logr.Logger) (enabled bool, optedOut bool) {
+	if config == "" {
+		return false, false
+	}
+	conf, err := adapters.ConfigStructFromJSONString(config)
 	if err != nil {
 		log.Error(err, "Failed to unmarshall agent configuration")
+		return false, false
+	}
+	if conf.Logs == nil || conf.Logs.LogMetricsCollected == nil || conf.Logs.LogMetricsCollected.Kubernetes == nil {
+		return false, false
+	}
+	kubernetes := conf.Logs.LogMetricsCollected.Kubernetes
+	// missing feature flag means it's on by default
+	optedOut = strings.Contains(config, acceleratedComputeMetrics) && !kubernetes.AcceleratedComputeMetrics
+	return kubernetes.EnhancedContainerInsights && !optedOut, optedOut
+}
+
+// otelConfigScrapesService reports whether a receiver used by a pipeline has a static scrape target on service.
+func otelConfigScrapesService(otelConfig string, service string, log logr.Logger) bool {
+	if otelConfig == "" {
 		return false
 	}
-
-	if conf.Logs != nil && conf.Logs.LogMetricsCollected != nil && conf.Logs.LogMetricsCollected.Kubernetes != nil {
-		if conf.Logs.LogMetricsCollected.Kubernetes.EnhancedContainerInsights {
-			return !featureConfigExists || conf.Logs.LogMetricsCollected.Kubernetes.AcceleratedComputeMetrics
-		} else {
-			// enhanced container insights is disabled
-			return false
+	conf, err := adapters.ConfigFromString(otelConfig)
+	if err != nil {
+		log.Error(err, "Failed to unmarshall agent OTEL configuration")
+		return false
+	}
+	receivers, _ := conf["receivers"].(map[interface{}]interface{})
+	serviceConf, _ := conf["service"].(map[interface{}]interface{})
+	pipelines, _ := serviceConf["pipelines"].(map[interface{}]interface{})
+	for _, p := range pipelines {
+		pipeline, _ := p.(map[interface{}]interface{})
+		names, _ := pipeline["receivers"].([]interface{})
+		for _, name := range names {
+			for _, target := range staticScrapeTargets(receivers[name]) {
+				if target == service || strings.HasPrefix(target, service+":") || strings.HasPrefix(target, service+".") {
+					return true
+				}
+			}
 		}
 	}
 	return false
 }
 
-var getAmazonCloudWatchAgentResource = func(ctx context.Context, c client.Client) v1alpha1.AmazonCloudWatchAgent {
-	cr := &v1alpha1.AmazonCloudWatchAgent{}
+func staticScrapeTargets(receiver interface{}) []string {
+	var targets []string
+	r, _ := receiver.(map[interface{}]interface{})
+	config, _ := r["config"].(map[interface{}]interface{})
+	scrapeConfigs, _ := config["scrape_configs"].([]interface{})
+	for _, sc := range scrapeConfigs {
+		scrapeConfig, _ := sc.(map[interface{}]interface{})
+		staticConfigs, _ := scrapeConfig["static_configs"].([]interface{})
+		for _, st := range staticConfigs {
+			staticConfig, _ := st.(map[interface{}]interface{})
+			list, _ := staticConfig["targets"].([]interface{})
+			for _, t := range list {
+				if target, ok := t.(string); ok {
+					targets = append(targets, target)
+				}
+			}
+		}
+	}
+	return targets
+}
 
-	_ = c.Get(ctx, client.ObjectKey{
-		Namespace: amazonCloudWatchNamespace,
-		Name:      amazonCloudWatchAgentName,
-	}, cr)
-
-	return *cr
+var listAmazonCloudWatchAgents = func(ctx context.Context, c client.Client, namespace string) ([]v1alpha1.AmazonCloudWatchAgent, error) {
+	agents := &v1alpha1.AmazonCloudWatchAgentList{}
+	if err := c.List(ctx, agents, client.InNamespace(namespace)); err != nil {
+		return nil, err
+	}
+	return agents.Items, nil
 }
