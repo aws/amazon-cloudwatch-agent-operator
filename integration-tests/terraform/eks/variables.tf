@@ -22,7 +22,7 @@ variable "addon_name" {
 }
 
 variable "addon_version" {
-  type = string
+  type    = string
   default = "v1.1.0-eksbuild.1"
 }
 
@@ -33,5 +33,16 @@ variable "beta" {
 
 variable "beta_endpoint" {
   type    = string
-  default = "https://api.beta.us-west-2.wesley.amazonaws.com"
+  default = ""
 }
+
+variable "eks_endpoint" {
+  type    = string
+  default = ""
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._:/-]*$", var.eks_endpoint))
+    error_message = "eks_endpoint may only contain endpoint URL characters."
+  }
+}
+

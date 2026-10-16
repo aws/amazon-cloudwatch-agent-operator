@@ -10,8 +10,9 @@ module "basic_components" {
 }
 
 locals {
-  role_arn = format("%s%s", module.basic_components.role_arn, var.beta ? "-eks-beta" : "")
-  aws_eks  = format("%s%s", "aws eks --region ${var.region}", var.beta ? " --endpoint ${var.beta_endpoint}" : "")
+  eks_endpoint = var.eks_endpoint != "" ? var.eks_endpoint : (var.beta ? var.beta_endpoint : "")
+  role_arn     = format("%s%s", module.basic_components.role_arn, var.beta ? "-eks-beta" : "")
+  aws_eks      = format("%s%s", "aws eks --region ${var.region}", local.eks_endpoint != "" ? " --endpoint ${local.eks_endpoint}" : "")
 }
 
 data "aws_eks_cluster_auth" "this" {
@@ -112,8 +113,8 @@ resource "aws_eks_addon" "this" {
   depends_on = [
     null_resource.kubectl
   ]
-  addon_name   = var.addon_name
-  cluster_name = aws_eks_cluster.this.name
+  addon_name    = var.addon_name
+  cluster_name  = aws_eks_cluster.this.name
   addon_version = var.addon_version
 }
 
