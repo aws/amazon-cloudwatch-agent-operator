@@ -22,7 +22,12 @@ on:
         required: true
         type: boolean
         default: true
-        description: "Run in EKS Addon Beta environment"
+        description: "Run in EKS Addon Beta environment (requires eks_endpoint to be supplied)"
+      eks_endpoint:
+        required: false
+        type: string
+        default: ""
+        description: "Optional EKS API endpoint override (empty keeps the default/beta behaviour)"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -106,12 +111,19 @@ jobs:
 
       - name: Terraform apply
         uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2.9.0
+        env:
+          TF_VAR_eks_endpoint: ${{ github.event.inputs.eks_endpoint }}
+          RUN_IN_BETA: ${{ github.event.inputs.run_in_beta }}
         with:
           max_attempts: 1
           timeout_minutes: 60 # EKS takes about 20 minutes to spin up a cluster and service on the cluster
           retry_wait_seconds: 5
           command: |
             cd integration-tests/terraform/eks
+
+            if [ "$RUN_IN_BETA" = "true" ] && [ -z "$TF_VAR_eks_endpoint" ]; then
+              echo "run_in_beta=true requires eks_endpoint" >&2; exit 1
+            fi
 
             terraform init
             if terraform apply -var="beta=${{ github.event.inputs.run_in_beta }}" -var="addon_name=${{ github.event.inputs.addon_name }}" -var="addon_version=${{ github.event.inputs.addon_version }}" -var="k8s_version=${{ matrix.arrays.k8sVersion }}" --auto-approve; then
@@ -123,6 +135,8 @@ jobs:
       - name: Terraform destroy
         if: ${{ cancelled() || failure() }}
         uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2.9.0
+        env:
+          TF_VAR_eks_endpoint: ${{ github.event.inputs.eks_endpoint }}
         with:
           max_attempts: 3
           timeout_minutes: 8

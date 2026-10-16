@@ -4,6 +4,6 @@
 provider "aws" {
   region = var.region
   endpoints {
-    eks = var.beta ? var.beta_endpoint : null
+    eks = local.eks_endpoint != "" ? local.eks_endpoint : null
   }
 }
