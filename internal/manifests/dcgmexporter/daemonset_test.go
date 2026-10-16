@@ -78,6 +78,24 @@ func TestDcgmDaemonSetConfigSha256AnnotationChangesWithMetricsConfig(t *testing.
 	assert.NotEqual(t, shaA, shaB, "MetricsConfig change must roll the DaemonSet")
 }
 
+func TestDcgmDaemonSetAnnotationChangesWithMetricsConfigMapData(t *testing.T) {
+	dcgm := v1alpha1.DcgmExporter{
+		ObjectMeta: metav1.ObjectMeta{Name: "dcgm"},
+		Spec: v1alpha1.DcgmExporterSpec{
+			MetricsConfigFrom: &v1alpha1.MetricsConfigSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "my-metrics"},
+				Key:                  "gpu.csv",
+			}},
+		},
+	}
+	dsA := DaemonSet(manifests.Params{Log: logger, Config: config.New(), DcgmExp: dcgm, DcgmMetricsConfigMapData: "DCGM_FI_DEV_GPU_UTIL, gauge, GPU utilization"})
+	dsB := DaemonSet(manifests.Params{Log: logger, Config: config.New(), DcgmExp: dcgm, DcgmMetricsConfigMapData: "DCGM_FI_DEV_SM_CLOCK, gauge, SM clock"})
+
+	shaA := dsA.Spec.Template.Annotations[configSHAAnnotation]
+	assert.Equal(t, getConfigMapSHA(MetricsConfig(manifests.Params{DcgmExp: dcgm, DcgmMetricsConfigMapData: "DCGM_FI_DEV_GPU_UTIL, gauge, GPU utilization"})), shaA)
+	assert.NotEqual(t, shaA, dsB.Spec.Template.Annotations[configSHAAnnotation], "ConfigMap content change must roll the DaemonSet")
+}
+
 func TestDcgmDaemonSetTopologySpreadConstraints(t *testing.T) {
 	tsc := []corev1.TopologySpreadConstraint{
 		{

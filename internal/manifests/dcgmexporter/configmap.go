@@ -4,6 +4,8 @@
 package dcgmexporter
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -23,7 +25,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	labels := manifestutils.Labels(params.DcgmExp.ObjectMeta, name, params.DcgmExp.Spec.Image, ComponentDcgmExporter, []string{})
 
 	data := map[string]string{
-		DcgmMetricsIncludedCsv: params.DcgmExp.Spec.MetricsConfig,
+		DcgmMetricsIncludedCsv: MetricsConfig(params),
 	}
 	if len(params.DcgmExp.Spec.TlsConfig) > 0 {
 		data[DcgmWebConfigYaml] = params.DcgmExp.Spec.TlsConfig
@@ -37,4 +39,13 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		},
 		Data: data,
 	}, nil
+}
+
+// MetricsConfig returns the metrics CSV for the exporter: the content of the key selected by
+// Spec.MetricsConfigFrom when it is set and not empty, otherwise Spec.MetricsConfig.
+func MetricsConfig(params manifests.Params) string {
+	if params.DcgmExp.Spec.MetricsConfigMapKeyRef() != nil && strings.TrimSpace(params.DcgmMetricsConfigMapData) != "" {
+		return params.DcgmMetricsConfigMapData
+	}
+	return params.DcgmExp.Spec.MetricsConfig
 }

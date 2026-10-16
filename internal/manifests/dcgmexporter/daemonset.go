@@ -20,6 +20,10 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 		name = ComponentDcgmExporter
 	}
 	labels := manifestutils.Labels(params.DcgmExp.ObjectMeta, name, params.DcgmExp.Spec.Image, ComponentDcgmExporter, params.Config.LabelsFilter())
+	podAnnotations := PodAnnotations(params.DcgmExp)
+	if params.DcgmExp.Spec.MetricsConfigMapKeyRef() != nil {
+		podAnnotations[configSHAAnnotation] = getConfigMapSHA(MetricsConfig(params))
+	}
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,7 +39,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      PodLabels(params.DcgmExp, labels),
-					Annotations: PodAnnotations(params.DcgmExp),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(params.DcgmExp),

@@ -19793,6 +19793,13 @@ consumed in the config file for the Collector.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#dcgmexporterspecmetricsconfigfrom">metricsConfigFrom</a></b></td>
+        <td>object</td>
+        <td>
+          MetricsConfigFrom reads the metrics CSV from another source instead of MetricsConfig.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -21873,6 +21880,84 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DcgmExporter.spec.metricsConfigFrom
+<sup><sup>[↩ Parent](#dcgmexporterspec)</sup></sup>
+
+
+
+MetricsConfigFrom reads the metrics CSV from another source instead of MetricsConfig.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#dcgmexporterspecmetricsconfigfromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMapKeyRef selects a key of an existing ConfigMap in the same namespace that holds the metrics CSV.
+It replaces MetricsConfig, and the exporter pods are restarted when the selected key changes. If the
+ConfigMap or key does not exist, MetricsConfig is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DcgmExporter.spec.metricsConfigFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#dcgmexporterspecmetricsconfigfrom)</sup></sup>
+
+
+
+ConfigMapKeyRef selects a key of an existing ConfigMap in the same namespace that holds the metrics CSV.
+It replaces MetricsConfig, and the exporter pods are restarted when the selected key changes. If the
+ConfigMap or key does not exist, MetricsConfig is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
