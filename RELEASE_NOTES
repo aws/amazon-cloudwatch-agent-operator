@@ -1,4 +1,20 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.8.0 (2026-10-21)
+========================================================================
+New Features:
+* [Prometheus] Add per-node scraping so each CloudWatch Agent scrapes only the ServiceMonitor and PodMonitor targets on its own node
+* [Prometheus] Support splitting ServiceMonitor and PodMonitor scraping between a per-node agent and a cluster-level agent
+
+Enhancements:
+* [Agent] Support more pod settings (labels, annotations, scheduling, priority and disruption budget) on the CloudWatch Agent, DCGM Exporter and Neuron Monitor
+
+Bug Fixes:
+* [Prometheus] Fix Target Allocator failing to start in some configurations
+* [ContainerInsights] Fix GPU and Neuron metrics not being collected when using OTel Container Insights
+* [Agent] Restart pods when their configuration changes
+* [ApplicationSignals] Preserve auto-instrumentation opt-outs set by the user
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.7.0 (2026-08-04)
 ========================================================================
 Enhancements:
