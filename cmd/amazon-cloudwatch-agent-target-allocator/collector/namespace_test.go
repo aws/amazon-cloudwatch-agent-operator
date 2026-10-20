@@ -46,7 +46,10 @@ func TestWatchIsScopedToNamespace(t *testing.T) {
 		return &v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns, Labels: labelMap},
 			Spec:       v1.PodSpec{NodeName: "node-" + name},
-			Status:     v1.PodStatus{Phase: v1.PodRunning},
+			Status: v1.PodStatus{
+				Phase:      v1.PodRunning,
+				Conditions: []v1.PodCondition{{Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
 		}
 	}
 	c := &Client{
