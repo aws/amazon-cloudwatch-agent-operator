@@ -159,6 +159,7 @@ func main() {
 		dcgmExporterImage            string
 		neuronMonitorImage           string
 		targetAllocatorImage         string
+		enableNodeCapacityLabeler    bool
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -175,6 +176,7 @@ func main() {
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("%s:%s", targetAllocatorImageRepository, v.TargetAllocator), "The default AmazonCloudWatchAgent target allocator image. This image is used when no image is specified in the CustomResource.")
+	pflag.BoolVar(&enableNodeCapacityLabeler, "enable-node-capacity-labeler", true, "Enable the controller that labels nodes with cloudwatch.aws.amazon.com/gpu.present and neuron.present based on advertised accelerator capacity.")
 	pflag.Parse()
 
 	// set instrumentation cpu and memory limits in environment variables to be used for default instrumentation; default values received from https://github.com/open-telemetry/opentelemetry-operator/blob/main/apis/v1alpha1/instrumentation_webhook.go
@@ -264,6 +266,7 @@ func main() {
 			TLSOpts: optionsTlSOptsFuncs,
 		}),
 		Cache: cache.Options{
+			// DefaultNamespaces only restricts namespaced kinds; cluster-scoped kinds like Node are always watched cluster-wide, so no ByObject entry is needed.
 			DefaultNamespaces: namespaces,
 		},
 	}
@@ -307,6 +310,17 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NeuronMonitor")
 		os.Exit(1)
+	}
+
+	if enableNodeCapacityLabeler {
+		if err = (&controllers.NodeLabelerReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+			Log:    ctrl.Log.WithName("controllers").WithName("NodeLabeler"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "NodeLabeler")
+			os.Exit(1)
+		}
 	}
 
 	decoder := admission.NewDecoder(mgr.GetScheme())

@@ -35,6 +35,15 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
   - apps
   resources:
   - daemonsets
