@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -32,6 +33,11 @@ const (
 	nodeJS  = "NODEJS"
 	limit   = "LIMIT"
 	request = "REQUEST"
+
+	// k8sModeEKS is the operator's k8s-mode value indicating an EKS cluster (mirrors the
+	// CloudWatch agent's KubernetesMode == ModeEKS); other modes (ROSA, native K8S) use the
+	// generic "k8s:" Environment prefix.
+	k8sModeEKS = "EKS"
 )
 
 func getInstrumentationConfigForResource(langStr string, resourceStr string) corev1.ResourceList {
@@ -50,7 +56,7 @@ func getInstrumentationConfigForResource(langStr string, resourceStr string) cor
 	return instrumentationConfigForResource
 }
 
-func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs map[Type]map[string]string, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
+func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, k8sMode string, additionalEnvs map[Type]map[string]string, isWindowsPod bool) (*v1alpha1.Instrumentation, error) {
 	javaInstrumentationImage, ok := os.LookupEnv("AUTO_INSTRUMENTATION_JAVA")
 	if !ok {
 		return nil, errors.New("unable to determine java instrumentation image")
@@ -85,6 +91,15 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 		}
 	}
 
+	// Inject the cluster name (and, on EKS, cloud.platform=aws_eks) into instrumented pods so
+	// the SDK resolves the same Environment the CloudWatch agent does. The cluster name comes
+	// from the agent config's application_signals.hosted_in (the SAME value the agent uses) —
+	// the in-pod OTel EKS detector is RBAC-gated and the operator does not otherwise inject the
+	// cluster name. The eks-vs-k8s prefix is driven by k8sMode, mirroring the agent's
+	// KubernetesMode == ModeEKS ? "eks:" : "k8s:" logic (so AppSignals and
+	// ServiceEvents/DynamicInstrumentation stay consistent). See EKS_OPERATOR_CHANGE.md.
+	resourceAttributes := defaultResourceAttributes(agentConfig, k8sMode)
+
 	return &v1alpha1.Instrumentation{
 		Status: v1alpha1.InstrumentationStatus{},
 		TypeMeta: metav1.TypeMeta{
@@ -100,6 +115,9 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 				v1alpha1.TraceContext,
 				v1alpha1.Baggage,
 				v1alpha1.XRay,
+			},
+			Resource: v1alpha1.Resource{
+				Attributes: resourceAttributes,
 			},
 			Java: v1alpha1.Java{
 				Image: javaInstrumentationImage,
@@ -135,6 +153,31 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 			},
 		},
 	}, nil
+}
+
+// defaultResourceAttributes builds the resource attributes the operator injects into every
+// instrumented pod's default Instrumentation. It sets k8s.cluster.name (from the agent
+// config's hosted_in) so the SDK can resolve the platform-scoped Environment, and on EKS
+// also cloud.platform=aws_eks so the SDK yields the "eks:" prefix (vs the generic "k8s:" for
+// ROSA / native K8s) — mirroring the agent's KubernetesMode-driven prefix. Returns nil when
+// no cluster name is available (e.g. EC2/on-prem-no-cluster), leaving resolution unchanged.
+func defaultResourceAttributes(agentConfig *adapters.CwaConfig, k8sMode string) map[string]string {
+	if agentConfig == nil {
+		return nil
+	}
+	clusterName := agentConfig.GetClusterName()
+	if clusterName == "" {
+		return nil
+	}
+	attrs := map[string]string{
+		"k8s.cluster.name": clusterName,
+	}
+	// Only claim the EKS platform when the deployment is actually EKS; ROSA / native K8s must
+	// keep the generic "k8s:" prefix, matching the agent (KubernetesMode == ModeEKS ? eks : k8s).
+	if strings.EqualFold(k8sMode, k8sModeEKS) {
+		attrs["cloud.platform"] = "aws_eks"
+	}
+	return attrs
 }
 
 // getSharedOtlpEndpointEnvs returns the OTLP logs/metrics endpoints routed to the CloudWatch Agent.
