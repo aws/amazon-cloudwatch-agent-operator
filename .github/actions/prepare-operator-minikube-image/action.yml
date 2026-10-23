@@ -21,9 +21,13 @@ inputs:
     required: false
     default: 'us-west-2'
   aws-role:
-    description: 'IAM role ARN to assume for ECR pull (digest mode).'
+    description: 'IAM role ARN to assume for the private ECR pull (digest mode) and, best effort, for authenticated ECR Public pulls when preloading test images.'
     required: false
     default: ''
+  preload-agent-image:
+    description: "Also preload the agent image(s) from spec.image of integration-tests/manifests/cloudwatch-agent-daemonset*.yaml. Only needed by jobs that apply those manifests."
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -58,6 +62,165 @@ runs:
         docker images "$IMG"
         minikube image load "$IMG"
         minikube image ls | grep cloudwatch-agent-operator || true
+
+    # Preload test images into minikube.
+    #
+    # minikube's containerd pulls anonymously, and anonymous pulls from
+    # public.ecr.aws are throttled per source IP. GitHub-hosted runners share
+    # egress IPs, so pods intermittently hit '429 Too Many Requests' and sit in
+    # ImagePullBackOff until the test times out. Pulling once on the runner
+    # (authenticated when a role is available) and loading the result into
+    # minikube means the kubelet finds the image locally and never contacts the
+    # registry. This relies on the pods using imagePullPolicy IfNotPresent: the
+    # test agent manifests set it explicitly (they use ':latest', which would
+    # otherwise default to Always), and the injected init containers use
+    # versioned tags with no explicit policy, which default to IfNotPresent.
+    - name: Resolve test images
+      id: images
+      shell: bash
+      env:
+        PRELOAD_AGENT_IMAGE: ${{ inputs.preload-agent-image }}
+      run: |
+        set -euo pipefail
+        # Errors go to stderr so they are never captured into a value. Each
+        # helper runs in its own $(...) subshell, so failures are propagated
+        # explicitly with '|| return 1' / top-level assignments under set -e.
+        fail() { echo "::error::$*" >&2; exit 1; }
+
+        # Exactly one '<key>=<value>' line in versions.txt.
+        ver() {
+          local v
+          v=$(awk -F= -v k="$1" '$1 == k {print $2}' versions.txt)
+          [[ -n "$v" && "$v" != *$'\n'* ]] || fail "expected exactly one '$1=' entry in versions.txt"
+          printf '%s' "$v"
+        }
+        # Exactly one '<name>ImageRepository = "..."' constant in main.go.
+        repo() {
+          local r
+          r=$(awk -F'"' -v k="$1ImageRepository" '$1 ~ "^[[:space:]]*" k "[[:space:]]*=" {print $2}' main.go)
+          [[ -n "$r" && "$r" != *$'\n'* ]] || fail "expected exactly one $1ImageRepository constant in main.go"
+          printf '%s' "$r"
+        }
+        ref() {
+          local r v
+          r=$(repo "$1") || return 1
+          v=$(ver "$2") || return 1
+          printf '%s:%s' "$r" "$v"
+        }
+        valid_ref() {
+          [[ "$1" =~ ^[a-z0-9.-]+(:[0-9]+)?/[^[:space:]@]+:[^[:space:]:@/]+$ ]]
+        }
+
+        # Default instrumentation images the operator injects. Same refs are
+        # used by the digest-mode override step below.
+        java=$(ref autoInstrumentationJava aws-otel-java-instrumentation)
+        python=$(ref autoInstrumentationPython aws-otel-python-instrumentation)
+        dotnet=$(ref autoInstrumentationDotNet aws-otel-dotnet-instrumentation)
+        nodejs=$(ref autoInstrumentationNodeJS aws-otel-nodejs-instrumentation)
+        preload=("$java" "$python" "$dotnet" "$nodejs")
+
+        # Agent image(s) set in spec.image of the test AmazonCloudWatchAgent
+        # manifests. Only jobs that apply those manifests need it.
+        if [ "${PRELOAD_AGENT_IMAGE}" = "true" ]; then
+          agent_list=$( { grep -h '^  image:' integration-tests/manifests/cloudwatch-agent-daemonset*.yaml || true; } \
+            | awk '{print $2}' | tr -d "\"'" | sort -u)
+          [ -n "$agent_list" ] || fail "no spec.image found in integration-tests/manifests/cloudwatch-agent-daemonset*.yaml"
+          mapfile -t agent_images <<< "$agent_list"
+          preload+=("${agent_images[@]}")
+        fi
+
+        for img in "${preload[@]}"; do
+          valid_ref "$img" || fail "malformed image reference: '${img}'"
+        done
+
+        {
+          echo "java=${java}"
+          echo "python=${python}"
+          echo "dotnet=${dotnet}"
+          echo "nodejs=${nodejs}"
+          echo "preload=${preload[*]}"
+        } >> "$GITHUB_OUTPUT"
+        printf 'Images to preload:\n'; printf '  %s\n' "${preload[@]}"
+
+    # Credentials are returned as step outputs only (output-env-credentials:
+    # false), so they are never exported to the job environment and later
+    # steps (make deploy, go test, ...) don't inherit them. No retries: a
+    # rejected assume should fall through to the anonymous path quickly.
+    - name: Get AWS credentials for ECR Public
+      id: ecr-public-creds
+      if: ${{ inputs.aws-role != '' }}
+      continue-on-error: true
+      uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+      with:
+        role-to-assume: ${{ inputs.aws-role }}
+        aws-region: us-east-1 # ECR Public authentication is only available in us-east-1
+        output-credentials: true
+        output-env-credentials: false
+        retry-max-attempts: 1
+
+    - name: Preload test images into minikube
+      shell: bash
+      env:
+        IMAGES: ${{ steps.images.outputs.preload }}
+        HAS_ROLE: ${{ inputs.aws-role != '' }}
+        # Scoped to this step only.
+        AWS_ACCESS_KEY_ID: ${{ steps.ecr-public-creds.outputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ steps.ecr-public-creds.outputs.aws-secret-access-key }}
+        AWS_SESSION_TOKEN: ${{ steps.ecr-public-creds.outputs.aws-session-token }}
+      run: |
+        set -euo pipefail
+        read -r -a images <<< "${IMAGES}"
+        [ "${#images[@]}" -gt 0 ] || { echo "::error::no images to preload"; exit 1; }
+
+        # Authenticated pulls count against the AWS account instead of the
+        # shared runner IP. Best effort: fork PRs have no role, and a role
+        # without ECR Public permissions falls back to anonymous pulls. Either
+        # case is surfaced as an annotation so it isn't mistaken for flakiness.
+        if [ -n "${AWS_ACCESS_KEY_ID}" ]; then
+          if aws ecr-public get-login-password --region us-east-1 \
+              | docker login --username AWS --password-stdin public.ecr.aws; then
+            trap 'docker logout public.ecr.aws >/dev/null 2>&1 || true' EXIT
+          else
+            echo "::warning::ECR Public login failed (role needs ecr-public:GetAuthorizationToken and sts:GetServiceBearerToken); pulling anonymously, which may be throttled"
+          fi
+        elif [ "${HAS_ROLE}" = "true" ]; then
+          echo "::warning::could not assume the AWS role for ECR Public; pulling anonymously, which may be throttled"
+        else
+          echo "::notice::no AWS role available (e.g. fork PR); pulling public.ecr.aws images anonymously"
+        fi
+        unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+
+        pull_with_retry() {
+          local img=$1 attempt
+          for attempt in 1 2 3 4 5; do
+            docker pull --quiet "${img}" && return 0
+            [ "${attempt}" -lt 5 ] || return 1
+            echo "Pull of ${img} failed (attempt ${attempt}/5), retrying..."
+            sleep $((attempt * 15))
+          done
+        }
+
+        for img in "${images[@]}"; do
+          echo "Preloading ${img}"
+          if ! pull_with_retry "${img}"; then
+            # public.ecr.aws is the registry whose throttling this step exists
+            # to avoid, so a failure there is fatal. Other registries keep the
+            # previous behaviour: leave the pull to the kubelet.
+            if [[ "${img}" == public.ecr.aws/* ]]; then
+              echo "::error::failed to pull ${img} after 5 attempts"
+              exit 1
+            fi
+            echo "::warning::failed to pull ${img}; leaving the pull to the kubelet"
+            continue
+          fi
+          minikube image load "${img}"
+          # 'minikube image load' only logs import failures, so confirm the
+          # image is actually in the node's containerd under this reference.
+          if ! minikube ssh -- sudo crictl inspecti "${img}" > /dev/null; then
+            echo "::error::${img} is not present in minikube after 'minikube image load'"
+            exit 1
+          fi
+        done
 
     - name: Configure AWS credentials
       if: ${{ inputs.operator-image-digest != '' }}
@@ -98,15 +261,20 @@ runs:
     - name: Override instrumentation images from source
       if: ${{ inputs.operator-image-digest != '' }}
       shell: bash
+      env:
+        # Resolved once in 'Resolve test images' so the injected refs always
+        # match what was preloaded.
+        JAVA_IMAGE: ${{ steps.images.outputs.java }}
+        PYTHON_IMAGE: ${{ steps.images.outputs.python }}
+        DOTNET_IMAGE: ${{ steps.images.outputs.dotnet }}
+        NODEJS_IMAGE: ${{ steps.images.outputs.nodejs }}
       run: |
         set -euo pipefail
-        ver()  { grep "^$1=" versions.txt | cut -d '=' -f2; }
-        repo() { grep "${1}ImageRepository" main.go | head -1 | cut -d '"' -f2; }
         kubectl set env deployment/cloudwatch-controller-manager -n amazon-cloudwatch \
-          RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA=$(repo autoInstrumentationJava):$(ver aws-otel-java-instrumentation) \
-          RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON=$(repo autoInstrumentationPython):$(ver aws-otel-python-instrumentation) \
-          RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET=$(repo autoInstrumentationDotNet):$(ver aws-otel-dotnet-instrumentation) \
-          RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS=$(repo autoInstrumentationNodeJS):$(ver aws-otel-nodejs-instrumentation)
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA="${JAVA_IMAGE}" \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON="${PYTHON_IMAGE}" \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET="${DOTNET_IMAGE}" \
+          RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS="${NODEJS_IMAGE}"
         kubectl rollout status deployment/cloudwatch-controller-manager -n amazon-cloudwatch --timeout=180s
 
     - name: Wait for operator ready

@@ -94,6 +94,7 @@ jobs:
           operator-image-digest: ${{ inputs.operator-image-digest }}
           region: ${{ inputs.region }}
           aws-role: ${{ secrets.TERRAFORM_AWS_ASSUME_ROLE }}
+          preload-agent-image: 'true'
 
       - name: Test case for cloudwatch agent pod creation
         run: |

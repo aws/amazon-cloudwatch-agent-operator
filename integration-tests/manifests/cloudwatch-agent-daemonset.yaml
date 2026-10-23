@@ -7,6 +7,9 @@ spec:
   mode: daemonset
   serviceAccount: cloudwatch-agent
   image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest
+  # CI preloads this image into minikube. ':latest' defaults to Always, so
+  # IfNotPresent is needed for the kubelet to use the preloaded copy.
+  imagePullPolicy: IfNotPresent
   config: |
     {
       "agent": {
