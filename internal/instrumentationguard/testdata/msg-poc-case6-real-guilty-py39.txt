@@ -1,0 +1,9 @@
+Error in sitecustomize; set PYTHONVERBOSE for traceback:
+ImportError: cannot import name 'EntryPoints' from 'importlib.metadata' (/usr/local/lib/python3.9/importlib/metadata.py)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/otel-auto-instrumentation-python/urllib3/__init__.py", line 15, in <module>
+    from ._base_connection import _TYPE_BODY
+  File "/otel-auto-instrumentation-python/urllib3/_base_connection.py", line 10, in <module>
+    bytes, typing.IO[typing.Any], typing.Iterable[bytes | str], str
+TypeError: unsupported operand type(s) for |: 'type' and 'type'

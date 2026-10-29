@@ -1,0 +1,30 @@
+/instrumentation/auto_instrumentation/__init__.py", line 144, in _initialize
+    _load_instrumentors(distro)
+  File "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation/_load.py", line 143, in _load_instrumentors
+    raise exc
+  File "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation/_load.py", line 109, in _load_instrumentors
+    distro.load_instrumentor(entry_point, skip_dep_check=True)
+  File "/otel-auto-instrumentation-python/opentelemetry/instrumentation/distro.py", line 50, in load_instrumentor
+    instrumentor: BaseInstrumentor = entry_point.load()
+                                     ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/importlib/metadata/__init__.py", line 202, in load
+    module = import_module(match.group('module'))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 936, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1074, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1004, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/otel-auto-instrumentation-python/opentelemetry/instrumentation/requests/__init__.py", line 174
+    from __future__ import annotations
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: from __future__ imports must occur at the beginning of the file
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+RuntimeError: the customer app has its own bug
