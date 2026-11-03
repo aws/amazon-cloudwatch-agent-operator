@@ -1,4 +1,11 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.8.1 (2026-11-03)
+========================================================================
+Enhancements:
+* [TargetAllocator] Support per-node target allocation and annotation-based ServiceMonitor and PodMonitor routing
+* [TargetAllocator] Tolerate missing ServiceMonitor and PodMonitor CRDs
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.8.0 (2026-10-21)
 ========================================================================
 New Features:
