@@ -155,13 +155,13 @@ jobs:
           ref: ${{ inputs.target-sha }}
           repository: ${{inputs.repository}}
 
-      # Pinned (not '>=1.25') so the target allocator binary is always built with a Go that
-      # rejects chains through the compromised eMudhra intermediates (GO-2026-6809, fixed in
-      # 1.26.10 and 1.27.3).
+      # check-latest makes setup-go resolve the newest release in the range instead of
+      # using an older Go already cached on the runner image.
       - name: Set up Go 1.x
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
-          go-version: '1.27.3'
+          go-version: '>=1.27.3'
+          check-latest: true
           cache: true
 
       - name: Configure AWS Credentials
