@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/aws/amazon-cloudwatch-agent-operator/apis/v1alpha1"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/collector/adapters"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/manifests/manifestutils"
@@ -55,29 +56,10 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 		promName := naming.PrometheusConfigMap(params.OtelCol.Name)
 		promLabels := manifestutils.Labels(params.OtelCol.ObjectMeta, promName, "", ComponentAmazonCloudWatchAgent, []string{})
 
-		replacedPrometheusConf, err := ReplacePrometheusConfig(params.OtelCol)
+		replacedPrometheusConf, err := renderPrometheusConfig(params.OtelCol)
 		if err != nil {
 			params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 			return nil, err
-		}
-
-		if !params.OtelCol.Spec.TargetAllocator.Enabled {
-			replacedPrometheusConfig, err := adapters.ConfigFromString(replacedPrometheusConf)
-			if err != nil {
-				return nil, err
-			}
-
-			replacedPrometheusConfProp, ok := replacedPrometheusConfig["config"]
-			if !ok {
-				return nil, fmt.Errorf("no prometheusConfig available as part of the configuration")
-			}
-
-			replacedPrometheusConfPropYAML, err := yaml.Marshal(replacedPrometheusConfProp)
-			if err != nil {
-				return nil, err
-			}
-
-			replacedPrometheusConf = string(replacedPrometheusConfPropYAML)
 		}
 
 		configmaps = append(configmaps, &corev1.ConfigMap{
@@ -94,4 +76,33 @@ func ConfigMaps(params manifests.Params) ([]*corev1.ConfigMap, error) {
 	}
 
 	return configmaps, nil
+}
+
+// renderPrometheusConfig returns the Prometheus ConfigMap data exactly as the
+// agent receives it. Besides Spec.Prometheus it depends on
+// Spec.TargetAllocator.Enabled, the instance name (the Target Allocator service
+// URL) and the EnableTargetAllocatorRewrite feature gate, so the pod restart
+// hash uses this output rather than Spec.Prometheus alone.
+func renderPrometheusConfig(instance v1alpha1.AmazonCloudWatchAgent) (string, error) {
+	replacedPrometheusConf, err := ReplacePrometheusConfig(instance)
+	if err != nil {
+		return "", err
+	}
+	if instance.Spec.TargetAllocator.Enabled {
+		return replacedPrometheusConf, nil
+	}
+
+	replacedPrometheusConfig, err := adapters.ConfigFromString(replacedPrometheusConf)
+	if err != nil {
+		return "", err
+	}
+	replacedPrometheusConfProp, ok := replacedPrometheusConfig["config"]
+	if !ok {
+		return "", fmt.Errorf("no prometheusConfig available as part of the configuration")
+	}
+	replacedPrometheusConfPropYAML, err := yaml.Marshal(replacedPrometheusConfProp)
+	if err != nil {
+		return "", err
+	}
+	return string(replacedPrometheusConfPropYAML), nil
 }

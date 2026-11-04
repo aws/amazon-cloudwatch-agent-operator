@@ -79,9 +79,9 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 			},
 			mutations: []AnnotationMutation{
-				NewRemoveAnnotationMutation([]string{
-					"keyA",
-					"keyC",
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyA": "1",
+					"keyC": "4",
 				}),
 			},
 			wantAnnotations: map[string]string{
@@ -96,9 +96,9 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 			},
 			mutations: []AnnotationMutation{
-				NewRemoveAnnotationMutation([]string{
-					"keyA",
-					"keyB",
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyA": "1",
+					"keyB": "2",
 				}),
 			},
 			wantAnnotations: map[string]string{},
@@ -113,11 +113,11 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 			},
 			mutations: []AnnotationMutation{
-				NewRemoveAnnotationMutation([]string{
-					"keyA",
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyA": "1",
 				}),
-				NewRemoveAnnotationMutation([]string{
-					"keyB",
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyB": "2",
 				}),
 			},
 			wantAnnotations: map[string]string{},
@@ -126,14 +126,33 @@ func TestMutateAnnotations(t *testing.T) {
 				"keyB": "2",
 			},
 		},
+		"TestRemove/PreservesUserValue": {
+			// A managed key present with a value other than the one the operator injected
+			// (e.g. an explicit "false" opt-out) must not be removed.
+			annotations: map[string]string{
+				"keyA": "false",
+				"keyB": "2",
+			},
+			mutations: []AnnotationMutation{
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyA": "true",
+					"keyB": "2",
+				}),
+			},
+			wantAnnotations: map[string]string{
+				"keyA": "false",
+				"keyB": "2",
+			},
+			wantMutatedAnnotations: map[string]string{},
+		},
 		"TestBoth": {
 			annotations: map[string]string{
 				"keyA": "1",
 				"keyB": "2",
 			},
 			mutations: []AnnotationMutation{
-				NewRemoveAnnotationMutation([]string{
-					"keyA",
+				NewRemoveAnnotationMutation(map[string]string{
+					"keyA": "1",
 				}),
 				NewInsertAnnotationMutation(map[string]string{
 					"keyA": "3",
