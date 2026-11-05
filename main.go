@@ -17,6 +17,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -37,6 +38,7 @@ import (
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/namespacemutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/podmutation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/internal/webhook/workloadmutation"
+	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/crdmanager"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/featuregate"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation"
 	"github.com/aws/amazon-cloudwatch-agent-operator/pkg/instrumentation/auto"
@@ -70,6 +72,7 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -159,6 +162,7 @@ func main() {
 		dcgmExporterImage            string
 		neuronMonitorImage           string
 		targetAllocatorImage         string
+		managePrometheusCRDs         bool
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -172,6 +176,7 @@ func main() {
 	stringFlagOrEnv(&autoAnnotationConfigStr, "auto-annotation-config", "AUTO_ANNOTATION_CONFIG", "", "The configuration for auto-annotation.")
 	pflag.StringVar(&autoMonitorConfigStr, "auto-monitor-config", "", "The configuration for auto-monitor.")
 	pflag.StringVar(&autoInstrumentationConfigStr, "auto-instrumentation-config", "", "The configuration for auto-instrumentation.")
+	pflag.BoolVar(&managePrometheusCRDs, "manage-prometheus-crds", false, "Create the ServiceMonitor and PodMonitor CRDs (monitoring.coreos.com/v1) when they do not exist. The operator never deletes them and never changes a copy it did not create.")
 	stringFlagOrEnv(&dcgmExporterImage, "dcgm-exporter-image", "RELATED_IMAGE_DCGM_EXPORTER", fmt.Sprintf("%s:%s", dcgmExporterImageRepository, v.DcgmExporter), "The default DCGM Exporter image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&neuronMonitorImage, "neuron-monitor-image", "RELATED_IMAGE_NEURON_MONITOR", fmt.Sprintf("%s:%s", neuronMonitorImageRepository, v.NeuronMonitor), "The default Neuron monitor image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("%s:%s", targetAllocatorImageRepository, v.TargetAllocator), "The default AmazonCloudWatchAgent target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -307,6 +312,22 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NeuronMonitor")
 		os.Exit(1)
+	}
+
+	if managePrometheusCRDs {
+		crdReconciler, crdErr := crdmanager.NewReconciler(
+			mgr.GetClient(),
+			ctrl.Log.WithName("controllers").WithName("PrometheusCRD"),
+			mgr.GetEventRecorderFor("amazon-cloudwatch-agent-operator"), //nolint:staticcheck // TODO: migrate to events.EventRecorder
+		)
+		if crdErr == nil {
+			crdErr = crdReconciler.SetupWithManager(mgr)
+		}
+		if crdErr != nil {
+			setupLog.Error(crdErr, "unable to create controller", "controller", "PrometheusCRD")
+			os.Exit(1)
+		}
+		setupLog.Info("managing ServiceMonitor and PodMonitor CRDs", "version", crdmanager.BundledVersion)
 	}
 
 	decoder := admission.NewDecoder(mgr.GetScheme())
