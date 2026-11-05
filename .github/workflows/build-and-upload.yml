@@ -155,6 +155,8 @@ jobs:
           ref: ${{ inputs.target-sha }}
           repository: ${{inputs.repository}}
 
+      # check-latest makes setup-go resolve the newest release in the range instead of
+      # using an older Go already cached on the runner image.
       - name: Set up Go 1.x
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
