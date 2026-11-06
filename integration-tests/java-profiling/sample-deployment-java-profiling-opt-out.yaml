@@ -1,0 +1,22 @@
+# Java profiling opt-out: the pod is Java-instrumented but annotated out of profiling, so it gets no profiler
+# variables, volume or mount.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-java-profiling-opt-out
+spec:
+  selector:
+    matchLabels:
+      app: nginx-java-profiling-opt-out
+  template:
+    metadata:
+      labels:
+        app: nginx-java-profiling-opt-out
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        cloudwatch.aws.amazon.com/java-profiling: "false"
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.14.2
+      restartPolicy: Always

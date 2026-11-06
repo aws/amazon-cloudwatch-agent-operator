@@ -1,0 +1,28 @@
+# Java profiling: two Java containers (app, worker) are profiled and share one profiler volume; the sidecar is not
+# Java-instrumented and must get nothing from the profiler.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-java-profiling
+spec:
+  selector:
+    matchLabels:
+      app: nginx-java-profiling
+  template:
+    metadata:
+      labels:
+        app: nginx-java-profiling
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/java-container-names: "app,worker"
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.14.2
+        - name: worker
+          image: nginx:1.14.2
+          command: ["sh", "-c", "sleep 3600"]
+        - name: sidecar
+          image: nginx:1.14.2
+          command: ["sh", "-c", "sleep 3600"]
+      restartPolicy: Always

@@ -1,0 +1,1 @@
+{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}, "runtime_metrics": {"enabled": "true"}, "service_events": {}, "dynamic_instrumentation": {}, "profiling": {"enabled": "true", "mode": "cpu", "volume_size_limit": "64Mi"}}}
