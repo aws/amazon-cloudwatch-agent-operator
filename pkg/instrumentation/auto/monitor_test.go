@@ -6,6 +6,7 @@ package auto
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"testing"
 	"time"
 
@@ -672,7 +673,7 @@ func waitForInformerUpdate(monitor *Monitor, isValid func(int) bool) error {
 	return wait.PollUntilContextTimeout(
 		context.TODO(),     // parent context
 		1*time.Millisecond, // interval between polls
-		5*time.Second,      // timeout
+		3*time.Second,      // timeout
 		false,              // immediate (set to false to match PollImmediate behavior)
 		func(ctx context.Context) (bool, error) {
 			return isValid(len(monitor.serviceInformer.GetStore().ListKeys())), nil
@@ -706,22 +707,32 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				service := newTestService("service", defaultNs, labels)
 				workload := wt.create("workload", defaultNs, labels, annotations)
 
-				clientset := fake.NewSimpleClientset(service, workload)
+				// Create the Service after the monitor starts and wait for numKeys==1 so the
+				// informer's WATCH is live before the delete (otherwise the delete can be lost).
+				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(service, workload)
 				config := simpleConfig(true, true, none, none)
 				k8sInterface := clientset
 				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+
+				_, err := clientset.CoreV1().Services(defaultNs).Create(context.TODO(), service, metav1.CreateOptions{})
+				assert.NoError(t, err)
+				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 1 })
+				assert.NoError(t, err)
+
 				monitor.MutateAndPatchAll(context.TODO())
 
-				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
+				err = clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
 				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
 				assert.NoError(t, err)
 
-				updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
-				assert.NoError(t, err)
-				assert.Equal(t, userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
+				// Un-instrumentation is applied asynchronously after the delete; poll for it.
+				assert.Eventually(t, func() bool {
+					updatedWorkload, err := wt.get(clientset, defaultNs, workload.GetName())
+					return err == nil && reflect.DeepEqual(userAnnotations, getPodTemplate(updatedWorkload).GetAnnotations())
+				}, 3*time.Second, time.Millisecond)
 			})
 
 			t.Run("auto restart false, delete and then restart operator", func(t *testing.T) {
@@ -749,15 +760,23 @@ func Test_OptOutByRemovingService(t *testing.T) {
 				service := newTestService("service", defaultNs, labels)
 				workload := wt.create("workload", defaultNs, labels, originalAnnotations)
 
-				clientset := fake.NewSimpleClientset(service, workload)
+				// Create the Service after the monitor starts and wait for numKeys==1 so the
+				// informer's WATCH is live before the delete (otherwise the delete can be lost).
+				clientset := fake.NewSimpleClientset(workload)
 				c := fake2.NewFakeClient(service, workload)
 				config := simpleConfig(true, false, none, none)
 				var k8sInterface kubernetes.Interface = clientset
 				logger := testr.New(t)
 				monitor := NewMonitor(context.TODO(), config, k8sInterface, c, c, logger)
+
+				_, err := clientset.CoreV1().Services(defaultNs).Create(context.TODO(), service, metav1.CreateOptions{})
+				assert.NoError(t, err)
+				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 1 })
+				assert.NoError(t, err)
+
 				monitor.MutateAndPatchAll(context.TODO())
 
-				err := clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
+				err = clientset.CoreV1().Services(defaultNs).Delete(context.TODO(), service.Name, metav1.DeleteOptions{})
 				assert.NoError(t, err)
 				err = waitForInformerUpdate(monitor, func(numKeys int) bool { return numKeys == 0 })
 				assert.NoError(t, err)
