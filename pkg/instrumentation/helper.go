@@ -36,6 +36,12 @@ const (
 
 var defaultSize = resource.MustParse("200Mi")
 
+// defaultProfilerVolumeSize is the default sizeLimit of the Java profiler's data volume (java.profiling.volume_size_limit).
+// It covers ADOT's default settings: busy services peaked at 27 to 70 MB (measured), and ADOT caps rotated files at
+// 128 MiB. Longer windows or allocation profiling need more, set in the chart. It is a ceiling, not a reservation;
+// exceeding it gets the pod evicted.
+var defaultProfilerVolumeSize = resource.MustParse("160Mi")
+
 // Calculate if we already inject InitContainers.
 func isInitContainerMissing(pod corev1.Pod, containerName string) bool {
 	for _, initContainer := range pod.Spec.InitContainers {
