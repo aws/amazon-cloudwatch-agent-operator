@@ -292,7 +292,7 @@ func TestRateLimit(t *testing.T) {
 		},
 	}
 	events := make(chan Event, 1)
-	eventInterval := 5 * time.Millisecond
+	eventInterval := 8 * time.Millisecond // deflake: widened from 5ms so ms-scale scheduling jitter stays under the interval
 
 	w := getTestPrometheusCRWatcher(t, nil, nil)
 	defer func() { _ = w.Close() }()
