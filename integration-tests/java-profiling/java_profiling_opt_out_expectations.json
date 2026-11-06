@@ -1,0 +1,7 @@
+{
+  "labelSelector": "app=nginx-java-profiling-opt-out",
+  "javaInstrumentedContainers": ["app"],
+  "profiledContainers": {},
+  "unprofiledContainers": ["app"],
+  "volumeSizeLimit": ""
+}

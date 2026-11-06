@@ -1,0 +1,20 @@
+{
+  "labelSelector": "app=nginx-java-profiling",
+  "javaInstrumentedContainers": ["app", "worker"],
+  "profiledContainers": {
+    "app": {
+      "OTEL_AWS_PROFILER_ENABLED": "true",
+      "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4318/v1development/profiles",
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/app",
+      "OTEL_AWS_PROFILER_MODE": "cpu"
+    },
+    "worker": {
+      "OTEL_AWS_PROFILER_ENABLED": "true",
+      "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:4318/v1development/profiles",
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/worker",
+      "OTEL_AWS_PROFILER_MODE": "cpu"
+    }
+  },
+  "unprofiledContainers": ["sidecar"],
+  "volumeSizeLimit": "128Mi"
+}
