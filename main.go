@@ -114,6 +114,30 @@ func setLangEnvVars(langStr string, cfg map[string]map[string]string) {
 	if dynamicInstrumentation, ok := cfg["dynamic_instrumentation"]; ok {
 		setLangEnvVarsForDynamicInstrumentation(langStr, dynamicInstrumentation)
 	}
+	if profiling, ok := cfg["profiling"]; ok && langStr == "JAVA" {
+		setLangEnvVarsForProfiling(langStr, profiling)
+	}
+}
+
+// setLangEnvVarsForProfiling copies java.profiling.enabled into AUTO_INSTRUMENTATION_JAVA_PROFILING_ENABLED,
+// and every other java.profiling key, as JSON, into AUTO_INSTRUMENTATION_JAVA_PROFILING_SETTINGS for the
+// pod mutator, which reads the endpoint and payload cap from them; other keys are ignored and logged.
+func setLangEnvVarsForProfiling(langStr string, cfg map[string]string) {
+	settings := map[string]string{}
+	for key, value := range cfg {
+		if key == "enabled" {
+			if value != "" {
+				_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_PROFILING_ENABLED", value)
+			}
+			continue
+		}
+		settings[key] = value
+	}
+	if len(settings) > 0 {
+		if raw, err := json.Marshal(settings); err == nil {
+			_ = os.Setenv("AUTO_INSTRUMENTATION_"+langStr+"_PROFILING_SETTINGS", string(raw))
+		}
+	}
 }
 
 func setLangEnvVarsForServiceEvents(langStr string, cfg map[string]string) {
