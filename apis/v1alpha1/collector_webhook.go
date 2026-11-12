@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -168,6 +169,17 @@ func (c CollectorWebhook) validate(r *AmazonCloudWatchAgent) (admission.Warnings
 		taSpec.PrometheusCR.ScraperRole != ""
 	if taSpec.Enabled && r.Spec.Mode != ModeStatefulSet && !supportedNonStatefulSet {
 		warnings = append(warnings, fmt.Sprintf("The Amazon CloudWatch Agent mode is set to %s, we do not recommend enabling Target Allocator when not running as a StatefulSet", r.Spec.Mode))
+	}
+
+	// The CRD schema accepts any operator and any label key or value in the
+	// ServiceMonitor/PodMonitor selectors. Reject an invalid selector here, so it
+	// fails on apply rather than at Target Allocator startup, where it would stop
+	// all ServiceMonitor and PodMonitor scraping.
+	if _, err := metav1.LabelSelectorAsSelector(taSpec.PrometheusCR.ServiceMonitorSelector); err != nil {
+		return warnings, fmt.Errorf("invalid spec.targetAllocator.prometheusCR.serviceMonitorSelector: %w", err)
+	}
+	if _, err := metav1.LabelSelectorAsSelector(taSpec.PrometheusCR.PodMonitorSelector); err != nil {
+		return warnings, fmt.Errorf("invalid spec.targetAllocator.prometheusCR.podMonitorSelector: %w", err)
 	}
 
 	// validate Prometheus config for target allocation
