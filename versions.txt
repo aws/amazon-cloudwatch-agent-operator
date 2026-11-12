@@ -10,6 +10,6 @@ aws-otel-python-instrumentation=v0.2.0
 aws-otel-dotnet-instrumentation=1.6.0
 aws-otel-nodejs-instrumentation=0.52.1
 
-dcgm-exporter=4.6.1-4.8.4-distroless
+dcgm-exporter=4.7.0-4.9.0-distroless
 neuron-monitor=1.0.1
 target-allocator=1.1.0
