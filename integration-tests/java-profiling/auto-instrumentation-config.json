@@ -1,0 +1,1 @@
+{"java": {"limits": {"cpu": "500m", "memory": "64Mi"}, "requests": {"cpu": "50m", "memory": "64Mi"}, "runtime_metrics": {"enabled": "true"}, "service_events": {}, "dynamic_instrumentation": {}, "profiling": {"enabled": "true", "endpoint": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles", "max_payload_bytes": "20971520"}}}

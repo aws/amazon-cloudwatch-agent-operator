@@ -84,6 +84,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		javaContainers := insts.Java.Containers
+		// A customer volume named like the profiler's makes every container skip profiling (recorded before the
+		// first container adds the operator's own volume).
+		profilerVolumeClash := javaProfilerVolumePresent(pod)
 
 		for _, container := range strings.Split(javaContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -99,6 +102,23 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				var profiled bool
+				var profErr error
+				profilingConfig, first := javaProfilingConfigFromEnv()
+				if first && javaProfilingEnabled() {
+					if len(profilingConfig.notes) > 0 {
+						i.logger.Info("java.profiling settings: some keys were ignored or rejected", "keys", profilingConfig.notes)
+					}
+					if profilingConfig.endpoint == "" {
+						i.logger.Info("java.profiling is enabled but java.profiling.endpoint is missing or invalid; the profiler is not injected")
+					}
+				}
+				pod, profiled, profErr = injectJavaProfiling(javaProfilingEnabled(), profilingConfig, profilerVolumeClash, pod, index, envs)
+				if profErr != nil {
+					i.logger.Info("Skipping Java profiling injection", "reason", profErr.Error(), "container", pod.Spec.Containers[index].Name)
+				} else if profiled {
+					i.logger.V(1).Info("enabled the ADOT Java profiler", "container", pod.Spec.Containers[index].Name)
+				}
 				//disable setting security context in init container due to issue with runAsNonRoot conflict
 				//https://github.com/open-telemetry/opentelemetry-operator/issues/2272
 				//pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)

@@ -1,0 +1,32 @@
+{
+  "labelSelector": "app=nginx-java-profiling",
+  "javaInstrumentedContainers": [
+    "app",
+    "worker",
+    "custom"
+  ],
+  "profiledContainers": {
+    "app": {
+      "OTEL_AWS_PROFILER_ENABLED": "true",
+      "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
+      "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/app"
+    },
+    "worker": {
+      "OTEL_AWS_PROFILER_ENABLED": "true",
+      "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
+      "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/worker"
+    },
+    "custom": {
+      "OTEL_AWS_PROFILER_ENABLED": "true",
+      "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
+      "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
+      "OTEL_AWS_PROFILER_DATA_DIR": "/profiler-own/custom"
+    }
+  },
+  "unprofiledContainers": [
+    "sidecar"
+  ],
+  "volumeSizeLimit": "480Mi"
+}

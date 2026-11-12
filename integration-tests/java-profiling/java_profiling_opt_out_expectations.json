@@ -1,0 +1,8 @@
+{
+  "labelSelector": "app=nginx-java-profiling-opt-out",
+  "javaInstrumentedContainers": ["app"],
+  "profiledContainers": {},
+  "unprofiledContainers": ["app"],
+  "unprofiledAllowedEnv": {"OTEL_AWS_PROFILER_ENABLED": "false"},
+  "volumeSizeLimit": ""
+}
