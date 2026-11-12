@@ -72,12 +72,15 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		prometheusCRConfig["scrape_interval"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
 	}
 
+	// The selectors are written as label selector objects (matchLabels and
+	// matchExpressions). The Target Allocator also accepts the legacy flat
+	// {key: value} form, which it reads as matchLabels.
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
+		taConfig["service_monitor_selector"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}
 
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+		taConfig["pod_monitor_selector"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
 	}
 
 	if len(params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScraperRole) > 0 {

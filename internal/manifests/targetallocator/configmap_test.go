@@ -79,18 +79,34 @@ label_selector:
   app.kubernetes.io/managed-by: amazon-cloudwatch-agent-operator
   app.kubernetes.io/part-of: amazon-cloudwatch-agent
 pod_monitor_selector:
-  release: my-instance
+  matchlabels:
+    release: my-instance
+  matchexpressions:
+  - key: tier
+    operator: In
+    values:
+    - web
+    - api
+  - key: team
+    operator: Exists
+    values: []
 scraper_role: cluster-scraper
 service_monitor_selector:
-  release: my-instance
+  matchlabels:
+    release: my-instance
+  matchexpressions: []
 `,
 		}
 		instance := collectorInstance()
-		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
-			"release": "my-instance",
+		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{"release": "my-instance"},
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{Key: "tier", Operator: metav1.LabelSelectorOpIn, Values: []string{"web", "api"}},
+				{Key: "team", Operator: metav1.LabelSelectorOpExists},
+			},
 		}
-		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
-			"release": "my-instance",
+		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{"release": "my-instance"},
 		}
 		instance.Spec.TargetAllocator.PrometheusCR.ScraperRole = "cluster-scraper"
 		cfg := config.New()

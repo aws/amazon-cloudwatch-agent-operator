@@ -4,6 +4,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestLoad(t *testing.T) {
@@ -26,8 +28,8 @@ func TestLoad(t *testing.T) {
 		wantLabels    map[string]string
 		wantPromCR    PrometheusCRConfig
 		wantAlloc     *string
-		wantPodMonSel map[string]string
-		wantSvcMonSel map[string]string
+		wantPodMonSel *metav1.LabelSelector
+		wantSvcMonSel *metav1.LabelSelector
 		wantJobNames  []string
 	}{
 		{
@@ -65,7 +67,7 @@ func TestLoad(t *testing.T) {
 			wantAlloc:  CreateDefaultConfig().AllocationStrategy,
 		},
 		{
-			name: "service monitor pod monitor selector",
+			name: "legacy flat map service monitor pod monitor selector",
 			args: args{
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
@@ -85,11 +87,46 @@ func TestLoad(t *testing.T) {
 				ScrapeInterval: DefaultCRScrapeInterval,
 			},
 			wantAlloc: &defaulAllocationStrategy,
-			wantPodMonSel: map[string]string{
-				"release": "test",
+			wantPodMonSel: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"release": "test"},
 			},
-			wantSvcMonSel: map[string]string{
-				"release": "test",
+			wantSvcMonSel: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"release": "test"},
+			},
+			wantJobNames: []string{"prometheus"},
+		},
+		{
+			name: "label selector object service monitor pod monitor selector",
+			args: args{
+				file: "./testdata/pod_service_label_selector_test.yaml",
+			},
+			wantErr: assert.NoError,
+			wantHTTPS: HTTPSServerConfig{
+				Enabled:         true,
+				ListenAddr:      DefaultListenAddr,
+				CAFilePath:      DefaultCABundlePath,
+				TLSCertFilePath: DefaultTLSCertPath,
+				TLSKeyFilePath:  DefaultTLSKeyPath,
+			},
+			wantLabels: map[string]string{
+				"app.kubernetes.io/instance":   "default.test",
+				"app.kubernetes.io/managed-by": "amazon-cloudwatch-agent-operator",
+			},
+			wantPromCR: PrometheusCRConfig{
+				ScrapeInterval: DefaultCRScrapeInterval,
+			},
+			wantAlloc: &defaulAllocationStrategy,
+			wantPodMonSel: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"release": "test"},
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{Key: "tier", Operator: metav1.LabelSelectorOpIn, Values: []string{"web", "api"}},
+				},
+			},
+			wantSvcMonSel: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"release": "test"},
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{Key: "team", Operator: metav1.LabelSelectorOpExists},
+				},
 			},
 			wantJobNames: []string{"prometheus"},
 		},
@@ -147,6 +184,39 @@ func TestValidateConfig(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name: "promCR enabled, invalid service monitor selector",
+			fileConfig: Config{
+				PrometheusCR: PrometheusCRConfig{Enabled: true},
+				ServiceMonitorSelector: &metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{
+					{Key: "env", Operator: metav1.LabelSelectorOpIn},
+				}},
+			},
+			expectedErr: fmt.Errorf("invalid service_monitor_selector: %w",
+				errors.New("values: Invalid value: null: for 'in', 'notin' operators, values set can't be empty")),
+		},
+		{
+			name: "promCR enabled, invalid pod monitor selector",
+			fileConfig: Config{
+				PrometheusCR: PrometheusCRConfig{Enabled: true},
+				PodMonitorSelector: &metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{
+					{Key: "env", Operator: "Equals", Values: []string{"prod"}},
+				}},
+			},
+			expectedErr: fmt.Errorf("invalid pod_monitor_selector: %w",
+				errors.New(`"Equals" is not a valid label selector operator`)),
+		},
+		{
+			name: "promCR enabled, valid selectors",
+			fileConfig: Config{
+				PrometheusCR:           PrometheusCRConfig{Enabled: true},
+				ServiceMonitorSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"release": "test"}},
+				PodMonitorSelector: &metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{
+					{Key: "env", Operator: metav1.LabelSelectorOpNotIn, Values: []string{"dev"}},
+				}},
+			},
+			expectedErr: nil,
+		},
+		{
 			name: "promCR enabled, Prometheus config present, scrapeConfigs present",
 			fileConfig: Config{
 				PromConfig:   &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
@@ -159,7 +229,11 @@ func TestValidateConfig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
-			assert.Equal(t, tc.expectedErr, err)
+			if tc.expectedErr == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedErr.Error())
+			}
 		})
 	}
 }

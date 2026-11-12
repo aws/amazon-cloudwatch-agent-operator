@@ -13514,12 +13514,13 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>podMonitorSelector</b></td>
-        <td>map[string]string</td>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorprometheuscrpodmonitorselector">podMonitorSelector</a></b></td>
+        <td>object</td>
         <td>
           PodMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-PodMonitor's meta labels. The requirements are ANDed.<br/>
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches all objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13548,12 +13549,183 @@ agent while all others stay on the per-node agent.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>serviceMonitorSelector</b></td>
-        <td>map[string]string</td>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorprometheuscrservicemonitorselector">serviceMonitorSelector</a></b></td>
+        <td>object</td>
         <td>
           ServiceMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-ServiceMonitor's meta labels. The requirements are ANDed.<br/>
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches all objects.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.prometheusCR.podMonitorSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorprometheuscr)</sup></sup>
+
+
+
+PodMonitors to be selected for target discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches all objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorprometheuscrpodmonitorselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.prometheusCR.podMonitorSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorprometheuscrpodmonitorselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.prometheusCR.serviceMonitorSelector
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorprometheuscr)</sup></sup>
+
+
+
+ServiceMonitors to be selected for target discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches all objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#amazoncloudwatchagentspectargetallocatorprometheuscrservicemonitorselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### AmazonCloudWatchAgent.spec.targetAllocator.prometheusCR.serviceMonitorSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#amazoncloudwatchagentspectargetallocatorprometheuscrservicemonitorselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
