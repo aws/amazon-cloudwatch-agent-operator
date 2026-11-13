@@ -95,6 +95,7 @@ type Monitor struct {
 	deploymentInformer  cache.SharedIndexInformer
 	daemonsetInformer   cache.SharedIndexInformer
 	statefulsetInformer cache.SharedIndexInformer
+	langDetector        *languageDetector
 }
 
 func (m *Monitor) MutateAndPatchAll(ctx context.Context) {
@@ -179,6 +180,7 @@ func NewMonitor(ctx context.Context, config MonitorConfig, k8sClient kubernetes.
 		deploymentInformer:  deploymentInformer,
 		daemonsetInformer:   daemonsetInformer,
 		statefulsetInformer: statefulSetInformer,
+		langDetector:        newLanguageDetector(logger),
 	}
 
 	_, err = serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -450,7 +452,9 @@ func getTemplateSpecLabels(obj metav1.Object) labels.Set {
 	}
 }
 
-// MutateObject adds all enabled languages in config. Should only be run if selected by auto monitor or custom selector
+// MutateObject adds detected or configured languages. When auto-monitor is active, it first
+// attempts to detect the application language from container image, env vars, and commands.
+// Falls back to all configured languages only if detection yields no results.
 func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 	if !safeToMutate(oldObj, obj, m.config.RestartPods) {
 		return map[string]string{}
@@ -458,8 +462,22 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 
 	languagesToAnnotate := m.config.CustomSelector.LanguagesOf(obj, false)
 	if m.isWorkloadAutoMonitored(obj) {
-		for l := range m.config.Languages {
-			languagesToAnnotate[l] = nil
+		// Attempt to detect the language from container spec before falling back to all languages
+		detected := m.detectLanguagesFromWorkload(obj)
+		if len(detected) > 0 {
+			m.logger.V(1).Info("auto-monitor detected language(s) from container spec",
+				"objName", obj.GetName(), "detected", detected)
+			for l := range detected {
+				if _, ok := m.config.Languages[l]; ok {
+					languagesToAnnotate[l] = nil
+				}
+			}
+		} else {
+			m.logger.V(1).Info("auto-monitor could not detect language, falling back to all configured languages",
+				"objName", obj.GetName(), "languages", m.config.Languages)
+			for l := range m.config.Languages {
+				languagesToAnnotate[l] = nil
+			}
 		}
 	}
 
@@ -469,6 +487,15 @@ func (m *Monitor) MutateObject(oldObj client.Object, obj client.Object) any {
 
 	m.logger.V(2).Info("languages to annotate", "objName", obj.GetName(), "languages", languagesToAnnotate)
 	return mutate(obj, languagesToAnnotate)
+}
+
+// detectLanguagesFromWorkload extracts the pod template from a workload and runs language detection.
+func (m *Monitor) detectLanguagesFromWorkload(obj client.Object) instrumentation.TypeSet {
+	podTemplate := getPodTemplate(obj)
+	if podTemplate == nil {
+		return nil
+	}
+	return m.langDetector.detectLanguages(podTemplate)
 }
 
 // returns if workload is auto monitored (does not include custom selector)
