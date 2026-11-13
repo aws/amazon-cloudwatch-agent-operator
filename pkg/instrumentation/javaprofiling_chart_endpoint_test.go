@@ -75,6 +75,8 @@ func TestJavaProfilingUsesChartEndpoint(t *testing.T) {
 	assert.Equal(t, "true", getEnvValue(c.Env, envProfilerEnabled))
 	assert.Equal(t, chartProfilesEndpoint, getEnvValue(c.Env, envProfilerEndpoint))
 	assert.Equal(t, "20971520", getEnvValue(c.Env, "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES"))
+	assert.Equal(t, "true", getEnvValue(c.Env, "OTEL_AWS_PROFILER_MEMORY_ENABLED"), "allocation profiling by default")
+	assert.Equal(t, -1, getIndexOfEnv(c.Env, "OTEL_AWS_PROFILER_MODE"), "the mode stays ADOT's default")
 }
 
 // Without an endpoint from the chart there is no receiver to send to, so nothing is injected (no fallback).
@@ -140,11 +142,12 @@ func TestJavaProfilingConfigMapOptOutWins(t *testing.T) {
 // passed through. The data dir is fixed on the profiler volume, and the volume is 160Mi per profiled container.
 func TestJavaProfilingOnlyChartKeys(t *testing.T) {
 	setJavaProfiling(t, map[string]string{"endpoint": chartProfilesEndpoint, "data_dir": "/base", "volume_size_limit": "64Mi",
-		"mode": "cpu", "window_seconds": "300"})
+		"mode": "cpu", "memory_enabled": "false", "window_seconds": "300"})
 	pod := mutateJavaPodWithVolumes(t, corev1.Container{Name: "app", Image: "app"}, nil)
 	c := pod.Spec.Containers[0]
 	assert.Equal(t, "/otel-profiler-data-java/app", getEnvValue(c.Env, envProfilerDataDir))
 	assert.Equal(t, -1, getIndexOfEnv(c.Env, "OTEL_AWS_PROFILER_MODE"))
+	assert.Equal(t, "true", getEnvValue(c.Env, "OTEL_AWS_PROFILER_MEMORY_ENABLED"), "the operator's default, not the key")
 	assert.Equal(t, -1, getIndexOfEnv(c.Env, "OTEL_AWS_PROFILER_WINDOW_SECONDS"))
 	var size string
 	for _, v := range pod.Spec.Volumes {
@@ -178,5 +181,41 @@ func TestJavaProfilingOwnVolumeDataDir(t *testing.T) {
 		if v.Name == javaProfilerVolumeName {
 			assert.Equal(t, "160Mi", v.EmptyDir.SizeLimit.String())
 		}
+	}
+}
+
+// Through the pod mutator: values in a ConfigMap the container loads with envFrom win (nothing is injected for them).
+// A Secret the container loads with envFrom is not read, so even one that holds the container's own values does not
+// stop the defaults; Kubernetes then gives the injected env precedence over the Secret's values.
+func TestJavaProfilingDefaultsFromEnvFrom(t *testing.T) {
+	setJavaProfiling(t, map[string]string{"endpoint": chartProfilesEndpoint})
+	ctx := context.Background()
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "java-profiling-chart-endpoint"}}
+	if err := k8sClient.Create(ctx, &ns); err != nil && !apierrors.IsAlreadyExists(err) {
+		require.NoError(t, err)
+	}
+	data := map[string]string{}
+	for _, d := range injectedDefaults {
+		data[d.name] = d.own
+	}
+	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "profiler-own-defaults", Namespace: ns.Name}, Data: data}
+	require.NoError(t, k8sClient.Create(ctx, &cm))
+	t.Cleanup(func() { _ = k8sClient.Delete(ctx, &cm) })
+	c := mutateJavaPod(t, corev1.Container{Name: "app", Image: "app", EnvFrom: []corev1.EnvFromSource{
+		{ConfigMapRef: &corev1.ConfigMapEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: cm.Name}}},
+	}})
+	assert.Equal(t, "true", getEnvValue(c.Env, envProfilerEnabled), "still profiled")
+	for _, d := range injectedDefaults {
+		assert.Equal(t, -1, getIndexOfEnv(c.Env, d.name), "the ConfigMap's value wins: "+d.name)
+	}
+
+	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "profiler-own-defaults-secret", Namespace: ns.Name}, StringData: data}
+	require.NoError(t, k8sClient.Create(ctx, &secret))
+	t.Cleanup(func() { _ = k8sClient.Delete(ctx, &secret) })
+	c = mutateJavaPod(t, corev1.Container{Name: "app", Image: "app", EnvFrom: []corev1.EnvFromSource{
+		{SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: secret.Name}}},
+	}})
+	for _, d := range injectedDefaults {
+		assert.Equal(t, d.value, getEnvValue(c.Env, d.name), "a Secret does not stop the default: "+d.name)
 	}
 }

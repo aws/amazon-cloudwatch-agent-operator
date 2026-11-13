@@ -37,8 +37,9 @@ const (
 var defaultSize = resource.MustParse("200Mi")
 
 // defaultProfilerVolumeSize is the fixed sizeLimit of the Java profiler's data volume, per profiled container.
-// It covers ADOT's default settings: busy services peaked at 27 to 70 MB (measured), and ADOT caps rotated files at
-// 128 MiB. Longer windows or allocation profiling need more: such a container mounts its own volume and sets
+// It was sized at ADOT's default window and intervals: busy services peaked at 27 to 70 MB without allocation
+// profiling (measured), and ADOT caps rotated files at 128 MiB. Longer windows or a smaller
+// OTEL_AWS_PROFILER_ALLOC_INTERVAL_BYTES need more: such a container mounts its own volume and sets
 // OTEL_AWS_PROFILER_DATA_DIR on it. It is a ceiling, not a reservation; exceeding it gets the pod evicted.
 var defaultProfilerVolumeSize = resource.MustParse("160Mi")
 

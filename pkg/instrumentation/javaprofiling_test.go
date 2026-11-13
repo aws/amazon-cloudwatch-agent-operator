@@ -79,6 +79,7 @@ func TestInjectJavaProfilingDefaults(t *testing.T) {
 		{Name: "OTEL_AWS_PROFILER_ENABLED", Value: "true"},
 		{Name: "OTEL_AWS_PROFILER_ENDPOINT", Value: agentEndpoint},
 		{Name: "OTEL_AWS_PROFILER_DATA_DIR", Value: "/otel-profiler-data-java/app"},
+		{Name: "OTEL_AWS_PROFILER_MEMORY_ENABLED", Value: "true"},
 	}, pod.Spec.Containers[0].Env)
 	v := profilerVolume(pod)
 	require.NotNil(t, v, "one pod-level profiler volume")
@@ -216,13 +217,13 @@ func TestInjectJavaProfilingClashes(t *testing.T) {
 func TestJavaProfilingChartKeysOnly(t *testing.T) {
 	cfg := cfgFrom(t, map[string]string{
 		"enabled": "true", "Enabled": "false", "export_endpoint": "x", "_ENDPOINT": "x", "Endpoint": "http://evil:4318",
-		"data_dir": "/base", "volume_size_limit": "64Mi", "mode": "cpu", "max_payload_bytes": "20971520", "MAX_PAYLOAD_BYTES": "1",
+		"data_dir": "/base", "volume_size_limit": "64Mi", "mode": "cpu", "memory_enabled": "false", "max_payload_bytes": "20971520", "MAX_PAYLOAD_BYTES": "1",
 		"ENABLED": "false",
 	})
 	notes := strings.Join(cfg.notes, "\n")
 	assert.Equal(t, agentEndpoint, cfg.endpoint, "the chart's lower-case endpoint key is the endpoint")
 	assert.Equal(t, "20971520", cfg.maxPayloadBytes, "only the lower-case spelling is read")
-	for _, key := range []string{"Endpoint", "export_endpoint", "_ENDPOINT", "data_dir", "volume_size_limit", "mode", "MAX_PAYLOAD_BYTES", "Enabled", "ENABLED"} {
+	for _, key := range []string{"Endpoint", "export_endpoint", "_ENDPOINT", "data_dir", "volume_size_limit", "mode", "memory_enabled", "MAX_PAYLOAD_BYTES", "Enabled", "ENABLED"} {
 		assert.Contains(t, notes, `"`+key+`": unknown, ignored`, key)
 	}
 	assert.NotContains(t, notes, "http://evil", "values are never logged")
@@ -233,8 +234,9 @@ func TestJavaProfilingChartKeysOnly(t *testing.T) {
 		{Name: "OTEL_AWS_PROFILER_ENABLED", Value: "true"},
 		{Name: "OTEL_AWS_PROFILER_ENDPOINT", Value: agentEndpoint},
 		{Name: "OTEL_AWS_PROFILER_DATA_DIR", Value: "/otel-profiler-data-java/app"},
+		{Name: "OTEL_AWS_PROFILER_MEMORY_ENABLED", Value: "true"},
 		{Name: "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES", Value: "20971520"},
-	}, pod.Spec.Containers[0].Env, "exactly these four: no pass-through of other keys")
+	}, pod.Spec.Containers[0].Env, "exactly these five, memory the operator's own: no pass-through of other keys")
 }
 
 // The chart-passed endpoint and payload cap are validated; a bad value is not used.
@@ -314,6 +316,11 @@ func TestJavaProfilingNoPassThrough(t *testing.T) {
 	pod, _, err := injectJavaProfiling(true, cfg, false, profilingPod(), 0, nil)
 	require.NoError(t, err)
 	for _, k := range keys {
+		if k == "memory_enabled" {
+			// Memory is the operator's default, never the key's value.
+			assert.Equal(t, "true", getEnvValue(pod.Spec.Containers[0].Env, "OTEL_AWS_PROFILER_MEMORY_ENABLED"), k)
+			continue
+		}
 		assert.Equal(t, -1, getIndexOfEnv(pod.Spec.Containers[0].Env, "OTEL_AWS_PROFILER_"+strings.ToUpper(k)), k)
 	}
 	cfg = cfgFrom(t, map[string]string{"empty": "", "max_payload_bytes": "30\nforged"})
@@ -334,6 +341,103 @@ func TestInjectJavaProfilingCustomerWins(t *testing.T) {
 	assert.Equal(t, "cpu", getEnvValue(env, "OTEL_AWS_PROFILER_MODE"), "the container's own ADOT setting stays")
 	assert.Equal(t, 1, countEnv(env, "OTEL_AWS_PROFILER_DATA_DIR"), "a valueFrom on the pod wins")
 	assert.Equal(t, -1, getIndexOfEnv(env, "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES"), "an empty ConfigMap value still counts as set")
+}
+
+// injectedDefaults are the ADOT settings the operator injects as defaults, with a value a container may set itself.
+var injectedDefaults = []struct{ name, value, own string }{
+	{name: "OTEL_AWS_PROFILER_MEMORY_ENABLED", value: "true", own: "false"},
+}
+
+// Each injected default follows the rule of the other profiler variables: a value the container sets itself wins,
+// in env (a value or a valueFrom) or in a ConfigMap it loads with envFrom (allEnvs). A Secret envFrom value, which the
+// operator cannot read, does not stop the default (Kubernetes gives env precedence over envFrom). An opted-out
+// container, or a pod with profiling off, gets none of them. ADOT reads the matching system property
+// (-Dotel.aws.profiler.<name>) first; the operator does not look for it, so it still injects the default.
+func TestInjectJavaProfilingInjectedDefaults(t *testing.T) {
+	for _, d := range injectedDefaults {
+		t.Run(d.name, func(t *testing.T) {
+			ref := &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "c"}, Key: "k"}}
+			tests := []struct {
+				name      string
+				pod       corev1.Pod
+				wantValue string
+				wantFrom  bool
+			}{
+				{name: "default", pod: profilingPod(), wantValue: d.value},
+				{name: "own value in env", pod: profilingPod(corev1.EnvVar{Name: d.name, Value: d.own}), wantValue: d.own},
+				{name: "own empty value in env", pod: profilingPod(corev1.EnvVar{Name: d.name, Value: ""}), wantValue: ""},
+				{name: "own valueFrom", pod: profilingPod(corev1.EnvVar{Name: d.name, ValueFrom: ref}), wantFrom: true},
+			}
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					out, injected, err := injectJavaProfiling(true, defaultCfg(), false, tt.pod, 0, tt.pod.Spec.Containers[0].Env)
+					require.NoError(t, err)
+					assert.True(t, injected)
+					env := out.Spec.Containers[0].Env
+					require.Equal(t, 1, countEnv(env, d.name), "set exactly once")
+					idx := getIndexOfEnv(env, d.name)
+					assert.Equal(t, tt.wantValue, env[idx].Value)
+					assert.Equal(t, tt.wantFrom, env[idx].ValueFrom != nil)
+				})
+			}
+			t.Run("configmap envFrom wins", func(t *testing.T) {
+				out, injected, err := injectJavaProfiling(true, defaultCfg(), false, profilingPod(), 0, []corev1.EnvVar{{Name: d.name, Value: d.own}})
+				require.NoError(t, err)
+				assert.True(t, injected)
+				assert.Equal(t, -1, getIndexOfEnv(out.Spec.Containers[0].Env, d.name), "the ConfigMap value is the one ADOT reads")
+			})
+			t.Run("opted out", func(t *testing.T) {
+				off := profilingPod(corev1.EnvVar{Name: "OTEL_AWS_PROFILER_ENABLED", Value: "false"})
+				out, injected, err := injectJavaProfiling(true, defaultCfg(), false, off, 0, off.Spec.Containers[0].Env)
+				require.NoError(t, err)
+				assert.False(t, injected)
+				assert.Equal(t, -1, getIndexOfEnv(out.Spec.Containers[0].Env, d.name))
+			})
+			t.Run("not enabled", func(t *testing.T) {
+				out, _, _ := injectJavaProfiling(false, defaultCfg(), false, profilingPod(), 0, nil)
+				assert.Equal(t, -1, getIndexOfEnv(out.Spec.Containers[0].Env, d.name))
+			})
+			t.Run("system property left alone", func(t *testing.T) {
+				prop := "-D" + strings.ToLower(strings.ReplaceAll(d.name, "_", ".")) + "=" + d.own
+				own := profilingPod(corev1.EnvVar{Name: "JAVA_TOOL_OPTIONS", Value: prop})
+				out, injected, err := injectJavaProfiling(true, defaultCfg(), false, own, 0, own.Spec.Containers[0].Env)
+				require.NoError(t, err)
+				assert.True(t, injected)
+				assert.Equal(t, prop, getEnvValue(out.Spec.Containers[0].Env, "JAVA_TOOL_OPTIONS"))
+				assert.Equal(t, d.value, getEnvValue(out.Spec.Containers[0].Env, d.name), "not special-cased: the default is still injected")
+			})
+		})
+	}
+}
+
+// A value in the Instrumentation's env is in the container's env before the profiler is injected, so it wins over
+// the operator's default for every container it instruments.
+func TestInjectJavaProfilingDefaultsFromInstrumentation(t *testing.T) {
+	t.Setenv(envJavaProfilingEnabled, "true")
+	t.Setenv(envJavaProfilingSettings, `{"endpoint":"`+agentEndpoint+`"}`)
+	javaProfilingConfigOnce = sync.Once{}
+	t.Cleanup(func() { javaProfilingConfigOnce = sync.Once{} })
+	var own []corev1.EnvVar
+	for _, d := range injectedDefaults {
+		own = append(own, corev1.EnvVar{Name: d.name, Value: d.own})
+	}
+	for name, inst := range map[string]v1alpha1.Instrumentation{
+		"spec.env":      {Spec: v1alpha1.InstrumentationSpec{Java: v1alpha1.Java{Image: "img:1"}, Env: own}},
+		"spec.java.env": {Spec: v1alpha1.InstrumentationSpec{Java: v1alpha1.Java{Image: "img:1", Env: own}}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			inst := inst
+			insts := languageInstrumentations{Java: instrumentationWithContainers{Instrumentation: &inst, Containers: "app"}}
+			inj := sdkInjector{logger: logr.Discard()}
+			pod := inj.inject(context.Background(), insts, corev1.Namespace{}, profilingPod())
+			env := pod.Spec.Containers[0].Env
+			assert.Equal(t, "true", getEnvValue(env, "OTEL_AWS_PROFILER_ENABLED"), "profiled")
+			for _, d := range injectedDefaults {
+				assert.Equal(t, 1, countEnv(env, d.name), d.name)
+				assert.Equal(t, d.own, getEnvValue(env, d.name), d.name)
+			}
+		})
+	}
 }
 
 func TestJavaProfilingEnabled(t *testing.T) {
