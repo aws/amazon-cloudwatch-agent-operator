@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	configmapMountPath  = "/etc/dcgm-exporter"
+	// Mount the ConfigMap in its own directory so it does not hide the
+	// /etc/dcgm-exporter/config.yaml that DCGM Exporter 4.9.0+ images load at startup.
+	configmapMountPath  = "/etc/dcgm-exporter/operator"
 	metricsConfigEnvVar = "DCGM_EXPORTER_COLLECTORS"
 )
 
