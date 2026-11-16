@@ -122,9 +122,15 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		return nil, err
 	}
 
-	servMonSelector := getSelector(cfg.ServiceMonitorSelector)
+	servMonSelector, err := getSelector(cfg.ServiceMonitorSelector)
+	if err != nil {
+		return nil, fmt.Errorf("invalid service_monitor_selector: %w", err)
+	}
 
-	podMonSelector := getSelector(cfg.PodMonitorSelector)
+	podMonSelector, err := getSelector(cfg.PodMonitorSelector)
+	if err != nil {
+		return nil, fmt.Errorf("invalid pod_monitor_selector: %w", err)
+	}
 
 	// Informers are NOT built here. Each ServiceMonitor/PodMonitor informer is
 	// started lazily, only once its CRD is observed to exist (see Watch). This
@@ -191,11 +197,10 @@ type PrometheusCRWatcher struct {
 	maxBlindStartAttempts int
 }
 
-func getSelector(s map[string]string) labels.Selector {
-	if s == nil {
-		return labels.NewSelector()
-	}
-	return labels.SelectorFromSet(s)
+// getSelector returns the label selector used to list ServiceMonitors or
+// PodMonitors. A nil or empty selector selects every monitor.
+func getSelector(s *metav1.LabelSelector) (labels.Selector, error) {
+	return allocatorconfig.MonitorSelector(s)
 }
 
 // ScraperAnnotationKey and clusterScraperRole implement annotation-based routing of

@@ -1,0 +1,24 @@
+# Java profiling opt-out: the container is Java-instrumented but sets OTEL_AWS_PROFILER_ENABLED=false, so it gets no
+# other profiler variable, volume or mount.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-java-profiling-opt-out
+spec:
+  selector:
+    matchLabels:
+      app: nginx-java-profiling-opt-out
+  template:
+    metadata:
+      labels:
+        app: nginx-java-profiling-opt-out
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.14.2
+          env:
+            - name: OTEL_AWS_PROFILER_ENABLED
+              value: "false"
+      restartPolicy: Always

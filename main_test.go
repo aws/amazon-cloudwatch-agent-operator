@@ -112,3 +112,26 @@ func assertEnv(t *testing.T, name string, want *string) {
 		t.Errorf("%s: got %q, want %q", name, got, *want)
 	}
 }
+
+// Test_setLangEnvVars_profiling verifies that java.profiling.enabled reaches the pod mutator as
+// AUTO_INSTRUMENTATION_JAVA_PROFILING_ENABLED, the other keys as JSON in _SETTINGS, and that other languages are ignored.
+func Test_setLangEnvVars_profiling(t *testing.T) {
+	names := []string{"AUTO_INSTRUMENTATION_JAVA_PROFILING_ENABLED", "AUTO_INSTRUMENTATION_JAVA_PROFILING_MODE", "AUTO_INSTRUMENTATION_PYTHON_PROFILING_ENABLED", "AUTO_INSTRUMENTATION_JAVA_PROFILING_SETTINGS", "AUTO_INSTRUMENTATION_PYTHON_PROFILING_SETTINGS"}
+	unsetAll := func() {
+		for _, n := range names {
+			_ = os.Unsetenv(n)
+		}
+	}
+	unsetAll()
+	t.Cleanup(unsetAll)
+
+	profiling := map[string]string{"enabled": "true", "mode": "wall"}
+	setLangEnvVars("JAVA", map[string]map[string]string{"profiling": profiling})
+	setLangEnvVars("PYTHON", map[string]map[string]string{"profiling": profiling})
+
+	assertEnv(t, names[0], ptr("true"))
+	assertEnv(t, names[1], nil)
+	assertEnv(t, names[2], nil)
+	assertEnv(t, "AUTO_INSTRUMENTATION_JAVA_PROFILING_SETTINGS", ptr(`{"mode":"wall"}`))
+	assertEnv(t, "AUTO_INSTRUMENTATION_PYTHON_PROFILING_SETTINGS", nil)
+}

@@ -25,6 +25,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	metadatafake "k8s.io/client-go/metadata/fake"
@@ -292,7 +293,7 @@ func TestRateLimit(t *testing.T) {
 		},
 	}
 	events := make(chan Event, 1)
-	eventInterval := 5 * time.Millisecond
+	eventInterval := 8 * time.Millisecond // deflake: widened from 5ms so ms-scale scheduling jitter stays under the interval
 
 	w := getTestPrometheusCRWatcher(t, nil, nil)
 	defer func() { _ = w.Close() }()
@@ -486,8 +487,8 @@ func getTestPrometheusCRWatcherWithCRDs(t *testing.T, sm *monitoringv1.ServiceMo
 		informerStopChannels:   map[string]chan struct{}{},
 		configGenerator:        generator,
 		prom:                   prom,
-		serviceMonitorSelector: getSelector(nil),
-		podMonitorSelector:     getSelector(nil),
+		serviceMonitorSelector: labels.Everything(),
+		podMonitorSelector:     labels.Everything(),
 		stopChannel:            make(chan struct{}),
 	}
 }

@@ -372,15 +372,17 @@ type AmazonCloudWatchAgentTargetAllocatorPrometheusCR struct {
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
 	// PodMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// PodMonitor's meta labels. The requirements are ANDed.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches all objects.
 	// +optional
-	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
+	PodMonitorSelector *metav1.LabelSelector `json:"podMonitorSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches all objects.
 	// +optional
-	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
+	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
 	// ScraperRole partitions ServiceMonitor/PodMonitor discovery across CloudWatch agents by the
 	// "cloudwatch.aws.amazon.com/scraper" annotation on the monitor CR. "cluster-scraper" selects only monitors
 	// annotated cloudwatch.aws.amazon.com/scraper: cluster-scraper; empty (default) selects only monitors that are

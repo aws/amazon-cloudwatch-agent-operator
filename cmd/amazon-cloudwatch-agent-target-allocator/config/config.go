@@ -61,8 +61,8 @@ type Config struct {
 	FallbackAllocationStrategy *string               `yaml:"allocation_fallback_strategy,omitempty"`
 	FilterStrategy             *string               `yaml:"filter_strategy,omitempty"`
 	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector         map[string]string     `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector     map[string]string     `yaml:"service_monitor_selector,omitempty"`
+	PodMonitorSelector         *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector     *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
 	ScraperRole                string                `yaml:"scraper_role,omitempty"`
 	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
 	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
@@ -245,6 +245,12 @@ func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0
 	if !config.PrometheusCR.Enabled && !scrapeConfigsPresent {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	if _, err := MonitorSelector(config.ServiceMonitorSelector); err != nil {
+		return fmt.Errorf("invalid service_monitor_selector: %w", err)
+	}
+	if _, err := MonitorSelector(config.PodMonitorSelector); err != nil {
+		return fmt.Errorf("invalid pod_monitor_selector: %w", err)
 	}
 	return nil
 }

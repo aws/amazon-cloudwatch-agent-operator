@@ -267,6 +267,65 @@ jobs:
           go run integration-tests/manifests/cmd/validate_instrumentation_vars.go default integration-tests/manifests/cmd/ns_instrumentation_env_variables.json app_signals
           kubectl delete instrumentation sample-instrumentation
 
+      - name: Enable Java profiling in the operator
+        run: |
+          # Pass java.profiling the way the Helm chart does, through --auto-instrumentation-config on the manager.
+          CONFIG="$(jq -c . integration-tests/java-profiling/auto-instrumentation-config.json)"
+          INDEX="$(kubectl get deployment cloudwatch-controller-manager -n amazon-cloudwatch -o json | jq '.spec.template.spec.containers | map(.name) | index("manager")')"
+          kubectl patch deployment cloudwatch-controller-manager -n amazon-cloudwatch --type=json \
+            -p "$(jq -cn --arg v "--auto-instrumentation-config=${CONFIG}" --argjson i "${INDEX}" '[{"op":"add","path":"/spec/template/spec/containers/\($i)/args/-","value":$v}]')"
+          kubectl rollout status deployment/cloudwatch-controller-manager -n amazon-cloudwatch --timeout=180s
+          kubectl get deployment cloudwatch-controller-manager -n amazon-cloudwatch -o jsonpath='{.spec.template.spec.containers[*].args}'; echo
+          # A finished rollout does not mean the new manager's webhook serves yet, and the pod webhook ignores
+          # failures. Dry-run a Java pod through admission until the reply carries the profiler variable.
+          cat > /tmp/java-profiling-probe-pod.yaml <<'EOF'
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: java-profiling-probe
+            namespace: default
+            annotations:
+              instrumentation.opentelemetry.io/inject-java: "true"
+          spec:
+            containers:
+              - name: app
+                image: nginx:1.14.2
+          EOF
+          for i in $(seq 1 36); do
+            out="$(kubectl create --dry-run=server -o json -f /tmp/java-profiling-probe-pod.yaml 2>/dev/null || true)"
+            if grep -q '"OTEL_AWS_PROFILER_ENABLED"' <<< "$out"; then
+              echo "Webhook injects Java profiling (attempt $i)"
+              exit 0
+            fi
+            echo "Waiting for the webhook to inject Java profiling... ($i/36)"
+            sleep 5
+          done
+          kubectl create --dry-run=server -o yaml -f /tmp/java-profiling-probe-pod.yaml || true
+          kubectl logs -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-agent-operator --tail=100 || true
+          echo "::error::operator webhook never became ready after enabling Java profiling"
+          exit 1
+
+      - name: Test for Java profiling injection
+        run: |
+          cat integration-tests/java-profiling/sample-deployment-java-profiling.yaml
+          kubectl apply -f integration-tests/java-profiling/sample-deployment-java-profiling.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx-java-profiling -n default --timeout=180s
+          kubectl describe pods -n default -l app=nginx-java-profiling
+          go test ./integration-tests/java-profiling/validate
+          go run ./integration-tests/java-profiling/cmd default integration-tests/java-profiling/java_profiling_expectations.json
+
+      - name: Test for Java profiling opt-out
+        run: |
+          cat integration-tests/java-profiling/sample-deployment-java-profiling-opt-out.yaml
+          kubectl apply -f integration-tests/java-profiling/sample-deployment-java-profiling-opt-out.yaml
+          sleep 5
+          kubectl wait --for=condition=Available deployment/nginx-java-profiling-opt-out -n default --timeout=180s
+          kubectl describe pods -n default -l app=nginx-java-profiling-opt-out
+          go run ./integration-tests/java-profiling/cmd default integration-tests/java-profiling/java_profiling_opt_out_expectations.json
+          kubectl delete -f integration-tests/java-profiling/sample-deployment-java-profiling-opt-out.yaml
+          kubectl delete -f integration-tests/java-profiling/sample-deployment-java-profiling.yaml
+
       # Check pod state/events/operator logs for any failure.
       - name: Dump diagnostics on failure
         if: failure()
