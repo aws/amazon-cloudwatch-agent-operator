@@ -20,8 +20,16 @@ import (
 // enables the profiler, points it at the agent, and gives it a dedicated disk-backed emptyDir for its data dir (the
 // native library and rotating JFR files). Profiles go to the endpoint the chart passes (java.profiling.endpoint, the
 // node agent's OTLP HTTP endpoint), with the payload cap it passes for that receiver (java.profiling.max_payload_bytes).
-// Without an endpoint nothing is injected.
+// Without an endpoint nothing is injected. It also selects ADOT settings the chart does not expose: allocation profiling
+// (defaultProfiler* below), which a container overrides in its own env.
 const (
+	// defaultProfilerMemoryEnabled turns on ADOT's allocation profiling (off in ADOT by default). async-profiler then
+	// adds alloc=<OTEL_AWS_PROFILER_ALLOC_INTERVAL_BYTES> to the same session, and ADOT exports alloc_space and
+	// alloc_objects profiles next to the wall one. On JDK 11 and later it uses JVMTI allocation sampling.
+	// Before JDK 11 it needs HotSpot's AllocTracer symbols in libjvm; without them async-profiler fails to start the
+	// whole session, so such a container is not profiled at all until it sets OTEL_AWS_PROFILER_MEMORY_ENABLED=false.
+	defaultProfilerMemoryEnabled = "true"
+
 	envJavaProfilingEnabled  = "AUTO_INSTRUMENTATION_JAVA_PROFILING_ENABLED"
 	envJavaProfilingSettings = "AUTO_INSTRUMENTATION_JAVA_PROFILING_SETTINGS"
 
@@ -29,6 +37,7 @@ const (
 	envProfilerEndpoint        = "OTEL_AWS_PROFILER_ENDPOINT"
 	envProfilerDataDir         = "OTEL_AWS_PROFILER_DATA_DIR"
 	envProfilerMaxPayloadBytes = "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES"
+	envProfilerMemoryEnabled   = "OTEL_AWS_PROFILER_MEMORY_ENABLED"
 	envOTelExporterProtocol    = "OTEL_EXPORTER_OTLP_PROTOCOL"
 
 	// fargateSchedulerName and fargateProfileLabel mark an EKS Fargate pod, which has no node-local agent.
@@ -169,16 +178,22 @@ func isFargatePod(pod corev1.Pod) bool {
 }
 
 // injectJavaProfiling adds OTEL_AWS_PROFILER_ENABLED, OTEL_AWS_PROFILER_ENDPOINT (cfg.endpoint),
-// OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES (cfg.maxPayloadBytes, when passed) and
-// OTEL_AWS_PROFILER_DATA_DIR=/otel-profiler-data-java/<container-name> to the Java container at index after the
-// javaagent was injected, mounts the profiler volume in it,
-// and adds the volume to the pod once, growing its sizeLimit by defaultProfilerVolumeSize per profiled container. Without
+// OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES (cfg.maxPayloadBytes, when passed),
+// OTEL_AWS_PROFILER_DATA_DIR=/otel-profiler-data-java/<container-name> and OTEL_AWS_PROFILER_MEMORY_ENABLED=true
+// (defaultProfilerMemoryEnabled) to the Java container at index after the javaagent was injected, mounts the profiler
+// volume in it, and adds the volume to the pod once, growing its sizeLimit by defaultProfilerVolumeSize per profiled container. Without
 // cfg.endpoint it injects nothing (the caller logs that once).
 //
 // Precedence, as for the javaagent and Application Signals variables: a variable the container sets in env, or in a
 // ConfigMap it loads with envFrom (allEnvs), wins and is not injected. A customer OTEL_AWS_PROFILER_DATA_DIR is used
 // verbatim (a path outside the volume is not on it). A value from an envFrom Secret, which the operator cannot read,
-// is overridden by the injected env, because Kubernetes gives env precedence over envFrom. volumeClash is
+// is overridden by the injected env, because Kubernetes gives env precedence over envFrom. A variable from the
+// Instrumentation resource's env is already in the container's env here, so it wins too
+// (OTEL_AWS_PROFILER_MEMORY_ENABLED=false in a user-written Instrumentation keeps allocation profiling off for every
+// pod it instruments; the operator's default Instrumentation has no such env). An envFrom ConfigMap loaded with a
+// prefix is matched without the prefix (resolveEnvFrom), and only a literal OTEL_AWS_PROFILER_ENABLED value opts out. ADOT reads the
+// -Dotel.aws.profiler.memory.enabled system property before the env var, so a container that sets it (in
+// JAVA_TOOL_OPTIONS, for example) keeps its own value; the operator does not look for it. volumeClash is
 // javaProfilerVolumePresent of the pod as it was before any injection, a customer volume with the profiler's name. It
 // returns whether it injected.
 func injectJavaProfiling(enabled bool, cfg javaProfilingConfig, volumeClash bool, pod corev1.Pod, index int, allEnvs []corev1.EnvVar) (corev1.Pod, bool, error) {
@@ -232,6 +247,7 @@ func injectJavaProfiling(enabled bool, cfg javaProfilingConfig, volumeClash bool
 		{Name: envProfilerEnabled, Value: "true"},
 		{Name: envProfilerEndpoint, Value: cfg.endpoint},
 		{Name: envProfilerDataDir, Value: javaProfilerMountPath + "/" + container.Name},
+		{Name: envProfilerMemoryEnabled, Value: defaultProfilerMemoryEnabled},
 	}
 	// The payload cap belongs to the chart's receiver: skip it when the container sends to its own endpoint.
 	if cfg.maxPayloadBytes != "" && !envSetByCustomer(container, allEnvs, envProfilerEndpoint) {

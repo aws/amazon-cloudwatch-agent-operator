@@ -10,19 +10,22 @@
       "OTEL_AWS_PROFILER_ENABLED": "true",
       "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
       "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
-      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/app"
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/app",
+      "OTEL_AWS_PROFILER_MEMORY_ENABLED": "true"
     },
     "worker": {
       "OTEL_AWS_PROFILER_ENABLED": "true",
       "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
       "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
-      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/worker"
+      "OTEL_AWS_PROFILER_DATA_DIR": "/otel-profiler-data-java/worker",
+      "OTEL_AWS_PROFILER_MEMORY_ENABLED": "true"
     },
     "custom": {
       "OTEL_AWS_PROFILER_ENABLED": "true",
       "OTEL_AWS_PROFILER_ENDPOINT": "http://cloudwatch-agent.amazon-cloudwatch:14318/v1development/profiles",
       "OTEL_AWS_PROFILER_MAX_PAYLOAD_BYTES": "20971520",
-      "OTEL_AWS_PROFILER_DATA_DIR": "/profiler-own/custom"
+      "OTEL_AWS_PROFILER_DATA_DIR": "/profiler-own/custom",
+      "OTEL_AWS_PROFILER_MEMORY_ENABLED": "false"
     }
   },
   "unprofiledContainers": [

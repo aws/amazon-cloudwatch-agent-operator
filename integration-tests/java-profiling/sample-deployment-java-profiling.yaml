@@ -1,7 +1,8 @@
 # Java profiling: three Java containers (app, worker, custom) are profiled and share one profiler volume; the sidecar is not
 # Java-instrumented and must get nothing from the profiler. worker loads an (optional) Secret with envFrom, which does
 # not stop it being profiled. custom brings its own volume and OTEL_AWS_PROFILER_DATA_DIR (the way to give the profiler
-# more space), which the operator keeps; the operator's volume is still mounted in it, unused.
+# more space), which the operator keeps; the operator's volume is still mounted in it, unused. app and worker get the
+# operator's allocation profiling; custom sets OTEL_AWS_PROFILER_MEMORY_ENABLED=false itself, which the operator keeps.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,6 +35,8 @@ spec:
           env:
             - name: OTEL_AWS_PROFILER_DATA_DIR
               value: /profiler-own/custom
+            - name: OTEL_AWS_PROFILER_MEMORY_ENABLED
+              value: "false"
           volumeMounts:
             - name: profiler-own
               mountPath: /profiler-own
