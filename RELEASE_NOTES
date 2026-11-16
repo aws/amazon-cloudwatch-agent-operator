@@ -1,4 +1,15 @@
 ========================================================================
+Amazon CloudWatch Agent Operator v3.9.0 (2026-11-16)
+========================================================================
+New Features:
+* [ApplicationSignals] Support the ADOT Java embedded profiler for auto-instrumented Java workloads, enabled with `java.profiling`, including allocation profiling
+* [Prometheus] Add opt-in `--manage-prometheus-crds` flag to create the ServiceMonitor and PodMonitor CRDs when they are missing
+
+Enhancements:
+* [TargetAllocator] Support full label selectors (`matchLabels` and `matchExpressions`) for selecting ServiceMonitors and PodMonitors
+* [ContainerInsights] Update the default DCGM Exporter image to 4.7.0-4.9.0-distroless
+
+========================================================================
 Amazon CloudWatch Agent Operator v3.8.1 (2026-11-03)
 ========================================================================
 Enhancements:
