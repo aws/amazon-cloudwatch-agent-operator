@@ -352,7 +352,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig, nil, false)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, "", nil, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -363,6 +363,76 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 		})
 	}
 
+}
+
+func Test_defaultResourceAttributes(t *testing.T) {
+	withHostedIn := func(cluster string) *adapters.CwaConfig {
+		return &adapters.CwaConfig{
+			Logs: &adapters.Logs{
+				LogMetricsCollected: &adapters.LogMetricsCollected{
+					ApplicationSignals: &adapters.AppSignals{HostedIn: cluster},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name        string
+		agentConfig *adapters.CwaConfig
+		k8sMode     string
+		want        map[string]string
+	}{
+		{
+			name:        "nil agent config -> nil",
+			agentConfig: nil,
+			k8sMode:     "EKS",
+			want:        nil,
+		},
+		{
+			name:        "no cluster name (no hosted_in) -> nil",
+			agentConfig: &adapters.CwaConfig{Logs: &adapters.Logs{LogMetricsCollected: &adapters.LogMetricsCollected{ApplicationSignals: &adapters.AppSignals{}}}},
+			k8sMode:     "EKS",
+			want:        nil,
+		},
+		{
+			name:        "EKS -> cluster name + cloud.platform=aws_eks",
+			agentConfig: withHostedIn("my-cluster"),
+			k8sMode:     "EKS",
+			want:        map[string]string{"k8s.cluster.name": "my-cluster", "cloud.platform": "aws_eks"},
+		},
+		{
+			name:        "EKS case-insensitive -> cloud.platform set",
+			agentConfig: withHostedIn("my-cluster"),
+			k8sMode:     "eks",
+			want:        map[string]string{"k8s.cluster.name": "my-cluster", "cloud.platform": "aws_eks"},
+		},
+		{
+			name:        "native K8s -> cluster name only (k8s: prefix)",
+			agentConfig: withHostedIn("my-cluster"),
+			k8sMode:     "K8S",
+			want:        map[string]string{"k8s.cluster.name": "my-cluster"},
+		},
+		{
+			name:        "ROSA -> cluster name only (k8s: prefix)",
+			agentConfig: withHostedIn("my-cluster"),
+			k8sMode:     "ROSA",
+			want:        map[string]string{"k8s.cluster.name": "my-cluster"},
+		},
+		{
+			name:        "empty k8sMode -> cluster name only",
+			agentConfig: withHostedIn("my-cluster"),
+			k8sMode:     "",
+			want:        map[string]string{"k8s.cluster.name": "my-cluster"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := defaultResourceAttributes(tt.agentConfig, tt.k8sMode)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("defaultResourceAttributes() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func Test_getDefaultInstrumentationWindows(t *testing.T) {
@@ -700,7 +770,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig, nil, true)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, "", nil, true)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -939,7 +1009,7 @@ func Test_getDefaultInstrumentationLinuxWithApplicationSignalsDisabled(t *testin
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDefaultInstrumentation(tt.args.agentConfig, tt.args.additionalEnvs, false)
+			got, err := getDefaultInstrumentation(tt.args.agentConfig, "", tt.args.additionalEnvs, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getDefaultInstrumentation() error = %v, wantErr %v", err, tt.wantErr)
 				return
