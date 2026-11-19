@@ -154,9 +154,6 @@ func getServiceEventsEnvs(langStr string) []corev1.EnvVar {
 	if functionInstrumentEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED"); ok {
 		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: functionInstrumentEnabled})
 	}
-	if profilerEnabled, ok := os.LookupEnv("AUTO_INSTRUMENTATION_" + langStr + "_SERVICE_EVENTS_PROFILER_ENABLED"); ok {
-		envs = append(envs, corev1.EnvVar{Name: "OTEL_AWS_SERVICE_EVENTS_PROFILER_ENABLED", Value: profilerEnabled})
-	}
 	return envs
 }
 

@@ -16,7 +16,6 @@ func Test_setLangEnvVars_serviceEvents(t *testing.T) {
 	const (
 		enabledVar  = "AUTO_INSTRUMENTATION_JAVA_SERVICE_EVENTS_ENABLED"
 		functionVar = "AUTO_INSTRUMENTATION_JAVA_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED"
-		profilerVar = "AUTO_INSTRUMENTATION_JAVA_SERVICE_EVENTS_PROFILER_ENABLED"
 		dynamicVar  = "AUTO_INSTRUMENTATION_JAVA_DYNAMIC_INSTRUMENTATION_ENABLED"
 	)
 	tests := []struct {
@@ -25,7 +24,6 @@ func Test_setLangEnvVars_serviceEvents(t *testing.T) {
 		dynamicInst  map[string]string
 		wantEnabled  *string // nil = expect unset
 		wantFunction *string
-		wantProfiler *string
 		wantDynamic  *string
 	}{
 		{
@@ -42,11 +40,6 @@ func Test_setLangEnvVars_serviceEvents(t *testing.T) {
 			wantEnabled:  ptr("false"),
 		},
 		{
-			name:         "profiler_enabled=false is forwarded",
-			serviceEvent: map[string]string{"profiler_enabled": "false"},
-			wantProfiler: ptr("false"),
-		},
-		{
 			name:        "dynamic_instrumentation enabled=true is forwarded",
 			dynamicInst: map[string]string{"enabled": "true"},
 			wantDynamic: ptr("true"),
@@ -60,16 +53,14 @@ func Test_setLangEnvVars_serviceEvents(t *testing.T) {
 			serviceEvent: map[string]string{
 				"enabled":                     "true",
 				"function_instrument_enabled": "true",
-				"profiler_enabled":            "false",
 			},
 			dynamicInst:  map[string]string{"enabled": "true"},
 			wantEnabled:  ptr("true"),
 			wantFunction: ptr("true"),
-			wantProfiler: ptr("false"),
 			wantDynamic:  ptr("true"),
 		},
 	}
-	envVars := []string{enabledVar, functionVar, profilerVar, dynamicVar}
+	envVars := []string{enabledVar, functionVar, dynamicVar}
 	unsetAll := func() {
 		for _, v := range envVars {
 			_ = os.Unsetenv(v)
@@ -87,7 +78,6 @@ func Test_setLangEnvVars_serviceEvents(t *testing.T) {
 
 			assertEnv(t, enabledVar, tt.wantEnabled)
 			assertEnv(t, functionVar, tt.wantFunction)
-			assertEnv(t, profilerVar, tt.wantProfiler)
 			assertEnv(t, dynamicVar, tt.wantDynamic)
 		})
 	}
