@@ -136,6 +136,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
 					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -270,6 +271,7 @@ func Test_getDefaultInstrumentationLinux(t *testing.T) {
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
 					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -488,6 +490,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
 					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -622,6 +625,7 @@ func Test_getDefaultInstrumentationWindows(t *testing.T) {
 					{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 					{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/logs"},
 					{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "https://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"},
+					{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local:2000"},
 				},
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -1017,8 +1021,8 @@ func Test_getServiceEventsEnvs(t *testing.T) {
 }
 
 // Test_getDotNetEnvs_serviceEvents covers the .NET wiring. Without the shared OTLP endpoints the
-// .NET distro sends Service Events to localhost:4316, where nothing listens inside the pod.
-// Dynamic Instrumentation is intentionally not wired for .NET yet, so its API URL must be absent.
+// .NET distro sends Service Events to localhost:4316, and Dynamic Instrumentation calls
+// localhost:2000, where nothing listens inside the pod.
 func Test_getDotNetEnvs_serviceEvents(t *testing.T) {
 	const endpoint = "cloudwatch-agent.amazon-cloudwatch"
 	tests := []struct {
@@ -1030,17 +1034,18 @@ func Test_getDotNetEnvs_serviceEvents(t *testing.T) {
 		denyEnvs []string
 	}{
 		{
-			name:               "shared OTLP endpoints emitted when Application Signals is enabled",
+			name:               "shared OTLP endpoints and DI API URL emitted when Application Signals is enabled",
 			isAppSignalsEnable: true,
 			env:                map[string]string{},
 			wantEnvs: []corev1.EnvVar{
 				{Name: "OTEL_AWS_OTLP_LOGS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"},
 				{Name: "OTEL_AWS_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"},
+				{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
 			},
-			denyEnvs: []string{"OTEL_AWS_SERVICE_EVENTS_ENABLED", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED"},
+			denyEnvs: []string{"OTEL_AWS_SERVICE_EVENTS_ENABLED", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED"},
 		},
 		{
-			name:               "service events toggles forwarded for .NET",
+			name:               "service events and DI toggles forwarded for .NET",
 			isAppSignalsEnable: true,
 			env: map[string]string{
 				"SERVICE_EVENTS_ENABLED":                     "true",
@@ -1050,14 +1055,15 @@ func Test_getDotNetEnvs_serviceEvents(t *testing.T) {
 			wantEnvs: []corev1.EnvVar{
 				{Name: "OTEL_AWS_SERVICE_EVENTS_ENABLED", Value: "true"},
 				{Name: "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED", Value: "true"},
+				{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", Value: "http://cloudwatch-agent.amazon-cloudwatch:2000"},
+				{Name: "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED", Value: "true"},
 			},
-			denyEnvs: []string{"OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED"},
 		},
 		{
 			name:               "nothing emitted when Application Signals is disabled",
 			isAppSignalsEnable: false,
-			env:                map[string]string{"SERVICE_EVENTS_ENABLED": "true"},
-			denyEnvs:           []string{"OTEL_AWS_OTLP_LOGS_ENDPOINT", "OTEL_AWS_OTLP_METRICS_ENDPOINT", "OTEL_AWS_SERVICE_EVENTS_ENABLED"},
+			env:                map[string]string{"SERVICE_EVENTS_ENABLED": "true", "DYNAMIC_INSTRUMENTATION_ENABLED": "true"},
+			denyEnvs:           []string{"OTEL_AWS_OTLP_LOGS_ENDPOINT", "OTEL_AWS_OTLP_METRICS_ENDPOINT", "OTEL_AWS_SERVICE_EVENTS_ENABLED", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL", "OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED"},
 		},
 	}
 	for _, tt := range tests {

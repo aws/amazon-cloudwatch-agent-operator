@@ -268,6 +268,7 @@ func getDotNetEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 		}
 		envs = append(envs, getSharedOtlpEndpointEnvs(cloudwatchAgentServiceEndpoint, exporterPrefix)...)
 		envs = append(envs, getServiceEventsEnvs(dotNet)...)
+		envs = append(envs, getDynamicInstrumentationEnvs(dotNet, cloudwatchAgentServiceEndpoint)...)
 	}
 	return envs
 }
