@@ -130,7 +130,7 @@ metadata:
   namespace: default # use a namespace with pods you'd like to inject
 spec:
   exporter:
-    endpoint: http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics
+    endpoint: http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics
   propagators:
     - tracecontext
     - baggage
@@ -147,7 +147,7 @@ spec:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "http/protobuf"
       - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
-        value: "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"
+        value: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316/v1/metrics"
 EOF
 ```
 

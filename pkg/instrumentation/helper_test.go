@@ -238,17 +238,17 @@ func TestContainsCloudWatchAgent(t *testing.T) {
 	}{
 		{
 			name:     "Valid: Standard CloudWatch agent endpoint",
-			endpoint: "http://cloudwatch-agent.amazon-cloudwatch:4316",
+			endpoint: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316",
 			expected: true,
 		},
 		{
 			name:     "Valid: grpc protocol",
-			endpoint: "grpc://cloudwatch-agent.amazon-cloudwatch:4316",
+			endpoint: "grpc://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316",
 			expected: true,
 		},
 		{
 			name:     "Valid: https protocol",
-			endpoint: "https://cloudwatch-agent.amazon-cloudwatch:4316",
+			endpoint: "https://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316",
 			expected: true,
 		},
 		{
@@ -258,7 +258,7 @@ func TestContainsCloudWatchAgent(t *testing.T) {
 		},
 		{
 			name:     "Valid: Custom port",
-			endpoint: "http://cloudwatch-agent.amazon-cloudwatch:8080",
+			endpoint: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:8080",
 			expected: true,
 		},
 		{
@@ -268,7 +268,7 @@ func TestContainsCloudWatchAgent(t *testing.T) {
 		},
 		{
 			name:     "Invalid: Prefix before hostname",
-			endpoint: "http://my-cloudwatch-agent.amazon-cloudwatch:4316",
+			endpoint: "http://my-cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316",
 			expected: false,
 		},
 		{
@@ -278,7 +278,7 @@ func TestContainsCloudWatchAgent(t *testing.T) {
 		},
 		{
 			name:     "Invalid: No protocol separator",
-			endpoint: "cloudwatch-agent.amazon-cloudwatch:4316",
+			endpoint: "cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316",
 			expected: false,
 		},
 	}
@@ -516,7 +516,7 @@ func TestShouldInjectADOTSDK(t *testing.T) {
 		{
 			name: "CloudWatch endpoint: Inject",
 			envs: []corev1.EnvVar{
-				{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316"},
+				{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316"},
 			},
 			pod:       corev1.Pod{},
 			container: &corev1.Container{},
@@ -526,7 +526,7 @@ func TestShouldInjectADOTSDK(t *testing.T) {
 			name: "Custom traces endpoint + CloudWatch metrics: Skip",
 			envs: []corev1.EnvVar{
 				{Name: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Value: "http://custom:4318"},
-				{Name: "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch:4316"},
+				{Name: "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", Value: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4316"},
 			},
 			pod:       corev1.Pod{},
 			container: &corev1.Container{},

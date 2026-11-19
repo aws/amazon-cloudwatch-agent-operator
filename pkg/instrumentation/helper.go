@@ -21,7 +21,7 @@ import (
 
 const (
 	// CloudWatch agent service endpoints
-	cloudwatchAgentStandardEndpoint = "cloudwatch-agent.amazon-cloudwatch"
+	cloudwatchAgentStandardEndpoint = "cloudwatch-agent.amazon-cloudwatch.svc.cluster.local"
 	cloudwatchAgentWindowsEndpoint  = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
 )
 

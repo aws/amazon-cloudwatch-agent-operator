@@ -68,11 +68,11 @@ func getDefaultInstrumentation(agentConfig *adapters.CwaConfig, additionalEnvs m
 		return nil, errors.New("unable to determine nodejs instrumentation image")
 	}
 
-	cloudwatchAgentServiceEndpoint := "cloudwatch-agent.amazon-cloudwatch"
+	cloudwatchAgentServiceEndpoint := cloudwatchAgentStandardEndpoint
 	if isWindowsPod {
 		// Windows pods use the headless service endpoint due to limitations with the agent on host network mode
 		// https://kubernetes.io/docs/concepts/services-networking/windows-networking/#limitations
-		cloudwatchAgentServiceEndpoint = "cloudwatch-agent-windows-headless.amazon-cloudwatch.svc.cluster.local"
+		cloudwatchAgentServiceEndpoint = cloudwatchAgentWindowsEndpoint
 	}
 
 	// set protocol by checking cloudwatch agent config for tls setting
