@@ -266,6 +266,9 @@ func getDotNetEnvs(isAppSignalsEnabled bool, cloudwatchAgentServiceEndpoint, exp
 			{Name: "OTEL_LOGS_EXPORTER", Value: "none"},
 			{Name: "OTEL_DOTNET_AUTO_PLUGINS", Value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"},
 		}
+		envs = append(envs, getSharedOtlpEndpointEnvs(cloudwatchAgentServiceEndpoint, exporterPrefix)...)
+		envs = append(envs, getServiceEventsEnvs(dotNet)...)
+		envs = append(envs, getDynamicInstrumentationEnvs(dotNet, cloudwatchAgentServiceEndpoint)...)
 	}
 	return envs
 }
