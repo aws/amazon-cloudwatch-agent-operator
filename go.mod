@@ -2,6 +2,8 @@ module github.com/aws/amazon-cloudwatch-agent-operator
 
 go 1.26.10
 
+toolchain go1.27.4
+
 retract v1.51.0
 
 // openshift removed all tags from their repo, use the pseudoversion from the release-3.9 branch HEAD
